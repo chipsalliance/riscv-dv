@@ -1,0 +1,69 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#!/bin/bash
+
+# Path for RISC-V GCC toolchain
+# You can install the toolchain from https://github.com/riscv/riscv-gcc
+RISCV_TOOLCHAIN="XXX"
+RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv64-unknown-elf-gcc"
+RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv64-unknown-elf-objcopy"
+RISCV_SPIKE="XXX"
+
+# GCC compile options
+ABI="lp64"
+ISA="rv64imc"
+
+DATE=`date +%Y-%m-%d`
+
+# RTL simulator, support vcs and irun
+SIMULATOR="vcs"
+
+# Test name, "all" means run all tests in the testlist
+TEST="riscv_instr_base_test"
+
+# Simulation output directory
+SRC_DIR="./out_${DATE}/asm_tests"
+
+find "$SRC_DIR" -name "*.S" > "$SRC_DIR/asm_test_list"
+
+# GCC compile
+while read asm_test; do
+  # Generate binary for RTL simulation
+  SRC="$asm_test"
+  OBJFILE="$asm_test.o"
+  BINFILE="$asm_test.bin"
+  GCC_CMD="$RISCV_GCC -march=$ISA -mabi=$ABI -static -mcmodel=medany \
+           -fvisibility=hidden -nostdlib \
+           -nostartfiles -I$RISCV_TESTS/env/p \
+           -Tscripts/link.ld $SRC -o $OBJFILE"
+  echo "Gcc compile :\n$GCC_CMD"
+  $($GCC_CMD)
+  echo "Convert $OBJFILE to $BINFILE"
+  # Convert the ELF to plain binary
+  # You can load this binary to your RTL simulation
+  "$RISCV_OBJCOPY" -O binary "$OBJFILE" "$BINFILE"
+done <"$SRC_DIR/asm_test_list"
+
+# Run spike simulation
+find "$SRC_DIR" -name "*.o" > "$SRC_DIR/elf_list"
+mkdir -p "$SRC_DIR/spike_sim"
+while read elf_file; do
+  ELF="$elf_file"
+  TEST_NAME=$(echo "$elf_file" | sed 's/^.*\///g')
+  LOGFILE="$SRC_DIR/spike_sim/$TEST_NAME.log"
+  SPIKE_CMD="timeout 60s $RISCV_SPIKE --isa=$ISA -l $ELF &> $LOGFILE"
+  echo "$SPIKE_CMD"
+  $($SPIKE_CMD &> $LOGFILE)
+done <"$SRC_DIR/elf_list"
