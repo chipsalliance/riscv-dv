@@ -71,12 +71,6 @@ class riscv_rand_instr extends riscv_instr_base;
     }
   }
 
-  // Do not randomize CSR instructions by default, as it may cause co-sim mismatch and corrupt the
-  // previleged CSR state. The CSR instructions are tested in the dedicted tests
-  constraint csr_instr_c {
-    soft category != CSR;
-  }
-
   constraint constraint_cfg_knob_c {
     if(cfg.no_csr_instr == 1) {
       category != CSR;

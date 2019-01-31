@@ -68,7 +68,11 @@ class riscv_instr_base extends uvm_object;
       imm_len == 20;
     }
     if(format inside {I_FORMAT, S_FORMAT, B_FORMAT}) {
-      imm_len == 11;
+      if(imm_type == UIMM) {
+        imm_len == 5;
+      } else {
+        imm_len == 11;
+      }
     }
     if(format inside {CI_FORMAT, CSS_FORMAT}) {
       // TODO: gcc compiler seems to not support 6 bits unsigned imm for c.lui,

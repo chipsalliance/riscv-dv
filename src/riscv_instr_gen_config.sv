@@ -128,11 +128,11 @@ class riscv_instr_gen_config extends uvm_object;
   // For tests doesn't involve load/store, the data section generation could be skipped
   bit                    no_data_page;
   // Options to turn off some specific types of instructions
-  bit                    no_branch_jump;  // No branch/jump instruction
-  bit                    no_load_store;   // No load/store instruction
-  bit                    no_csr_instr;    // No csr instruction
-  bit                    no_ebreak = 1;   // No ebreak instruction
-  bit                    no_fence;        // No fence instruction
+  bit                    no_branch_jump;   // No branch/jump instruction
+  bit                    no_load_store;    // No load/store instruction
+  bit                    no_csr_instr = 1; // No csr instruction
+  bit                    no_ebreak = 1;    // No ebreak instruction
+  bit                    no_fence;         // No fence instruction
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
