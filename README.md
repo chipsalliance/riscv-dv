@@ -1,7 +1,7 @@
 # RISCV-DV
 
 RISCV-DV is a SV/UVM based open-source instruction generator for RISC-V
-processor verification. It currently supports below features:
+processor verification. It currently supports the following features:
 
 - Supported instruction set: RV32IMC, RV64IMC
 - Supported privileged mode: machine mode, supervisor mode, user mode
@@ -17,9 +17,9 @@ processor verification. It currently supports below features:
 
 ### Prerequisites
 
-To be able to run the instruction generator, you need to have a RTL simulator
+To be able to run the instruction generator, you need to have an RTL simulator
 which supports Systemverilog and UVM 1.2. This generator has been verified with
-Synopsys VCS and Cadence Incisive/Xcelium simualtor. Please make sure the EDA
+Synopsys VCS and Cadence Incisive/Xcelium simulator. Please make sure the EDA
 tool environment is properly setup before running the generator.
 
 ### Running the generator
@@ -75,11 +75,11 @@ Here's a few more examples of run command:
 
 ### Use the generated test in your RTL and ISS simulation
 
-You need to use RISC-V gcc/llvm compiler to compile the assembly tests to ELF
+You need to use the RISC-V gcc/llvm compiler to compile the assembly tests to an ELF
 file and feed into your TB. We currently don't provide a reference TB for the
 co-simulation as it could be quite different based on the processor and ISS
 implementation. A reference script "iss_sim" is provided to compile the program
-with RISC-V gcc compiler and simulate with spike.
+with the RISC-V gcc compiler and simulate with spike.
 ```
 ./run -test all; ./iss_sim
 ```
@@ -142,11 +142,11 @@ using this flow and how we can make it better together.
 We definitely welcome external contributions. We hope it could be a
 collaborative effort to build a strong open source RISC-V processor
 verification platform. Free feel to submit your pull request for review.
-Please refer to CONTRIBUTIONG.md for license related questions.
+Please refer to CONTRIBUTING.md for license related questions.
 
 ## Future release plan
 
-We have some work in progress which will be part of future release:
+We have some work in progress which will be part of future releases:
 
 -   Privileged CSR test suite.
 -   Illegal instruction support.
