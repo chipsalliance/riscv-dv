@@ -94,7 +94,6 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
   rand riscv_instr_base    addi;
   rand riscv_pseudo_instr  la;
   rand riscv_instr_base    branch;
-  rand bit [11:0]          jalr_imm;
   rand bit                 enable_branch;
   rand int                 mixed_instr_cnt;
   riscv_instr_base         stack_exit_instr[];
@@ -105,9 +104,6 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     solve jump.instr_name before addi.imm;
     solve jump.instr_name before addi.rs1;
     jump.instr_name dist {JAL := 1, JALR := 1};
-    if(jump.instr_name == JALR) {
-      addi.imm == -jump.imm;
-    }
     jump.rd == RA;
     !(addi.rs1 inside {cfg.reserved_regs, ZERO});
     addi.rs1 == la.rd;
@@ -148,6 +144,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     if(jump.instr_name == JAL) begin
       jump.imm_str = target_program_label;
     end else begin
+      jump.imm = -$signed(addi.imm);
       instr = {la, addi, instr};
     end
     mix_instr_stream(instr);
