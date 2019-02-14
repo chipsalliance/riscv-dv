@@ -12,15 +12,15 @@ processor verification. It currently supports the following features:
 - Support sub-programs and random program calls
 - Support illegal instruction and HINT instruction
 - Random forward/backward branch instructions
-- Support mix directed instruciton with random instruction stream
-- Support co-simulation with multiple ISS : spike, riscv-ovpsim
+- Supports mixing directed instructions with random instruction stream
+- Supports co-simulation with multiple ISS : spike, riscv-ovpsim
 
 ## Getting Started
 
 ### Prerequisites
 
 To be able to run the instruction generator, you need to have an RTL simulator
-which supports Systemverilog and UVM 1.2. This generator has been verified with
+which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
 
