@@ -1,4 +1,5 @@
 # Copyright 2018 Google LLC
+# Copyright 2019 Imperas Software Ltd
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,12 +25,14 @@
 # ./run -test all
 #
 # Change output directory
-# ./run -out my_output_dir
+# ./run -o my_output_dir
 
 DATE=`date +%Y-%m-%d`
 
-# RTL simulator, support vcs and irun
+# RTL simulator, support vcs, irun, and questa
 SIMULATOR="vcs"
+SIMULATOR="irun"
+SIMULATOR="questa"
 
 # random seed
 SEED=`date +%s`
@@ -45,11 +48,20 @@ NUM_TESTS=1
 # Simulation output directory
 OUT="./out_${DATE}"
 
+COMPILE=0
+GENERATE=0
+
 # Process command line options
 while [[ $# -gt 0 ]]
 do
 key="$1"
 case $key in
+    -compile)
+    COMPILE=1
+    ;;
+    -generate)
+    GENERATE=1
+    ;;
     -tool)
     SIMULATOR="$2"
     shift
@@ -70,9 +82,20 @@ case $key in
     OUT="$2"
     shift
     ;;
+    -help)
+    echo "usage:"
+    echo "    -tool vcs | irun | questa"
+    echo "    -test <name> | all"
+    echo "    -n <num tests>"
+    echo "    -seed <seed>"
+    echo "    -o <output dir>"
+    echo "    -generate"
+    echo "    -compile"
+    exit -1
+    ;;
     *)
     echo "unknown option $1"
-    return
+    exit -1
     ;;
 esac
 shift
@@ -101,42 +124,66 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
 
   SIM_CMD="irun -R +UVM_TESTNAME="
 
+elif [[ "$SIMULATOR" == "questa" ]]; then
+  # COMPILE_CMD="vlog -64 \
+  COMPILE_CMD="vlog  -msglimit all -msglimitcount 2 \
+                    -f ./files.f \
+                    -sv -quiet -mfcu \
+                    -L ${QUESTA_HOME}/uvm-1.2  \
+                    -l ${OUT}/compile.log"
+
+  echo ${COMPILE_CMD}
+  SIM_CMD="vsim riscv_instr_gen_tb_top -msglimit all -msglimitcount 2 -c -quiet -do \"run\" -L ${QUESTA_HOME}/uvm-1.2 +UVM_TESTNAME="
+
 else
   echo "unsupported simulator $SIMULATOR"
-  return
+  exit -1
 fi
 
-# Clean up previous runs
-rm -rf ${OUT}
-mkdir -p ${OUT}
-mkdir -p ${OUT}/asm_tests
+if [[ ${COMPILE} == "1" ]]; then
+  # Create the library.
+  if [ -f work ]; then
+      vdel -all
+  fi 
+  vlib work
 
-# Compilation
-${COMPILE_CMD}
+  # Clean up previous runs
+  rm -rf ${OUT}
+  mkdir -p ${OUT}
+  mkdir -p ${OUT}/asm_tests
 
-# Run sim
-if [[ ${TEST} == "all" ]]; then
-  echo "Running regression with testlist:"
-  cat testlist
-  while read line; do
-    if ! [[ $line =~ ^\/\/ ]]; then
-      if [[ $line =~([a-z0-9_-]*)([[:space:]]*)\:([[:space:]]*)([0-9]*) ]]; then
-        SEED=`date +%s`
-        TEST=${BASH_REMATCH[1]}
-        ITERATION=${BASH_REMATCH[4]}
-        echo "Running ${TEST}, iteration count: ${ITERATION}"
-        ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
-                          +ntb_random_seed=${SEED} \
-                          -l ${OUT}/sim_${TEST}.log +num_of_tests=${ITERATION}
+  # Compilation
+  ${COMPILE_CMD}
+fi
+
+if [[ ${GENERATE} == "1" ]]; then
+  mkdir -p ${OUT}
+  mkdir -p ${OUT}/asm_tests
+  # Run sim
+  if [[ ${TEST} == "all" ]]; then
+    echo "Running regression with testlist:"
+    cat testlist
+    while read line; do
+      if ! [[ $line =~ ^\/\/ ]]; then
+        if [[ $line =~([a-z0-9_-]*)([[:space:]]*)\:([[:space:]]*)([0-9]*) ]]; then
+          SEED=`date +%s`
+          TEST=${BASH_REMATCH[1]}
+          ITERATION=${BASH_REMATCH[4]}
+          echo "Running ${TEST}, iteration count: ${ITERATION}"
+          ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
+                            +ntb_random_seed=${SEED} \
+                            -l ${OUT}/sim_${TEST}.log +num_of_tests=${ITERATION}
+        fi
       fi
-    fi
-  done < testlist
-else
-  echo "Running test ${TEST} with $SIMULATOR.."
-  ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
-                    +ntb_random_seed=${SEED} \
-                    -l ${OUT}/sim_${TEST}.log \
-                    +num_of_tests=${NUM_TESTS}
+    done < testlist
+  else
+    echo "Running test ${TEST} with $SIMULATOR.."
+    ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
+                      -sv_seed ${SEED} \
+                      -l ${OUT}/sim_${TEST}.log \
+                      +num_of_tests=${NUM_TESTS}
+  fi
+  #                    +ntb_random_seed=${SEED} \
 fi
 
 # List all generated assembly tests
