@@ -28,7 +28,7 @@ class riscv_instr_gen_config extends uvm_object;
   privileged_mode_t supported_privileged_mode[] = {USER_MODE, SUPERVISOR_MODE, MACHINE_MODE};
 
   // Unsupported instructions
-  riscv_instr_name_t unsupported_instr[] = {};
+  riscv_instr_name_t unsupported_instr[];
 
   // ISA supported by the processor
   riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C};

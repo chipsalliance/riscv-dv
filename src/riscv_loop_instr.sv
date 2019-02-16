@@ -153,7 +153,7 @@ class riscv_loop_instr extends riscv_rand_instr_stream;
 
   // Build the whole loop structure from innermost loop to the outermost loop
   function void build_loop_instr_stream();
-    loop_instr = {};
+    loop_instr.delete;
     for(int i = 0; i < num_of_nested_loop; i++) begin
       loop_instr = {loop_init_instr[2*i],
                     loop_init_instr[2*i+1],
