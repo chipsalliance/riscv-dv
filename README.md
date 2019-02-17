@@ -144,6 +144,8 @@ endfunction
 Please file an issue under this repository for any bug report / integration
 issue / feature request. We are looking forward to knowing your experience of
 using this flow and how we can make it better together.
+You can also use [riscv-dv group](https://groups.google.com/forum/#!forum/riscv-dv)
+to discuss any issue related to this RISC-V instruction generator.
 
 ## External contributions
 
