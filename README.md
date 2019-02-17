@@ -84,6 +84,14 @@ with the RISC-V gcc compiler and simulate with spike.
 ./run -test all; ./iss_sim
 ```
 
+The default ISS is spike. Thanks for the great support from Imperas Software Ltd.,
+we have added the support for [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim).
+You can use -iss to run with different ISS.
+```
+./iss_sim -iss spike  # Use spike as ISS
+./iss_sim -iss ovpsim # Use riscv-ovpsim as ISS
+```
+
 ## Configure the generator
 
 The default configuration for the instruction generator is for RV64IMC RISC-V

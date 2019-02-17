@@ -27,16 +27,34 @@ ISA="rv64imc"
 
 DATE=`date +%Y-%m-%d`
 
-# RTL simulator, support vcs and irun
-SIMULATOR="vcs"
+# Instruction set simulator
+ISS="spike" # other options: ovpsim, all
 
-# Test name, "all" means run all tests in the testlist
-TEST="riscv_instr_base_test"
+# riscv-ovpsim options
+OVPSIM_VARIANT="RV64GC"
+RISCV_OVPSIM="YOUR_PATH_HERE/riscv-ovpsim/bin/Linux64/riscvOVPsim.exe"
 
 # Simulation output directory
 SRC_DIR="./out_${DATE}/asm_tests"
 
 find "$SRC_DIR" -name "*.S" > "$SRC_DIR/asm_test_list"
+
+# Process command line options
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+    -iss)
+    ISS="$2"
+    shift
+    ;;
+    *)
+    echo "unknown option $1"
+    return
+    ;;
+esac
+shift
+done
 
 # GCC compile
 while read asm_test; do
@@ -56,14 +74,35 @@ while read asm_test; do
   "$RISCV_OBJCOPY" -O binary "$OBJFILE" "$BINFILE"
 done <"$SRC_DIR/asm_test_list"
 
-# Run spike simulation
 find "$SRC_DIR" -name "*.o" > "$SRC_DIR/elf_list"
-mkdir -p "$SRC_DIR/spike_sim"
-while read elf_file; do
-  ELF="$elf_file"
-  TEST_NAME=$(echo "$elf_file" | sed 's/^.*\///g')
-  LOGFILE="$SRC_DIR/spike_sim/$TEST_NAME.log"
-  SPIKE_CMD="timeout 60s $RISCV_SPIKE --isa=$ISA -l $ELF &> $LOGFILE"
-  echo "$SPIKE_CMD"
-  $($SPIKE_CMD &> $LOGFILE)
-done <"$SRC_DIR/elf_list"
+
+# Run spike simulation
+if [[ "$ISS" == "spike" ]] || [[ "$ISS" == "all" ]]; then
+  mkdir -p "$SRC_DIR/spike_sim"
+  while read elf_file; do
+    ELF="$elf_file"
+    TEST_NAME=$(echo "$elf_file" | sed 's/^.*\///g')
+    echo "Running spike: $TEST_NAME"
+    LOGFILE="$SRC_DIR/spike_sim/$TEST_NAME.log"
+    SPIKE_CMD="timeout 60s $RISCV_SPIKE --isa=$ISA -l $ELF &> $LOGFILE"
+    echo "$SPIKE_CMD"
+    $($SPIKE_CMD &> $LOGFILE)
+  done <"$SRC_DIR/elf_list"
+fi
+
+# Run ovpsim simulation
+if [[ "$ISS" == "ovpsim" ]] || [[ "$ISS" == "all" ]]; then
+  mkdir -p "$SRC_DIR/riscv_ovpsim"
+  while read elf_file; do
+    ELF="$elf_file"
+    TEST_NAME=$(echo "$elf_file" | sed 's/^.*\///g')
+    echo "Running ovpsim : $TEST_NAME"
+    LOGFILE="$SRC_DIR/riscv_ovpsim/$TEST_NAME.log"
+    RISCV_OVPSIM_CMD="$RISCV_OVPSIM --variant $OVPSIM_VARIANT \
+                      --override riscvOVPsim/cpu/PMP_registers=0 \
+                      --override riscvOVPsim/cpu/simulateexceptions=T \
+                      --trace --tracechange --traceshowicount --program $ELF \
+                      --finishafter 1000000"
+    $($RISCV_OVPSIM_CMD &> $LOGFILE)
+  done <"$SRC_DIR/elf_list"
+fi
