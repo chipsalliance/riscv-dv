@@ -16,6 +16,7 @@
 
 spike_log="$1"
 ovpsim_log="$2"
+report_file="$3"
 
 # -----------------------------------------------------------------------------
 # Convert spike log to standard instruction trace csv
@@ -47,4 +48,4 @@ python scripts/ovpsim_log_to_trace_csv.py --log $ovpsim_log --csv $ovpsim_csv
 # -----------------------------------------------------------------------------
 # Compare the trace log
 # -----------------------------------------------------------------------------
-python scripts/instr_trace_compare.py $spike_csv $ovpsim_csv "spike" "ovpsim"
+python scripts/instr_trace_compare.py $spike_csv $ovpsim_csv "spike" "ovpsim" >> $report_file
