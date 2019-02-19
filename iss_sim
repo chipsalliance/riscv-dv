@@ -34,10 +34,17 @@ ISS="spike" # other options: ovpsim, all
 OVPSIM_VARIANT="RV64GC"
 RISCV_OVPSIM="YOUR_PATH_HERE/riscv-ovpsim/bin/Linux64/riscvOVPsim.exe"
 
-# Simulation output directory
+# Directory of assemble tests
 SRC_DIR="./out_${DATE}/asm_tests"
 
-find "$SRC_DIR" -name "*.S" > "$SRC_DIR/asm_test_list"
+# Assembly test file name
+TEST=""
+
+# Regression report file name
+REPORT="$SRC_DIR/regression_report.log"
+
+# Clean the result of the previous runs
+CLEAN=1
 
 # Process command line options
 while [[ $# -gt 0 ]]
@@ -48,6 +55,22 @@ case $key in
     ISS="$2"
     shift
     ;;
+    -dir)
+    SRC_DIR="$2"
+    shift
+    ;;
+    -test)
+    TEST="$2"
+    shift
+    ;;
+    -report)
+    REPORT="$2"
+    shift
+    ;;
+    -noclean)
+    CLEAN=0
+    shift
+    ;;
     *)
     echo "unknown option $1"
     return
@@ -55,6 +78,25 @@ case $key in
 esac
 shift
 done
+
+# If the test is specified through "-test" option, run a single test rather
+# than all tests under SRC_DIR.
+if [[ $TEST == "" ]]; then
+  find "$SRC_DIR" -name "*.S" > "$SRC_DIR/asm_test_list"
+else
+  echo "$TEST" > "$SRC_DIR/asm_test_list"
+fi
+
+# Clean up previous running result
+if [[ $CLEAN == 1 ]]; then
+  rm -rf "$REPORT"
+  if [[ "$ISS" == "spike" ]] || [[ "$ISS" == "all" ]]; then
+    rm -rf "$SRC_DIR/spike_sim"
+  fi
+  if [[ "$ISS" == "ovpsim" ]] || [[ "$ISS" == "all" ]]; then
+    rm -rf "$SRC_DIR/riscv_ovpsim"
+  fi
+fi
 
 # GCC compile
 while read asm_test; do
@@ -74,18 +116,17 @@ while read asm_test; do
   "$RISCV_OBJCOPY" -O binary "$OBJFILE" "$BINFILE"
 done <"$SRC_DIR/asm_test_list"
 
-find "$SRC_DIR" -name "*.o" > "$SRC_DIR/elf_list"
-
 if [[ "$ISS" == "ovpsim" ]] || [[ "$ISS" == "all" ]]; then
   mkdir -p "$SRC_DIR/riscv_ovpsim"
 fi
 if [[ "$ISS" == "spike" ]] || [[ "$ISS" == "all" ]]; then
   mkdir -p "$SRC_DIR/spike_sim"
 fi
-# Run spike simulation
-while read elf_file; do
-  ELF="$elf_file"
-  TEST_NAME=$(echo "$elf_file" | sed 's/^.*\///g')
+
+# Run ISS simulation
+while read asm_test; do
+  ELF="${asm_test}.o"
+  TEST_NAME=$(echo "$ELF" | sed 's/^.*\///g')
   # Spike sim
   if [[ "$ISS" == "spike" ]] || [[ "$ISS" == "all" ]]; then
     echo "Running spike: $TEST_NAME"
@@ -93,7 +134,8 @@ while read elf_file; do
     SPIKE_CMD="timeout 60s $RISCV_SPIKE --isa=$ISA -l $ELF &> $SPIKE_LOG"
     $($SPIKE_CMD &> $SPIKE_LOG)
   fi
-  if [[ "$ISS" == "spike" ]] || [[ "$ISS" == "all" ]]; then
+  # riscv_ovpsim sim
+  if [[ "$ISS" == "ovpsim" ]] || [[ "$ISS" == "all" ]]; then
     OVPSIM_LOG="$SRC_DIR/riscv_ovpsim/$TEST_NAME.log"
     echo "Running ovpsim: $TEST_NAME"
     RISCV_OVPSIM_CMD="$RISCV_OVPSIM --variant $OVPSIM_VARIANT \
@@ -104,6 +146,16 @@ while read elf_file; do
     $($RISCV_OVPSIM_CMD &> $OVPSIM_LOG)
   fi
   if [[ "$ISS" == "all" ]]; then
-    ./iss_cmp "$SPIKE_LOG" "$OVPSIM_LOG"
+    echo "Rerun command: ./iss_sim -test $asm_test -iss all" >> "$REPORT"
+    echo "spike  : $SPIKE_LOG" >> "$REPORT"
+    echo "ovpsim : $OVPSIM_LOG" >> "$REPORT"
+    ./iss_cmp "$SPIKE_LOG" "$OVPSIM_LOG" "$REPORT"
+    tail -1 "$REPORT"
+    echo "" >> "$REPORT"
   fi
-done <"$SRC_DIR/elf_list"
+done <"$SRC_DIR/asm_test_list"
+
+if [[ "$ISS" == "all" ]]; then
+  echo "Full regression report is saved to $REPORT"
+  cat "$REPORT"
+fi

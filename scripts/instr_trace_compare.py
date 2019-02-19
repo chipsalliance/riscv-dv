@@ -79,9 +79,6 @@ def compare_trace_csv(csv1, csv2, name1, name2):
       compare_result = "FAIL"
     print("Compare result[%s]: %d matched, %d mismatch" %
           (compare_result, matched_cnt, mismatch_cnt))
-    if compare_result == "FAIL":
-      print("%s : %0s" % (name1, csv1))
-      print("%s : %0s" % (name2, csv2))
 
 
 def check_update_gpr(rd, rd_val, gpr):
