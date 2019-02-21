@@ -108,6 +108,8 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     !(addi.rs1 inside {cfg.reserved_regs, ZERO});
     addi.rs1 == la.rd;
     addi.rd  == la.rd;
+    // Avoid using negative offset -1024
+    addi.imm != 'hFFFF_F800;
     jump.rs1 == addi.rd;
     addi.instr_name == ADDI;
     branch.category == BRANCH;
