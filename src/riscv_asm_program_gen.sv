@@ -63,11 +63,13 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.delete();
     // Generate program header
     gen_program_header();
+    // Initialize general purpose registers
+    init_gpr();
     // Create all page tables
     create_page_table();
     // Setup privileged mode registers and enter target privileged mode
     pre_enter_privileged_mode();
-    // Additional init section
+    // Init section
     gen_init_section();
     // Generate sub program
     if(cfg.num_of_sub_program > 0) begin
@@ -269,19 +271,18 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void gen_init_section();
     string str;
-    bit [DATA_WIDTH-1:0] reg_val;
-    riscv_reg_t tmp_reg;
-    `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(tmp_reg,
-      !(tmp_reg inside {cfg.reserved_regs, ZERO});)
     str = format_string("_init:", LABEL_STR_LEN);
     instr_stream.push_back(str);
     // Init stack pointer to point to the end of the user stack
     str = {indent, "la sp, _user_stack_end"};
     instr_stream.push_back(str);
+  endfunction
+
+  virtual function void init_gpr();
+    string str;
+    bit [DATA_WIDTH-1:0] reg_val;
     // Init general purpose registers with random values
     for(int i = 0; i < 32; i++) begin
-      // Skip initializing stack pointer here
-      if(i inside {SP, TP}) continue;
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(reg_val,
         reg_val dist {
           'h0                         :/ 1,
