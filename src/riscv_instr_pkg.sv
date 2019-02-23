@@ -88,7 +88,7 @@ package riscv_instr_pkg;
   } riscv_reg_t;
 
   // Enum for 32 bits instruction opcode
-  // >32b instructions are not supported yet
+  // >32b instrunctions are not supported yet
   typedef enum bit[6:0] {
     OP_LOAD        = 7'b0000011,
     OP_LOAD_FP     = 7'b0000111,
