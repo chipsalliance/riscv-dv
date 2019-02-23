@@ -11,14 +11,14 @@ processor verification. It currently supports the following features:
 - Test suite to stress test MMU
 - Support sub-programs and random program calls
 - Random forward/backward branch instructions
-- Supports mixing directed instructions with random instruction stream
+- Support mix directed instruciton with random instruction stream
 
 ## Getting Started
 
 ### Prerequisites
 
 To be able to run the instruction generator, you need to have an RTL simulator
-which supports SystemVerilog and UVM 1.2. This generator has been verified with
+which supports Systemverilog and UVM 1.2. This generator has been verified with
 Synopsys VCS and Cadence Incisive/Xcelium simulator. Please make sure the EDA
 tool environment is properly setup before running the generator.
 
