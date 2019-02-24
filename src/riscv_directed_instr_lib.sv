@@ -110,6 +110,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     addi.rd  == la.rd;
     // Avoid using negative offset -1024
     addi.imm != 'hFFFF_F800;
+    jump.imm == ~addi.imm + 1;
     jump.rs1 == addi.rd;
     addi.instr_name == ADDI;
     branch.category == BRANCH;
@@ -146,7 +147,6 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     if(jump.instr_name == JAL) begin
       jump.imm_str = target_program_label;
     end else begin
-      jump.imm = -$signed(addi.imm);
       instr = {la, addi, instr};
     end
     mix_instr_stream(instr);
