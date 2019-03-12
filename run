@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2018 Google LLC
 # Copyright 2019 Imperas Software Ltd
 #
@@ -13,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
 
 # This is simple run script to run a dedicated test or a regression
 #
