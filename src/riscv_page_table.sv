@@ -54,8 +54,12 @@ class riscv_page_table#(satp_mode_t MODE = SV39) extends uvm_object;
     str = $sformatf("%0s:", get_name());
     instr.push_back(str);
     foreach(pte_binary[i]) begin
-      if(i % 8 == 0) begin
-        str = $sformatf(".dword 0x%0x", pte_binary[i]);
+      if (i % 8 == 0) begin
+        if (XLEN == 64) begin
+          str = $sformatf(".dword 0x%0x", pte_binary[i]);
+        end else begin
+          str = $sformatf(".word 0x%0x", pte_binary[i]);
+        end
       end else begin
         str = {str, $sformatf(", 0x%0x", pte_binary[i])};
       end

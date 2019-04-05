@@ -66,7 +66,7 @@ class riscv_data_page_gen extends uvm_object;
       data_page_str.push_back($sformatf(".align %0d", cfg.data_page_alignment));
       for(int i = 0; i < page_size; i+= 32) begin
         gen_data(.idx(i), .pattern(pattern), .num_of_bytes(32), .data(tmp_data));
-        tmp_str = format_string($sformatf(".dword %0s", format_data(tmp_data)), LABEL_STR_LEN);
+        tmp_str = format_string($sformatf(".word %0s", format_data(tmp_data)), LABEL_STR_LEN);
         data_page_str.push_back(tmp_str);
       end
     end
