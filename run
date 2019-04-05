@@ -72,7 +72,7 @@ case $key in
     ;;
     *)
     echo "unknown option $1"
-    return
+    exit 1
     ;;
 esac
 shift
@@ -103,7 +103,7 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
 
 else
   echo "unsupported simulator $SIMULATOR"
-  return
+  exit 1
 fi
 
 # Clean up previous runs
