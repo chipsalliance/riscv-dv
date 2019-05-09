@@ -36,6 +36,8 @@ class riscv_instr_base extends uvm_object;
   bit                           branch_assigned;
   bit                           process_load_store = 1'b1;
   bit                           is_compressed;
+  bit                           is_illegal_instr;
+  bit                           is_hint_instr;
 
   string                        imm_str;
   string                        comment;
@@ -104,19 +106,22 @@ class riscv_instr_base extends uvm_object;
     }
   }
 
-  // TODO: Support HINT instruction
-  constraint compressed_instr_legal_rd_c {
-    rd != ZERO;
-    if(instr_name == C_LUI) {
-      rd != SP;
+  // Avoid generating HINT or illegal instruction by default as it's not supported by the compiler
+  constraint no_hint_illegal_instr_c {
+    if (instr_name inside {C_ADDI, C_ADDIW, C_LI, C_LUI, C_SLLI, C_SLLI64,
+                           C_LQSP, C_LDSP, C_MV, C_ADD}) {
+      rd != ZERO;
     }
-    if(instr_name == C_MV) {
+    if (instr_name == C_JR) {
+      rs1 != ZERO;
+    }
+    if (instr_name == C_MV) {
       rs2 != ZERO;
     }
   }
 
-  //  Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
-  //  and CB formats
+  // Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
+  // and CB formats
   constraint compressed_three_bits_csr_c {
     if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT}) {
       rs1 inside {[S0:A5]};
@@ -153,6 +158,21 @@ class riscv_instr_base extends uvm_object;
   constraint load_store_c {
     if(category inside {LOAD, STORE}) {
       rs1 != ZERO; // x0 cannot be used to save the base address
+    }
+  }
+
+  constraint nop_c {
+    if(instr_name inside {NOP, C_NOP}) {
+      rs1 == ZERO;
+      rs2 == ZERO;
+      rd  == ZERO;
+    }
+  }
+
+  constraint system_instr_c {
+    if (category inside {SYSTEM, SYNCH}) {
+      rd  == ZERO;
+      rs1 == ZERO;
     }
   }
 
@@ -209,6 +229,10 @@ class riscv_instr_base extends uvm_object;
   // SYSTEM instructions
   `add_instr(ECALL,   I_FORMAT, SYSTEM, RV32I)
   `add_instr(EBREAK,  I_FORMAT, SYSTEM, RV32I)
+  `add_instr(URET,    I_FORMAT, SYSTEM, RV32I)
+  `add_instr(SRET,    I_FORMAT, SYSTEM, RV32I)
+  `add_instr(MRET,    I_FORMAT, SYSTEM, RV32I)
+  `add_instr(WFI,     I_FORMAT, SYSTEM, RV32I)
   // CSR instructions
   `add_instr(CSRRW,  R_FORMAT, CSR, RV32I, UIMM)
   `add_instr(CSRRS,  R_FORMAT, CSR, RV32I, UIMM)
@@ -361,6 +385,8 @@ class riscv_instr_base extends uvm_object;
     if((imm_type inside {NZIMM, NZUIMM}) && (imm == '0)) begin
       imm = $urandom_range(2 ** (imm_len-1) - 1, 1);
     end
+    if (group inside {RV32C, RV64C, RV128C, RV32DC, RV32FC})
+      is_compressed = 1'b1;
     if(imm_str == "")
       imm_str = $sformatf("%0d", $signed(imm));
   endfunction
@@ -438,12 +464,376 @@ class riscv_instr_base extends uvm_object;
     return asm_str.tolower();
   endfunction
 
+  function bit [6:0] get_opcode();
+    case (instr_name) inside
+      LUI                                                          : get_opcode = 7'b0110111;
+      AUIPC                                                        : get_opcode = 7'b0010111;
+      JAL                                                          : get_opcode = 7'b1101111;
+      JALR                                                         : get_opcode = 7'b1100111;
+      BEQ, BNE, BLT, BGE, BLTU, BGEU                               : get_opcode = 7'b1100011;
+      LB, LH, LW, LBU, LHU, LWU, LD                                : get_opcode = 7'b0000011;
+      SB, SH, SW, SD                                               : get_opcode = 7'b0100011;
+      ADDI, SLTI, SLTIU, XORI, ORI, ANDI, SLLI, SRLI, SRAI, NOP    : get_opcode = 7'b0010011;
+      ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND, MUL,
+      MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
+      ADDIW, SLLIW, SRLIW, SRAIW                                   : get_opcode = 7'b0011011;
+      MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
+      FENCE, FENCEI                                                : get_opcode = 7'b0001111;
+      ECALL, EBREAK, CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI   : get_opcode = 7'b1110011;
+      ADDW, SUBW, SLLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW, REMUW : get_opcode = 7'b0111011;
+      ECALL, EBREAK, URET, SRET, MRET, WFI, SFENCE_VMA             : get_opcode = 7'b1110011;
+      default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
+    endcase
+  endfunction
+
+  // Get opcode for compressed instruction
+  function bit [1:0] get_c_opcode();
+    case (instr_name) inside
+      C_ADDI4SPN, C_FLD, C_FLD, C_LQ, C_LW, C_FLW,
+      C_LD, C_FSD, C_SQ, C_SW, C_FSW, C_SD            : get_c_opcode = 2'b00;
+      C_NOP, C_ADDI, C_JAL, C_ADDIW, C_LI, C_ADDI16SP,
+      C_LUI, C_SRLI, C_SRLI64, C_SRAI, C_SRAI64,
+      C_ANDI, C_SUB, C_XOR, C_OR, C_AND, C_SUBW,
+      C_ADDW, C_J, C_BEQZ, C_BNEZ                     : get_c_opcode = 2'b01;
+      C_SLLI, C_SLLI64, C_FLDSP, C_LQSP, C_LWSP,
+      C_FLWSP, C_LDSP, C_JR, C_MV, C_EBREAK, C_JALR,
+      C_ADD, C_FSDSP, C_SQSP, C_SWSP, C_FSWSP, C_SDSP : get_c_opcode = 2'b10;
+      default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
+    endcase
+  endfunction
+
+  function bit [2:0] get_func3();
+    case (instr_name) inside
+      JALR       : get_func3 = 3'b000;
+      BEQ        : get_func3 = 3'b000;
+      BNE        : get_func3 = 3'b001;
+      BLT        : get_func3 = 3'b100;
+      BGE        : get_func3 = 3'b101;
+      BLTU       : get_func3 = 3'b110;
+      BGEU       : get_func3 = 3'b111;
+      LB         : get_func3 = 3'b000;
+      LH         : get_func3 = 3'b001;
+      LW         : get_func3 = 3'b010;
+      LBU        : get_func3 = 3'b100;
+      LHU        : get_func3 = 3'b101;
+      SB         : get_func3 = 3'b000;
+      SH         : get_func3 = 3'b001;
+      SW         : get_func3 = 3'b010;
+      ADDI       : get_func3 = 3'b000;
+      NOP        : get_func3 = 3'b000;
+      SLTI       : get_func3 = 3'b010;
+      SLTIU      : get_func3 = 3'b011;
+      XORI       : get_func3 = 3'b100;
+      ORI        : get_func3 = 3'b110;
+      ANDI       : get_func3 = 3'b111;
+      SLLI       : get_func3 = 3'b001;
+      SRLI       : get_func3 = 3'b101;
+      SRAI       : get_func3 = 3'b101;
+      ADD        : get_func3 = 3'b000;
+      SUB        : get_func3 = 3'b000;
+      SLL        : get_func3 = 3'b001;
+      SLT        : get_func3 = 3'b010;
+      SLTU       : get_func3 = 3'b011;
+      XOR        : get_func3 = 3'b100;
+      SRL        : get_func3 = 3'b101;
+      SRA        : get_func3 = 3'b101;
+      OR         : get_func3 = 3'b110;
+      AND        : get_func3 = 3'b111;
+      FENCE      : get_func3 = 3'b000;
+      FENCEI     : get_func3 = 3'b001;
+      ECALL      : get_func3 = 3'b000;
+      EBREAK     : get_func3 = 3'b000;
+      CSRRW      : get_func3 = 3'b001;
+      CSRRS      : get_func3 = 3'b010;
+      CSRRC      : get_func3 = 3'b011;
+      CSRRWI     : get_func3 = 3'b101;
+      CSRRSI     : get_func3 = 3'b110;
+      CSRRCI     : get_func3 = 3'b111;
+      LWU        : get_func3 = 3'b110;
+      LD         : get_func3 = 3'b011;
+      SD         : get_func3 = 3'b011;
+      ADDIW      : get_func3 = 3'b000;
+      SLLIW      : get_func3 = 3'b001;
+      SRLIW      : get_func3 = 3'b101;
+      SRAIW      : get_func3 = 3'b101;
+      ADDW       : get_func3 = 3'b000;
+      SUBW       : get_func3 = 3'b000;
+      SLLW       : get_func3 = 3'b001;
+      SRLW       : get_func3 = 3'b101;
+      SRAW       : get_func3 = 3'b101;
+      MUL        : get_func3 = 3'b000;
+      MULH       : get_func3 = 3'b001;
+      MULHSU     : get_func3 = 3'b010;
+      MULHU      : get_func3 = 3'b011;
+      DIV        : get_func3 = 3'b100;
+      DIVU       : get_func3 = 3'b101;
+      REM        : get_func3 = 3'b110;
+      REMU       : get_func3 = 3'b111;
+      MULW       : get_func3 = 3'b000;
+      DIVW       : get_func3 = 3'b100;
+      DIVUW      : get_func3 = 3'b101;
+      REMW       : get_func3 = 3'b110;
+      REMUW      : get_func3 = 3'b111;
+      C_ADDI4SPN : get_func3 = 3'b000;
+      C_FLD      : get_func3 = 3'b001;
+      C_LQ       : get_func3 = 3'b001;
+      C_LW       : get_func3 = 3'b010;
+      C_FLW      : get_func3 = 3'b011;
+      C_LD       : get_func3 = 3'b011;
+      C_FSD      : get_func3 = 3'b101;
+      C_SQ       : get_func3 = 3'b101;
+      C_SW       : get_func3 = 3'b110;
+      C_FSW      : get_func3 = 3'b111;
+      C_SD       : get_func3 = 3'b111;
+      C_NOP      : get_func3 = 3'b000;
+      C_ADDI     : get_func3 = 3'b000;
+      C_JAL      : get_func3 = 3'b001;
+      C_ADDIW    : get_func3 = 3'b001;
+      C_LI       : get_func3 = 3'b010;
+      C_ADDI16SP : get_func3 = 3'b011;
+      C_LUI      : get_func3 = 3'b011;
+      C_SRLI     : get_func3 = 3'b100;
+      C_SRLI64   : get_func3 = 3'b100;
+      C_SRAI     : get_func3 = 3'b100;
+      C_SRAI64   : get_func3 = 3'b100;
+      C_ANDI     : get_func3 = 3'b100;
+      C_SUB      : get_func3 = 3'b100;
+      C_XOR      : get_func3 = 3'b100;
+      C_OR       : get_func3 = 3'b100;
+      C_AND      : get_func3 = 3'b100;
+      C_SUBW     : get_func3 = 3'b100;
+      C_ADDW     : get_func3 = 3'b100;
+      C_J        : get_func3 = 3'b101;
+      C_BEQZ     : get_func3 = 3'b110;
+      C_BNEZ     : get_func3 = 3'b111;
+      C_SLLI     : get_func3 = 3'b000;
+      C_SLLI64   : get_func3 = 3'b000;
+      C_FLDSP    : get_func3 = 3'b001;
+      C_LQSP     : get_func3 = 3'b001;
+      C_LWSP     : get_func3 = 3'b010;
+      C_FLWSP    : get_func3 = 3'b011;
+      C_LDSP     : get_func3 = 3'b011;
+      C_JR       : get_func3 = 3'b100;
+      C_MV       : get_func3 = 3'b100;
+      C_EBREAK   : get_func3 = 3'b100;
+      C_JALR     : get_func3 = 3'b100;
+      C_ADD      : get_func3 = 3'b100;
+      C_FSDSP    : get_func3 = 3'b101;
+      C_SQSP     : get_func3 = 3'b101;
+      C_SWSP     : get_func3 = 3'b110;
+      C_FSWSP    : get_func3 = 3'b111;
+      C_SDSP     : get_func3 = 3'b111;
+      ECALL, EBREAK, URET, SRET, MRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
+      default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
+    endcase
+  endfunction
+
+  function bit [6:0] get_func7();
+    case (instr_name)
+      SLLI   : get_func7 = 7'b0000000;
+      SRLI   : get_func7 = 7'b0000000;
+      SRAI   : get_func7 = 7'b0100000;
+      ADD    : get_func7 = 7'b0000000;
+      SUB    : get_func7 = 7'b0100000;
+      SLL    : get_func7 = 7'b0000000;
+      SLT    : get_func7 = 7'b0000000;
+      SLTU   : get_func7 = 7'b0000000;
+      XOR    : get_func7 = 7'b0000000;
+      SRL    : get_func7 = 7'b0000000;
+      SRA    : get_func7 = 7'b0100000;
+      OR     : get_func7 = 7'b0000000;
+      AND    : get_func7 = 7'b0000000;
+      FENCE  : get_func7 = 7'b0000000;
+      FENCEI : get_func7 = 7'b0000000;
+      ECALL  : get_func7 = 7'b0000000;
+      EBREAK : get_func7 = 7'b0000000;
+      SLLIW  : get_func7 = 7'b0000000;
+      SRLIW  : get_func7 = 7'b0000000;
+      SRAIW  : get_func7 = 7'b0100000;
+      ADDW   : get_func7 = 7'b0000000;
+      SUBW   : get_func7 = 7'b0100000;
+      SLLW   : get_func7 = 7'b0000000;
+      SRLW   : get_func7 = 7'b0000000;
+      SRAW   : get_func7 = 7'b0100000;
+      MUL    : get_func7 = 7'b0000001;
+      MULH   : get_func7 = 7'b0000001;
+      MULHSU : get_func7 = 7'b0000001;
+      MULHU  : get_func7 = 7'b0000001;
+      DIV    : get_func7 = 7'b0000001;
+      DIVU   : get_func7 = 7'b0000001;
+      REM    : get_func7 = 7'b0000001;
+      REMU   : get_func7 = 7'b0000001;
+      MULW   : get_func7 = 7'b0000001;
+      DIVW   : get_func7 = 7'b0000001;
+      DIVUW  : get_func7 = 7'b0000001;
+      REMW   : get_func7 = 7'b0000001;
+      REMUW  : get_func7 = 7'b0000001;
+      ECALL  : get_func7 = 7'b0000000;
+      EBREAK : get_func7 = 7'b0000000;
+      URET   : get_func7 = 7'b0000000;
+      SRET   : get_func7 = 7'b0001000;
+      MRET   : get_func7 = 7'b0011000;
+      WFI    : get_func7 = 7'b0001000;
+      SFENCE_VMA: get_func7 = 7'b0001001;
+      default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
+    endcase
+  endfunction
+
+  // Convert the instruction to assembly code
+  virtual function string convert2bin(string prefix = "");
+    string binary;
+    if (!is_compressed) begin
+      case(format)
+        J_FORMAT: begin
+            binary = $sformatf("%8h", {imm[20], imm[10:1], imm[11], imm[19:12], rd,  get_opcode()});
+        end
+        U_FORMAT: begin
+            binary = $sformatf("%8h", {imm[31:12], rd,  get_opcode()});
+        end
+        I_FORMAT: begin
+          if(instr_name inside {FENCE, FENCEI})
+            binary = $sformatf("%8h", {17'b0, get_func3(), 5'b0, get_opcode()});
+          else if(category == CSR)
+            binary = $sformatf("%8h", {csr[10:0], imm[4:0], get_func3(), rd, get_opcode()});
+          else if(instr_name == ECALL)
+            binary = $sformatf("%8h", {get_func7(), 18'b0, get_opcode()});
+          else if(instr_name inside {URET, SRET, MRET})
+            binary = $sformatf("%8h", {get_func7(), 5'b10, 13'b0, get_opcode()});
+          else if(instr_name == EBREAK)
+            binary = $sformatf("%8h", {get_func7(), 5'b01, 13'b0, get_opcode()});
+          else if(instr_name == WFI)
+            binary = $sformatf("%8h", {get_func7(), 5'b101, 13'b0, get_opcode()});
+          else
+            binary = $sformatf("%8h", {imm[11:0], rs1, get_func3(), rd, get_opcode()});
+        end
+        S_FORMAT: begin
+            binary = $sformatf("%8h", {imm[11:5], rs2, rs1, get_func3(), imm[4:0], get_opcode()});
+        end
+        B_FORMAT: begin
+            binary = $sformatf("%8h",
+                               {imm[12], imm[10:5], rs2, rs1, get_func3(),
+                                imm[4:1], imm[11], get_opcode()});
+        end
+        R_FORMAT: begin
+          if(category == CSR)
+            binary = $sformatf("%8h", {csr[10:0], rs1, get_func3(), rd, get_opcode()});
+          else if(instr_name == SFENCE_VMA)
+            binary = $sformatf("%8h", {get_func7(), 18'b0, get_opcode()});
+          else
+            binary = $sformatf("%8h", {get_func7(), rs2, rs1, get_func3(), rd, get_opcode()});
+        end
+      endcase
+    end else begin
+      case (instr_name) inside
+        C_ADDI4SPN:
+          binary = $sformatf("%4h", {get_func3(), imm[5:4], imm[9:6],
+                                     imm[2], imm[3], get_c_gpr(rd), get_c_opcode()});
+        C_LQ:
+          binary = $sformatf("%4h", {get_func3(), imm[5:4], imm[8],
+                                     get_c_gpr(rs1), imm[7:6], get_c_gpr(rd), get_c_opcode()});
+        C_FLD, C_LD:
+          binary = $sformatf("%4h", {get_func3(), imm[5:3], get_c_gpr(rs1),
+                                     imm[7:6], get_c_gpr(rd), get_c_opcode()});
+        C_LW, C_FLW:
+          binary = $sformatf("%4h", {get_func3(), imm[5:3], get_c_gpr(rs1),
+                                     imm[2], imm[6], get_c_gpr(rd), get_c_opcode()});
+        C_SQ:
+          binary = $sformatf("%4h", {get_func3(), imm[5:4], imm[8],
+                                     get_c_gpr(rs1), imm[7:6], get_c_gpr(rs2), get_c_opcode()});
+        C_FSD, C_SD:
+          binary = $sformatf("%4h", {get_func3(), imm[5:3], get_c_gpr(rs1),
+                                     imm[7:6], get_c_gpr(rs2), get_c_opcode()});
+        C_SW, C_FSW:
+          binary = $sformatf("%4h", {get_func3(), imm[5:3], get_c_gpr(rs1),
+                                     imm[2], imm[6], get_c_gpr(rs2), get_c_opcode()});
+        C_NOP, C_ADDI, C_LI, C_ADDIW:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4:0], get_c_opcode()});
+        C_JAL, C_J:
+          binary = $sformatf("%4h", {get_func3(), imm[11], imm[4], imm[9:8],
+                                     imm[10], imm[6], imm[7], imm[3:1], imm[5], get_c_opcode()});
+        C_ADDI16SP:
+          binary = $sformatf("%4h", {get_func3(), imm[9], 5'b10,
+                                     imm[4], imm[6], imm[8:7], imm[5], get_c_opcode()});
+        C_LUI:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4:0], get_c_opcode()});
+        C_SRLI:
+          binary = $sformatf("%4h", {get_func3(), imm[5],
+                                     2'b0, get_c_gpr(rd), imm[4:0], get_c_opcode()});
+        C_SRLI64:
+          binary = $sformatf("%4h", {get_func3(), 3'b0, get_c_gpr(rd), 5'b0, get_c_opcode()});
+        C_SRAI:
+          binary = $sformatf("%4h", {get_func3(), imm[5],
+                                     2'b01, get_c_gpr(rd), imm[4:0], get_c_opcode()});
+        C_SRAI64:
+          binary = $sformatf("%4h", {get_func3(), 3'b001,
+                                     get_c_gpr(rd), 5'b0, get_c_opcode()});
+        C_ANDI:
+          binary = $sformatf("%4h", {get_func3(), imm[5],
+                                     2'b10, get_c_gpr(rd), imm[4:0], get_c_opcode()});
+        C_SUB:
+          binary = $sformatf("%4h", {get_func3(), 3'b011, get_c_gpr(rd),
+                                     2'b00, get_c_gpr(rs2), get_c_opcode()});
+        C_XOR:
+          binary = $sformatf("%4h", {get_func3(), 3'b011, get_c_gpr(rd),
+                                     2'b01, get_c_gpr(rs2), get_c_opcode()});
+        C_OR:
+          binary = $sformatf("%4h", {get_func3(), 3'b011, get_c_gpr(rd),
+                                     2'b10, get_c_gpr(rs2), get_c_opcode()});
+        C_AND:
+          binary = $sformatf("%4h", {get_func3(), 3'b011, get_c_gpr(rd),
+                                     2'b11, get_c_gpr(rs2), get_c_opcode()});
+        C_SUBW:
+          binary = $sformatf("%4h", {get_func3(), 3'b111, get_c_gpr(rd),
+                                     2'b00, get_c_gpr(rs2), get_c_opcode()});
+        C_ADDW:
+          binary = $sformatf("%4h", {get_func3(), 3'b111, get_c_gpr(rd),
+                                     2'b01, get_c_gpr(rs2), get_c_opcode()});
+        C_BEQZ, C_BNEZ:
+          binary = $sformatf("%4h", {get_func3(), imm[8], imm[4:3],
+                                     get_c_gpr(rs1), imm[7:6], imm[2:1], imm[5], get_c_opcode()});
+        C_SLLI:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4:0], get_c_opcode()});
+        C_SLLI64:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, rd, 5'b0, get_c_opcode()});
+        C_FLDSP, C_LDSP:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4:3], imm[8:6], get_c_opcode()});
+        C_LQSP:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4], imm[9:6], get_c_opcode()});
+        C_LWSP, C_FLWSP:
+          binary = $sformatf("%4h", {get_func3(), imm[5], rd, imm[4:2], imm[7:6], get_c_opcode()});
+        C_JR:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, rs1, 5'b0, get_c_opcode()});
+        C_MV:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, rd, rs2, get_c_opcode()});
+        C_EBREAK:
+          binary = $sformatf("%4h", {get_func3(), 1'b1, 10'b0, get_c_opcode()});
+        C_JALR:
+          binary = $sformatf("%4h", {get_func3(), 1'b1, 10'b0, get_c_opcode()});
+        C_ADD:
+          binary = $sformatf("%4h", {get_func3(), 1'b1, rd, rs2, get_c_opcode()});
+        C_FSDSP, C_SDSP:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, imm[5:3], imm[8:6], rs2, get_c_opcode()});
+        C_SQSP:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, imm[5:4], imm[9:6], rs2, get_c_opcode()});
+        C_SWSP, C_FSWSP:
+          binary = $sformatf("%4h", {get_func3(), 1'b0, imm[5:2], imm[7:6], rs2, get_c_opcode()});
+        default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
+      endcase
+    end
+    return {prefix, binary};
+  endfunction
+
   virtual function string get_instr_name();
     get_instr_name = instr_name.name();
     if(get_instr_name.substr(0, 1) == "C_") begin
       get_instr_name = {"c.", get_instr_name.substr(2, get_instr_name.len() - 1)};
     end
     return get_instr_name;
+  endfunction
+
+  // Get RVC register name for CIW, CL, CS, CB format
+  function bit [2:0] get_c_gpr(riscv_reg_t gpr);
+    return gpr[2:0];
   endfunction
 
   // Default return imm value directly, can be overriden to use labels and symbols

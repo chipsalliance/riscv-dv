@@ -160,15 +160,17 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
 
   function void pre_randomize();
     if(access_u_mode_mem) begin
-      max_load_store_offset = cfg.data_page_size;
-      max_data_page_id = cfg.num_of_data_pages;
+      max_load_store_offset = riscv_instr_pkg::data_page_size;
+      max_data_page_id = riscv_instr_pkg::num_of_data_pages;
     end else begin
-      max_load_store_offset = cfg.kernel_data_page_size;
-      max_data_page_id = cfg.num_of_kernel_data_pages;
+      max_load_store_offset = riscv_instr_pkg::kernel_data_page_size;
+      max_data_page_id = riscv_instr_pkg::num_of_kernel_data_pages;
     end
   endfunction
 
-  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  virtual function void gen_instr(bit no_branch = 1'b0,
+                                  bit no_load_store = 1'b1,
+                                  bit enable_hint_instr = 1'b0);
     foreach(instr_list[i]) begin
       `DV_CHECK_RANDOMIZE_WITH_FATAL(instr_list[i],
         // The last instruction cannot be branch instruction as there's no forward branch target.

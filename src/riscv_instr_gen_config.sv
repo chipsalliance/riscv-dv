@@ -21,67 +21,6 @@
 class riscv_instr_gen_config extends uvm_object;
 
   //-----------------------------------------------------------------------------
-  // Processor feature configuration
-  //-----------------------------------------------------------------------------
-
-  // Supported Privileged mode
-  privileged_mode_t supported_privileged_mode[] = {USER_MODE, SUPERVISOR_MODE, MACHINE_MODE};
-
-  // Unsupported instructions
-  riscv_instr_name_t unsupported_instr[];
-
-  // ISA supported by the processor
-  riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C};
-
-  // Support delegate trap to user mode
-  bit support_umode_trap = 0;
-
-  // Support sfence.vma instruction
-  bit support_sfence = 1;
-
-  // Cache line size (in bytes)
-  // If processor does not support caches, set to XLEN/8
-  int dcache_line_size_in_bytes = 128;
-
-  // Number of data section
-  // For processor that doesn't have data TLB, this can be set to 1
-  // For processor that supports data TLB, this should be set to be larger than the number
-  // of entries of dTLB to cover dTLB hit/miss scenario
-  int num_of_data_pages = 40;
-
-  // Data section byte size
-  // For processor with no dTLB and data cache, keep the value below 10K
-  // For processor with dTLB support, set it to the physical memory size that covers one entry
-  // of the dTLB
-  int data_page_size = 4096;
-  int data_page_alignment = $clog2(data_page_size);
-
-  // The maximum data section byte size actually used by load/store instruction
-  // Set to this value to be smaller than data_page_size. If there's data cache in the system,
-  // this value should be set large enough to be able to hit cache hit/miss scenario within a data
-  // section. Don't set this to too big as it will introduce a very large binary.
-  int max_used_data_page_size = 512;
-
-  // Stack section word length
-  int stack_len = 5000;
-
-  //-----------------------------------------------------------------------------
-  // Kernel section setting, used by supervisor mode programs
-  //-----------------------------------------------------------------------------
-
-  // Number of kernel data pages
-  int num_of_kernel_data_pages = 5;
-
-  // Byte size of kernel data pages
-  int kernel_data_page_size = 4096;
-
-  // Kernel Stack section word length
-  int kernel_stack_len = 5000;
-
-  // Number of instructions for each kernel program
-  int kernel_program_instr_cnt = 400;
-
-  //-----------------------------------------------------------------------------
   // Random instruction generation settings
   //-----------------------------------------------------------------------------
 
@@ -133,11 +72,13 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    no_csr_instr = 1; // No csr instruction
   bit                    no_ebreak = 1;    // No ebreak instruction
   bit                    no_fence;         // No fence instruction
+  bit                    enable_illegal_instruction;
+  bit                    enable_hint_instruction;
+  int                    bin_program_instr_cnt = 200;
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
   bit                    no_directed_instr;
-  riscv_instr_group_t    march_list[$];
   // A name suffix for the generated assembly program
   string                 asm_test_suffix;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
@@ -180,7 +121,7 @@ class riscv_instr_gen_config extends uvm_object;
       enable_sfence == 1'b1;
       (init_privileged_mode != SUPERVISOR_MODE) || (mstatus_tvm == 1'b1);
     } else {
-      (init_privileged_mode != SUPERVISOR_MODE || !support_sfence || mstatus_tvm || no_fence)
+      (init_privileged_mode != SUPERVISOR_MODE || !riscv_instr_pkg::support_sfence || mstatus_tvm || no_fence)
                                                      -> (enable_sfence == 1'b0);
     }
   }
@@ -188,15 +129,15 @@ class riscv_instr_gen_config extends uvm_object;
   // Boot privileged mode distribution
   constraint boot_privileged_mode_dist_c {
     // Boot to higher privileged mode more often
-    if(supported_privileged_mode.size() == 2) {
-      init_privileged_mode dist {supported_privileged_mode[0] := 9,
-                                 supported_privileged_mode[1] := 1};
-    } else if (supported_privileged_mode.size() == 3) {
-      init_privileged_mode dist {supported_privileged_mode[0] := 6,
-                                 supported_privileged_mode[1] := 3,
-                                 supported_privileged_mode[2] := 1};
+    if(riscv_instr_pkg::supported_privileged_mode.size() == 2) {
+      init_privileged_mode dist {riscv_instr_pkg::supported_privileged_mode[0] := 9,
+                                 riscv_instr_pkg::supported_privileged_mode[1] := 1};
+    } else if (riscv_instr_pkg::supported_privileged_mode.size() == 3) {
+      init_privileged_mode dist {riscv_instr_pkg::supported_privileged_mode[0] := 6,
+                                 riscv_instr_pkg::supported_privileged_mode[1] := 3,
+                                 riscv_instr_pkg::supported_privileged_mode[2] := 1};
     } else {
-      init_privileged_mode == supported_privileged_mode[0];
+      init_privileged_mode == riscv_instr_pkg::supported_privileged_mode[0];
     }
   }
 
@@ -279,7 +220,6 @@ class riscv_instr_gen_config extends uvm_object;
     setup_default_reserved_regs();
     init_delegation();
     inst = uvm_cmdline_processor::get_inst();
-    march_list = supported_isa;
     get_int_arg_value("+num_of_tests=", num_of_tests);
     get_int_arg_value("+enable_page_table_exception=", enable_page_table_exception);
     get_int_arg_value("+enable_interrupt=", enable_interrupt);
@@ -294,6 +234,8 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_directed_instr=", no_directed_instr);
     get_bool_arg_value("+no_fence=", no_fence);
     get_bool_arg_value("+no_delegation=", no_delegation);
+    get_bool_arg_value("+enable_illegal_instruction=", enable_illegal_instruction);
+    get_bool_arg_value("+enable_hint_instruction=", enable_hint_instruction);
     get_bool_arg_value("+force_m_delegation=", force_m_delegation);
     get_bool_arg_value("+force_s_delegation=", force_s_delegation);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
@@ -308,8 +250,8 @@ class riscv_instr_gen_config extends uvm_object;
       endcase
       init_privileged_mode.rand_mode(0);
     end
-    `uvm_info(`gfn, $sformatf("supported_privileged_mode = %0d",
-                   supported_privileged_mode.size()), UVM_LOW)
+    `uvm_info(`gfn, $sformatf("riscv_instr_pkg::supported_privileged_mode = %0d",
+                   riscv_instr_pkg::supported_privileged_mode.size()), UVM_LOW)
     void'(inst.get_arg_value("+asm_test_suffix=", asm_test_suffix));
     // Directed march list from the runtime options, ex. RV32I, RV32M etc.
     void'(inst.get_arg_value("+march=", s));
@@ -317,12 +259,13 @@ class riscv_instr_gen_config extends uvm_object;
       string cmdline_march_list[$];
       riscv_instr_group_t march;
       uvm_split_string(s, ",", cmdline_march_list);
+      riscv_instr_pkg::supported_isa.delete();
       foreach(cmdline_march_list[i]) begin
         if(uvm_enum_wrapper#(riscv_instr_group_t)::from_name(cmdline_march_list[i], march)) begin
-          march_list.push_back(march);
+          riscv_instr_pkg::supported_isa.push_back(march);
         end else begin
-          `uvm_error(get_full_name(), $sformatf(
-                     "Invalid march %0s specified in command line", march_list[i]))
+          `uvm_fatal(get_full_name(), $sformatf(
+                     "Invalid march %0s specified in command line", cmdline_march_list[i]))
         end
       end
     end
@@ -361,8 +304,8 @@ class riscv_instr_gen_config extends uvm_object;
   endfunction
 
   function void pre_randomize();
-    foreach (supported_privileged_mode[i]) begin
-      if(supported_privileged_mode[i] == SUPERVISOR_MODE)
+    foreach (riscv_instr_pkg::supported_privileged_mode[i]) begin
+      if(riscv_instr_pkg::supported_privileged_mode[i] == SUPERVISOR_MODE)
         support_supervisor_mode = 1;
     end
   endfunction
@@ -372,6 +315,32 @@ class riscv_instr_gen_config extends uvm_object;
     reserved_regs = {default_reserved_regs, loop_regs};
     // Need to save all loop registers, and RA/T0
     min_stack_len_per_program = (max_nested_loop * 2 + 2) * (XLEN/8);
+    // Check if the setting is legal
+    check_setting();
+  endfunction
+
+  function void check_setting();
+    bit support_64b;
+    bit support_128b;
+    foreach (riscv_instr_pkg::supported_isa[i]) begin
+      if (riscv_instr_pkg::supported_isa[i] inside {RV64I, RV64M, RV64A, RV64F, RV64D, RV64C}) begin
+        support_64b = 1'b1;
+      end else if (riscv_instr_pkg::supported_isa[i] inside {RV128I, RV128C}) begin
+        support_128b = 1'b1;
+      end
+    end
+    if (support_128b && XLEN != 128) begin
+      `uvm_fatal(`gfn, "XLEN should be set to 128 based on riscv_instr_pkg::supported_isa setting")
+    end
+    if (!support_128b && support_64b && XLEN != 64) begin
+      `uvm_fatal(`gfn, "XLEN should be set to 64 based on riscv_instr_pkg::supported_isa setting")
+    end
+    if (!(support_128b || support_64b) && XLEN != 32) begin
+      `uvm_fatal(`gfn, "XLEN should be set to 32 based on riscv_instr_pkg::supported_isa setting")
+    end
+    if (!(support_128b || support_64b) && !(SATP_MODE inside {SV32, BARE})) begin
+      `uvm_fatal(`gfn, $sformatf("SATP mode %0s is not supported for RV32G ISA", SATP_MODE.name()))
+    end
   endfunction
 
   // Get an integer argument from comand line

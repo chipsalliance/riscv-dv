@@ -29,6 +29,9 @@ class riscv_asm_program_gen extends uvm_object;
    // User mode programs
    riscv_instr_sequence                main_program;
    riscv_instr_sequence                sub_program[];
+   // Program in binary format, stored in the data section, used to inject illegal/HINT instruction
+   riscv_instr_sequence                bin_program;
+   string                              instr_binary[$];
    // Kernel programs
    // These programs are called in the interrupt/exception handling routine based on the privileged
    // mode settings. For example, when the interrupt/exception is delegated to S-mode, if both SUM
@@ -69,6 +72,25 @@ class riscv_asm_program_gen extends uvm_object;
     create_page_table();
     // Setup privileged mode registers and enter target privileged mode
     pre_enter_privileged_mode();
+    // Generate sub program in binary format
+    // Illegal instruction and hint instruction cannot pass compilation, need to directly generate
+    // the instruction in binary format and store in data section to skip compilation.
+    if(cfg.enable_illegal_instruction || cfg.enable_hint_instruction) begin
+      bin_program = riscv_instr_sequence::type_id::create("bin_program");
+      bin_program.instr_cnt = cfg.bin_program_instr_cnt;
+      bin_program.label_name = bin_program.get_name();
+      bin_program.cfg = cfg;
+      if (cfg.enable_illegal_instruction) begin
+        bin_program.illegal_instr_pct = $urandom_range(5, 20);
+      end
+      if (cfg.enable_hint_instruction) begin
+        bin_program.hint_instr_pct = $urandom_range(5, 20);
+      end
+      `DV_CHECK_RANDOMIZE_FATAL(bin_program)
+      bin_program.gen_instr(.is_main_program(0), .enable_hint_instr(cfg.enable_hint_instruction));
+      bin_program.post_process_instr();
+      bin_program.generate_binary_stream(instr_binary);
+    end
     // Init section
     gen_init_section();
     // Generate sub program
@@ -124,6 +146,9 @@ class riscv_asm_program_gen extends uvm_object;
         `uvm_fatal(get_full_name(), "Failed to generate callstack")
       end
     end
+    if (bin_program != null) begin
+      main_program.insert_jump_instr("sub_bin", 0);
+    end
     main_program.post_process_instr();
     main_program.generate_instr_stream();
     instr_stream = {instr_stream, main_program.instr_string_list};
@@ -136,11 +161,22 @@ class riscv_asm_program_gen extends uvm_object;
       sub_program[i].generate_instr_stream();
       instr_stream = {instr_stream, sub_program[i].instr_string_list};
     end
+    // Reserve some space to copy instruction from data section
+    if (instr_binary.size() > 0) begin
+      instr_stream.push_back(".align 2");
+      instr_stream.push_back("sub_bin:");
+      instr_stream.push_back({indent, $sformatf(".rept %0d", 2 * instr_binary.size())});
+      instr_stream.push_back({indent, "nop"});
+      instr_stream.push_back({indent, ".endr"});
+      instr_stream.push_back({indent, "ret"});
+    end
     // Privileged mode switch routine
     gen_privileged_mode_switch_routine();
     // Program end
     gen_program_end();
     gen_data_page_begin();
+    // Generate the sub program in binary format
+    gen_bin_program();
     // Page table
     gen_page_table_section();
     if(!cfg.no_data_page) begin
@@ -172,8 +208,8 @@ class riscv_asm_program_gen extends uvm_object;
     // Trap handler
     gen_all_trap_handler();
     // Interrupt handling subroutine
-    foreach(cfg.supported_privileged_mode[i]) begin
-      gen_interrupt_handler_section(cfg.supported_privileged_mode[i]);
+    foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
+      gen_interrupt_handler_section(riscv_instr_pkg::supported_privileged_mode[i]);
     end
     // Kernel data pages
     gen_kernel_data_page_begin();
@@ -188,7 +224,7 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   virtual function void gen_kernel_program(riscv_instr_sequence seq);
-    seq.instr_cnt = cfg.kernel_program_instr_cnt;
+    seq.instr_cnt = riscv_instr_pkg::kernel_program_instr_cnt;
     generate_directed_instr_stream(.label(seq.get_name()),
                                    .original_instr_cnt(seq.instr_cnt),
                                    .min_insert_cnt(0),
@@ -251,7 +287,7 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_stack_section();
     instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
     instr_stream.push_back("_user_stack_start:");
-    instr_stream.push_back($sformatf(".rept %0d", cfg.stack_len - 1));
+    instr_stream.push_back($sformatf(".rept %0d", riscv_instr_pkg::stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
     instr_stream.push_back(".endr");
     instr_stream.push_back("_user_stack_end:");
@@ -262,7 +298,7 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_kernel_stack_section();
     instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
     instr_stream.push_back("_kernel_stack_start:");
-    instr_stream.push_back($sformatf(".rept %0d", cfg.kernel_stack_len - 1));
+    instr_stream.push_back($sformatf(".rept %0d", riscv_instr_pkg::kernel_stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
     instr_stream.push_back(".endr");
     instr_stream.push_back("_kernel_stack_end:");
@@ -276,6 +312,17 @@ class riscv_asm_program_gen extends uvm_object;
     // Init stack pointer to point to the end of the user stack
     str = {indent, "la sp, _user_stack_end"};
     instr_stream.push_back(str);
+    // Copy the instruction from data section to instruction section
+    if (instr_binary.size() > 0) begin
+      instr_stream.push_back({indent, "la x31, instr_bin"});
+      instr_stream.push_back({indent, "la x30, sub_bin"});
+      instr_stream.push_back({indent, $sformatf(".rept %0d", instr_binary.size())});
+      instr_stream.push_back({indent, "lw x29, 0(x31)"});
+      instr_stream.push_back({indent, "sw x29, 0(x30)"});
+      instr_stream.push_back({indent, "addi x31, x31, 4"});
+      instr_stream.push_back({indent, "addi x30, x30, 4"});
+      instr_stream.push_back({indent, ".endr"});
+    end
   endfunction
 
   virtual function void init_gpr();
@@ -352,15 +399,15 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void gen_privileged_mode_switch_routine();
     privil_seq = riscv_privileged_common_seq::type_id::create("privil_seq");
-    foreach(cfg.supported_privileged_mode[i]) begin
+    foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
       string instr[$];
-      if(cfg.supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
+      if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       `uvm_info(`gfn, $sformatf("Generating privileged mode routing for %0s",
-                      cfg.supported_privileged_mode[i].name()), UVM_LOW)
+                      riscv_instr_pkg::supported_privileged_mode[i].name()), UVM_LOW)
       // Enter privileged mode
       privil_seq.cfg = cfg;
       `DV_CHECK_RANDOMIZE_FATAL(privil_seq)
-      privil_seq.enter_privileged_mode(cfg.supported_privileged_mode[i], instr);
+      privil_seq.enter_privileged_mode(riscv_instr_pkg::supported_privileged_mode[i], instr);
       instr_stream = {instr_stream, instr};
     end
   endfunction
@@ -396,7 +443,7 @@ class riscv_asm_program_gen extends uvm_object;
     gen_delegation_instr(MEDELEG, MIDELEG,
                          cfg.m_mode_exception_delegation,
                          cfg.m_mode_interrupt_delegation);
-    if(cfg.support_umode_trap) begin
+    if(riscv_instr_pkg::support_umode_trap) begin
       gen_delegation_instr(SEDELEG, SIDELEG,
                            cfg.s_mode_exception_delegation,
                            cfg.s_mode_interrupt_delegation);
@@ -438,19 +485,19 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[];
     privileged_reg_t trap_vec_reg;
     string tvec_name;
-    foreach(cfg.supported_privileged_mode[i]) begin
-      case(cfg.supported_privileged_mode[i])
+    foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
+      case(riscv_instr_pkg::supported_privileged_mode[i])
         MACHINE_MODE:    trap_vec_reg = MTVEC;
         SUPERVISOR_MODE: trap_vec_reg = STVEC;
         USER_MODE:       trap_vec_reg = UTVEC;
       endcase
       // Skip utvec init if trap delegation to u_mode is not supported
       // TODO: For now the default mode is direct mode, needs to support vector mode
-      if((cfg.supported_privileged_mode[i] == USER_MODE) && !cfg.support_umode_trap) continue;
-      if(cfg.supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
+      if((riscv_instr_pkg::supported_privileged_mode[i] == USER_MODE) && !riscv_instr_pkg::support_umode_trap) continue;
+      if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       tvec_name = trap_vec_reg.name();
       instr = {instr, $sformatf("la a0, %0s_handler", tvec_name.tolower())};
-      if(SATP_MODE != BARE && cfg.supported_privileged_mode[i] != MACHINE_MODE) begin
+      if(SATP_MODE != BARE && riscv_instr_pkg::supported_privileged_mode[i] != MACHINE_MODE) begin
         // For supervisor and user mode, use virtual address instead of physical address.
         // Virtual address starts from address 0x0, here only the lower 20 bits are kept
         // as virtual address offset.
@@ -470,15 +517,15 @@ class riscv_asm_program_gen extends uvm_object;
   // Trap handling routine
   virtual function void gen_all_trap_handler();
     string instr[$];
-    foreach(cfg.supported_privileged_mode[i]) begin
-      if(cfg.supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
-      case(cfg.supported_privileged_mode[i])
+    foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
+      if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
+      case(riscv_instr_pkg::supported_privileged_mode[i])
         MACHINE_MODE:
           gen_trap_handler_section("m", MCAUSE, MTVEC, MTVAL, MEPC, MSCRATCH, MSTATUS);
         SUPERVISOR_MODE:
           gen_trap_handler_section("s", SCAUSE, STVEC, STVAL, SEPC, SSCRATCH, SSTATUS);
         USER_MODE:
-          if(cfg.support_umode_trap)
+          if(riscv_instr_pkg::support_umode_trap)
             gen_trap_handler_section("u", UCAUSE, UTVEC, UTVAL, UEPC, USCRATCH, USTATUS);
       endcase
     end
@@ -574,13 +621,21 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   // Illegal instruction handler
-  // For now just exit from program
+  // Note: Save the illegal instruction to MTVAL is optional in the spec, and mepc could be
+  // a virtual address that cannot be used in machine mode handler. As a result, there's no way to
+  // know the illegal instruction is compressed or not. This hanlder just simply adds the PC by
+  // 4 and resumes execution. The way that the illegal instruction is injected guarantees that
+  // PC + 4 is a valid instruction boundary.
   virtual function void gen_illegal_instr_handler();
     string str;
-    string illegal_instr_handler_instr [] = {
-           "j     ecall_handler;"
+    string instr[$] = {
+           "csrr  x31, mepc",
+           "addi  x31, x31, 4",
+           "csrw  mepc, x31"
     };
-    gen_section("illegal_instr_handler", illegal_instr_handler_instr);
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
+    instr.push_back("mret");
+    gen_section("illegal_instr_handler", instr);
   endfunction
 
   //---------------------------------------------------------------------------------------
@@ -684,7 +739,7 @@ class riscv_asm_program_gen extends uvm_object;
   //---------------------------------------------------------------------------------------
 
   // Generate a code section
-  virtual function void gen_section(string label, string instr[]);
+  virtual function void gen_section(string label, string instr[$]);
     string str;
     if(label != "") begin
       str = format_string($sformatf("%0s:", label), LABEL_STR_LEN);
@@ -760,5 +815,30 @@ class riscv_asm_program_gen extends uvm_object;
     end
     instr_stream.shuffle();
   endfunction
+
+  // Generate sub-program in binary format, this is needed for illegal and HINT instruction
+  function void gen_bin_program();
+    if (bin_program != null) begin
+      string str;
+      instr_stream.push_back("instr_bin:");
+      instr_stream.push_back(".align 12");
+      foreach (instr_binary[i]) begin
+        if (((i+1) % 8 == 0) || (i == instr_binary.size() - 1)) begin
+          if (str != "")
+            instr_stream.push_back($sformatf(".word %0s, %0s", str, instr_binary[i]));
+          else
+            instr_stream.push_back($sformatf(".word %0s", instr_binary[i]));
+          str = "";
+        end else begin
+          if (str != "") begin
+            str = {str, ", ", instr_binary[i]};
+          end else begin
+            str = instr_binary[i];
+          end
+        end
+      end
+    end
+  endfunction
+
 
 endclass

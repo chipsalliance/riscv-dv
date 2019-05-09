@@ -38,122 +38,13 @@ package riscv_instr_pkg;
     NZIMM   // Non-zero signed immediate
   } imm_t;
 
-  // Bit width
-  parameter int XLEN = 64;
-
-  // Parameter for SATP mode, set to BARE if address translation is not supported
-  parameter satp_mode_t SATP_MODE = SV39;
-
-  // Maximum virtual address bits used by the program
-  parameter MAX_USED_VADDR_BITS = 30;
-
-  // xSTATUS bit mask
-  parameter bit [XLEN - 1 : 0] MPRV_BIT_MASK = 'h1 << 17;
-  parameter bit [XLEN - 1 : 0] SUM_BIT_MASK  = 'h1 << 18;
-  parameter bit [XLEN - 1 : 0] MPP_BIT_MASK  = 'h3 << 11;
-
-  typedef enum bit [4:0] {
-    ZERO = 5'b00000,
-    RA,
-    SP,
-    GP,
-    TP,
-    T0,
-    T1,
-    T2,
-    S0,
-    S1,
-    A0,
-    A1,
-    A2,
-    A3,
-    A4,
-    A5,
-    A6,
-    A7,
-    S2,
-    S3,
-    S4,
-    S5,
-    S6,
-    S7,
-    S8,
-    S9,
-    S10,
-    S11,
-    T3,
-    T4,
-    T5,
-    T6
-  } riscv_reg_t;
-
-  // Enum for 32 bits instruction opcode
-  // >32b instrunctions are not supported yet
-  typedef enum bit[6:0] {
-    OP_LOAD        = 7'b0000011,
-    OP_LOAD_FP     = 7'b0000111,
-    OP_CUSTOM_0    = 7'b0001011,
-    OP_MISC_MEM    = 7'b0001111,
-    OP_OP_IMM      = 7'b0010011,
-    OP_AUIPC       = 7'b0010111,
-    OP_OP_IMM_32   = 7'b0011011,
-    OP_STORE       = 7'b0100011,
-    OP_STORE_FP    = 7'b0100111,
-    OP_CUSTOM_1    = 7'b0101011,
-    OP_AMO         = 7'b0101111,
-    OP_OP          = 7'b0110011,
-    OP_LUI         = 7'b0110111,
-    OP_OP_32       = 7'b0111011,
-    OP_MADD        = 7'b1000011,
-    OP_MSUB        = 7'b1000111,
-    OP_NMSUB       = 7'b1001011,
-    OP_NMADD       = 7'b1001111,
-    OP_OP_FP       = 7'b1010011,
-    OP_RESERVED_0  = 7'b1010111,
-    OP_CUSTOM_2    = 7'b1011011,
-    OP_BRANCH      = 7'b1100011,
-    OP_JALR        = 7'b1100111,
-    OP_RESERVED_1  = 7'b1101011,
-    OP_JAL         = 7'b1101111,
-    OP_SYSTEM      = 7'b1110011,
-    OP_RESERVED_2  = 7'b1110111,
-    OP_CUSTOM_3    = 7'b1111011
-  } riscv_opcode_32b_t;
-
-  typedef enum bit [3:0] {
-    J_FORMAT = 0,
-    U_FORMAT,
-    I_FORMAT,
-    B_FORMAT,
-    R_FORMAT,
-    S_FORMAT,
-    CI_FORMAT,
-    CB_FORMAT,
-    CJ_FORMAT,
-    CR_FORMAT,
-    CL_FORMAT,
-    CS_FORMAT,
-    CSS_FORMAT,
-    CIW_FORMAT
-  } riscv_instr_format_t;
-
-  typedef enum bit [3:0] {
-    LOAD = 0,
-    STORE,
-    SHIFT,
-    ARITHMETIC,
-    LOGICAL,
-    COMPARE,
-    BRANCH,
-    JUMP,
-    SYNCH,
-    SYSTEM,
-    COUNTER,
-    CSR,
-    CHANGELEVEL,
-    TRAP,
-    INTERRUPT
-  } riscv_instr_cateogry_t;
+  // Privileged mode
+  typedef enum bit [1:0] {
+    USER_MODE       = 2'b00,
+    SUPERVISOR_MODE = 2'b01,
+    RESERVED_MODE   = 2'b10,
+    MACHINE_MODE    = 2'b11
+  } privileged_mode_t;
 
   typedef enum bit [4:0] {
     RV32I,
@@ -338,10 +229,94 @@ package riscv_instr_pkg;
     C_FLDSP,
     C_FSDSP,
     // Supervisor instruction
+    MRET,
+    URET,
+    SRET,
+    WFI,
     SFENCE_VMA,
     // You can add other instructions here
     INVALID_INSTR
   } riscv_instr_name_t;
+
+  `include "riscv_core_setting.sv"
+
+  // Maximum virtual address bits used by the program
+  parameter MAX_USED_VADDR_BITS = 30;
+
+  // xSTATUS bit mask
+  parameter bit [XLEN - 1 : 0] MPRV_BIT_MASK = 'h1 << 17;
+  parameter bit [XLEN - 1 : 0] SUM_BIT_MASK  = 'h1 << 18;
+  parameter bit [XLEN - 1 : 0] MPP_BIT_MASK  = 'h3 << 11;
+
+  typedef enum bit [4:0] {
+    ZERO = 5'b00000,
+    RA,
+    SP,
+    GP,
+    TP,
+    T0,
+    T1,
+    T2,
+    S0,
+    S1,
+    A0,
+    A1,
+    A2,
+    A3,
+    A4,
+    A5,
+    A6,
+    A7,
+    S2,
+    S3,
+    S4,
+    S5,
+    S6,
+    S7,
+    S8,
+    S9,
+    S10,
+    S11,
+    T3,
+    T4,
+    T5,
+    T6
+  } riscv_reg_t;
+
+  typedef enum bit [3:0] {
+    J_FORMAT = 0,
+    U_FORMAT,
+    I_FORMAT,
+    B_FORMAT,
+    R_FORMAT,
+    S_FORMAT,
+    CI_FORMAT,
+    CB_FORMAT,
+    CJ_FORMAT,
+    CR_FORMAT,
+    CL_FORMAT,
+    CS_FORMAT,
+    CSS_FORMAT,
+    CIW_FORMAT
+  } riscv_instr_format_t;
+
+  typedef enum bit [3:0] {
+    LOAD = 0,
+    STORE,
+    SHIFT,
+    ARITHMETIC,
+    LOGICAL,
+    COMPARE,
+    BRANCH,
+    JUMP,
+    SYNCH,
+    SYSTEM,
+    COUNTER,
+    CSR,
+    CHANGELEVEL,
+    TRAP,
+    INTERRUPT
+  } riscv_instr_cateogry_t;
 
   typedef bit [11:0] riscv_csr_t;
 
@@ -607,14 +582,6 @@ package riscv_instr_pkg;
     INCR_VAL
   } data_pattern_t;
 
-  // Privileged mode
-  typedef enum bit [1:0] {
-    USER_MODE       = 2'b00,
-    SUPERVISOR_MODE = 2'b01,
-    RESERVED_MODE   = 2'b10,
-    MACHINE_MODE    = 2'b11
-  } privileged_mode_t;
-
   typedef enum bit [2:0] {
     NEXT_LEVEL_PAGE   = 3'b000, // Pointer to next level of page table.
     READ_ONLY_PAGE    = 3'b001, // Read-only page.
@@ -749,7 +716,7 @@ package riscv_instr_pkg;
   function automatic void pop_gpr_from_kernel_stack(privileged_reg_t status,
                                                     privileged_reg_t scratch,
                                                     bit mprv,
-                                               ref string instr[$]);
+                                                    ref string instr[$]);
     string load_instr = (XLEN == 32) ? "lw" : "ld";
     // Pop user mode GPRs from kernel stack
     for(int i = 0; i < 32; i++) begin
@@ -764,6 +731,7 @@ package riscv_instr_pkg;
   endfunction
 
   `include "riscv_instr_gen_config.sv"
+  `include "riscv_illegal_instr.sv"
   `include "riscv_reg.sv"
   `include "riscv_privil_reg.sv"
   `include "riscv_page_table_entry.sv"
