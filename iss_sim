@@ -58,6 +58,14 @@ case $key in
     SRC_DIR="$2"
     shift
     ;;
+    -isa)
+    ISA="$2"
+    shift
+    ;;
+    -abi)
+    ABI="$2"
+    shift
+    ;;
     -test)
     TEST="$2"
     shift
@@ -78,12 +86,18 @@ esac
 shift
 done
 
+mkdir -p "$SRC_DIR"
+
 # If the test is specified through "-test" option, run a single test rather
 # than all tests under SRC_DIR.
 if [[ $TEST == "" ]]; then
   find "$SRC_DIR" -name "*.S" > "$SRC_DIR/asm_test_list"
 else
   echo "$TEST" > "$SRC_DIR/asm_test_list"
+fi
+
+if [[ $ISA =~ 32 ]]; then
+  OVPSIM_VARIANT="RV32GC"
 fi
 
 # Clean up previous running result

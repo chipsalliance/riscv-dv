@@ -45,11 +45,15 @@
 //  - Random instruction with sfence exception. sfence.vma could be excuted in non-supervisor mode
 //    or mstatus.tvm is set.
 //
+// riscv_illegal_instr_test:
+//  - Random instruction mixed with illegal instructions
+//
+// riscv_hint_instr_test:
+//  - Random instruction mixed with HINT instructions
+//
 // riscv_privileged_csr_test:
 //  - To be released soon
 //
-// riscv_compressed_instr_stress_test:
-//  - To be released soon
 //================================================================================================
 
 class riscv_arithmetic_basic_test extends riscv_instr_base_test;
@@ -216,6 +220,30 @@ class riscv_sfence_exception_test extends riscv_rand_instr_test;
 
   virtual function void randomize_cfg();
     cfg.allow_sfence_exception = 1'b1;
+    super.randomize_cfg();
+  endfunction
+
+endclass
+
+class riscv_illegal_instr_test extends riscv_rand_instr_test;
+
+  `uvm_component_utils(riscv_illegal_instr_test)
+  `uvm_component_new
+
+  virtual function void randomize_cfg();
+    cfg.enable_illegal_instruction = 1'b1;
+    super.randomize_cfg();
+  endfunction
+
+endclass
+
+class riscv_hint_instr_test extends riscv_rand_instr_test;
+
+  `uvm_component_utils(riscv_hint_instr_test)
+  `uvm_component_new
+
+  virtual function void randomize_cfg();
+    cfg.enable_hint_instruction = 1'b1;
     super.randomize_cfg();
   endfunction
 

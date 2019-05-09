@@ -10,8 +10,10 @@ processor verification. It currently supports the following features:
 - Trap/interrupt handling
 - Test suite to stress test MMU
 - Support sub-programs and random program calls
+- Support illegal instruction and HINT instruction
 - Random forward/backward branch instructions
 - Support mix directed instruciton with random instruction stream
+- Support co-simulation with multiple ISS : spike, riscv-ovpsim
 
 ## Getting Started
 
@@ -34,6 +36,7 @@ You can specify the simulator by "-tool" option
 
 ```
 ./run -test riscv_instr_base_test -tool irun
+./run -test riscv_instr_base_test -tool vcs
 ```
 The complete test list can be found in testlist. To run a full regression, you
 can just specify the test name to "all".
@@ -64,13 +67,23 @@ following output:
 ./out_2018-11-20/asm_tests/riscv_rand_jump_test.0.S
 ./out_2018-11-20/asm_tests/riscv_sfence_exception_test.0.S
 ```
-Here's a few more examples of run command:
+Here's a few more examples of the run command:
 ```
 // Run a single test 10 times
 ./run -test riscv_page_table_exception_test -n 10
 
 // Run a test with a specified seed
 ./run -test riscv_page_table_exception_test -seed 123
+
+// Run a test with addtional runtime options, separated with comma
+./run -test riscv_rand_instr_test -runo +instr_cnt=10000,+no_fence=1
+
+// Two steps compile and simulation (Avoid multiple compilation)
+./run -co # compile only
+# Generate multiple tests
+./run -so -test riscv_rand_instr_test -n 10
+./run -so -test riscv_mmu_stress_test -n 20
+....
 ```
 
 ### Use the generated test in your RTL and ISS simulation
@@ -84,6 +97,12 @@ with the RISC-V gcc compiler and simulate with spike.
 ./run -test all; ./iss_sim
 ```
 
+To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
+line like this:
+```
+./iss_sim -isa rv32imc -abi ilp32
+```
+
 The default ISS is spike. Thanks for the great support from Imperas Software Ltd.,
 we have added the support for [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim).
 You can use -iss to run with different ISS.
@@ -92,13 +111,21 @@ You can use -iss to run with different ISS.
 ./iss_sim -iss ovpsim # Use riscv-ovpsim as ISS
 ```
 
-## Configure the generator
+We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
+the instruction trace from these runs will be cross compared. This could greatly
+speed up your development of new test without the need to simulate against a
+real RISC-V processor.
+```
+./iss_sim -iss all # Run ISS simulation with spike + riscv-ovpsim
+```
 
-The default configuration for the instruction generator is for RV64IMC RISC-V
+## Configure the generator to match your processor features
+
+The default configuration of the instruction generator is for RV64IMC RISC-V
 processors with address translation capability. You might want to configure the
 generator according the feature of your processor.
 
-XLEN and SATP mode can be configured in src/riscv_instr_pkg.sv
+The static setting of the processor src/riscv_core_setting.sv
 
 ```
 // Bit width of RISC-V GPR
@@ -106,12 +133,7 @@ parameter int XLEN = 64;
 
 // Parameter for SATP mode, set to BARE if address translation is not supported
 parameter satp_mode_t SATP_MODE = SV39;
-```
 
-The other important configurations are in src/riscv_instr_gen_config.sv. Please
-refer to the comment in this class to properly setup these configurations.
-
-```
 // Supported Privileged mode
 privileged_mode_t supported_privileged_mode[] = {USER_MODE,
                                                  SUPERVISOR_MODE,
@@ -126,26 +148,28 @@ riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
 ...
 ```
 
-## Adding new test
+## Runtime options of the generator
+
+
+
+## Adding new instruction stream and test
 
 Please refer to src/src/riscv_load_store_instr_lib.sv for an example on how to
-add a new instruction stream. After the new instruction stream is created, you
-can refer to test/riscv_instr_test_lib.sv to see how an instruction stream can
-be mixed with existing random instruction stream.
-
+add a new instruction stream.
 ```
 virtual function void apply_directed_instr();
   asm_gen.add_directed_instr_stream("my_new_instr_stream_class_name", 10);
 endfunction
 ```
+ After the new instruction stream is created, you
+can refer to test/riscv_instr_test_lib.sv to see how an instruction stream can
+be mixed with existing random instruction stream.
 
 ## Supporting model
 
 Please file an issue under this repository for any bug report / integration
 issue / feature request. We are looking forward to knowing your experience of
 using this flow and how we can make it better together.
-You can also use [riscv-dv group](https://groups.google.com/forum/#!forum/riscv-dv)
-to discuss any issue related to this RISC-V instruction generator.
 
 ## External contributions
 
@@ -159,7 +183,6 @@ Please refer to CONTRIBUTING.md for license related questions.
 We have some work in progress which will be part of future releases:
 
 -   Privileged CSR test suite.
--   Illegal instruction support.
 -   Coverage model.
 
 ## Disclaimer

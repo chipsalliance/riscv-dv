@@ -82,7 +82,7 @@ class riscv_privileged_common_seq extends uvm_sequence;
     mstatus.set_field("SPIE", cfg.enable_interrupt);
     mstatus.set_field("SIE",  cfg.enable_interrupt);
     mstatus.set_field("UPIE", cfg.enable_interrupt);
-    mstatus.set_field("UIE", cfg.support_umode_trap);
+    mstatus.set_field("UIE", riscv_instr_pkg::support_umode_trap);
     regs.push_back(mstatus);
     // Enable external and timer interrupt
     mie.set_field("UEIE", cfg.enable_interrupt);
@@ -103,7 +103,7 @@ class riscv_privileged_common_seq extends uvm_sequence;
     sstatus.set_field("SPIE", cfg.enable_interrupt);
     sstatus.set_field("SIE",  cfg.enable_interrupt);
     sstatus.set_field("UPIE", cfg.enable_interrupt);
-    sstatus.set_field("UIE", cfg.support_umode_trap);
+    sstatus.set_field("UIE", riscv_instr_pkg::support_umode_trap);
     if(XLEN==64) begin
       sstatus.set_field("UXL", 2'b10);
     end

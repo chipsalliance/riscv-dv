@@ -194,7 +194,7 @@ class riscv_push_stack_instr extends riscv_rand_instr_stream;
     initialize_instr_list(num_of_redudant_instr);
   endfunction
 
-  virtual function void gen_push_stack_instr(int stack_len);
+  virtual function void gen_push_stack_instr(int stack_len, bit allow_branch = 1);
     this.stack_len = stack_len;
     init();
     gen_instr(1'b1);
@@ -205,7 +205,8 @@ class riscv_push_stack_instr extends riscv_rand_instr_stream;
     end
     // addi sp,sp,-imm
     `DV_CHECK_RANDOMIZE_WITH_FATAL(push_stack_instr[0],
-                                   instr_name == ADDI; rd == SP; rs1 == SP;)
+                                   instr_name == ADDI; rd == SP; rs1 == SP;
+                                   imm == (~stack_len + 1);)
     push_stack_instr[0].imm_str = $sformatf("-%0d", stack_len);
     foreach(saved_regs[i]) begin
       if(XLEN == 32) begin
@@ -217,7 +218,11 @@ class riscv_push_stack_instr extends riscv_rand_instr_stream;
       end
       push_stack_instr[i+1].process_load_store = 0;
     end
-    `DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
+    if (allow_branch) begin
+      `DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
+    end else begin
+      enable_branch = 0;
+    end
     if(enable_branch) begin
       // Cover jal -> branch scenario, the branch is added before push stack operation
       `DV_CHECK_RANDOMIZE_WITH_FATAL(branch_instr,
@@ -285,7 +290,7 @@ class riscv_pop_stack_instr extends riscv_rand_instr_stream;
     end
     // addi sp,sp,imm
     `DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[num_of_reg_to_save],
-                                   instr_name == ADDI; rd == SP; rs1 == SP;)
+                                   instr_name == ADDI; rd == SP; rs1 == SP; imm == stack_len;)
     pop_stack_instr[num_of_reg_to_save].imm_str = $sformatf("%0d", stack_len);
     mix_instr_stream(pop_stack_instr);
     foreach(instr_list[i]) begin
@@ -325,7 +330,9 @@ class riscv_long_branch_instr extends riscv_rand_instr_stream;
     backward_branch_instr_stream.initialize_instr_list(branch_instr_stream_len);
   endfunction
 
-  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  virtual function void gen_instr(bit no_branch = 1'b0,
+                                  bit no_load_store = 1'b1,
+                                  bit enable_hint_instr = 1'b0);
     int branch_offset;
     super.gen_instr(1'b1);
     forward_branch_instr_stream.gen_instr();

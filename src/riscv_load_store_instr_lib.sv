@@ -255,9 +255,9 @@ endclass
 class riscv_cache_line_stress_instr_stream extends riscv_load_store_stress_instr_stream;
 
   constraint same_cache_line_c {
-    base % cfg.dcache_line_size_in_bytes == 0;
+    base % riscv_instr_pkg::dcache_line_size_in_bytes == 0;
     foreach(offset[i]) {
-      offset[i] inside {[0 : cfg.dcache_line_size_in_bytes-1]};
+      offset[i] inside {[0 : riscv_instr_pkg::dcache_line_size_in_bytes-1]};
     }
   }
 

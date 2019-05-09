@@ -45,6 +45,12 @@ NUM_TESTS=1
 # Simulation output directory
 OUT="./out_${DATE}"
 
+# Simulation only
+SIM_ONLY=0
+
+# Compile only
+CMP_ONLY=0
+
 # Process command line options
 while [[ $# -gt 0 ]]
 do
@@ -65,6 +71,12 @@ case $key in
     -seed)
     SEED="$2"
     shift
+    ;;
+    -so)
+    SIM_ONLY=1
+    ;;
+    -co)
+    CMP_ONLY=1
     ;;
     -o)
     OUT="$2"
@@ -107,12 +119,22 @@ else
 fi
 
 # Clean up previous runs
-rm -rf ${OUT}
+if [[ $SIM_ONLY == 0 ]]; then
+  rm -rf ${OUT}
+fi
+
 mkdir -p ${OUT}
 mkdir -p ${OUT}/asm_tests
 
 # Compilation
-${COMPILE_CMD}
+if [[ $SIM_ONLY == 0 ]]; then
+  ${COMPILE_CMD}
+fi
+
+# Skip simulation if compilation only flag is set
+if [[ $CMP_ONLY == 1 ]]; then
+  exit 0
+fi
 
 # Run sim
 if [[ ${TEST} == "all" ]]; then
