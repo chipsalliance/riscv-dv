@@ -69,14 +69,23 @@ def compare_trace_csv(csv1, csv2, name1, name2):
       # Break the loop if it reaches the end of trace 2
       if trace_2_index == len(instr_trace_2):
         break
+    # Check if there's remaining instruction that change architectural state
     if trace_2_index != len(instr_trace_2):
-      print ("%0d instructions left in trace %0s" %
-             (len(instr_trace_2) - trace_2_index), name2)
-      mismatch_cnt += len(instr_trace_2) - trace_2_index
+      while (trace_2_index < len(instr_trace_2)):
+        gpr_state_change_2 = check_update_gpr(
+                             instr_trace_2[trace_2_index].rd,
+                             instr_trace_2[trace_2_index].rd_val,
+                             gpr_val_2)
+        if gpr_state_change_2 == 1:
+          print ("%0d instructions left in trace %0s" %
+                (len(instr_trace_2) - trace_2_index, name2))
+          mismatch_cnt += len(instr_trace_2) - trace_2_index
+          break
+        trace_2_index += 1
     if mismatch_cnt == 0:
-      compare_result = "PASS"
+      compare_result = "PASSED"
     else:
-      compare_result = "FAIL"
+      compare_result = "FAILED"
     print("Compare result[%s]: %d matched, %d mismatch" %
           (compare_result, matched_cnt, mismatch_cnt))
 
