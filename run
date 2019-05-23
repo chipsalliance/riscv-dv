@@ -147,9 +147,11 @@ if [[ ${TEST} == "all" ]]; then
         TEST=${BASH_REMATCH[1]}
         ITERATION=${BASH_REMATCH[4]}
         echo "Running ${TEST}, iteration count: ${ITERATION}"
-        ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
-                          +ntb_random_seed=${SEED} \
-                          -l ${OUT}/sim_${TEST}.log +num_of_tests=${ITERATION}
+        if ! [[ $ITERATION == "0" ]]; then
+          ${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
+                            +ntb_random_seed=${SEED} \
+                            -l ${OUT}/sim_${TEST}.log +num_of_tests=${ITERATION}
+        fi
       fi
     fi
   done < testlist
