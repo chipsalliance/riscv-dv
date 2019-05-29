@@ -34,8 +34,10 @@ def compare_trace_csv(csv1, csv2, name1, name2):
     trace_csv_2 = RiscvInstructiontTraceCsv(fd2)
     trace_csv_1.read_trace(instr_trace_1)
     trace_csv_2.read_trace(instr_trace_2)
+    trace_1_index = 0
     trace_2_index = 0
     for trace in instr_trace_1:
+      trace_1_index += 1
       # Check if there's a GPR change caused by this instruction
       gpr_state_change_1 = check_update_gpr(trace.rd, trace.rd_val, gpr_val_1)
       if gpr_state_change_1 == 0:
@@ -51,16 +53,22 @@ def compare_trace_csv(csv1, csv2, name1, name2):
       # Check if the GPR update is the same between trace 1 and 2
       if gpr_state_change_2 == 0:
         mismatch_cnt += 1
+        print("Mismatch[%d]:\n[%d] %s : %s -> %s(0x%s) addr:0x%s" %
+              (mismatch_cnt, trace_1_index, name1, trace.instr_str, trace.rd,
+               trace.rd_val, trace.addr))
+        print ("%0d instructions left in trace %0s" %
+               (len(instr_trace_1) - trace_1_index + 1, name1))
       elif (trace.rd != instr_trace_2[trace_2_index-1].rd or
             trace.rd_val != instr_trace_2[trace_2_index-1].rd_val):
         mismatch_cnt += 1
         # print first 5 mismatches
         if mismatch_cnt <= 5:
-          print("Mismatch[%d]:\n%s : %s -> %s(0x%s) addr:0x%s" %
-                (mismatch_cnt, name1, trace.instr_str, trace.rd,
-                 trace.rd_val, trace.addr))
-          print("%s : %s -> %s(0x%s) addr:0x%s" %
-                (name2, instr_trace_2[trace_2_index-1].instr_str,
+          print("Mismatch[%d]:\n[%d] %s : %s -> %s(0x%s) addr:0x%s" %
+                (mismatch_cnt, trace_2_index - 1, name1, trace.instr_str,
+                 trace.rd, trace.rd_val, trace.addr))
+          print("[%d] %s : %s -> %s(0x%s) addr:0x%s" %
+                (trace_2_index - 1, name2,
+                 instr_trace_2[trace_2_index-1].instr_str,
                  instr_trace_2[trace_2_index-1].rd,
                  instr_trace_2[trace_2_index-1].rd_val,
                  instr_trace_2[trace_2_index-1].addr))

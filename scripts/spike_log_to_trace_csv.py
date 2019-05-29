@@ -38,13 +38,13 @@ def process_spike_sim_log(spike_log, csv):
       m = re.search(r"core(.*)\) (.*)", line)
       if m:
         spike_instr = m.group(2)
-        instr_cnt += 1
       else:
         # Extract register value information
         m = re.search(r"(?P<pri>\d) 0x(?P<addr>[a-f0-9]+?) " \
                        "\((?P<bin>.*?)\) x\s*(?P<reg>\d*?) 0x(?P<val>.*)", line)
         if m:
           # Write the extracted instruction to a csvcol buffer file
+          instr_cnt += 1
           rv_instr_trace = RiscvInstructiontTraceEntry()
           rv_instr_trace.rd = gpr_to_abi("x%0s" % m.group("reg"))
           rv_instr_trace.rd_val = m.group("val")
