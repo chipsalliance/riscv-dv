@@ -613,7 +613,7 @@ package riscv_instr_pkg;
     STORE_AMO_PAGE_FAULT           = 4'hF
   } exception_cause_t;
 
-  `include "riscv_core_setting.sv"
+  `include "../setting/riscv_core_setting.sv"
 
   typedef bit [15:0] program_id_t;
 
