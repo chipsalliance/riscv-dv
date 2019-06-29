@@ -529,6 +529,8 @@ class riscv_asm_program_gen extends uvm_object;
             gen_trap_handler_section("u", UCAUSE, UTVEC, UTVAL, UEPC, USCRATCH, USTATUS);
       endcase
     end
+    // Ebreak handler
+    gen_ebreak_handler();
     // Ecall handler
     gen_ecall_handler();
     // Illegal instruction handler
@@ -570,6 +572,9 @@ class riscv_asm_program_gen extends uvm_object;
              $sformatf("csrr a1, 0x%0x # %0s", cause, cause.name()),
              $sformatf("csrr x31, 0x%0x # %0s", epc, epc.name()),
              $sformatf("csrr x29, 0x%0x # %0s", status, status.name()),
+             // Breakpoint
+             $sformatf("li a2, 0x%0x # BREAKPOINT", BREAKPOINT),
+             "beq a1, a2, ebreak_handler",
              // Check if it's an ECALL exception. Jump to ECALL exception handler
              $sformatf("li a2, 0x%0x # ECALL_UMODE", ECALL_UMODE),
              "beq a1, a2, ecall_handler",
@@ -620,6 +625,24 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(str);
   endfunction
 
+  // Ebreak trap handler
+  // When breakpoint exception happens, epc will be written with ebreak instruction
+  // itself. Add epc by 4 and resume execution.
+  // Note the breakpoint could be triggered by a C.EBREAK instruction, the generated program
+  // guarantees that epc + 4 is a valid instruction boundary
+  // TODO: Support random operations in debug mode
+  // TODO: Support ebreak exception delegation
+  virtual function void gen_ebreak_handler();
+    string instr[$] = {
+           "csrr  x31, mepc",
+           "addi  x31, x31, 4",
+           "csrw  mepc, x31"
+    };
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
+    instr.push_back("mret");
+    gen_section("ebreak_handler", instr);
+  endfunction
+
   // Illegal instruction handler
   // Note: Save the illegal instruction to MTVAL is optional in the spec, and mepc could be
   // a virtual address that cannot be used in machine mode handler. As a result, there's no way to
@@ -627,7 +650,6 @@ class riscv_asm_program_gen extends uvm_object;
   // 4 and resumes execution. The way that the illegal instruction is injected guarantees that
   // PC + 4 is a valid instruction boundary.
   virtual function void gen_illegal_instr_handler();
-    string str;
     string instr[$] = {
            "csrr  x31, mepc",
            "addi  x31, x31, 4",
