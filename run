@@ -59,7 +59,7 @@ CMP_OPTS=""
 VERBOSE=0
 
 # Submit to LSF
-LSF_CMD="bsub -q eda_high"
+LSF_CMD="bsub"
 LSF=0
 
 # Testlist for regression
