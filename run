@@ -141,23 +141,27 @@ OUT=`realpath ${OUT}`
 # Generate compile and simulation commands
 if [[ "$SIMULATOR" == "vcs" ]]; then
 
-  COMPILE_CMD="vcs -file ./vcs.compile.option.f \
-                   -f ./files.f -full64 \
-                   -l $OUT/compile.log  \
-                   -Mdir=$OUT/vcs_simv.csrc \
-                   -o $OUT/vcs_simv ${CMP_OPTS}"
+  function run_compile {
+    vcs -file ./vcs.compile.option.f \
+        -f ./files.f -full64 \
+        -l $OUT/compile.log  \
+        -Mdir=$OUT/vcs_simv.csrc \
+        -o $OUT/vcs_simv ${CMP_OPTS}
+  }
 
   SIM_CMD="$OUT/vcs_simv +vcs+lic+wait +UVM_TESTNAME="
 
 elif [[ "$SIMULATOR" == "irun" ]]; then
 
-  COMPILE_CMD="irun -64bit \
-                    -access +rwc \
-                    -f ./files.f \
-                    -q -sv -uvm  \
-                    -vlog_ext +.vh -I. \
-                    -uvmhome CDNS-1.2 \
-                    -l ${OUT}/compile.log ${CMP_OPTS}"
+  function run_compile {
+    irun -64bit \
+         -access +rwc \
+         -f ./files.f \
+         -q -sv -uvm  \
+         -vlog_ext +.vh -I. \
+         -uvmhome CDNS-1.2 \
+         -l ${OUT}/compile.log ${CMP_OPTS}
+    }
 
   SIM_CMD="irun -R +UVM_TESTNAME="
 
@@ -180,9 +184,9 @@ mkdir -p ${OUT}/asm_tests
 if [[ $SIM_ONLY == 0 ]]; then
   echo "Building RISC-V instruction generator..."
   if [[ $VERBOSE == 1 ]]; then
-    ${COMPILE_CMD}
+    run_compile
   else
-    ${COMPILE_CMD} > /dev/null
+    run_compile > /dev/null
   fi
   echo "Building RISC-V instruction generator...done"
 fi
