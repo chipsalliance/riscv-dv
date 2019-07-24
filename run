@@ -167,6 +167,26 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
   SIM_CMD="irun -R +UVM_TESTNAME="
   SIM_SEED="-svseed "
 
+elif [[ "$SIMULATOR" == "questa" ]]; then
+#Questa requires mapping libraries to compile correctly
+  function run_compile {
+      vmap mtiUvm $QUESTA_HOME/questasim/uvm-1.2
+      vlog -64 \
+           -access=rwc \
+           -f ./files.f \
+           -sv \
+           -mfcu -cuname design_cuname \
+           +define+UVM_REGEX_NO_DPI \
+           -writetoplevels ${OUT}/top.list \
+           -l ${OUT}/compile.log ${CMP_OPTS}
+      vopt -64 -debug \
+           +designfile -f ${OUT}/top.list \
+           -o design_opt
+    }
+
+  SIM_CMD="vsim -64 -c  -do questa_sim.tcl design_opt  +UVM_TESTNAME="
+  SIM_SEED="-sv_seed "
+
 else
   echo "unsupported simulator $SIMULATOR"
   exit 1
