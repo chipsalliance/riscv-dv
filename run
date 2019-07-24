@@ -161,6 +161,7 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
          -q -sv -uvm  \
          -vlog_ext +.vh -I. \
          -uvmhome CDNS-1.2 \
+         -elaborate \
          -l ${OUT}/compile.log ${CMP_OPTS}
     }
 
