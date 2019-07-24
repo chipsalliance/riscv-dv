@@ -150,6 +150,7 @@ if [[ "$SIMULATOR" == "vcs" ]]; then
   }
 
   SIM_CMD="$OUT/vcs_simv +vcs+lic+wait +UVM_TESTNAME="
+  SIM_SEED="+ntb_random_seed="
 
 elif [[ "$SIMULATOR" == "irun" ]]; then
 
@@ -164,6 +165,7 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
     }
 
   SIM_CMD="irun -R +UVM_TESTNAME="
+  SIM_SEED="-svseed "
 
 else
   echo "unsupported simulator $SIMULATOR"
@@ -213,7 +215,7 @@ if [[ ${TEST} == "all" ]]; then
         if [[ ${ITERATION} != "0" ]]; then
           echo "Running ${TEST} to generate ${ITERATION} tests"
           CMD="${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
-               +ntb_random_seed=${SEED} ${TEST_OPTS} ${SIM_OPTS} \
+               ${SIM_SEED}${SEED} ${TEST_OPTS} ${SIM_OPTS} \
                -l ${OUT}/sim_${TEST}.log +num_of_tests=${ITERATION}"
           ((PROGRAM_CNT+=$ITERATION))
           echo "${OUT}/sim_${TEST}.log" >> ${LOG_LIST}
@@ -266,7 +268,7 @@ if [[ ${TEST} == "all" ]]; then
 else
   echo "Running test ${TEST} to generate ${NUM_TESTS} tests"
   CMD="${SIM_CMD}${TEST} +asm_file_name=${OUT}/asm_tests/${TEST} \
-                    +ntb_random_seed=${SEED} \
+                    ${SIM_SEED}${SEED} \
                     -l ${OUT}/sim_${TEST}.log \
                     +num_of_tests=${NUM_TESTS} ${SIM_OPTS}"
   if [[ $VERBOSE == 1 ]]; then
