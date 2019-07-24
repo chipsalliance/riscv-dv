@@ -330,7 +330,7 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   // Setup MISA based on supported extensions
-  virtual function setup_misa();
+  virtual function void setup_misa();
     bit [XLEN-1:0] misa;
     misa[XLEN-1:XLEN-3] = (XLEN == 32) ? 1 :
                           (XLEN == 64) ? 2 : 3;
