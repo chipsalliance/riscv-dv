@@ -28,7 +28,7 @@
 
 DATE=`date +%Y-%m-%d`
 
-# RTL simulator, support vcs and irun
+# RTL simulator, supports vcs, irun, and questa
 SIMULATOR="vcs"
 
 # random seed
