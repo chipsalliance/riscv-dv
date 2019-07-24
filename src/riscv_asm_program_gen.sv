@@ -896,7 +896,7 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Generate the program in the debug ROM
   // Processor will fetch instruction from here upon receiving debug request from debug module
-  virtual function gen_debug_mode_section();
+  virtual function void gen_debug_mode_section();
     string instr[];
     if (riscv_instr_pkg::support_debug_mode) begin
       instr = {"dret"};
