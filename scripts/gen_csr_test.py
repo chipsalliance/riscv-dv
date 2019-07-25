@@ -13,7 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Parse processor-specific CSR description YAML file and generate a directed CSR test
+Parse processor-specific CSR description YAML file and generate a CSR test file.
+This test code will utilize every CSR instruction, writing values to the CSR
+and then using a prediction function to calculate a reference value that will
+be written into another register and compared against the value actually stored
+in the CSR at this point, allowing for the test to self-check in order to
+determine success or failure.
 """
 
 
