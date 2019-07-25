@@ -37,15 +37,6 @@ SEED=`date +%s`
 # Test name, "all" means run all tests in the testlist
 TEST="riscv_instr_base_test"
 
-# Toggle CSR test generation
-CSR_TEST_NUM=0
-
-# ISA length - for CSR test
-RV=32
-
-# Path to CSR YAML description file
-CSR_FILE="./yaml/csr_template.yaml"
-
 # Number of assembly programs to be generated for this test
 # This option only apply to single test mode. For the regression mode, the number is specified in
 # the testlist
@@ -91,18 +82,6 @@ case $key in
     ;;
     -n)
     NUM_TESTS="$2"
-    shift
-    ;;
-    -csr)
-    CSR_TEST_NUM="$2"
-    shift
-    ;;
-    -rv)
-    RV="$2"
-    shift
-    ;;
-    -csr_file)
-    CSR_FILE="$2"
     shift
     ;;
     -seed)
@@ -174,7 +153,8 @@ elif [[ "$SIMULATOR" == "irun" ]]; then
 
   COMPILE_CMD="irun -64bit \
                     -access +rwc \
-                    -f ./files.f \ -q -sv -uvm  \
+                    -f ./files.f \
+                    -q -sv -uvm  \
                     -vlog_ext +.vh -I. \
                     -uvmhome CDNS-1.2 \
                     -l ${OUT}/compile.log ${CMP_OPTS}"
@@ -292,10 +272,6 @@ else
   fi
 fi
 
-# Generate CSR tests
-if [[ $CSR_TEST_NUM > 0 ]]; then
-  python3 scripts/gen_csr_test.py --csr_file $CSR_FILE --rv $RV --num_test $CSR_TEST_NUM --out $OUT/asm_tests/
-fi
 
 # List all generated assembly tests
 echo "==========================================================="
