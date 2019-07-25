@@ -52,7 +52,7 @@
       description: >
           Encodes all supported ISA extensions
       type: WARL
-      reset_val: 260 # calculate based on the encoding table in the RISC-V Privileged Spec
+      reset_val: 0x104
       msb: 25
       lsb: 0
   rv64:
@@ -67,6 +67,6 @@
       description: >
         Encodes all supported ISA extensions
       type: WARL
-      reset_val: 260 # calculate based on the encoding table in the RISC-V Privileged Spec
+      reset_val: 0x104
       msb: 25
       lsb: 0
