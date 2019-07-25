@@ -21,8 +21,8 @@ processor verification. It currently supports the following features:
 
 To be able to run the instruction generator, you need to have an RTL simulator
 which supports Systemverilog and UVM 1.2. This generator has been verified with
-Synopsys VCS and Cadence Incisive/Xcelium simulator. Please make sure the EDA
-tool environment is properly setup before running the generator.
+Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
+make sure the EDA tool environment is properly setup before running the generator.
 
 ### Running the generator
 
@@ -37,6 +37,7 @@ You can specify the simulator by "-tool" option
 ```
 ./run -test riscv_instr_base_test -tool irun
 ./run -test riscv_instr_base_test -tool vcs
+./run -test riscv_instr_base_test -tool questa
 ```
 The complete test list can be found in testlist. To run a full regression, you
 can just specify the test name to "all".
