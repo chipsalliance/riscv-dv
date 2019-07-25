@@ -1,0 +1,72 @@
+# Base CSR template that should be followed when describing all processor supported CSRs to enable correct generation of directed test sequences
+#
+#- csr: CSR_NAME
+#  description: >
+#    BRIEF_DESCRIPTION
+#  privilege_mode: MODE (D/M/S/H/U)
+#  rv32:
+#    - MSB_FIELD_NAME:
+#      - description: >
+#          BRIEF_DESCRIPTION
+#      - type: TYPE (WPRI/WLRL/WARL)
+#      - reset_val: RESET_VAL
+#      - msb: MSB_POS
+#      - lsb: LSB_POS
+#    - ...
+#    - ...
+#    - LSB_FIELD_NAME:
+#      - description: ...
+#      - type: ...
+#      - ...
+#  rv64:
+#    - MSB_FIELD_NAME:
+#      - description: >
+#          BRIEF_DESCRIPTION
+#      - type: TYPE (WPRI/WLRL/WARL)
+#      - reset_val: RESET_VAL
+#      - msb: MSB_POS
+#      - lsb: LSB_POS
+#    - ...
+#    - ...
+#    - LSB_FIELD_NAME:
+#      - description: ...
+#      - type: ...
+#      - ...
+
+
+# Example template, using the CSR misa
+# Note: assume the processor supports only the RISC-V I/C extensions
+- csr: misa
+  description: >
+    Machine ISA Register
+  privilege_mode: M
+  rv32:
+    - field_name: MXL
+      description: >
+        Encodes native base ISA width
+      type: WARL
+      reset_val: 1
+      msb: 31
+      lsb: 30
+    - field_name: Extensions
+      description: >
+          Encodes all supported ISA extensions
+      type: WARL
+      reset_val: 260 # calculate based on the encoding table in the RISC-V Privileged Spec
+      msb: 25
+      lsb: 0
+  rv64:
+    - field_name: MXL
+      description: >
+        Encodes native base ISA width
+      type: WARL
+      reset_val: 2
+      msb: 63
+      lsb: 62
+    - field_name: Extensions
+      description: >
+        Encodes all supported ISA extensions
+      type: WARL
+      reset_val: 260 # calculate based on the encoding table in the RISC-V Privileged Spec
+      msb: 25
+      lsb: 0
