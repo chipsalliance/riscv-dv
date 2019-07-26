@@ -182,7 +182,7 @@ class riscv_illegal_instr extends uvm_object;
   `uvm_object_utils(riscv_illegal_instr)
   `uvm_object_new
 
-  function init(riscv_instr_gen_config cfg);
+  function void init(riscv_instr_gen_config cfg);
     this.cfg = cfg;
     if ((riscv_instr_pkg::RV32F inside {riscv_instr_pkg::supported_isa}) ||
          riscv_instr_pkg::RV32D inside {riscv_instr_pkg::supported_isa}) begin
