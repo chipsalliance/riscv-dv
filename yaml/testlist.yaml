@@ -1,0 +1,115 @@
+# Copyright Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- test: riscv_arithmetic_basic_test
+  description: >
+    Arithmetic instruction test, no load/store/branch instructions
+  iterations: 2
+  uvm_test: riscv_arithmetic_basic_test
+
+- test: riscv_machine_mode_rand_test
+  description: >
+    Machine mode random instruction test
+  iterations: 2
+  uvm_test: riscv_machine_mode_rand_test
+
+- test: riscv_privileged_mode_rand_test
+  description: >
+    Random previliged mode test
+  iterations: 2
+  uvm_test: riscv_privileged_mode_rand_test
+
+- test: riscv_rand_instr_test
+  description: >
+    Random instruction stress test"
+  iterations: 2
+  uvm_test: riscv_rand_instr_test
+
+- test: riscv_rand_jump_test
+  description: >
+    Jump among large number of sub-programs, stress testing iTLB operations.
+  iterations: 2
+  uvm_test: riscv_rand_jump_test
+
+- test: riscv_mmu_stress_test
+  description: >
+    Test with different patterns of load/store instructions, stress test MMU
+    operations.
+  iterations: 2
+  uvm_test: riscv_mmu_stress_test
+
+- test: riscv_page_table_exception_test
+  description: >
+    Test random page table exception handling. An exception handling routine is
+    designed to fix the page table error and resume execution.
+  iterations: 2
+  uvm_test: riscv_page_table_exception_test
+
+- test: riscv_no_fence_test
+  description: >
+    Random instruction with FENCE disabled, used to test processor pipeline with
+    less stall/flush operations caused by FENCE instruction.
+  iterations: 2
+  uvm_test: riscv_no_fence_test
+
+- test: riscv_sfence_exception_test
+  description: >
+    Random instruction test with S.FENCE exceptions
+  iterations: 2
+  uvm_test: riscv_sfence_exception_test
+
+- test: riscv_illegal_instr_test
+  description: >
+    Illegal instruction test, verify the processor can detect illegal
+    instruction and handle corresponding exception properly. An exception
+    handling routine is designed to resume execution after illegal
+    instruction exception.
+  iterations: 2
+  uvm_test: riscv_illegal_instr_test
+
+- test: riscv_hint_instr_test
+  description: >
+    HINT instruction test, verify the processor can detect HINT instruction
+    treat it as NOP. No illegal instruction exception is expected
+  iterations: 2
+  uvm_test: riscv_hint_instr_test
+
+- test: riscv_ebreak_test
+  description: >
+    Random instruction test with ebreak instruction enabled. Debug mode is not
+    enabled for this test, processor should raise ebreak exception.
+  iterations: 2
+  uvm_test: riscv_ebreak_test
+
+- test: riscv_ebreak_debug_mode_test
+  description: >
+    Ebreak instruction test with debug mode enabled.
+  iterations: 2
+  uvm_test: riscv_ebreak_test
+  sim_opts:
+    - +enable_debug_seq=1
+
+- test: riscv_wfi_test
+  description: >
+    WFI(wait for interrupt) instruction test. If WFI is supported, processor
+    should halt execution upon decoding WFI instruction and resume execution
+    by interrupt. Otherwise WFI should be executed as NOP instruction.
+  iterations: 2
+  uvm_test: riscv_wfi_test
+  gen_opts:
+    - +skip_trap_handling=1
+  sim_opts:
+    - +enable_irq_seq=1
+  compare_opts:
+    - 
