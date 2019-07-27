@@ -182,6 +182,7 @@ elif [[ "$SIMULATOR" == "questa" ]]; then
            -l ${OUT}/compile.log ${CMP_OPTS}
       vopt -64 -debug \
            +designfile -f ${OUT}/top.list \
+           -l ${OUT}/optimize.log ${CMP_OPTS} \
            -o design_opt
     }
 
