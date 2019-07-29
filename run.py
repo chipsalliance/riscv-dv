@@ -24,6 +24,9 @@ import re
 import sys
 
 from scripts.testlist_parser import *
+from scripts.spike_log_to_trace_csv import *
+from scripts.ovpsim_log_to_trace_csv import *
+from scripts.instr_trace_compare import *
 
 
 def get_env_var(var):
@@ -148,7 +151,7 @@ def get_seed(seed):
 
 
 def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, verbose):
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, verbose):
   """Run the instruction generator
 
   Args:
@@ -160,6 +163,8 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     compile_only   : Compile the generator only
     lsf_cmd        : LSF command used to run the instruction generator
     seed           : Seed to the instruction generator
+    cmp_opts       : Compile options for the generator
+    sim_opts       : Simulation options for the generator
     verbose        : Verbose logging
   """
   # Setup the compile and simulation command for the generator
@@ -172,6 +177,7 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     for cmd in compile_cmd:
       cmd = re.sub("<out>", output_dir, cmd)
       cmd = re.sub("<cwd>", cwd, cmd)
+      cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
       if verbose:
         print("Compile command: %s" % cmd)
       output = run_cmd(cmd)
@@ -181,18 +187,20 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
   if not compile_only:
     sim_cmd = re.sub("<out>", output_dir, sim_cmd)
     sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
+    sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
     print ("Running RISC-V instruction generator")
     for test in test_list:
       if test['iterations'] > 0:
         rand_seed = get_seed(seed)
         cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-              (" +UVM_TESTNAME=%s" % test['uvm_test']) + \
-              (" +num_of_tests=%d" % test['iterations']) + \
-              (" +asm_file_name=%s/asm_tests/%s" % (output_dir, test['test'])) + \
-              (" +ntb_random_seed=%d" % rand_seed) + \
-              (" -l %s/sim_%s.log" % (output_dir, test['test']))
+              (" +UVM_TESTNAME=%s " % test['gen_test']) + \
+              (" +num_of_tests=%d " % test['iterations']) + \
+              (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
+              (" +ntb_random_seed=%d " % rand_seed) + \
+              (" -l %s/sim_%s.log " % (output_dir, test['test']))
+        cmd += test['gen_opts']
         print("Run %0s to generate %d assembly tests" %
-              (test['uvm_test'], test['iterations']))
+              (test['gen_test'], test['iterations']))
         if verbose:
           print(cmd)
         try:
@@ -270,13 +278,14 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, verbose):
           print (cmd)
 
 
-def iss_cmp(test_list, iss, output_dir, verbose):
+def iss_cmp(test_list, iss, output_dir, isa, verbose):
   """Compare ISS simulation reult
 
   Args:
     test_list      : List of assembly programs to be compiled
     iss            : List of instruction set simulators
     output_dir     : Output directory of the ELF files
+    isa            : ISA
     verbose        : Verbose logging
   """
   iss_list = iss.split(",")
@@ -286,19 +295,26 @@ def iss_cmp(test_list, iss, output_dir, verbose):
   run_cmd("rm -rf %s" % report)
   for test in test_list:
     for i in range(0, test['iterations']):
-      if iss_list[1] == "spike":
-        iss_list[0], iss_list[1] = iss_list[1], iss_list[0]
       elf = ("%s/asm_tests/%s.%d.o" % (output_dir, test['test'], i))
       print("Comparing ISS sim result %s/%s : %s" %
             (iss_list[0], iss_list[1], elf))
+      csv_list = []
       run_cmd(("echo 'Test binary: %s' >> %s" % (elf, report)))
-      iss_0_log = ("%s/%s_sim/%s.%d.log" % (output_dir, iss_list[0], test['test'], i))
-      iss_1_log = ("%s/%s_sim/%s.%d.log" % (output_dir, iss_list[1], test['test'], i))
-      cmd = ("./iss_cmp %s %s %s" % (iss_0_log, iss_1_log, report))
-      cmd += (" &>> %s" % report)
-      run_cmd(cmd)
-      if verbose:
-        print(cmd)
+      for iss in iss_list:
+        log = ("%s/%s_sim/%s.%d.log" % (output_dir, iss, test['test'], i))
+        csv = ("%s/%s_sim/%s.%d.csv" % (output_dir, iss, test['test'], i))
+        csv_list.append(csv)
+        if iss == "spike":
+          if re.search("32", isa):
+            process_spike_sim_log(log, csv, 32)
+          else:
+            process_spike_sim_log(log, csv, 64)
+        elif iss == "ovpsim":
+          process_ovpsim_sim_log(log, csv)
+        else:
+          print("Unsupported ISS" % iss)
+          sys.exit(1)
+      compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
   passed_cnt = run_cmd("grep PASSED %s | wc -l" % report).strip()
   failed_cnt = run_cmd("grep FAILED %s | wc -l" % report).strip()
   summary = ("%s PASSED, %s FAILED" % (passed_cnt, failed_cnt))
@@ -338,6 +354,10 @@ parser.add_argument("--co", type=int, default=0,
                     help="Compile the generator only")
 parser.add_argument("--so", type=int, default=0,
                     help="Simulate the generator only")
+parser.add_argument("--cmp_opts", type=str, default="",
+                    help="Compile options for the generator")
+parser.add_argument("--sim_opts", type=str, default="",
+                    help="Simulation options for the generator")
 parser.add_argument("--steps", type=str, default="all",
                     help="Run steps: gen,gcc_compile,iss_sim,iss_cmp")
 parser.add_argument("--lsf_cmd", type=str, default="",
@@ -369,7 +389,8 @@ if len(matched_list) == 0:
 # Run instruction generator
 if args.steps == "all" or re.match("gen", args.steps):
   gen(matched_list, args.simulator, args.simulator_yaml, args.o,
-      args.so, args.co, args.lsf_cmd, args.seed, cwd, args.verbose)
+      args.so, args.co, args.lsf_cmd, args.seed, cwd,
+      args.cmp_opts, args.sim_opts, args.verbose)
 
 # Compile the assembly program to ELF, convert to plain binary
 if args.steps == "all" or re.match("gcc_compile", args.steps):
@@ -381,4 +402,4 @@ if args.steps == "all" or re.match("iss_sim", args.steps):
 
 # Compare ISS simulation result
 if args.steps == "all" or re.match("iss_cmp", args.steps):
-  iss_cmp(matched_list, args.iss, args.o, args.verbose)
+  iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)

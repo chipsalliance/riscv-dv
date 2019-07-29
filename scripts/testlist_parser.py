@@ -17,6 +17,7 @@ Parse the regression testlist in YAML format
 """
 
 import yaml
+import sys
 
 def read_yaml(yaml_file):
   """ Read YAML file to a dictionary
@@ -32,6 +33,7 @@ def read_yaml(yaml_file):
       yaml_data = yaml.safe_load(f)
     except yaml.YAMLError as exc:
       print(exc)
+      sys.exit(1)
   return yaml_data
 
 
