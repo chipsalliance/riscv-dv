@@ -15,12 +15,17 @@ limitations under the License.
 
 Convert spike sim log to standard riscv instruction trace format
 """
-import re
+
 import argparse
+import os
+import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 from riscv_trace_csv import *
 
-def process_spike_sim_log(spike_log, csv):
+def process_spike_sim_log(spike_log, csv, xlen):
   """Process SPIKE simulation log.
 
   Extract instruction and affected register information from spike simulation
@@ -29,6 +34,17 @@ def process_spike_sim_log(spike_log, csv):
   print("Processing spike log : %s" % spike_log)
   instr_cnt = 0
   spike_instr = ""
+
+  # Remove all the init spike boot instructions
+  # 0xffffffff80000000 is the first user instruction
+  if xlen == 32:
+    cmd = ("sed -i '/0xffffffff80000000/,$!d' %s" % spike_log)
+  else:
+    cmd = ("sed -i '/core.*0x0000000080000000/,$!d' %s" % spike_log)
+  os.system(cmd)
+  # Remove all instructions after ecall (end of program excecution)
+  cmd = ("sed -i '/ecall/q' %s" % spike_log)
+  os.system(cmd)
 
   with open(spike_log, "r") as f, open(csv, "w") as csv_fd:
     trace_csv = RiscvInstructiontTraceCsv(csv_fd)
@@ -55,11 +71,17 @@ def process_spike_sim_log(spike_log, csv):
           trace_csv.write_trace_entry(rv_instr_trace)
   print("Processed instruction count : %d" % instr_cnt)
 
-instr_trace = []
-# Parse input arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("--log", type=str, help="Input spike simulation log")
-parser.add_argument("--csv", type=str, help="Output trace csv_buf file")
-args = parser.parse_args()
-# Process spike log
-process_spike_sim_log(args.log, args.csv)
+
+def main():
+  instr_trace = []
+  # Parse input arguments
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--log", type=str, help="Input spike simulation log")
+  parser.add_argument("--csv", type=str, help="Output trace csv_buf file")
+  parser.add_argument("--xlen", type=int, default=32, help="XLEN")
+  args = parser.parse_args()
+  # Process spike log
+  process_spike_sim_log(args.log, args.csv, args.xlen)
+
+if __name__ == "__main__":
+  main()
