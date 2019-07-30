@@ -137,6 +137,8 @@ class riscv_illegal_instr extends uvm_object;
         (opcode == 7'b1110011) -> (func3 == 3'b100);
         (opcode == 7'b0011011) -> (!(func3 inside {3'b000, 3'b001, 3'b101}));
         (opcode == 7'b0111011) -> (func3 inside {3'b010, 3'b011});
+        opcode inside {7'b1100111, 7'b1100011, 7'b0000011, 7'b0100011,
+                       7'b0001111, 7'b1110011, 7'b0011011, 7'b0111011};
       } else {
         (opcode == 7'b1100111) -> (func3 == 3'b000);
         (opcode == 7'b1100011) -> (!(func3 inside {3'b010, 3'b011}));
