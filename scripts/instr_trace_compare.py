@@ -83,7 +83,7 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
             fd.write("Mismatch[%d]:\n%s[%d] : %s\n" %
                      (mismatch_cnt, name1, trace_2_index - 1,
                      trace.get_trace_string()))
-            fd.write("%s[%d] : %s" %
+            fd.write("%s[%d] : %s\n" %
                      (name2, trace_2_index - 1,
                      instr_trace_2[trace_2_index-1].get_trace_string()))
         else:

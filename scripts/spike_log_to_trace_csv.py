@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
 from riscv_trace_csv import *
 
-def process_spike_sim_log(spike_log, csv, xlen):
+def process_spike_sim_log(spike_log, csv):
   """Process SPIKE simulation log.
 
   Extract instruction and affected register information from spike simulation
@@ -36,11 +36,7 @@ def process_spike_sim_log(spike_log, csv, xlen):
   spike_instr = ""
 
   # Remove all the init spike boot instructions
-  # 0xffffffff80000000 is the first user instruction
-  if xlen == 32:
-    cmd = ("sed -i '/0xffffffff80000000/,$!d' %s" % spike_log)
-  else:
-    cmd = ("sed -i '/core.*0x0000000080000000/,$!d' %s" % spike_log)
+  cmd = ("sed -i '/core.*0x0000000000001010/,$!d' %s" % spike_log)
   os.system(cmd)
   # Remove all instructions after ecall (end of program excecution)
   cmd = ("sed -i '/ecall/q' %s" % spike_log)
@@ -78,10 +74,9 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--log", type=str, help="Input spike simulation log")
   parser.add_argument("--csv", type=str, help="Output trace csv_buf file")
-  parser.add_argument("--xlen", type=int, default=32, help="XLEN")
   args = parser.parse_args()
   # Process spike log
-  process_spike_sim_log(args.log, args.csv, args.xlen)
+  process_spike_sim_log(args.log, args.csv)
 
 if __name__ == "__main__":
   main()
