@@ -79,6 +79,7 @@ def main():
   # Process ovpsim log
   process_ovpsim_sim_log(args.log, args.csv)
 
+
 if __name__ == "__main__":
   main()
 

@@ -54,6 +54,7 @@ def process_regression_list(testlist, test, iterations, matched_list):
     if (entry['test'] == test) or (test == "all"):
       if iterations > 0:
         entry['iterations'] = iterations
-      print ("Found matched tests: %s, iterations:%0d" %
-             (entry['test'], entry['iterations']))
-      matched_list.append(entry)
+      if entry['iterations'] > 0:
+        print ("Found matched tests: %s, iterations:%0d" %
+               (entry['test'], entry['iterations']))
+        matched_list.append(entry)
