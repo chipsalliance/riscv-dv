@@ -73,7 +73,7 @@ def get_seed(seed):
     return random.getrandbits(32)
 
 
-def run_cmd(cmd, verbose = 0):
+def run_cmd(cmd, verbose = 0, timeout_s = 999):
   """Run a command and return output
 
   Args:
@@ -91,13 +91,18 @@ def run_cmd(cmd, verbose = 0):
   except subprocess.CalledProcessError as exc:
     print(ps.communicate()[0])
     sys.exit(1)
-  output = ps.communicate()[0]
+  try:
+    output = ps.communicate(timeout = timeout_s)[0]
+  except subprocess.TimeoutExpired:
+    print("Timeout[%ds]: %s" % (timeout_s, cmd))
+    output = ""
+    ps.kill()
   if verbose:
     print(output)
   return output
 
 
-def run_parallel_cmd(cmd_list, verbose = 0):
+def run_parallel_cmd(cmd_list, verbose = 0, timeout_s = 999):
   """Run a list of commands in parallel
 
   Args:
@@ -118,11 +123,15 @@ def run_parallel_cmd(cmd_list, verbose = 0):
     print("Command progress: %d/%d" % (i, len(children)))
     if verbose:
       print("Waiting for command: %s" % cmd_list[i])
-    output = children[i].communicate()[0]
+    try:
+      output = children[i].communicate(timeout = timeout_s)[0]
+    except subprocess.TimeoutExpired:
+      print("Timeout[%ds]: %s" % (timeout_s, cmd))
+      children[i].kill()
+    # Restore stty setting otherwise the terminal may go crazy
+    os.system("stty sane")
     if verbose:
       print(output)
-  # Restore stty setting otherwise the terminal may go crazy
-  os.system("stty sane")
 
 
 def process_regression_list(testlist, test, iterations, matched_list):
