@@ -20,16 +20,17 @@
            -Mdir=<out>/vcs_simv.csrc
            -o <out>/vcs_simv <cmp_opts>"
   sim_cmd: >
-    <out>/vcs_simv +vcs+lic+wait <sim_opts>
+    <out>/vcs_simv +vcs+lic+wait <sim_opts> +ntb_random_seed=<seed>
 
 - tool: ius
   compile_cmd:
     - "irun -64bit -access +rwc -f <cwd>/files.f
             -q -sv -uvm -vlog_ext +.vh -I.
             -uvmhome CDNS-1.2
+            -elaborate
             -l <out>/compile.log <cmp_opts>"
   sim_cmd: >
-    irun -R <sim_opts>
+    irun -R <sim_opts> -svseed <seed>
 
 - tool: questa
   compile_cmd:
@@ -46,4 +47,4 @@
 ￼     +designfile -f <out>/top.list
 ￼     -o design_opt"
   sim_cmd: >
-    vsim -64 -c -do <cwd>/questa_sim.tcl design_opt <sim_opts>
+    vsim -64 -c -do <cwd>/questa_sim.tcl design_opt <sim_opts>  -svseed <seed>
