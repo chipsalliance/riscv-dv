@@ -96,7 +96,7 @@ def get_iss_cmd(base_cmd, elf, log):
 
 
 def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, verbose):
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s, verbose):
   """Run the instruction generator
 
   Args:
@@ -110,6 +110,7 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     seed           : Seed to the instruction generator
     cmp_opts       : Compile options for the generator
     sim_opts       : Simulation options for the generator
+    timeout_s      : Timeout limit in seconds
     verbose        : Verbose logging
   """
   # Setup the compile and simulation command for the generator
@@ -150,9 +151,9 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
         if lsf_cmd:
           cmd_list.append(cmd)
         else:
-          run_cmd(cmd, verbose)
+          run_cmd(cmd, verbose, timeout_s)
     if lsf_cmd:
-      run_parallel_cmd(cmd_list, verbose)
+      run_parallel_cmd(cmd_list, verbose, timeout_s)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, verbose):
@@ -191,7 +192,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, verbose):
         print(output)
 
 
-def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, verbose):
+def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s, verbose):
   """Run ISS simulation with the generated test program
 
   Args:
@@ -200,6 +201,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, verbose):
     iss_list   : List of instruction set simulators
     iss_yaml   : ISS configuration file in YAML format
     isa        : ISA variant passed to the ISS
+    timeout_s  : Timeout limit in seconds
     verbose    : Verbose logging
   """
   for iss in iss_list.split(","):
@@ -214,7 +216,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, verbose):
         log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
         cmd = get_iss_cmd(base_cmd, elf, log)
         print ("Running ISS simulation: %s" % elf)
-        run_cmd(cmd)
+        run_cmd(cmd, 0, timeout_s)
         if verbose:
           print (cmd)
 
@@ -246,10 +248,7 @@ def iss_cmp(test_list, iss, output_dir, isa, verbose):
         csv = ("%s/%s_sim/%s.%d.csv" % (output_dir, iss, test['test'], i))
         csv_list.append(csv)
         if iss == "spike":
-          if re.search("32", isa):
-            process_spike_sim_log(log, csv, 32)
-          else:
-            process_spike_sim_log(log, csv, 64)
+          process_spike_sim_log(log, csv)
         elif iss == "ovpsim":
           process_ovpsim_sim_log(log, csv)
         else:
@@ -304,6 +303,10 @@ parser.add_argument("--steps", type=str, default="all",
 parser.add_argument("--lsf_cmd", type=str, default="",
                     help="LSF command. Run in local sequentially if lsf \
                           command is not specified")
+parser.add_argument("--gen_timeout", type=int, default=360,
+                    help="Generator timeout limit in seconds")
+parser.add_argument("--iss_timeout", type=int, default=50,
+                    help="ISS sim timeout limit in seconds")
 
 args = parser.parse_args()
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -331,7 +334,7 @@ if len(matched_list) == 0:
 if args.steps == "all" or re.match("gen", args.steps):
   gen(matched_list, args.simulator, args.simulator_yaml, args.o,
       args.so, args.co, args.lsf_cmd, args.seed, cwd,
-      args.cmp_opts, args.sim_opts, args.verbose)
+      args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
 
 # Compile the assembly program to ELF, convert to plain binary
 if args.steps == "all" or re.match("gcc_compile", args.steps):
@@ -339,7 +342,8 @@ if args.steps == "all" or re.match("gcc_compile", args.steps):
 
 # Run ISS simulation
 if args.steps == "all" or re.match("iss_sim", args.steps):
-  iss_sim(matched_list, args.o, args.iss, args.iss_yaml, args.isa, args.verbose)
+  iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+          args.isa, args.iss_timeout, args.verbose)
 
 # Compare ISS simulation result
 if args.steps == "all" or re.match("iss_cmp", args.steps):
