@@ -26,7 +26,15 @@ make sure the EDA tool environment is properly setup before running the generato
 
 ### Running the generator
 
-A simple script "run" is provided for you to run a single test or a regression.
+
+A simple script "run.py" is provided for you to run a single test or a regression.
+
+You can use --help to get the complete command reference:
+
+```
+python3 run.py --help
+```
+
 Here is the command to run a single test:
 
 ```
@@ -35,7 +43,7 @@ python3 run.py --test=riscv_arithmetic_basic_test
 You can specify the simulator by "-simulator" option
 
 ```
-python3 run.py --test=riscv_arithmetic_basic_test --simulator=irun
+python3 run.py --test=riscv_arithmetic_basic_test --simulator=ius
 python3 run.py --test=riscv_arithmetic_basic_test --simulator=vcs
 python3 run.py --test=riscv_arithmetic_basic_test --simulator=questa
 ```
@@ -55,17 +63,25 @@ python3 run.py --lsf_cmd="bsub -Is"
 Here's a few more examples of the run command:
 
 ```
-// Get the complete command reference info
-python3 run.py --help
-
 // Run a single test 10 times
 python3 run.py --test=riscv_page_table_exception_test --iterations=10
+
+// Run a test with verbose logging
+python3 run.py --test=riscv_page_table_exception_test --verbose
 
 // Run a test with a specified seed
 python3 run.py --test=riscv_page_table_exception_test --seed=123
 
 // Skip the generation, run ISS simulation with previously generated program
 python3 run.py --test=riscv_page_table_exception_test --steps=iss_sim
+
+// Run the generator only, do not compile and simluation with ISS
+python3 run.py --test=riscv_page_table_exception_test --steps=gen
+
+// Compile the generator only, do not simulate
+python3 run.py --test=riscv_page_table_exception_test --steps=gen --co=1
+
+
 ....
 ```
 
@@ -162,6 +178,12 @@ it with random instructions
 //+directed_instr_n=instr_sequence_name,frequency(number of insertions per 1000 instructions)
 +directed_instr_5=riscv_multi_page_load_store_instr_stream,4
 ```
+
+## Compile with generated programs with GCC
+
+- Install [riscv-gcc](https://github.com/riscv/riscv-gcc) toolchain
+- Set environment variable RISCV_GCC to the directory of the RISC-V gcc
+  executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
 
 ## Run ISS(Instruction Set Simulator) simulation
 

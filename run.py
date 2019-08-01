@@ -288,11 +288,11 @@ parser.add_argument("--iss", type=str, default="spike",
                     help="RISC-V instruction set simulator: spike, ovpsim")
 parser.add_argument("--iss_yaml", type=str, default="",
                     help="ISS setting YAML")
-parser.add_argument("--verbose", type=int, default=0,
+parser.add_argument("--verbose", dest="verbose", action="store_true",
                     help="Verbose logging")
-parser.add_argument("--co", type=int, default=0,
+parser.add_argument("--co", dest="co", action="store_true",
                     help="Compile the generator only")
-parser.add_argument("--so", type=int, default=0,
+parser.add_argument("--so", dest="so", action="store_true",
                     help="Simulate the generator only")
 parser.add_argument("--cmp_opts", type=str, default="",
                     help="Compile options for the generator")
@@ -307,6 +307,10 @@ parser.add_argument("--gen_timeout", type=int, default=360,
                     help="Generator timeout limit in seconds")
 parser.add_argument("--iss_timeout", type=int, default=50,
                     help="ISS sim timeout limit in seconds")
+
+parser.set_defaults(co=False)
+parser.set_defaults(so=False)
+parser.set_defaults(verbose=False)
 
 args = parser.parse_args()
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -336,15 +340,16 @@ if args.steps == "all" or re.match("gen", args.steps):
       args.so, args.co, args.lsf_cmd, args.seed, cwd,
       args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
 
-# Compile the assembly program to ELF, convert to plain binary
-if args.steps == "all" or re.match("gcc_compile", args.steps):
-  gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
+if not args.co:
+  # Compile the assembly program to ELF, convert to plain binary
+  if args.steps == "all" or re.match("gcc_compile", args.steps):
+    gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
 
-# Run ISS simulation
-if args.steps == "all" or re.match("iss_sim", args.steps):
-  iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
-          args.isa, args.iss_timeout, args.verbose)
+  # Run ISS simulation
+  if args.steps == "all" or re.match("iss_sim", args.steps):
+    iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+            args.isa, args.iss_timeout, args.verbose)
 
-# Compare ISS simulation result
-if args.steps == "all" or re.match("iss_cmp", args.steps):
-  iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+  # Compare ISS simulation result
+  if args.steps == "all" or re.match("iss_cmp", args.steps):
+    iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
