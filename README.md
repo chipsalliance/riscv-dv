@@ -79,8 +79,7 @@ python3 run.py --test=riscv_page_table_exception_test --steps=iss_sim
 python3 run.py --test=riscv_page_table_exception_test --steps=gen
 
 // Compile the generator only, do not simulate
-python3 run.py --test=riscv_page_table_exception_test --steps=gen --co=1
-
+python3 run.py --test=riscv_page_table_exception_test --co
 
 ....
 ```
