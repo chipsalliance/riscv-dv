@@ -133,23 +133,23 @@ riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
 
 ### Runtime options of the generator
 
-| Option   |      Description      | default |
-|----------|:-------------:|:------:|
-| num_of_tests |  Number of assembly tests to be generated | 1 |
-| num_of_sub_program |    Number of sub-program in one test    | 5 |
-| instr_cnt | Instruction count per test  | 200 | 
-| enable_page_table_exception | Enable page table exception  | 0 |
-| no_ebreak |  Disable ebreak instruction  | 1 |
-| no_wfi | Disable WFI instruction  | 1 |
-| no_branch_jump | Disable branch/jump instruction   | 0 |
-| no_load_store | Disable load/store instruction  | 0 |
-| no_csr_instr | Disable CSR instruction | 0 |
-| no_fence | Disable fence instruction  | 0 |
-| enable_illegal_instruction | Enable illegal instructions  | 0 |
-| enable_hint_instruction |  Enable HINT instruction  | 0 |
-| boot_mode | m:Machine mode, s:Supervisor mode, u:User mode  | m |
-| no_directed_instr | Disable directed instruction stream  | 0 |
-| enable_interrupt | Enable MStatus.MIE, used in interrupt test | 0 |
+| Option                      | Description                                     | Default |
+|:---------------------------:|:-----------------------------------------------:|:-------:|
+| num_of_tests                | Number of assembly tests to be generated        | 1       |
+| num_of_sub_program          | Number of sub-program in one test               | 5       |
+| instr_cnt                   | Instruction count per test                      | 200     |
+| enable_page_table_exception | Enable page table exception                     | 0       |
+| no_ebreak                   | Disable ebreak instruction                      | 1       |
+| no_wfi                      | Disable WFI instruction                         | 1       |
+| no_branch_jump              | Disable branch/jump instruction                 | 0       |
+| no_load_store               | Disable load/store instruction                  | 0       |
+| no_csr_instr                | Disable CSR instruction                         | 0       |
+| no_fence                    | Disable fence instruction                       | 0       |
+| enable_illegal_instruction  | Enable illegal instructions                     | 0       |
+| enable_hint_instruction     | Enable HINT instruction                         | 0       |
+| boot_mode                   | m:Machine mode, s:Supervisor mode, u:User mode  | m       |
+| no_directed_instr           | Disable directed instruction stream             | 0       |
+| enable_interrupt            | Enable MStatus.MIE, used in interrupt test      | 0       |
 
 ### Adding new instruction stream and test
 
