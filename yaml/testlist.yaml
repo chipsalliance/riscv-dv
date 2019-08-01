@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ======================================================================
+#                  Regression test list format
+# ----------------------------------------------------------------------
+# test         : Assembly test name
+# description  : Description of this test
+# gen_opts     : Instruction generator options
+# iterations   : Number of iterations of this test
+# gen_test     : Test name used by the instruction generator
+# rtl_test     : RTL simulation test name
+# cmp_opts     : Compile options passed to the instruction generator
+# sim_opts     : Simulation options passed to the instruction generator
+# compare_opts : Options for the RTL & ISS trace comparison
+# ----------------------------------------------------------------------
+
 - test: riscv_arithmetic_basic_test
   description: >
     Arithmetic instruction test, no load/store/branch instructions

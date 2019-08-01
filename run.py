@@ -19,32 +19,13 @@ Regression script for RISC-V random instruction generator
 import argparse
 import os
 import subprocess
-import random
 import re
 import sys
 
-from scripts.testlist_parser import *
+from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
-
-
-def get_env_var(var):
-  """Get the value of environment variable
-
-  Args:
-    var : Name of the environment variable
-
-  Returns:
-    val : Value of the environment variable
-  """
-  try:
-    val = os.environ[var]
-  except KeyError:
-    print ("Please set the environment variable %0s" % var)
-    sys.exit(1)
-  return val
-
 
 def get_generator_cmd(simulator, simulator_yaml):
   """ Setup the compile and simulation command for the generator
@@ -114,42 +95,6 @@ def get_iss_cmd(base_cmd, elf, log):
   return cmd
 
 
-def run_cmd(cmd):
-  """Run a command and return output
-
-  Args:
-    cmd : shell command to run
-
-  Returns:
-    command output
-  """
-  try:
-    ps = subprocess.Popen(cmd,
-                          shell=True,
-                          universal_newlines=True,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT)
-  except subprocess.CalledProcessError as exc:
-    print(ps.communicate()[0])
-    sys.exit(1)
-  return ps.communicate()[0]
-
-
-def get_seed(seed):
-  """Get the seed to run the generator
-
-  Args:
-    seed : input seed
-
-  Returns:
-    seed to run instruction generator
-  """
-  if seed >= 0:
-    return seed
-  else:
-    return random.getrandbits(32)
-
-
 def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
         compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, verbose):
   """Run the instruction generator
@@ -175,7 +120,7 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
   if not sim_only:
     print ("Building RISC-V instruction generator")
     for cmd in compile_cmd:
-      cmd = re.sub("<out>", output_dir, cmd)
+      cmd = re.sub("<out>", os.path.abspath(output_dir), cmd)
       cmd = re.sub("<cwd>", cwd, cmd)
       cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
       if verbose:
@@ -185,7 +130,8 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
         print(output)
   # Run the instruction generator
   if not compile_only:
-    sim_cmd = re.sub("<out>", output_dir, sim_cmd)
+    cmd_list = []
+    sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
     sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
     sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
     print ("Running RISC-V instruction generator")
@@ -196,22 +142,17 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
               (" +UVM_TESTNAME=%s " % test['gen_test']) + \
               (" +num_of_tests=%d " % test['iterations']) + \
               (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-              (" +ntb_random_seed=%d " % rand_seed) + \
               (" -l %s/sim_%s.log " % (output_dir, test['test']))
-        cmd += test['gen_opts']
-        print("Run %0s to generate %d assembly tests" %
-              (test['gen_test'], test['iterations']))
-        if verbose:
-          print(cmd)
-        try:
-          output = subprocess.check_output(cmd.split(),
-                                           timeout=300,
-                                           universal_newlines=True)
-        except subprocess.CalledProcessError as exc:
-          print(output)
-          sys.exit(1)
-        if verbose:
-          print(output)
+        cmd = re.sub("<seed>", str(rand_seed), cmd)
+        if "gen_opts" in test:
+          cmd += test['gen_opts']
+        print("Generating %d %s" % (test['iterations'], test['test']))
+        if lsf_cmd:
+          cmd_list.append(cmd)
+        else:
+          run_cmd(cmd, verbose)
+    if lsf_cmd:
+      run_parallel_cmd(cmd_list, verbose)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, verbose):
