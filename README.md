@@ -43,9 +43,9 @@ python3 run.py --test=riscv_arithmetic_basic_test
 You can specify the simulator by "-simulator" option
 
 ```
-python3 run.py --test=riscv_arithmetic_basic_test --simulator=ius
-python3 run.py --test=riscv_arithmetic_basic_test --simulator=vcs
-python3 run.py --test=riscv_arithmetic_basic_test --simulator=questa
+python3 run.py --test riscv_arithmetic_basic_test --simulator ius
+python3 run.py --test riscv_arithmetic_basic_test --simulator vcs
+python3 run.py --test riscv_arithmetic_basic_test --simulator questa
 ```
 The complete test list can be found in [yaml/testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/testlist.yaml). To run a full
 regression, simply use below command
@@ -64,22 +64,22 @@ Here's a few more examples of the run command:
 
 ```
 // Run a single test 10 times
-python3 run.py --test=riscv_page_table_exception_test --iterations=10
+python3 run.py --test riscv_page_table_exception_test --iterations 10
 
 // Run a test with verbose logging
-python3 run.py --test=riscv_page_table_exception_test --verbose
+python3 run.py --test riscv_page_table_exception_test --verbose
 
 // Run a test with a specified seed
-python3 run.py --test=riscv_page_table_exception_test --seed=123
+python3 run.py --test riscv_page_table_exception_test --seed 123
 
 // Skip the generation, run ISS simulation with previously generated program
-python3 run.py --test=riscv_page_table_exception_test --steps=iss_sim
+python3 run.py --test riscv_page_table_exception_test --steps iss_sim
 
 // Run the generator only, do not compile and simluation with ISS
-python3 run.py --test=riscv_page_table_exception_test --steps=gen
+python3 run.py --test riscv_page_table_exception_test --steps gen
 
 // Compile the generator only, do not simulate
-python3 run.py --test=riscv_page_table_exception_test --co
+python3 run.py --test riscv_page_table_exception_test --co
 
 ....
 ```
@@ -202,10 +202,10 @@ You can use -iss to run with different ISS.
 
 ```
 // Run ISS with spike
-python3 run.py --test=riscv_page_table_exception_test --iss=spike
+python3 run.py --test riscv_page_table_exception_test --iss spike
 
 // Run ISS with riscv-ovpsim
-python3 run.py --test=riscv_rand_instr_test --iss=ovpsim
+python3 run.py --test riscv_rand_instr_test --iss ovpsim
 ```
 
 To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
@@ -213,7 +213,7 @@ line like this:
 
 ```
 // Run a full regression with RV32IMC
-python3 run.py --isa=rv32imc --mabi=ilp32
+python3 run.py --isa rv32imc --mabi ilp32
 ```
 
 We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
@@ -239,7 +239,7 @@ You can add a new entry in [iss.yaml](https://github.com/google/riscv-dv/blob/ma
 Simulate with the new ISS
 
 ```
-python3 run.py --test=riscv_page_table_exception_test --iss=new_iss_name
+python3 run.py --test riscv_page_table_exception_test --iss new_iss_name
 ```
 
 ## End-to-end RTL and ISS co-simulation flow
