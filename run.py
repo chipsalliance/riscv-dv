@@ -22,6 +22,7 @@ import subprocess
 import re
 import sys
 
+from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
@@ -270,7 +271,7 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--o", type=str, default="./out",
+  parser.add_argument("--o", type=str,
                       help="Output directory name")
   parser.add_argument("--testlist", type=str, default="",
                       help="Regression testlist")
@@ -335,8 +336,12 @@ def main():
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   # Create output directory
-  subprocess.run(["mkdir", "-p", args.o])
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
+  if args.o is None:
+    output_dir = "out_" + str(date.today())
+  else:
+    output_dir = args.o
+  subprocess.run(["mkdir", "-p", output_dir])
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
   # Process regression test list
   matched_list = []
@@ -346,23 +351,23 @@ def main():
 
   # Run instruction generator
   if args.steps == "all" or re.match("gen", args.steps):
-    gen(matched_list, args.simulator, args.simulator_yaml, args.o,
+    gen(matched_list, args.simulator, args.simulator_yaml, output_dir,
         args.so, args.co, args.lsf_cmd, args.seed, cwd,
         args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
     if args.steps == "all" or re.match("gcc_compile", args.steps):
-      gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
+      gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.verbose)
 
     # Run ISS simulation
     if args.steps == "all" or re.match("iss_sim", args.steps):
-      iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+      iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
               args.isa, args.iss_timeout, args.verbose)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match("iss_cmp", args.steps):
-      iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+      iss_cmp(matched_list, args.iss, output_dir, args.isa, args.verbose)
 
 if __name__== "__main__":
   main()
