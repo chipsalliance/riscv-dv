@@ -178,13 +178,13 @@ it with random instructions
 +directed_instr_5=riscv_multi_page_load_store_instr_stream,4
 ```
 
-## Compile with generated programs with GCC
+## Compile generated programs with GCC
 
 - Install [riscv-gcc](https://github.com/riscv/riscv-gcc) toolchain
 - Set environment variable RISCV_GCC to the directory of the RISC-V gcc
   executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
 
-## Run ISS(Instruction Set Simulator) simulation
+## Run ISS (Instruction Set Simulator) simulation
 
 The default ISS is spike. Thanks for the great support from Imperas Software Ltd.,
 we have added the support for [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim).
@@ -245,7 +245,7 @@ python3 run.py --test riscv_page_table_exception_test --iss new_iss_name
 ## End-to-end RTL and ISS co-simulation flow
 
 We have collaborated with LowRISC to apply this flow for [IBEX RISC-V core
-verification](https://github.com/lowRISC/ibex/tree/master/dv/uvm). You can use
+verification](https://github.com/lowRISC/ibex/blob/master/doc/verification.rst). You can use
 it as a reference to setup end-to-end co-simulation flow. It's also a good
 reference for [customizing the generator](https://github.com/lowRISC/ibex/tree/master/dv/uvm/riscv_dv_extension) without getting impacted by upstream
 changes.
