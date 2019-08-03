@@ -318,45 +318,51 @@ def setup_parser():
 
   return parser
 
-parser = setup_parser()
-args = parser.parse_args()
-cwd = os.path.dirname(os.path.realpath(__file__))
+def main():
+  """This is the main entry point."""
 
-if not args.iss_yaml:
-  args.iss_yaml = cwd + "/yaml/iss.yaml"
+  parser = setup_parser()
+  args = parser.parse_args()
+  cwd = os.path.dirname(os.path.realpath(__file__))
 
-if not args.simulator_yaml:
-  args.simulator_yaml = cwd + "/yaml/simulator.yaml"
+  if not args.iss_yaml:
+    args.iss_yaml = cwd + "/yaml/iss.yaml"
 
-if not args.testlist:
-  args.testlist = cwd + "/yaml/testlist.yaml"
+  if not args.simulator_yaml:
+    args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
-# Create output directory
-subprocess.run(["mkdir", "-p", args.o])
-subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
+  if not args.testlist:
+    args.testlist = cwd + "/yaml/testlist.yaml"
 
-# Process regression test list
-matched_list = []
-process_regression_list(args.testlist, args.test, args.iterations, matched_list)
-if len(matched_list) == 0:
-  sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
+  # Create output directory
+  subprocess.run(["mkdir", "-p", args.o])
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
 
-# Run instruction generator
-if args.steps == "all" or re.match("gen", args.steps):
-  gen(matched_list, args.simulator, args.simulator_yaml, args.o,
-      args.so, args.co, args.lsf_cmd, args.seed, cwd,
-      args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
+  # Process regression test list
+  matched_list = []
+  process_regression_list(args.testlist, args.test, args.iterations, matched_list)
+  if len(matched_list) == 0:
+    sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
-if not args.co:
-  # Compile the assembly program to ELF, convert to plain binary
-  if args.steps == "all" or re.match("gcc_compile", args.steps):
-    gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
+  # Run instruction generator
+  if args.steps == "all" or re.match("gen", args.steps):
+    gen(matched_list, args.simulator, args.simulator_yaml, args.o,
+        args.so, args.co, args.lsf_cmd, args.seed, cwd,
+        args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
 
-  # Run ISS simulation
-  if args.steps == "all" or re.match("iss_sim", args.steps):
-    iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
-            args.isa, args.iss_timeout, args.verbose)
+  if not args.co:
+    # Compile the assembly program to ELF, convert to plain binary
+    if args.steps == "all" or re.match("gcc_compile", args.steps):
+      gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
 
-  # Compare ISS simulation result
-  if args.steps == "all" or re.match("iss_cmp", args.steps):
-    iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+    # Run ISS simulation
+    if args.steps == "all" or re.match("iss_sim", args.steps):
+      iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+              args.isa, args.iss_timeout, args.verbose)
+
+    # Compare ISS simulation result
+    if args.steps == "all" or re.match("iss_cmp", args.steps):
+      iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+
+if __name__== "__main__":
+  main()
