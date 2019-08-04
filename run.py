@@ -22,6 +22,7 @@ import subprocess
 import re
 import sys
 
+from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
@@ -262,94 +263,111 @@ def iss_cmp(test_list, iss, output_dir, isa, verbose):
   run_cmd(("echo %s >> %s" % (summary, report)))
   print("ISS regression report is saved to %s" % report)
 
+def setup_parser():
+  """Create a command line parser.
 
-# Parse input arguments
-parser = argparse.ArgumentParser()
+  Returns: The created parser.
+  """
+  # Parse input arguments
+  parser = argparse.ArgumentParser()
 
-parser.add_argument("--o", type=str, default="./out",
-                    help="Output directory name")
-parser.add_argument("--testlist", type=str, default="",
-                    help="Regression testlist")
-parser.add_argument("--isa", type=str, default="rv64imc",
-                    help="RISC-V ISA subset")
-parser.add_argument("--mabi", type=str, default="lp64",
-                    help="mabi used for compilation, lp32 or lp64")
-parser.add_argument("--test", type=str, default="all",
-                    help="Test name, 'all' means all tests in the list")
-parser.add_argument("--seed", type=int, default=-1,
-                    help="Randomization seed, default -1 means random seed")
-parser.add_argument("--iterations", type=int, default=0,
-                    help="Override the iteration count in the test list")
-parser.add_argument("--simulator", type=str, default="vcs",
-                    help="Simulator used to run the generator, default VCS")
-parser.add_argument("--simulator_yaml", type=str, default="",
-                    help="RTL simulator setting YAML")
-parser.add_argument("--iss", type=str, default="spike",
-                    help="RISC-V instruction set simulator: spike, ovpsim")
-parser.add_argument("--iss_yaml", type=str, default="",
-                    help="ISS setting YAML")
-parser.add_argument("--verbose", dest="verbose", action="store_true",
-                    help="Verbose logging")
-parser.add_argument("--co", dest="co", action="store_true",
-                    help="Compile the generator only")
-parser.add_argument("--so", dest="so", action="store_true",
-                    help="Simulate the generator only")
-parser.add_argument("--cmp_opts", type=str, default="",
-                    help="Compile options for the generator")
-parser.add_argument("--sim_opts", type=str, default="",
-                    help="Simulation options for the generator")
-parser.add_argument("--steps", type=str, default="all",
-                    help="Run steps: gen,gcc_compile,iss_sim,iss_cmp")
-parser.add_argument("--lsf_cmd", type=str, default="",
-                    help="LSF command. Run in local sequentially if lsf \
-                          command is not specified")
-parser.add_argument("--gen_timeout", type=int, default=360,
-                    help="Generator timeout limit in seconds")
-parser.add_argument("--iss_timeout", type=int, default=50,
-                    help="ISS sim timeout limit in seconds")
+  parser.add_argument("--o", type=str,
+                      help="Output directory name")
+  parser.add_argument("--testlist", type=str, default="",
+                      help="Regression testlist")
+  parser.add_argument("--isa", type=str, default="rv64imc",
+                      help="RISC-V ISA subset")
+  parser.add_argument("--mabi", type=str, default="lp64",
+                      help="mabi used for compilation, lp32 or lp64")
+  parser.add_argument("--test", type=str, default="all",
+                      help="Test name, 'all' means all tests in the list")
+  parser.add_argument("--seed", type=int, default=-1,
+                      help="Randomization seed, default -1 means random seed")
+  parser.add_argument("--iterations", type=int, default=0,
+                      help="Override the iteration count in the test list")
+  parser.add_argument("--simulator", type=str, default="vcs",
+                      help="Simulator used to run the generator, default VCS")
+  parser.add_argument("--simulator_yaml", type=str, default="",
+                      help="RTL simulator setting YAML")
+  parser.add_argument("--iss", type=str, default="spike",
+                      help="RISC-V instruction set simulator: spike, ovpsim")
+  parser.add_argument("--iss_yaml", type=str, default="",
+                      help="ISS setting YAML")
+  parser.add_argument("--verbose", dest="verbose", action="store_true",
+                      help="Verbose logging")
+  parser.add_argument("--co", dest="co", action="store_true",
+                      help="Compile the generator only")
+  parser.add_argument("--so", dest="so", action="store_true",
+                      help="Simulate the generator only")
+  parser.add_argument("--cmp_opts", type=str, default="",
+                      help="Compile options for the generator")
+  parser.add_argument("--sim_opts", type=str, default="",
+                      help="Simulation options for the generator")
+  parser.add_argument("--steps", type=str, default="all",
+                      help="Run steps: gen,gcc_compile,iss_sim,iss_cmp")
+  parser.add_argument("--lsf_cmd", type=str, default="",
+                      help="LSF command. Run in local sequentially if lsf \
+                            command is not specified")
+  parser.add_argument("--gen_timeout", type=int, default=360,
+                      help="Generator timeout limit in seconds")
+  parser.add_argument("--iss_timeout", type=int, default=50,
+                      help="ISS sim timeout limit in seconds")
 
-parser.set_defaults(co=False)
-parser.set_defaults(so=False)
-parser.set_defaults(verbose=False)
+  parser.set_defaults(co=False)
+  parser.set_defaults(so=False)
+  parser.set_defaults(verbose=False)
 
-args = parser.parse_args()
-cwd = os.path.dirname(os.path.realpath(__file__))
+  return parser
 
-if not args.iss_yaml:
-  args.iss_yaml = cwd + "/yaml/iss.yaml"
+def main():
+  """This is the main entry point."""
 
-if not args.simulator_yaml:
-  args.simulator_yaml = cwd + "/yaml/simulator.yaml"
+  parser = setup_parser()
+  args = parser.parse_args()
+  cwd = os.path.dirname(os.path.realpath(__file__))
 
-if not args.testlist:
-  args.testlist = cwd + "/yaml/testlist.yaml"
+  if not args.iss_yaml:
+    args.iss_yaml = cwd + "/yaml/iss.yaml"
 
-# Create output directory
-subprocess.run(["mkdir", "-p", args.o])
-subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
+  if not args.simulator_yaml:
+    args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
-# Process regression test list
-matched_list = []
-process_regression_list(args.testlist, args.test, args.iterations, matched_list)
-if len(matched_list) == 0:
-  sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
+  if not args.testlist:
+    args.testlist = cwd + "/yaml/testlist.yaml"
 
-# Run instruction generator
-if args.steps == "all" or re.match("gen", args.steps):
-  gen(matched_list, args.simulator, args.simulator_yaml, args.o,
-      args.so, args.co, args.lsf_cmd, args.seed, cwd,
-      args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
+  # Create output directory
+  if args.o is None:
+    output_dir = "out_" + str(date.today())
+  else:
+    output_dir = args.o
+  subprocess.run(["mkdir", "-p", output_dir])
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
-if not args.co:
-  # Compile the assembly program to ELF, convert to plain binary
-  if args.steps == "all" or re.match("gcc_compile", args.steps):
-    gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
+  # Process regression test list
+  matched_list = []
+  process_regression_list(args.testlist, args.test, args.iterations, matched_list)
+  if len(matched_list) == 0:
+    sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
-  # Run ISS simulation
-  if args.steps == "all" or re.match("iss_sim", args.steps):
-    iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
-            args.isa, args.iss_timeout, args.verbose)
+  # Run instruction generator
+  if args.steps == "all" or re.match("gen", args.steps):
+    gen(matched_list, args.simulator, args.simulator_yaml, output_dir,
+        args.so, args.co, args.lsf_cmd, args.seed, cwd,
+        args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
 
-  # Compare ISS simulation result
-  if args.steps == "all" or re.match("iss_cmp", args.steps):
-    iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+  if not args.co:
+    # Compile the assembly program to ELF, convert to plain binary
+    if args.steps == "all" or re.match("gcc_compile", args.steps):
+      gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.verbose)
+
+    # Run ISS simulation
+    if args.steps == "all" or re.match("iss_sim", args.steps):
+      iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
+              args.isa, args.iss_timeout, args.verbose)
+
+    # Compare ISS simulation result
+    if args.steps == "all" or re.match("iss_cmp", args.steps):
+      iss_cmp(matched_list, args.iss, output_dir, args.isa, args.verbose)
+
+if __name__== "__main__":
+  main()
