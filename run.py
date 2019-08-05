@@ -21,12 +21,15 @@ import os
 import subprocess
 import re
 import sys
+import logging
 
 from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
+
+LOGGER = logging.getLogger()
 
 def get_generator_cmd(simulator, simulator_yaml):
   """ Setup the compile and simulation command for the generator
@@ -39,16 +42,16 @@ def get_generator_cmd(simulator, simulator_yaml):
     compile_cmd    : RTL simulator command to compile the instruction generator
     sim_cmd        : RTL simulator command to run the instruction generator
   """
-  print("Processing simulator setup file : %s" % simulator_yaml)
+  logging.info("Processing simulator setup file : %s" % simulator_yaml)
   yaml_data = read_yaml(simulator_yaml)
   # Search for matched simulator
   for entry in yaml_data:
     if entry['tool'] == simulator:
-      print ("Found matching simulator: %s" % entry['tool'])
+      logging.info("Found matching simulator: %s" % entry['tool'])
       compile_cmd = entry['compile_cmd']
       sim_cmd = entry['sim_cmd']
       return compile_cmd, sim_cmd
-  print ("Cannot find RTL simulator %0s" % simulator)
+  logging.error("Cannot find RTL simulator %0s" % simulator)
   sys.exit(1)
 
 
@@ -63,12 +66,12 @@ def parse_iss_yaml(iss, iss_yaml, isa):
   Returns:
     cmd        : ISS run command
   """
-  print("Processing ISS setup file : %s" % iss_yaml)
+  logging.info("Processing ISS setup file : %s" % iss_yaml)
   yaml_data = read_yaml(iss_yaml)
   # Search for matched ISS
   for entry in yaml_data:
     if entry['iss'] == iss:
-      print ("Found matching ISS: %s" % entry['iss'])
+      logging.info("Found matching ISS: %s" % entry['iss'])
       cmd = entry['cmd'].rstrip()
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
       if iss == "ovpsim":
@@ -76,7 +79,7 @@ def parse_iss_yaml(iss, iss_yaml, isa):
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
-  print ("Cannot find ISS %0s" % iss)
+  logging.error("Cannot find ISS %0s" % iss)
   sys.exit(1)
 
 
@@ -97,7 +100,7 @@ def get_iss_cmd(base_cmd, elf, log):
 
 
 def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s, verbose):
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s):
   """Run the instruction generator
 
   Args:
@@ -112,7 +115,6 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     cmp_opts       : Compile options for the generator
     sim_opts       : Simulation options for the generator
     timeout_s      : Timeout limit in seconds
-    verbose        : Verbose logging
   """
   # Setup the compile and simulation command for the generator
   compile_cmd = []
@@ -120,23 +122,20 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
   compile_cmd, sim_cmd = get_generator_cmd(simulator, simulator_yaml);
   # Compile the instruction generator
   if not sim_only:
-    print ("Building RISC-V instruction generator")
+    logging.info("Building RISC-V instruction generator")
     for cmd in compile_cmd:
       cmd = re.sub("<out>", os.path.abspath(output_dir), cmd)
       cmd = re.sub("<cwd>", cwd, cmd)
       cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
-      if verbose:
-        print("Compile command: %s" % cmd)
-      output = run_cmd(cmd)
-      if verbose:
-        print(output)
+      logging.debug("Compile command: %s" % cmd)
+      logging.debug(run_cmd(cmd))
   # Run the instruction generator
   if not compile_only:
     cmd_list = []
     sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
     sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
     sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
-    print ("Running RISC-V instruction generator")
+    logging.info("Running RISC-V instruction generator")
     for test in test_list:
       if test['iterations'] > 0:
         rand_seed = get_seed(seed)
@@ -148,16 +147,16 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
         cmd = re.sub("<seed>", str(rand_seed), cmd)
         if "gen_opts" in test:
           cmd += test['gen_opts']
-        print("Generating %d %s" % (test['iterations'], test['test']))
+        logging.info("Generating %d %s" % (test['iterations'], test['test']))
         if lsf_cmd:
           cmd_list.append(cmd)
         else:
-          run_cmd(cmd, verbose, timeout_s)
+          run_cmd(cmd, timeout_s)
     if lsf_cmd:
-      run_parallel_cmd(cmd_list, verbose, timeout_s)
+      run_parallel_cmd(cmd_list, timeout_s)
 
 
-def gcc_compile(test_list, output_dir, isa, mabi, verbose):
+def gcc_compile(test_list, output_dir, isa, mabi):
   """Use riscv gcc toolchain to compile the assembly program
 
   Args:
@@ -165,7 +164,6 @@ def gcc_compile(test_list, output_dir, isa, mabi, verbose):
     output_dir : Output directory of the ELF files
     isa        : ISA variant passed to GCC
     mabi       : MABI variant passed to GCC
-    verbose    : Verbose logging
   """
   for test in test_list:
     for i in range(0, test['iterations']):
@@ -179,21 +177,18 @@ def gcc_compile(test_list, output_dir, isa, mabi, verbose):
              -nostartfiles \
              -Tscripts/link.ld %s -o %s" % \
              (get_env_var("RISCV_GCC") ,isa, mabi, asm, elf))
-      print("Compiling %s" % asm)
-      if verbose:
-        print(cmd)
+      logging.info("Compiling %s" % asm)
+      logging.debug(cmd)
       output = subprocess.check_output(cmd.split())
-      if verbose:
-        print(output)
+      logging.debug(output)
       # Convert the ELF to plain binary, used in RTL sim
-      print ("Converting to %s" % binary)
+      logging.info("Converting to %s" % binary)
       cmd = ("%s -O binary %s %s" % (get_env_var("RISCV_OBJCOPY"), elf, binary))
       output = subprocess.check_output(cmd.split())
-      if verbose:
-        print(output)
+      logging.debug(output)
 
 
-def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s, verbose):
+def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
   """Run ISS simulation with the generated test program
 
   Args:
@@ -203,12 +198,11 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s, verbose):
     iss_yaml   : ISS configuration file in YAML format
     isa        : ISA variant passed to the ISS
     timeout_s  : Timeout limit in seconds
-    verbose    : Verbose logging
   """
   for iss in iss_list.split(","):
     log_dir = ("%s/%s_sim" % (output_dir, iss))
     base_cmd = parse_iss_yaml(iss, iss_yaml, isa)
-    print ("%s sim log dir: %s" % (iss, log_dir))
+    logging.info("%s sim log dir: %s" % (iss, log_dir))
     subprocess.run(["mkdir", "-p", log_dir])
     for test in test_list:
       for i in range(0, test['iterations']):
@@ -216,13 +210,12 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s, verbose):
         elf = prefix + ".o"
         log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
         cmd = get_iss_cmd(base_cmd, elf, log)
-        print ("Running ISS simulation: %s" % elf)
-        run_cmd(cmd, 0, timeout_s)
-        if verbose:
-          print (cmd)
+        logging.info("Running ISS simulation: %s" % elf)
+        run_cmd(cmd, timeout_s)
+        logging.debug(cmd)
 
 
-def iss_cmp(test_list, iss, output_dir, isa, verbose):
+def iss_cmp(test_list, iss, output_dir, isa):
   """Compare ISS simulation reult
 
   Args:
@@ -230,7 +223,6 @@ def iss_cmp(test_list, iss, output_dir, isa, verbose):
     iss            : List of instruction set simulators
     output_dir     : Output directory of the ELF files
     isa            : ISA
-    verbose        : Verbose logging
   """
   iss_list = iss.split(",")
   if len(iss_list) != 2:
@@ -240,8 +232,8 @@ def iss_cmp(test_list, iss, output_dir, isa, verbose):
   for test in test_list:
     for i in range(0, test['iterations']):
       elf = ("%s/asm_tests/%s.%d.o" % (output_dir, test['test'], i))
-      print("Comparing ISS sim result %s/%s : %s" %
-            (iss_list[0], iss_list[1], elf))
+      logging.info("Comparing ISS sim result %s/%s : %s" %
+                  (iss_list[0], iss_list[1], elf))
       csv_list = []
       run_cmd(("echo 'Test binary: %s' >> %s" % (elf, report)))
       for iss in iss_list:
@@ -253,15 +245,15 @@ def iss_cmp(test_list, iss, output_dir, isa, verbose):
         elif iss == "ovpsim":
           process_ovpsim_sim_log(log, csv)
         else:
-          print("Unsupported ISS" % iss)
+          logging.error("Unsupported ISS" % iss)
           sys.exit(1)
       compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
   passed_cnt = run_cmd("grep PASSED %s | wc -l" % report).strip()
   failed_cnt = run_cmd("grep FAILED %s | wc -l" % report).strip()
   summary = ("%s PASSED, %s FAILED" % (passed_cnt, failed_cnt))
-  print(summary)
+  logging.info(summary)
   run_cmd(("echo %s >> %s" % (summary, report)))
-  print("ISS regression report is saved to %s" % report)
+  logging.info("ISS regression report is saved to %s" % report)
 
 def setup_parser():
   """Create a command line parser.
@@ -293,7 +285,7 @@ def setup_parser():
                       help="RISC-V instruction set simulator: spike, ovpsim")
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
-  parser.add_argument("--verbose", dest="verbose", action="store_true",
+  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
                       help="Verbose logging")
   parser.add_argument("--co", dest="co", action="store_true",
                       help="Compile the generator only")
@@ -319,12 +311,28 @@ def setup_parser():
 
   return parser
 
+def setup_logging(verbose):
+  """Setup the root logger.
+
+  Args:
+    verbose: Verbose logging
+  """
+  if verbose:
+    logging.basicConfig(format="%(asctime)s %(filename)s:%(lineno)-5s %(levelname)-8s %(message)s",
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        level=logging.DEBUG)
+  else:
+    logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s",
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        level=logging.INFO)
+
 def main():
   """This is the main entry point."""
 
   parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
+  setup_logging(args.verbose)
 
   if not args.iss_yaml:
     args.iss_yaml = cwd + "/yaml/iss.yaml"
@@ -353,21 +361,21 @@ def main():
   if args.steps == "all" or re.match("gen", args.steps):
     gen(matched_list, args.simulator, args.simulator_yaml, output_dir,
         args.so, args.co, args.lsf_cmd, args.seed, cwd,
-        args.cmp_opts, args.sim_opts, args.gen_timeout, args.verbose)
+        args.cmp_opts, args.sim_opts, args.gen_timeout)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
     if args.steps == "all" or re.match("gcc_compile", args.steps):
-      gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.verbose)
+      gcc_compile(matched_list, output_dir, args.isa, args.mabi)
 
     # Run ISS simulation
     if args.steps == "all" or re.match("iss_sim", args.steps):
       iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
-              args.isa, args.iss_timeout, args.verbose)
+              args.isa, args.iss_timeout)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match("iss_cmp", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.isa, args.verbose)
+      iss_cmp(matched_list, args.iss, output_dir, args.isa)
 
 if __name__== "__main__":
   main()
