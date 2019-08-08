@@ -15,6 +15,10 @@ processor verification. It currently supports the following features:
 - Supports mixing directed instructions with random instruction stream
 - Supports co-simulation with multiple ISS : spike, riscv-ovpsim
 
+A CSR test generation script written in Python is also provided, to generate a
+directed test suite that stresses all CSR instructions on all of the CSRs that
+the core implements.
+
 ## Getting Started
 
 ### Prerequisites
@@ -23,6 +27,15 @@ To be able to run the instruction generator, you need to have an RTL simulator
 which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
+
+To be able to run the CSR generation script, the open-source `bitstring`
+Python library is required ([bitstring](https://github.com/scott-griffiths/bitstring)).
+To install this library, either clone the repository and run the `setup.py`
+setup script, or run only one of the below commands:
+```
+1) sudo apt-get install python3-bitstring (or your OS-specific package manager)
+2) pip install bitstring
+```
 
 ### Running the generator
 
@@ -84,22 +97,104 @@ python3 run.py --test riscv_page_table_exception_test --co
 ....
 ```
 
+### CSR Generation
+
+
+The CSR generation script is located at [scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).  To quickly generate a basic CSR test, run the below command:
+
+```
+python3 scripts/gen_csr_test.py
+```
+
+To create a new processor-specific CSR description YAML file, format it as
+detailed below, and then run:
+```
+python3 scripts/gen_csr_test.py --csr_file PATH_TO_NEW_CSR_DESCRIPTION_FILE
+```
+
+If the CSRs are a different XLEN, such as 64-bit or 128-bit, use the `--xlen`
+option to change the ISA length used to generate the test.
+```
+python3 scripts/gen_csr_test.py --xlen 64
+```
+
+To input the number of CSR test files that should be generated, use the
+`--iterations` option. Say 10 tests should be generated:
+```
+python3 scripts/gen_csr_test.py --iterations 10
+```
+
+To change the output directory that the tests are generated into, use the
+`--out` option. Say the tests should be generated into the home directory:
+```
+python3 scripts/gen_csr_test.py --out ~
+```
+
+Any number of the above options can be combined together, and all of them have
+default values should they not be specified at runtime.
+
 ## Configuration
+
+### Setup CSR description list
+
+[CSR descriptions in YAML
+format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml))
+
+```
+- csr: CSR_NAME
+  description: >
+    BRIEF_DESCRIPTION
+  address: 0x###
+  privilege_mode: MODE (D/M/S/H/U)
+  rv32:
+    - MSB_FIELD_NAME:
+      - description: >
+          BRIEF_DESCRIPTION
+      - type: TYPE (WPRI/WLRL/WARL/R)
+      - reset_val: RESET_VAL
+      - msb: MSB_POS
+      - lsb: LSB_POS
+    - ...
+    - ...
+    - LSB_FIELD_NAME:
+      - description: ...
+      - type: ...
+      - ...
+  rv64:
+    - MSB_FIELD_NAME:
+      - description: >
+          BRIEF_DESCRIPTION
+      - type: TYPE (WPRI/WLRL/WARL/R)
+      - reset_val: RESET_VAL
+      - msb: MSB_POS
+      - lsb: LSB_POS
+    - ...
+    - ...
+    - LSB_FIELD_NAME:
+      - description: ...
+      - type: ...
+      - ...
+```
+
+To specify what ISA width should be generated in the test, simply include the
+matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.
 
 ### Setup regression test list
 
 [Test list in YAML format](https://github.com/google/riscv-dv/blob/master/yaml/testlist.yaml)
 
 ```
-# test         : Assembly test name
-# description  : Description of this test
-# gen_opts     : Instruction generator options
-# iterations   : Number of iterations of this test
-# gen_test     : Test name used by the instruction generator
-# rtl_test     : RTL simulation test name
-# cmp_opts     : Compile options passed to the instruction generator
-# sim_opts     : Simulation options passed to the instruction generator
-# compare_opts : Options for the RTL & ISS trace comparison
+# test            : Assembly test name
+# description     : Description of this test
+# gen_opts        : Instruction generator options
+# iterations      : Number of iterations of this test
+# no_iss          : Enable/disable ISS simulation (Optional)
+# gen_test        : Test name used by the instruction generator
+# rtl_test        : RTL simulation test name
+# cmp_opts        : Compile options passed to the instruction generator
+# sim_opts        : Simulation options passed to the instruction generator
+# no_post_compare : Enable/disable log comparison (Optional)
+# compare_opts    : Options for the RTL & ISS trace comparison
 
 - test: riscv_arithmetic_basic_test
   description: >
@@ -116,6 +211,11 @@ python3 run.py --test riscv_page_table_exception_test --co
   rtl_test: core_base_test
 
 ```
+
+Note: To automatically generate CSR tests without having to explicitly run the
+script, include `riscv_csr_test` in the testlist as shown in the example YAML
+file above.
+
 
 ### Configure the generator to match your processor features
 

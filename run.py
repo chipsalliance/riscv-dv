@@ -116,6 +116,7 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
     seed           : Seed to the instruction generator
     cmp_opts       : Compile options for the generator
     sim_opts       : Simulation options for the generator
+    iterations     : The number of tests to be generated
     timeout_s      : Timeout limit in seconds
   """
 
@@ -231,7 +232,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
           elf = prefix + ".o"
           log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
           cmd = get_iss_cmd(base_cmd, elf, log)
-          print ("Running ISS simulation: %s" % elf)
+          logging.info("Running ISS simulation: %s" % elf)
           run_cmd(cmd, timeout_s)
           logging.debug(cmd)
 

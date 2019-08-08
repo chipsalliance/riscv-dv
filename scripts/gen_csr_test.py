@@ -304,7 +304,7 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
 Define command line arguments.
 """
 parser = argparse.ArgumentParser()
-parser.add_argument("--csr_file", type=str,
+parser.add_argument("--csr_file", type=str, default="yaml/csr_template.yaml",
         help="The YAML file contating descriptions of all processor supported CSRs")
 parser.add_argument("--xlen", type=int, default=32,
         help="Specify the ISA width, e.g. 32 or 64 or 128")

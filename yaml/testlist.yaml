@@ -211,7 +211,7 @@
 - test: riscv_csr_test
   description: >
     Test all CSR instructions on all implemented CSR registers
-  iterations: 5
+  iterations: 1
   no_iss: 1
   rtl_test: core_ibex_csr_test
   no_post_compare: 1
