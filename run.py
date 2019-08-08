@@ -227,7 +227,6 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
           cmd = get_iss_cmd(base_cmd, elf, log)
           print ("Running ISS simulation: %s" % elf)
           run_cmd(cmd, 0, timeout_s)
-<<<<<<< HEAD
           logging.debug(cmd)
 
 
@@ -306,8 +305,6 @@ def setup_parser():
                       help="ISS setting YAML")
   parser.add_argument("--verbose", dest="verbose", type=int,
                       help="Verbose logging")
-  #parser.add_argument("--verbose", dest="verbose", action="store_true",
-  #                    help="Verbose logging")
   parser.add_argument("--co", dest="co", action="store_true",
                       help="Compile the generator only")
   parser.add_argument("--so", dest="so", action="store_true",
@@ -352,6 +349,7 @@ def setup_logging(verbose):
 def main():
   """This is the main entry point."""
 
+  parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
 
@@ -394,5 +392,5 @@ def main():
     if args.steps == "all" or re.match("iss_cmp", args.steps):
       iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
 
-if__name__ == "__main__":
+if __name__ == "__main__":
   main()
