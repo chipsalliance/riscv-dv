@@ -17,7 +17,9 @@
 #- csr: CSR_NAME
 #  description: >
 #    BRIEF_DESCRIPTION
+#  address: 0x###
 #  privilege_mode: MODE (D/M/S/H/U)
+#  read_only: READ_ONLY (0/1)
 #  rv32:
 #    - MSB_FIELD_NAME:
 #      - description: >
@@ -53,7 +55,9 @@
 - csr: misa
   description: >
     Machine ISA Register
+  address: 0x301
   privilege_mode: M
+  read_only: 0
   rv32:
     - field_name: MXL
       description: >
