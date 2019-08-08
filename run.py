@@ -145,11 +145,11 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
               (" --csr_file %s" % csr_file) + \
               (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
               (" --iterations %i" % iterations) + \
-              (" --out %s/asm_tests" % args.o)
+              (" --out %s/asm_tests" % output_dir)
         if lsf_cmd:
           cmd_list.append(cmd)
         else:
-          run_cmd(cmd, verbose, timeout_s)
+          run_cmd(cmd, timeout_s)
       else:
         if test['iterations'] > 0:
           rand_seed = get_seed(seed)
@@ -165,7 +165,7 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
           if lsf_cmd:
             cmd_list.append(cmd)
           else:
-            run_cmd(cmd, verbose, timeout_s)
+            run_cmd(cmd, timeout_s)
     if lsf_cmd:
       run_parallel_cmd(cmd_list, timeout_s)
 
@@ -381,16 +381,16 @@ def main():
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
     if args.steps == "all" or re.match("gcc_compile", args.steps):
-      gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
+      gcc_compile(matched_list, args.o, args.isa, args.mabi)
 
     # Run ISS simulation
     if args.steps == "all" or re.match("iss_sim", args.steps):
       iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
-              args.isa, args.iss_timeout, args.verbose)
+              args.isa, args.iss_timeout)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match("iss_cmp", args.steps):
-      iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
+      iss_cmp(matched_list, args.iss, args.o, args.isa)
 
 if __name__ == "__main__":
   main()
