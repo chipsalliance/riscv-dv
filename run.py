@@ -99,12 +99,14 @@ def get_iss_cmd(base_cmd, elf, log):
   return cmd
 
 
-def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s):
+def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_only,
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, iterations, timeout_s, verbose):
   """Run the instruction generator
 
   Args:
     test_list      : List of assembly programs to be compiled
+    csr_file       : YAML file containing description of all CSRs
+    isa            : Processor supported ISA subset
     simulator      : RTL simulator used to run instruction generator
     simulator_yaml : RTL simulator configuration file in YAML format
     output_dir     : Output directory of the ELF files
@@ -116,6 +118,7 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     sim_opts       : Simulation options for the generator
     timeout_s      : Timeout limit in seconds
   """
+
   # Setup the compile and simulation command for the generator
   compile_cmd = []
   sim_cmd = ""
@@ -137,21 +140,32 @@ def gen(test_list, simulator, simulator_yaml, output_dir, sim_only,
     sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
     logging.info("Running RISC-V instruction generator")
     for test in test_list:
-      if test['iterations'] > 0:
-        rand_seed = get_seed(seed)
-        cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-              (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-              (" +num_of_tests=%d " % test['iterations']) + \
-              (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-              (" -l %s/sim_%s.log " % (output_dir, test['test']))
-        cmd = re.sub("<seed>", str(rand_seed), cmd)
-        if "gen_opts" in test:
-          cmd += test['gen_opts']
-        logging.info("Generating %d %s" % (test['iterations'], test['test']))
+      if test['test'] == 'riscv_csr_test' and test['iterations'] > 0:
+        cmd = "python3 scripts/gen_csr_test.py" + \
+              (" --csr_file %s" % csr_file) + \
+              (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
+              (" --iterations %i" % iterations) + \
+              (" --out %s/asm_tests" % args.o)
         if lsf_cmd:
           cmd_list.append(cmd)
         else:
-          run_cmd(cmd, timeout_s)
+          run_cmd(cmd, verbose, timeout_s)
+      else:
+        if test['iterations'] > 0:
+          rand_seed = get_seed(seed)
+          cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
+                (" +UVM_TESTNAME=%s " % test['gen_test']) + \
+                (" +num_of_tests=%d " % test['iterations']) + \
+                (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
+                (" -l %s/sim_%s.log " % (output_dir, test['test']))
+          cmd = re.sub("<seed>", str(rand_seed), cmd)
+          if "gen_opts" in test:
+            cmd += test['gen_opts']
+          logging.info("Generating %d %s" % (test['iterations'], test['test']))
+          if lsf_cmd:
+            cmd_list.append(cmd)
+          else:
+            run_cmd(cmd, verbose, timeout_s)
     if lsf_cmd:
       run_parallel_cmd(cmd_list, timeout_s)
 
@@ -205,14 +219,15 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
     logging.info("%s sim log dir: %s" % (iss, log_dir))
     subprocess.run(["mkdir", "-p", log_dir])
     for test in test_list:
-      for i in range(0, test['iterations']):
-        prefix = ("%s/asm_tests/%s.%d" % (output_dir, test['test'], i))
-        elf = prefix + ".o"
-        log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
-        cmd = get_iss_cmd(base_cmd, elf, log)
-        logging.info("Running ISS simulation: %s" % elf)
-        run_cmd(cmd, timeout_s)
-        logging.debug(cmd)
+      if test['no_iss'] == 0:
+        for i in range(0, test['iterations']):
+          prefix = ("%s/asm_tests/%s.%d" % (output_dir, test['test'], i))
+          elf = prefix + ".o"
+          log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
+          cmd = get_iss_cmd(base_cmd, elf, log)
+          print ("Running ISS simulation: %s" % elf)
+          run_cmd(cmd, 0, timeout_s)
+          logging.debug(cmd)
 
 
 def iss_cmp(test_list, iss, output_dir, isa):
@@ -255,6 +270,7 @@ def iss_cmp(test_list, iss, output_dir, isa):
   run_cmd(("echo %s >> %s" % (summary, report)))
   logging.info("ISS regression report is saved to %s" % report)
 
+
 def setup_parser():
   """Create a command line parser.
 
@@ -263,10 +279,12 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--o", type=str,
+  parser.add_argument("--o", type=str, default="./out",
                       help="Output directory name")
   parser.add_argument("--testlist", type=str, default="",
                       help="Regression testlist")
+  parser.add_argument("--csr_yaml", type=str, default="",
+                      help="CSR description file")
   parser.add_argument("--isa", type=str, default="rv64imc",
                       help="RISC-V ISA subset")
   parser.add_argument("--mabi", type=str, default="lp64",
@@ -285,8 +303,10 @@ def setup_parser():
                       help="RISC-V instruction set simulator: spike, ovpsim")
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
-  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+  parser.add_argument("--verbose", dest="verbose", type=int,
                       help="Verbose logging")
+  #parser.add_argument("--verbose", dest="verbose", action="store_true",
+  #                    help="Verbose logging")
   parser.add_argument("--co", dest="co", action="store_true",
                       help="Compile the generator only")
   parser.add_argument("--so", dest="so", action="store_true",
@@ -311,6 +331,7 @@ def setup_parser():
 
   return parser
 
+
 def setup_logging(verbose):
   """Setup the root logger.
 
@@ -326,13 +347,12 @@ def setup_logging(verbose):
                         datefmt='%a, %d %b %Y %H:%M:%S',
                         level=logging.INFO)
 
+
 def main():
   """This is the main entry point."""
 
-  parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
-  setup_logging(args.verbose)
 
   if not args.iss_yaml:
     args.iss_yaml = cwd + "/yaml/iss.yaml"
@@ -344,12 +364,8 @@ def main():
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   # Create output directory
-  if args.o is None:
-    output_dir = "out_" + str(date.today())
-  else:
-    output_dir = args.o
-  subprocess.run(["mkdir", "-p", output_dir])
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
+  subprocess.run(["mkdir", "-p", args.o])
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
 
   # Process regression test list
   matched_list = []
@@ -359,23 +375,23 @@ def main():
 
   # Run instruction generator
   if args.steps == "all" or re.match("gen", args.steps):
-    gen(matched_list, args.simulator, args.simulator_yaml, output_dir,
+    gen(matched_list, args.csr_yaml, args.isa, args.simulator, args.simulator_yaml, args.o,
         args.so, args.co, args.lsf_cmd, args.seed, cwd,
-        args.cmp_opts, args.sim_opts, args.gen_timeout)
+        args.cmp_opts, args.sim_opts, args.iterations, args.gen_timeout, args.verbose)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
     if args.steps == "all" or re.match("gcc_compile", args.steps):
-      gcc_compile(matched_list, output_dir, args.isa, args.mabi)
+      gcc_compile(matched_list, args.o, args.isa, args.mabi, args.verbose)
 
     # Run ISS simulation
     if args.steps == "all" or re.match("iss_sim", args.steps):
-      iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
-              args.isa, args.iss_timeout)
+      iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+              args.isa, args.iss_timeout, args.verbose)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match("iss_cmp", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.isa)
+      iss_cmp(matched_list, args.iss, args.o, args.isa, args.verbose)
 
-if __name__== "__main__":
+if__name__ == "__main__":
   main()
