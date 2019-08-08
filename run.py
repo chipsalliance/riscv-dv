@@ -219,7 +219,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
     logging.info("%s sim log dir: %s" % (iss, log_dir))
     subprocess.run(["mkdir", "-p", log_dir])
     for test in test_list:
-      if test['no_iss'] == 0:
+      if 'no_iss' in test and test['no_iss'] == 0:
         for i in range(0, test['iterations']):
           prefix = ("%s/asm_tests/%s.%d" % (output_dir, test['test'], i))
           elf = prefix + ".o"
