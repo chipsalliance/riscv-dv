@@ -364,7 +364,6 @@ def main():
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   # Create output directory
-  print(args.o)
   if args.o is None:
     output_dir = "out_" + str(date.today())
   else:
