@@ -118,7 +118,9 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
     sim_opts       : Simulation options for the generator
     timeout_s      : Timeout limit in seconds
   """
-
+  # Mutually exclusive options between compile_only and sim_only
+  if compile_only and sim_only:
+    logging.error("argument -co is not allowed with argument -so")
   # Setup the compile and simulation command for the generator
   compile_cmd = []
   sim_cmd = ""
