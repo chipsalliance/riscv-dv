@@ -279,7 +279,7 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--o", type=str, default="./out",
+  parser.add_argument("--o", type=str,
                       help="Output directory name")
   parser.add_argument("--testlist", type=str, default="",
                       help="Regression testlist")
@@ -303,7 +303,7 @@ def setup_parser():
                       help="RISC-V instruction set simulator: spike, ovpsim")
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
-  parser.add_argument("--verbose", dest="verbose", type=int,
+  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
                       help="Verbose logging")
   parser.add_argument("--co", dest="co", action="store_true",
                       help="Compile the generator only")
@@ -363,8 +363,12 @@ def main():
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   # Create output directory
-  subprocess.run(["mkdir", "-p", args.o])
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % args.o)])
+  if args.o is None:
+    output_dir = "out_" + str(date.today())
+  else:
+    output_dir = args.o
+  subprocess.run(["mkdir", "-p", output_dir])
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
   # Process regression test list
   matched_list = []

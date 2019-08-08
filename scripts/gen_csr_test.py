@@ -32,7 +32,6 @@ import yaml
 import argparse
 import random
 from bitstring import BitArray as bitarray
-import pdb
 
 def get_csr_map(csr_file, xlen):
   """
@@ -217,7 +216,7 @@ def gen_csr_test_fail(test_file):
   The testbench will poll this register at the end of the test to detect failure.
 
   Args:
-    test_File: the file containing the generated assembly test code.
+    test_file: the file containing the generated assembly test code.
   """
   test_file.write(f"csr_fail:\n")
   test_file.write(f"\tli gp, 2\n")
@@ -232,7 +231,7 @@ def gen_csr_test_pass(test_file):
   The testbench will poll this register at the end of the test to detect success.
 
   Args:
-    test_File: the file containing the generated assembly test code.
+    test_file: the file containing the generated assembly test code.
   """
   test_file.write(f"csr_pass:\n")
   test_file.write(f"\tli gp, 1\n")
@@ -290,8 +289,6 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
               else:
                 first_li = f"\tli {source_reg}, 0x{rand_rs1_val.hex}\n"
                 csr_inst = f"\t{op} {dest_reg}, {csr_address}, {source_reg}\n"
-                #if csr=='mie':
-                #  pdb.set_trace()
                 predict_li = (f"\tli {source_reg}, "
                   f"{predict_csr_val(op, rand_rs1_val, csr_val, csr_write_mask, csr_read_mask)}\n")
               branch_check = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
