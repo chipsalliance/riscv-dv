@@ -52,11 +52,9 @@ def get_csr_map(csr_file, xlen):
     for csr_dict in csr_description:
       csr_name = csr_dict.get("csr")
       csr_address = csr_dict.get("address")
-      csr_access = csr_dict.get("read_only")
       assert(rv_string in csr_dict), "The {} CSR must be configured for rv{}".format(csr_name, str(rv))
       csr_value = bitarray(uintbe=0, length=xlen)
       csr_write_mask = []
-      #csr_write_mask = bitarray(uintbe=0, length=xlen)
       csr_read_mask = bitarray(uintbe=0, length=xlen)
       csr_field_list = csr_dict.get(rv_string)
       for csr_field_detail_dict in csr_field_list:
@@ -74,7 +72,7 @@ def get_csr_map(csr_file, xlen):
           csr_value.overwrite(val_bitarray, xlen - 1 - field_msb)
           access = True if field_type == "R" else False
           csr_write_mask.append([mask_bitarray, (start_pos, end_pos), access])
-      csrs.update({csr_name : [csr_address, csr_value, csr_write_mask, csr_read_mask, csr_access]})
+      csrs.update({csr_name : [csr_address, csr_value, csr_write_mask, csr_read_mask]})
   return csrs
 
 
@@ -117,9 +115,6 @@ def csr_write(val, csr_val, csr_write_mask):
     csr_val: A bitarray containing the current CSR value.
     csr_write_mask: A bitarray containing the CSR's mask.
   """
-  #if val.len == csr_write_mask.len:
-  #  csr_val.overwrite(val & csr_write_mask, 0)
-
   for bitslice in csr_write_mask:
     read_only = bitslice[2]
     start_index = bitslice[1][0]
@@ -263,52 +258,44 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
     with open(f"{out}/riscv_csr_test.{i}.S", "w") as csr_test_file:
       gen_setup(csr_test_file)
       for csr in csr_list:
-        csr_address, csr_val, csr_write_mask, csr_read_mask, csr_access = csr_map.get(csr)
+        csr_address, csr_val, csr_write_mask, csr_read_mask = csr_map.get(csr)
         csr_test_file.write(f"\t# {csr}\n")
-        if csr_access:
-          csr_inst = f"\tcsrr {dest_reg}, {csr_address}\n"
-          li = f"\tli {source_reg}, {csr_read(csr_val, csr_read_mask)}\n"
-          branch = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
-          csr_test_file.write(csr_inst)
-          csr_test_file.write(li)
-          csr_test_file.write(branch)
-        else:
-          for op in csr_instructions:
-            for i in range(3):
-              # hex string
-              rand_rs1_val = get_rs1_val(i, xlen)
-              # I type CSR instruction
-              first_li = ""
-              if op[-1] == "i":
-                imm = rand_rs1_val[-5:]
-                csr_inst = f"\t{op} {dest_reg}, {csr_address}, 0b{imm.bin}\n"
-                imm_val = bitarray(uint=0, length=xlen-5)
-                imm_val.append(imm)
-                predict_li = (f"\tli {source_reg}, "
-                  f"{predict_csr_val(op, imm_val, csr_val, csr_write_mask, csr_read_mask)}\n")
-              else:
-                first_li = f"\tli {source_reg}, 0x{rand_rs1_val.hex}\n"
-                csr_inst = f"\t{op} {dest_reg}, {csr_address}, {source_reg}\n"
-                predict_li = (f"\tli {source_reg}, "
-                  f"{predict_csr_val(op, rand_rs1_val, csr_val, csr_write_mask, csr_read_mask)}\n")
-              branch_check = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
-              csr_test_file.write(first_li)
-              csr_test_file.write(csr_inst)
-              csr_test_file.write(predict_li)
-              csr_test_file.write(branch_check)
-              """
-              We must hardcode in one final CSR check, as the value that has last
-              been written to the CSR has not been tested.
-              """
-              if csr == csr_list[-1] and op == csr_instructions[-1] and i == 2:
-                final_csr_read = f"\tcsrr {dest_reg}, {csr_address}\n"
-                csrrs_read_mask = bitarray(uint=0, length=xlen)
-                final_li = (f"\tli {source_reg}, "
-                  f"{predict_csr_val('csrrs', csrrs_read_mask, csr_val, csr_write_mask, csr_read_mask)}\n")
-                final_branch_check = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
-                csr_test_file.write(final_csr_read)
-                csr_test_file.write(final_li)
-                csr_test_file.write(final_branch_check)
+        for op in csr_instructions:
+          for i in range(3):
+            # hex string
+            rand_rs1_val = get_rs1_val(i, xlen)
+            # I type CSR instruction
+            first_li = ""
+            if op[-1] == "i":
+              imm = rand_rs1_val[-5:]
+              csr_inst = f"\t{op} {dest_reg}, {csr_address}, 0b{imm.bin}\n"
+              imm_val = bitarray(uint=0, length=xlen-5)
+              imm_val.append(imm)
+              predict_li = (f"\tli {source_reg}, "
+                f"{predict_csr_val(op, imm_val, csr_val, csr_write_mask, csr_read_mask)}\n")
+            else:
+              first_li = f"\tli {source_reg}, 0x{rand_rs1_val.hex}\n"
+              csr_inst = f"\t{op} {dest_reg}, {csr_address}, {source_reg}\n"
+              predict_li = (f"\tli {source_reg}, "
+                f"{predict_csr_val(op, rand_rs1_val, csr_val, csr_write_mask, csr_read_mask)}\n")
+            branch_check = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
+            csr_test_file.write(first_li)
+            csr_test_file.write(csr_inst)
+            csr_test_file.write(predict_li)
+            csr_test_file.write(branch_check)
+            """
+            We must hardcode in one final CSR check, as the value that has last
+            been written to the CSR has not been tested.
+            """
+            if csr == csr_list[-1] and op == csr_instructions[-1] and i == 2:
+              final_csr_read = f"\tcsrr {dest_reg}, {csr_address}\n"
+              csrrs_read_mask = bitarray(uint=0, length=xlen)
+              final_li = (f"\tli {source_reg}, "
+                f"{predict_csr_val('csrrs', csrrs_read_mask, csr_val, csr_write_mask, csr_read_mask)}\n")
+              final_branch_check = f"\tbne {source_reg}, {dest_reg}, csr_fail\n"
+              csr_test_file.write(final_csr_read)
+              csr_test_file.write(final_li)
+              csr_test_file.write(final_branch_check)
       gen_csr_test_pass(csr_test_file)
       gen_csr_test_fail(csr_test_file)
 

@@ -140,6 +140,10 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
     sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
     logging.info("Running RISC-V instruction generator")
     for test in test_list:
+      """
+      If we are running a CSR test, need to call a separate python script
+      to generate directed CSR test code, located at scripts/gen_csr_test.py.
+      """
       if test['test'] == 'riscv_csr_test' and test['iterations'] > 0:
         cmd = "python3 scripts/gen_csr_test.py" + \
               (" --csr_file %s" % csr_file) + \
