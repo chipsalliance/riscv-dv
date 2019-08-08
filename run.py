@@ -100,7 +100,7 @@ def get_iss_cmd(base_cmd, elf, log):
 
 
 def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, iterations, timeout_s, verbose):
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, iterations, timeout_s):
   """Run the instruction generator
 
   Args:
@@ -352,6 +352,7 @@ def main():
   parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
+  setup_logging(args.verbose)
 
   if not args.iss_yaml:
     args.iss_yaml = cwd + "/yaml/iss.yaml"
@@ -363,6 +364,7 @@ def main():
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   # Create output directory
+  print(args.o)
   if args.o is None:
     output_dir = "out_" + str(date.today())
   else:
@@ -378,23 +380,23 @@ def main():
 
   # Run instruction generator
   if args.steps == "all" or re.match("gen", args.steps):
-    gen(matched_list, args.csr_yaml, args.isa, args.simulator, args.simulator_yaml, args.o,
+    gen(matched_list, args.csr_yaml, args.isa, args.simulator, args.simulator_yaml, output_dir,
         args.so, args.co, args.lsf_cmd, args.seed, cwd,
-        args.cmp_opts, args.sim_opts, args.iterations, args.gen_timeout, args.verbose)
+        args.cmp_opts, args.sim_opts, args.iterations, args.gen_timeout)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
     if args.steps == "all" or re.match("gcc_compile", args.steps):
-      gcc_compile(matched_list, args.o, args.isa, args.mabi)
+      gcc_compile(matched_list, output_dir, args.isa, args.mabi)
 
     # Run ISS simulation
     if args.steps == "all" or re.match("iss_sim", args.steps):
-      iss_sim(matched_list, args.o, args.iss, args.iss_yaml,
+      iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
               args.isa, args.iss_timeout)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match("iss_cmp", args.steps):
-      iss_cmp(matched_list, args.iss, args.o, args.isa)
+      iss_cmp(matched_list, args.iss, output_dir, args.isa)
 
 if __name__ == "__main__":
   main()
