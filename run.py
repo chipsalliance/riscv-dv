@@ -100,7 +100,7 @@ def get_iss_cmd(base_cmd, elf, log):
 
 
 def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, iterations, timeout_s):
+        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s):
   """Run the instruction generator
 
   Args:
@@ -116,7 +116,6 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
     seed           : Seed to the instruction generator
     cmp_opts       : Compile options for the generator
     sim_opts       : Simulation options for the generator
-    iterations     : The number of tests to be generated
     timeout_s      : Timeout limit in seconds
   """
 
@@ -141,36 +140,33 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
     sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
     logging.info("Running RISC-V instruction generator")
     for test in test_list:
-      """
-      If we are running a CSR test, need to call a separate python script
-      to generate directed CSR test code, located at scripts/gen_csr_test.py.
-      """
-      if test['test'] == 'riscv_csr_test' and test['iterations'] > 0:
-        cmd = "python3 scripts/gen_csr_test.py" + \
-              (" --csr_file %s" % csr_file) + \
-              (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
-              (" --iterations %i" % iterations) + \
-              (" --out %s/asm_tests" % output_dir)
-        if lsf_cmd:
-          cmd_list.append(cmd)
+      iterations = test['iterations']
+      if iterations > 0:
+        """
+        If we are running a CSR test, need to call a separate python script
+        to generate directed CSR test code, located at scripts/gen_csr_test.py.
+        """
+        if test['test'] == 'riscv_csr_test':
+          cmd = "python3 scripts/gen_csr_test.py" + \
+                (" --csr_file %s" % csr_file) + \
+                (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
+                (" --iterations %i" % iterations) + \
+                (" --out %s/asm_tests" % output_dir)
         else:
-          run_cmd(cmd, timeout_s)
-      else:
-        if test['iterations'] > 0:
           rand_seed = get_seed(seed)
           cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
                 (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-                (" +num_of_tests=%d " % test['iterations']) + \
+                (" +num_of_tests=%d " % 'iterations') + \
                 (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
                 (" -l %s/sim_%s.log " % (output_dir, test['test']))
           cmd = re.sub("<seed>", str(rand_seed), cmd)
           if "gen_opts" in test:
             cmd += test['gen_opts']
-          logging.info("Generating %d %s" % (test['iterations'], test['test']))
-          if lsf_cmd:
-            cmd_list.append(cmd)
-          else:
-            run_cmd(cmd, timeout_s)
+        logging.info("Generating %d %s" % (iterations, test['test']))
+        if lsf_cmd:
+          cmd_list.append(cmd)
+        else:
+          run_cmd(cmd, timeout_s)
     if lsf_cmd:
       run_parallel_cmd(cmd_list, timeout_s)
 
@@ -388,7 +384,7 @@ def main():
   if args.steps == "all" or re.match("gen", args.steps):
     gen(matched_list, args.csr_yaml, args.isa, args.simulator, args.simulator_yaml, output_dir,
         args.so, args.co, args.lsf_cmd, args.seed, cwd,
-        args.cmp_opts, args.sim_opts, args.iterations, args.gen_timeout)
+        args.cmp_opts, args.sim_opts, args.gen_timeout)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary

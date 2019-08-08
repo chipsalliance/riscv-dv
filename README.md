@@ -97,10 +97,11 @@ python3 run.py --test riscv_page_table_exception_test --co
 ....
 ```
 
-### CSR Generation
+### Privileged CSR Test Generation
 
 
-The CSR generation script is located at [scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).  To quickly generate a basic CSR test, run the below command:
+The CSR generation script is located at [scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py). The CSR test code that this script generates will execute every CSR instruction on every processor implemented CSR, writing values to the CSR and then using a prediction function to calculate a reference value that will be written into another GPR. The reference value will then be compared to the value actually stored in the CSR to determine whether to jump to the failure condition or continue executing, allowing it to be completely self checking.
+To quickly generate a basic CSR test, run the below command:
 
 ```
 python3 scripts/gen_csr_test.py
@@ -137,8 +138,11 @@ default values should they not be specified at runtime.
 
 ### Setup CSR description list
 
+This YAML description file of all CSRs is only required for the privileged CSR
+test. All other standard tests do not use this description.
+
 [CSR descriptions in YAML
-format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml))
+format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml)
 
 ```
 - csr: CSR_NAME
