@@ -227,6 +227,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
           cmd = get_iss_cmd(base_cmd, elf, log)
           print ("Running ISS simulation: %s" % elf)
           run_cmd(cmd, 0, timeout_s)
+<<<<<<< HEAD
           logging.debug(cmd)
 
 
