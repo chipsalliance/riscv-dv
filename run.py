@@ -223,14 +223,16 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
     logging.info("%s sim log dir: %s" % (iss, log_dir))
     subprocess.run(["mkdir", "-p", log_dir])
     for test in test_list:
-      if 'no_iss' in test and test['no_iss'] == 0:
+      if 'no_iss' in test and test['no_iss'] == 1:
+        continue
+      else:
         for i in range(0, test['iterations']):
           prefix = ("%s/asm_tests/%s.%d" % (output_dir, test['test'], i))
           elf = prefix + ".o"
           log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
           cmd = get_iss_cmd(base_cmd, elf, log)
           print ("Running ISS simulation: %s" % elf)
-          run_cmd(cmd, 0, timeout_s)
+          run_cmd(cmd, timeout_s)
           logging.debug(cmd)
 
 
