@@ -99,24 +99,26 @@ def get_iss_cmd(base_cmd, elf, log):
   return cmd
 
 
-def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_only,
-        compile_only, lsf_cmd, seed, cwd, cmp_opts, sim_opts, timeout_s):
+def gen(test_list, csr_file, end_signature_addr, isa, simulator,
+        simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
+        cwd, cmp_opts, sim_opts, timeout_s):
   """Run the instruction generator
 
   Args:
-    test_list      : List of assembly programs to be compiled
-    csr_file       : YAML file containing description of all CSRs
-    isa            : Processor supported ISA subset
-    simulator      : RTL simulator used to run instruction generator
-    simulator_yaml : RTL simulator configuration file in YAML format
-    output_dir     : Output directory of the ELF files
-    sim_only       : Simulation only
-    compile_only   : Compile the generator only
-    lsf_cmd        : LSF command used to run the instruction generator
-    seed           : Seed to the instruction generator
-    cmp_opts       : Compile options for the generator
-    sim_opts       : Simulation options for the generator
-    timeout_s      : Timeout limit in seconds
+    test_list             : List of assembly programs to be compiled
+    csr_file              : YAML file containing description of all CSRs
+    end_signature_addr    : Address that tests will write pass/fail signature to at end of test
+    isa                   : Processor supported ISA subset
+    simulator             : RTL simulator used to run instruction generator
+    simulator_yaml        : RTL simulator configuration file in YAML format
+    output_dir            : Output directory of the ELF files
+    sim_only              : Simulation only
+    compile_only          : Compile the generator only
+    lsf_cmd               : LSF command used to run the instruction generator
+    seed                  : Seed to the instruction generator
+    cmp_opts              : Compile options for the generator
+    sim_opts              : Simulation options for the generator
+    timeout_s             : Timeout limit in seconds
   """
   # Mutually exclusive options between compile_only and sim_only
   if compile_only and sim_only:
@@ -153,7 +155,8 @@ def gen(test_list, csr_file, isa, simulator, simulator_yaml, output_dir, sim_onl
                 (" --csr_file %s" % csr_file) + \
                 (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
                 (" --iterations %i" % iterations) + \
-                (" --out %s/asm_tests" % output_dir)
+                (" --out %s/asm_tests" % output_dir) + \
+                (" --end_signature_addr %s" % end_signature_addr)
         else:
           rand_seed = get_seed(seed)
           cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
@@ -290,6 +293,8 @@ def setup_parser():
                       help="Regression testlist")
   parser.add_argument("--csr_yaml", type=str, default="",
                       help="CSR description file")
+  parser.add_argument("--end_signature_addr", type=str, default="0",
+                      help="Address that privileged CSR test writes to at EOT")
   parser.add_argument("--isa", type=str, default="rv64imc",
                       help="RISC-V ISA subset")
   parser.add_argument("--mabi", type=str, default="lp64",
@@ -384,9 +389,10 @@ def main():
 
   # Run instruction generator
   if args.steps == "all" or re.match("gen", args.steps):
-    gen(matched_list, args.csr_yaml, args.isa, args.simulator, args.simulator_yaml, output_dir,
-        args.so, args.co, args.lsf_cmd, args.seed, cwd,
-        args.cmp_opts, args.sim_opts, args.gen_timeout)
+    gen(matched_list, args.csr_yaml, args.end_signature_addr, args.isa,
+        args.simulator, args.simulator_yaml, output_dir, args.so,
+        args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
+        args.sim_opts, args.gen_timeout)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary

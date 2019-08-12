@@ -33,6 +33,13 @@ import argparse
 import random
 from bitstring import BitArray as bitarray
 
+"""
+Defines the test's success/failure values, one of which will be written to
+the chosen signature address to indicate the test's result.
+"""
+PASS_VAL = 1
+FAIL_VAL = 0
+
 def get_csr_map(csr_file, xlen):
   """
   Parses the YAML file containing CSR descriptions.
@@ -198,13 +205,12 @@ def gen_setup(test_file):
   test_file.write(f".section .text.init\n")
   test_file.write(f".globl _start\n")
   test_file.write(f".option norvc\n")
-  test_file.write(f"j csr_pass\n")
-  for i in range(31):
+  for i in range(32):
     test_file.write(f"j csr_fail\n")
   test_file.write(f"_start:\n")
 
 
-def gen_csr_test_fail(test_file):
+def gen_csr_test_fail(test_file, end_addr):
   """
   Generates code to handle a test failure.
   This code consists of writing 1 to the GP register in an infinite loop.
@@ -212,14 +218,16 @@ def gen_csr_test_fail(test_file):
 
   Args:
     test_file: the file containing the generated assembly test code.
+    end_addr: address that should be written to at end of test
   """
   test_file.write(f"csr_fail:\n")
-  test_file.write(f"\tli gp, 2\n")
-  test_file.write(f"\tecall\n")
+  test_file.write(f"\tli x1, {FAIL_VAL}\n")
+  test_file.write(f"\tli x2, {end_addr}\n")
+  test_file.write(f"\tsw x1, 0(x2)\n")
   test_file.write(f"\tj csr_fail\n")
 
 
-def gen_csr_test_pass(test_file):
+def gen_csr_test_pass(test_file, end_addr):
   """
   Generates code to handle test success.
   This code consists of writing 2 to the GP register in an infinite loop.
@@ -227,14 +235,17 @@ def gen_csr_test_pass(test_file):
 
   Args:
     test_file: the file containing the generated assembly test code.
+    end_addr: address that should be written to at end of test
   """
   test_file.write(f"csr_pass:\n")
-  test_file.write(f"\tli gp, 1\n")
-  test_file.write(f"\tecall\n")
+  test_file.write(f"\tli x1, {PASS_VAL}\n")
+  test_file.write(f"\tli x2, {end_addr}\n")
+  test_file.write(f"\tsw x1, 0(x2)\n")
   test_file.write(f"\tj csr_pass\n")
 
 
-def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
+def gen_csr_instr(csr_map, csr_instructions, xlen,
+                  iterations, out, end_signature_addr):
   """
   Uses the information in the map produced by get_csr_map() to generate
   test CSR instructions operating on the generated random values.
@@ -245,6 +256,7 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
     xlen: The RISC-V ISA bit length.
     iterations: Indicates how many randomized test files will be generated.
     out: A string containing the directory path that the tests will be generated in.
+    end_signature_addr: The address the test should write to upon terminating
 
   Returns:
     No explicit return value, but will write the randomized assembly test code
@@ -253,7 +265,7 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
   for i in range(iterations):
     # pick two GPRs at random to act as source and destination registers
     # for CSR operations
-    source_reg, dest_reg = [f"x{i}" for i in random.sample(range(5, 15), 2)]
+    source_reg, dest_reg = [f"x{i}" for i in random.sample(range(1, 16), 2)]
     csr_list = list(csr_map.keys())
     with open(f"{out}/riscv_csr_test.{i}.S", "w") as csr_test_file:
       gen_setup(csr_test_file)
@@ -296,8 +308,8 @@ def gen_csr_instr(csr_map, csr_instructions, xlen, iterations, out):
               csr_test_file.write(final_csr_read)
               csr_test_file.write(final_li)
               csr_test_file.write(final_branch_check)
-      gen_csr_test_pass(csr_test_file)
-      gen_csr_test_fail(csr_test_file)
+      gen_csr_test_pass(csr_test_file, end_signature_addr)
+      gen_csr_test_fail(csr_test_file, end_signature_addr)
 
 
 """
@@ -312,6 +324,8 @@ parser.add_argument("--iterations", type=int, default=1,
         help="Specify how many tests to be generated")
 parser.add_argument("--out", type=str, default="./",
         help="Specify output directory")
+parser.add_argument("--end_signature_addr", type=str, default="0",
+        help="Address that should be written to at end of this test")
 args = parser.parse_args()
 
 
@@ -320,4 +334,6 @@ A list containing all supported CSR instructions.
 """
 csr_ops = ['csrrw', 'csrrs', 'csrrc', 'csrrwi', 'csrrsi', 'csrrci']
 
-gen_csr_instr(get_csr_map(args.csr_file, args.xlen), csr_ops, args.xlen, args.iterations, args.out)
+gen_csr_instr(get_csr_map(args.csr_file, args.xlen),
+              csr_ops, args.xlen, args.iterations, args.out,
+              args.end_signature_addr)
