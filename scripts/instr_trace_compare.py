@@ -32,6 +32,10 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
   matched_cnt = 0
   mismatch_cnt = 0
 
+  # ensure that in order mode is disabled if necessary
+  if compare_final_value_only:
+    in_order_mode = 0
+
   if log:
     fd = open(log, 'a+')
   else:
@@ -131,8 +135,8 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
           for trace_1_index in range(0, len(gpr_trace_1[gpr])-1):
             if (trace_2_index == len(gpr_trace_2[gpr])):
               break
-            if long(gpr_trace_1[gpr][trace_1_index].rd_val, 16) != \
-               long(gpr_trace_2[gpr][trace_2_index].rd_val, 16):
+            if int(gpr_trace_1[gpr][trace_1_index].rd_val, 16) != \
+               int(gpr_trace_2[gpr][trace_2_index].rd_val, 16):
               if coalesced_updates >= coalescing_limit:
                 coalesced_updates = 0
                 mismatch_cnt += 1
@@ -163,8 +167,8 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
           mismatch_cnt += 1
           fd.write("Zero GPR[%s] updates observed: %s:%d, %s:%d\n" % (gpr,
                    name1, len(gpr_trace_1[gpr]), name2, len(gpr_trace_2[gpr])))
-        elif long(gpr_trace_1[gpr][-1].rd_val, 16) != \
-             long(gpr_trace_2[gpr][-1].rd_val, 16):
+        elif int(gpr_trace_1[gpr][-1].rd_val, 16) != \
+             int(gpr_trace_2[gpr][-1].rd_val, 16):
           mismatch_cnt += 1
           if mismatch_cnt <= mismatch_print_limit:
             fd.write("Mismatch final value:\n")
@@ -206,10 +210,10 @@ def check_update_gpr(rd, rd_val, gpr):
 def main():
   # Parse input arguments
   parser = argparse.ArgumentParser()
-  parser.add_argument("csv_file_1", type=str, help="Instruction trace 1 CSV")
-  parser.add_argument("csv_file_2", type=str, help="Instruction trace 2 CSV")
-  parser.add_argument("csv_name_1", type=str, help="Instruction trace 1 name")
-  parser.add_argument("csv_name_2", type=str, help="Instruction trace 2 name")
+  parser.add_argument("--csv_file_1", type=str, help="Instruction trace 1 CSV")
+  parser.add_argument("--csv_file_2", type=str, help="Instruction trace 2 CSV")
+  parser.add_argument("--csv_name_1", type=str, help="Instruction trace 1 name")
+  parser.add_argument("--csv_name_2", type=str, help="Instruction trace 2 name")
   # optional arguments
   parser.add_argument("--log", type=str, default="",
                       help="Log file")
@@ -227,9 +231,6 @@ def main():
                       help="Only compare the final value of the GPR")
 
   args = parser.parse_args()
-
-  if args.compare_final_value_only:
-    args.in_order_mode = 0
 
   # Compare trace CSV
   compare_trace_csv(args.csv_file_1, args.csv_file_2,
