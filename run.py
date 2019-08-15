@@ -293,9 +293,9 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--o", type=str,
+  parser.add_argument("-o", "--ouput", type=str,
                       help="Output directory name")
-  parser.add_argument("--testlist", type=str, default="",
+  parser.add_argument("-tl", "--testlist", type=str, default="",
                       help="Regression testlist")
   parser.add_argument("--csr_yaml", type=str, default="",
                       help="CSR description file")
@@ -303,15 +303,15 @@ def setup_parser():
                       help="Address that privileged CSR test writes to at EOT")
   parser.add_argument("--isa", type=str, default="rv64imc",
                       help="RISC-V ISA subset")
-  parser.add_argument("--mabi", type=str, default="lp64",
+  parser.add_argument("-m", "--mabi", type=str, default="lp64",
                       help="mabi used for compilation, lp32 or lp64")
-  parser.add_argument("--test", type=str, default="all",
+  parser.add_argument("-tn", "--test", type=str, default="all",
                       help="Test name, 'all' means all tests in the list")
   parser.add_argument("--seed", type=int, default=-1,
                       help="Randomization seed, default -1 means random seed")
-  parser.add_argument("--iterations", type=int, default=0,
+  parser.add_argument("-i", "--iterations", type=int, default=0,
                       help="Override the iteration count in the test list")
-  parser.add_argument("--simulator", type=str, default="vcs",
+  parser.add_argument("-si", "--simulator", type=str, default="vcs",
                       help="Simulator used to run the generator, default VCS")
   parser.add_argument("--simulator_yaml", type=str, default="",
                       help="RTL simulator setting YAML")
@@ -331,7 +331,7 @@ def setup_parser():
                       help="Simulation options for the generator")
   parser.add_argument("--gcc_opts", type=str, default="",
                       help="GCC compile options")
-  parser.add_argument("--steps", type=str, default="all",
+  parser.add_argument("-s", "--steps", type=str, default="all",
                       help="Run steps: gen,gcc_compile,iss_sim,iss_cmp")
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
