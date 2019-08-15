@@ -27,6 +27,7 @@ from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
+from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
 
 LOGGER = logging.getLogger()
@@ -270,6 +271,8 @@ def iss_cmp(test_list, iss, output_dir, isa):
           process_spike_sim_log(log, csv)
         elif iss == "ovpsim":
           process_ovpsim_sim_log(log, csv)
+        elif iss == "sail":
+          process_sail_sim_log(log, csv)
         else:
           logging.error("Unsupported ISS" % iss)
           sys.exit(1)
@@ -313,7 +316,7 @@ def setup_parser():
   parser.add_argument("--simulator_yaml", type=str, default="",
                       help="RTL simulator setting YAML")
   parser.add_argument("--iss", type=str, default="spike",
-                      help="RISC-V instruction set simulator: spike, ovpsim")
+                      help="RISC-V instruction set simulator: spike,ovpsim,sail")
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
   parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
