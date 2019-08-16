@@ -60,6 +60,8 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
       gpr_val_2 = {}
       for trace in instr_trace_1:
         trace_1_index += 1
+        if trace.rd == "":
+          continue
         # Check if there's a GPR change caused by this instruction
         gpr_state_change_1 = check_update_gpr(trace.rd, trace.rd_val, gpr_val_1)
         if gpr_state_change_1 == 0:
@@ -67,10 +69,11 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
         # Move forward the other trace until a GPR update happens
         gpr_state_change_2 = 0
         while (gpr_state_change_2 == 0 and trace_2_index < len(instr_trace_2)):
-          gpr_state_change_2 = check_update_gpr(
-                               instr_trace_2[trace_2_index].rd,
-                               instr_trace_2[trace_2_index].rd_val,
-                               gpr_val_2)
+          if instr_trace_2[trace_2_index].rd != "":
+            gpr_state_change_2 = check_update_gpr(
+                                 instr_trace_2[trace_2_index].rd,
+                                 instr_trace_2[trace_2_index].rd_val,
+                                 gpr_val_2)
           trace_2_index += 1
         # Check if the GPR update is the same between trace 1 and 2
         if gpr_state_change_2 == 0:
@@ -187,12 +190,13 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
 def parse_gpr_update_from_trace(trace_csv, gpr_trace):
   prev_val = {}
   for trace in trace_csv:
-    if not (trace.rd in prev_val):
-      gpr_trace[trace.rd] = []
-      gpr_trace[trace.rd].append(trace)
-    elif prev_val[trace.rd] != trace.rd_val:
-      gpr_trace[trace.rd].append(trace)
-    prev_val[trace.rd] = trace.rd_val
+    if trace.rd != "":
+      if not (trace.rd in prev_val):
+        gpr_trace[trace.rd] = []
+        gpr_trace[trace.rd].append(trace)
+      elif prev_val[trace.rd] != trace.rd_val:
+        gpr_trace[trace.rd].append(trace)
+      prev_val[trace.rd] = trace.rd_val
 
 
 def check_update_gpr(rd, rd_val, gpr):
