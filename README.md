@@ -203,6 +203,7 @@ riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
 | boot_mode                   | m:Machine mode, s:Supervisor mode, u:User mode  | m       |
 | no_directed_instr           | Disable directed instruction stream             | 0       |
 | enable_interrupt            | Enable MStatus.MIE, used in interrupt test      | 0       |
+| empty_debug_section         | Disables randomized debug_rom section           | 0       |
 
 
 ### Setup Privileged CSR description
