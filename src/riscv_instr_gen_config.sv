@@ -293,7 +293,8 @@ class riscv_instr_gen_config extends uvm_object;
       uvm_split_string(s, ",", cmdline_march_list);
       riscv_instr_pkg::supported_isa.delete();
       foreach(cmdline_march_list[i]) begin
-        if(uvm_enum_wrapper#(riscv_instr_group_t)::from_name(cmdline_march_list[i], march)) begin
+        if(uvm_enum_wrapper#(riscv_instr_group_t)::from_name(
+           cmdline_march_list[i].toupper(), march)) begin
           riscv_instr_pkg::supported_isa.push_back(march);
         end else begin
           `uvm_fatal(get_full_name(), $sformatf(

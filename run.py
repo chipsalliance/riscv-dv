@@ -171,6 +171,8 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
           cmd = re.sub("<seed>", str(rand_seed), cmd)
           if "gen_opts" in test:
             cmd += test['gen_opts']
+        if not re.search("c", isa):
+          cmd += "+disable_comparessed_instr=1";
         logging.info("Generating %d %s" % (iterations, test['test']))
         if lsf_cmd:
           cmd_list.append(cmd)
@@ -196,11 +198,19 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       elf = prefix + ".o"
       binary = prefix + ".bin"
       # gcc comilation
-      cmd = ("%s -march=%s -mabi=%s -static -mcmodel=medany \
+      cmd = ("%s -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
              -nostartfiles %s \
-             -Tscripts/link.ld %s -o %s" % \
-             (get_env_var("RISCV_GCC") ,isa, mabi, asm, opts, elf))
+             -Tscripts/link.ld %s -o %s " % \
+             (get_env_var("RISCV_GCC"), asm, opts, elf))
+      if 'gcc_opts' in test:
+        cmd += test['gcc_opts']
+      # If march/mabi is not defined in the test gcc_opts, use the default
+      # setting from the command line.
+      if not re.search('march', cmd):
+        cmd += (" -march=%s" % isa)
+      if not re.search('mabi', cmd):
+        cmd += (" -mabi=%s" % mabi)
       logging.info("Compiling %s" % asm)
       logging.debug(cmd)
       output = subprocess.check_output(cmd.split())
@@ -297,14 +307,6 @@ def setup_parser():
                       help="Output directory name", dest="o")
   parser.add_argument("-tl", "--testlist", type=str, default="",
                       help="Regression testlist", dest="testlist")
-  parser.add_argument("--csr_yaml", type=str, default="",
-                      help="CSR description file")
-  parser.add_argument("--end_signature_addr", type=str, default="0",
-                      help="Address that privileged CSR test writes to at EOT")
-  parser.add_argument("--isa", type=str, default="rv64imc",
-                      help="RISC-V ISA subset")
-  parser.add_argument("-m", "--mabi", type=str, default="lp64",
-                      help="mabi used for compilation, lp32 or lp64", dest="mabi")
   parser.add_argument("-tn", "--test", type=str, default="all",
                       help="Test name, 'all' means all tests in the list", dest="test")
   parser.add_argument("--seed", type=int, default=-1,
@@ -313,12 +315,8 @@ def setup_parser():
                       help="Override the iteration count in the test list", dest="iterations")
   parser.add_argument("-si", "--simulator", type=str, default="vcs",
                       help="Simulator used to run the generator, default VCS", dest="simulator")
-  parser.add_argument("--simulator_yaml", type=str, default="",
-                      help="RTL simulator setting YAML")
   parser.add_argument("--iss", type=str, default="spike",
                       help="RISC-V instruction set simulator: spike,ovpsim,sail")
-  parser.add_argument("--iss_yaml", type=str, default="",
-                      help="ISS setting YAML")
   parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
                       help="Verbose logging")
   parser.add_argument("--co", dest="co", action="store_true",
@@ -336,10 +334,22 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
+  parser.add_argument("--isa", type=str, default="rv64imc",
+                      help="RISC-V ISA subset")
+  parser.add_argument("-m", "--mabi", type=str, default="lp64",
+                      help="mabi used for compilation, lp32 or lp64", dest="mabi")
   parser.add_argument("--gen_timeout", type=int, default=360,
                       help="Generator timeout limit in seconds")
+  parser.add_argument("--end_signature_addr", type=str, default="0",
+                      help="Address that privileged CSR test writes to at EOT")
   parser.add_argument("--iss_timeout", type=int, default=50,
                       help="ISS sim timeout limit in seconds")
+  parser.add_argument("--iss_yaml", type=str, default="",
+                      help="ISS setting YAML")
+  parser.add_argument("--simulator_yaml", type=str, default="",
+                      help="RTL simulator setting YAML")
+  parser.add_argument("--csr_yaml", type=str, default="",
+                      help="CSR description file")
 
   parser.set_defaults(co=False)
   parser.set_defaults(so=False)
@@ -371,6 +381,9 @@ def main():
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
   setup_logging(args.verbose)
+
+  if not args.csr_yaml:
+    args.csr_yaml = cwd + "/yaml/csr_template.yaml"
 
   if not args.iss_yaml:
     args.iss_yaml = cwd + "/yaml/iss.yaml"
