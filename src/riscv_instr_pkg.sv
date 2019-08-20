@@ -24,6 +24,8 @@ package riscv_instr_pkg;
 
   `define include_file(f) `include `"f`"
 
+  parameter CORE_INITIALIZATION_DONE = 2;
+
   typedef enum bit [3:0] {
     BARE = 4'b0000,
     SV32 = 4'b0001,

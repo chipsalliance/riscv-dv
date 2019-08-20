@@ -32,6 +32,7 @@ class riscv_asm_program_gen extends uvm_object;
    // Program in binary format, stored in the data section, used to inject illegal/HINT instruction
    riscv_instr_sequence                bin_program;
    riscv_instr_sequence                debug_program;
+   riscv_instr_sequence                debug_sub_program[];
    string                              instr_binary[$];
    // Kernel programs
    // These programs are called in the interrupt/exception handling routine based on the privileged
@@ -96,23 +97,7 @@ class riscv_asm_program_gen extends uvm_object;
     // Init section
     gen_init_section();
     // Generate sub program
-    if(cfg.num_of_sub_program > 0) begin
-      sub_program = new[cfg.num_of_sub_program];
-      foreach(sub_program[i]) begin
-        sub_program[i] = riscv_instr_sequence::type_id::create($sformatf("sub_%0d",i+1));
-        sub_program[i].instr_cnt = cfg.sub_program_instr_cnt[i];
-        sub_program[i].is_debug_program = 0;
-        generate_directed_instr_stream(.label(sub_program[i].get_name()),
-                                       .original_instr_cnt(sub_program[i].instr_cnt),
-                                       .min_insert_cnt(0),
-                                       .instr_stream(sub_program[i].directed_instr));
-        sub_program[i].label_name = sub_program[i].get_name();
-        sub_program[i].cfg = cfg;
-        `DV_CHECK_RANDOMIZE_FATAL(sub_program[i])
-        sub_program[i].gen_instr(0);
-        sub_program_name.push_back(sub_program[i].label_name);
-      end
-    end
+    gen_sub_program(sub_program, sub_program_name, cfg.num_of_sub_program);
     // Generate main program
     main_program = riscv_instr_sequence::type_id::create("main_program");
     main_program.instr_cnt = cfg.main_program_instr_cnt;
@@ -126,30 +111,7 @@ class riscv_asm_program_gen extends uvm_object;
     `DV_CHECK_RANDOMIZE_FATAL(main_program)
     main_program.gen_instr(1);
     // Setup jump instruction among main program and sub programs
-    if(cfg.num_of_sub_program != 0) begin
-      callstack_gen = riscv_callstack_gen::type_id::create("callstack_gen");
-      callstack_gen.init(cfg.num_of_sub_program+1);
-      `uvm_info(get_full_name(), "Randomizing call stack", UVM_LOW)
-      if(callstack_gen.randomize()) begin
-        program_id_t pid;
-        int idx;
-        // Insert the jump instruction based on the call stack
-        foreach(callstack_gen.program_h[i]) begin
-          foreach(callstack_gen.program_h[i].sub_program_id[j]) begin
-            idx++;
-            pid = callstack_gen.program_h[i].sub_program_id[j] - 1;
-            `uvm_info(get_full_name(), $sformatf(
-                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_HIGH)
-            if(i == 0)
-              main_program.insert_jump_instr(sub_program_name[pid], idx);
-            else
-              sub_program[i-1].insert_jump_instr(sub_program_name[pid], idx);
-          end
-        end
-      end else begin
-        `uvm_fatal(get_full_name(), "Failed to generate callstack")
-      end
-    end
+    gen_callstack(main_program, sub_program, sub_program_name, cfg.num_of_sub_program);
     if (bin_program != null) begin
       main_program.insert_jump_instr("sub_bin", 0);
     end
@@ -159,12 +121,7 @@ class riscv_asm_program_gen extends uvm_object;
     // Test done section
     gen_test_done();
     // Shuffle the sub programs and insert to the instruction stream
-    sub_program.shuffle();
-    foreach(sub_program[i]) begin
-      sub_program[i].post_process_instr();
-      sub_program[i].generate_instr_stream();
-      instr_stream = {instr_stream, sub_program[i].instr_string_list};
-    end
+    insert_sub_program(sub_program, instr_stream);
     // Reserve some space to copy instruction from data section
     if (instr_binary.size() > 0) begin
       instr_stream.push_back(".align 2");
@@ -179,9 +136,9 @@ class riscv_asm_program_gen extends uvm_object;
     // Program end
     gen_program_end();
     // Generate debug rom section
-    gen_debug_mode_section();
+    gen_debug_rom();
     // Generate debug mode exception handler
-    gen_debug_exception_section();
+    gen_debug_exception_handler();
     // Starting point of data section
     gen_data_page_begin();
     // Generate the sub program in binary format
@@ -251,6 +208,79 @@ class riscv_asm_program_gen extends uvm_object;
     seq.post_process_instr();
     seq.generate_instr_stream();
     instr_stream = {instr_stream, seq.instr_string_list};
+  endfunction
+
+  //---------------------------------------------------------------------------------------
+  // Generate any subprograms and set up the callstack
+  //---------------------------------------------------------------------------------------
+
+  virtual function void gen_sub_program(ref riscv_instr_sequence sub_program[],
+                                        ref string sub_program_name[$],
+                                        input int num_sub_program,
+                                        bit is_debug = 1'b0,
+                                        string prefix = "sub");
+    if(num_sub_program > 0) begin
+      sub_program = new[num_sub_program];
+      foreach(sub_program[i]) begin
+        sub_program[i] = riscv_instr_sequence::type_id::create($sformatf("%s_%0d",prefix,i+1));
+        `uvm_info(`gfn, $sformatf("sub program name: %s", prefix), UVM_LOW)
+        sub_program[i].is_debug_program = is_debug;
+        if (is_debug) begin
+          sub_program[i].instr_cnt = cfg.debug_sub_program_instr_cnt[i];
+        end else begin
+          sub_program[i].instr_cnt = cfg.sub_program_instr_cnt[i];
+        end
+        generate_directed_instr_stream(.label(sub_program[i].get_name()),
+                                       .original_instr_cnt(sub_program[i].instr_cnt),
+                                       .min_insert_cnt(0),
+                                       .instr_stream(sub_program[i].directed_instr));
+        sub_program[i].label_name = sub_program[i].get_name();
+        sub_program[i].cfg = cfg;
+        `DV_CHECK_RANDOMIZE_FATAL(sub_program[i])
+        sub_program[i].gen_instr(0);
+        sub_program_name.push_back(sub_program[i].label_name);
+      end
+    end
+  endfunction
+
+  virtual function void gen_callstack(riscv_instr_sequence main_program,
+                                      ref riscv_instr_sequence sub_program[],
+                                      ref string sub_program_name[$],
+                                      input int num_sub_program);
+    if(num_sub_program != 0) begin
+      callstack_gen = riscv_callstack_gen::type_id::create("callstack_gen");
+      callstack_gen.init(num_sub_program+1);
+      `uvm_info(get_full_name(), "Randomizing call stack", UVM_LOW)
+      if(callstack_gen.randomize()) begin
+        program_id_t pid;
+        int idx;
+        // Insert the jump instruction based on the call stack
+        foreach(callstack_gen.program_h[i]) begin
+          foreach(callstack_gen.program_h[i].sub_program_id[j]) begin
+            idx++;
+            pid = callstack_gen.program_h[i].sub_program_id[j] - 1;
+            `uvm_info(get_full_name(), $sformatf(
+                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_HIGH)
+            if(i == 0)
+              main_program.insert_jump_instr(sub_program_name[pid], idx);
+            else
+              sub_program[i-1].insert_jump_instr(sub_program_name[pid], idx);
+          end
+        end
+      end else begin
+        `uvm_fatal(get_full_name(), "Failed to generate callstack")
+      end
+    end
+  endfunction
+
+  virtual function void insert_sub_program(ref riscv_instr_sequence sub_program[],
+                                           ref string instr_list[$]);
+    sub_program.shuffle();
+    foreach(sub_program[i]) begin
+      sub_program[i].post_process_instr();
+      sub_program[i].generate_instr_stream();
+      instr_list = {instr_list, sub_program[i].instr_string_list};
+    end
   endfunction
 
   //---------------------------------------------------------------------------------------
@@ -327,6 +357,7 @@ class riscv_asm_program_gen extends uvm_object;
     str = {indent, "la sp, _user_stack_end"};
     setup_misa();
     instr_stream.push_back(str);
+    core_is_initialized();
     // Copy the instruction from data section to instruction section
     if (instr_binary.size() > 0) begin
       instr_stream.push_back({indent, "la x31, instr_bin"});
@@ -361,6 +392,24 @@ class riscv_asm_program_gen extends uvm_object;
     end
     instr_stream.push_back({indent, $sformatf("li x15, 0x%0x", misa)});
     instr_stream.push_back({indent, "csrw misa, x15"});
+  endfunction
+
+  // Write to the signature_addr with values to indicate to the core testbench
+  // that is safe to start sending interrupt and debug stimulus
+  virtual function void core_is_initialized();
+    if (cfg.require_signature_addr) begin
+      if (cfg.signature_addr != 32'hdead_beef) begin
+        string str;
+        str = {indent, $sformatf("li x5, 0x%0h", cfg.signature_addr)};
+        instr_stream.push_back(str);
+        str = {indent, $sformatf("li x6, 0x%0h", riscv_instr_pkg::CORE_INITIALIZATION_DONE)};
+        instr_stream.push_back(str);
+        str = {indent, "sw x6, 0(x5)"};
+        instr_stream.push_back(str);
+      end else begin
+        `uvm_fatal(`gfn, "The signature_addr is not properly configured!")
+      end
+    end
   endfunction
 
   // Initialize general purpose registers with random value
@@ -932,21 +981,26 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Generate the program in the debug ROM
   // Processor will fetch instruction from here upon receiving debug request from debug module
-  virtual function void gen_debug_mode_section();
+  virtual function void gen_debug_rom();
     string push_gpr[$];
     string pop_gpr[$];
     string instr[$];
     string dret;
+    string debug_sub_program_name[$] = {};
     if (riscv_instr_pkg::support_debug_mode) begin
       // The main debug rom
-      if (!cfg.empty_debug_section) begin
+      if (cfg.gen_debug_section) begin
+        gen_sub_program(debug_sub_program, debug_sub_program_name,
+                        cfg.num_debug_sub_program, 1'b1, "debug_sub");
         debug_program = riscv_instr_sequence::type_id::create("debug_program");
         debug_program.instr_cnt = cfg.debug_program_instr_cnt;
         debug_program.is_debug_program = 1;
         debug_program.cfg = cfg;
         `DV_CHECK_RANDOMIZE_FATAL(debug_program)
         debug_program.gen_instr(.is_main_program(1'b1), .enable_hint_instr(1'b0),
-                                .no_branch(1'b1));
+                                .no_branch(1'b0));
+        gen_callstack(debug_program, debug_sub_program, debug_sub_program_name,
+                      cfg.num_debug_sub_program);
         debug_program.post_process_instr();
         debug_program.generate_instr_stream(.no_label(1'b1));
         // Need to save off GPRs to avoid modifying program flow
@@ -955,6 +1009,7 @@ class riscv_asm_program_gen extends uvm_object;
         pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, pop_gpr);
         format_section(pop_gpr);
         instr = {push_gpr, debug_program.instr_string_list, pop_gpr};
+        insert_sub_program(debug_sub_program, instr_stream);
       end
       dret = {format_string(" ", LABEL_STR_LEN), "dret"};
       instr = {instr, dret};
@@ -963,7 +1018,7 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   // Generate exception handling routine for debug ROM
-  virtual function void gen_debug_exception_section();
+  virtual function void gen_debug_exception_handler();
     if (riscv_instr_pkg::support_debug_mode) begin
       string instr[];
       instr = {"dret"};
