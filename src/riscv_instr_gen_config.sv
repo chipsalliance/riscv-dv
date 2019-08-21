@@ -58,6 +58,7 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit               mstatus_mxr;
   rand bit               mstatus_sum;
   rand bit               mstatus_tvm;
+  rand mtvec_mode_t      mtvec_mode;
 
   // Enable sfence.vma instruction
   rand bit               enable_sfence;
@@ -182,6 +183,10 @@ class riscv_instr_gen_config extends uvm_object;
     } else {
       init_privileged_mode == riscv_instr_pkg::supported_privileged_mode[0];
     }
+  }
+
+  constraint mtvec_c {
+    mtvec_mode inside {supported_interrupt_mode};
   }
 
   constraint mstatus_c {
