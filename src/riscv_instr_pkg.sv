@@ -35,6 +35,11 @@ package riscv_instr_pkg;
     SV64 = 4'b1011
   } satp_mode_t;
 
+  typedef enum bit [1:0] {
+    DIRECT   = 2'b00,
+    VECTORED = 2'b01
+  } mtvec_mode_t;
+
   typedef enum bit [2:0] {
     IMM,    // Signed immediate
     UIMM,   // Unsigned immediate
@@ -731,7 +736,7 @@ package riscv_instr_pkg;
     // need to use the virtual address to access the kernel stack.
     if((status == MSTATUS) && (SATP_MODE != BARE)) begin
       // We temporarily use tp to check mstatus to avoid changing other GPR. The value of sp has
-      // been saved to xStatus and can be restored later.
+      // been saved to xScratch and can be restored later.
       if(mprv) begin
         instr.push_back($sformatf("csrr tp, 0x%0x // MSTATUS", status));
         instr.push_back("srli tp, tp, 11");  // Move MPP to bit 0
