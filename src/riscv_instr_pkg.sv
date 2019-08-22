@@ -24,7 +24,42 @@ package riscv_instr_pkg;
 
   `define include_file(f) `include `"f`"
 
+  // TODO(udi) - Remove this parameter once the enum system is fully in place
   parameter CORE_INITIALIZATION_DONE = 2;
+
+  // TODO(udi) - Move this enum and any related functions to a new package
+  // Will be the lowest 8 bits of the data word
+  typedef enum bit[7:0] {
+    // Information sent to the core relating its current status.
+    // Will be followed by information from core_status_t.
+    CORE_STATUS,
+    // Information sent to the core conveying the uvm simulation result.
+    // Will be followed by information from test_result_t.
+    TEST_RESULT,
+    // Will be sent to the core to indicate a dump of GPRs to testbench.
+    // Will be followed by 32 writes of registers x0-x32.
+    WRITE_GPR,
+    // Will be sent to the core to indicate a write of a CSR's data.
+    // The upper 24 bits will be written with the CSR address.
+    // Will be followed by a second write of the actual data from the CSR.
+    WRITE_CSR,
+  } signature_type_t;
+
+  typedef enum bit[4:0] {
+    INITIALIZED,
+    DEBUG_MODE,
+    MACHINE_MODE,
+    HYPERVISOR_MODE,
+    SUPERVISOR_MODE,
+    USER_MODE,
+    HANDLING_IRQ,
+    HANDLING_EXCEPTION
+  } core_status_t;
+
+  typedef enum bit {
+    TEST_PASS,
+    TEST_FAIL
+  } test_result_t;
 
   typedef enum bit [3:0] {
     BARE = 4'b0000,
