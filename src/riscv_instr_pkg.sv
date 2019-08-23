@@ -47,11 +47,11 @@ package riscv_instr_pkg;
 
   typedef enum bit[4:0] {
     INITIALIZED,
-    DEBUG_MODE,
-    MACHINE_MODE,
-    HYPERVISOR_MODE,
-    SUPERVISOR_MODE,
-    USER_MODE,
+    IN_DEBUG_MODE,
+    IN_MACHINE_MODE,
+    IN_HYPERVISOR_MODE,
+    IN_SUPERVISOR_MODE,
+    IN_USER_MODE,
     HANDLING_IRQ,
     HANDLING_EXCEPTION
   } core_status_t;
