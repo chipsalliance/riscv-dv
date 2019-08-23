@@ -42,7 +42,7 @@ package riscv_instr_pkg;
     // Will be sent to the core to indicate a write of a CSR's data.
     // The upper 24 bits will be written with the CSR address.
     // Will be followed by a second write of the actual data from the CSR.
-    WRITE_CSR,
+    WRITE_CSR
   } signature_type_t;
 
   typedef enum bit[4:0] {
