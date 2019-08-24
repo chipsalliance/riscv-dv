@@ -667,6 +667,9 @@ class riscv_asm_program_gen extends uvm_object;
     gen_section($sformatf("%0s_handler", tvec_name.tolower()), instr);
     // Exception handler
     instr = {};
+    if (cfg.mtvec_mode == VECTORED) begin
+      push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, instr);
+    end
     gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
     instr = {instr,
              // The trap is caused by an exception, read back xCAUSE, xEPC to see if these
@@ -723,7 +726,7 @@ class riscv_asm_program_gen extends uvm_object;
                     $sformatf("j %0smode_exception_handler", mode)};
     // Redirect the interrupt to the corresponding interrupt handler
     for (int i = 1; i < 16; i++) begin
-      instr.push_back($sformatf("j intr_vector_%0d", i));
+      instr.push_back($sformatf("j %0smode_intr_vector_%0d", mode, i));
     end
     instr = {instr, ".option rvc;"};
     for (int i = 1; i < 16; i++) begin
@@ -738,7 +741,7 @@ class riscv_asm_program_gen extends uvm_object;
                // Jump to commmon interrupt handling routine
                $sformatf("j %0smode_intr_handler", mode),
                "1: j test_done"};
-      gen_section($sformatf("intr_vector_%0d", i), intr_handler);
+      gen_section($sformatf("%0smode_intr_vector_%0d", mode, i), intr_handler);
     end
   endfunction
 
