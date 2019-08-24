@@ -70,6 +70,7 @@ class riscv_asm_program_gen extends uvm_object;
     gen_program_header();
     // Initialize general purpose registers
     init_gpr();
+    setup_misa();
     // Create all page tables
     create_page_table();
     // Setup privileged mode registers and enter target privileged mode
@@ -355,7 +356,6 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(str);
     // Init stack pointer to point to the end of the user stack
     str = {indent, "la sp, _user_stack_end"};
-    setup_misa();
     instr_stream.push_back(str);
     core_is_initialized();
     // Copy the instruction from data section to instruction section
