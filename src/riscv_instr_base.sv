@@ -373,8 +373,8 @@ class riscv_instr_base extends uvm_object;
   `add_instr(C_FSDSP, CSS_FORMAT, STORE, RV32DC, UIMM)
 
   // RV32A
-  `add_instr(LR_W,      R_FORMAT, AMO, RV32A)
-  `add_instr(SC_W,      R_FORMAT, AMO, RV32A)
+  `add_instr(LR_W,      R_FORMAT, LOAD, RV32A)
+  `add_instr(SC_W,      R_FORMAT, STORE, RV32A)
   `add_instr(AMOSWAP_W, R_FORMAT, AMO, RV32A)
   `add_instr(AMOADD_W,  R_FORMAT, AMO, RV32A)
   `add_instr(AMOAND_W,  R_FORMAT, AMO, RV32A)
@@ -386,8 +386,8 @@ class riscv_instr_base extends uvm_object;
   `add_instr(AMOMAXU_W, R_FORMAT, AMO, RV32A)
 
   // RV64A
-  `add_instr(LR_D,      R_FORMAT, AMO, RV32A)
-  `add_instr(SC_D,      R_FORMAT, AMO, RV32A)
+  `add_instr(LR_D,      R_FORMAT, LOAD, RV32A)
+  `add_instr(SC_D,      R_FORMAT, STORE, RV32A)
   `add_instr(AMOSWAP_D, R_FORMAT, AMO, RV32A)
   `add_instr(AMOADD_D,  R_FORMAT, AMO, RV32A)
   `add_instr(AMOAND_D,  R_FORMAT, AMO, RV32A)
@@ -493,9 +493,9 @@ class riscv_instr_base extends uvm_object;
       endcase
     end else if (group inside {RV32A, RV64A}) begin
       if (instr_name inside {LR_W, LR_D}) begin
-        asm_str = $sformatf("%0s%0s, (%0s)", asm_str, rd.name(), rs1.name());
+        asm_str = $sformatf("%0s %0s, (%0s)", asm_str, rd.name(), rs1.name());
       end else begin
-        asm_str = $sformatf("%0s%0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
+        asm_str = $sformatf("%0s %0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
       end
     end else begin
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
