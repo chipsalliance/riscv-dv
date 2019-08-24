@@ -384,6 +384,7 @@ class riscv_asm_program_gen extends uvm_object;
         RV32C, RV64C, RV128C : misa[MISA_EXT_C] = 1'b1;
         RV32I, RV64I, RV128I : misa[MISA_EXT_I] = 1'b1;
         RV32M, RV64M         : misa[MISA_EXT_M] = 1'b1;
+        RV32A, RV64A         : misa[MISA_EXT_A] = 1'b1;
         default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported", supported_isa[i].name()))
       endcase
     end
