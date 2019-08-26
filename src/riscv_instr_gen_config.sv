@@ -247,8 +247,8 @@ class riscv_instr_gen_config extends uvm_object;
     foreach(loop_regs[i]) {
       !(loop_regs[i] inside {default_reserved_regs});
     }
-    !(signature_addr_reg inside {default_reserved_regs, loop_regs});
-    !(signature_data_reg inside {default_reserved_regs, loop_regs});
+    !(signature_addr_reg inside {ZERO, default_reserved_regs, loop_regs});
+    !(signature_data_reg inside {ZERO, default_reserved_regs, loop_regs});
     signature_addr_reg != signature_data_reg;
   }
 
