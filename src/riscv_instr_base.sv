@@ -521,6 +521,8 @@ class riscv_instr_base extends uvm_object;
         I_FORMAT: // instr rd,rs1,imm
           if(instr_name == NOP)
             asm_str = "nop";
+          else if(instr_name == WFI)
+            asm_str = "wfi";
           else if(instr_name == FENCE)
             asm_str = $sformatf("fence"); // TODO: Support all fence combinations
           else if(instr_name == FENCEI)

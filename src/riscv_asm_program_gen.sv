@@ -399,10 +399,12 @@ class riscv_asm_program_gen extends uvm_object;
   // Write to the signature_addr with values to indicate to the core testbench
   // that is safe to start sending interrupt and debug stimulus
   virtual function void core_is_initialized();
+    string instr[$];
     if (cfg.require_signature_addr) begin
       if (cfg.signature_addr != 32'hdead_beef) begin
-        string str;
-        gen_signature_handshake(instr_stream, CORE_STATUS, INITIALIZED);
+        gen_signature_handshake(instr, CORE_STATUS, INITIALIZED);
+        format_section(instr);
+        instr_stream = {instr_stream, instr};
       end else begin
         `uvm_fatal(`gfn, "The signature_addr is not properly configured!")
       end
