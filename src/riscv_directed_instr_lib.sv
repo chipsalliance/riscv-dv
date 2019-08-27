@@ -133,18 +133,14 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
 
   function void pre_randomize();
     branch.cfg = cfg;
-    `uvm_info(`gfn, "riscv_jump_instr pre", UVM_LOW)
   endfunction
 
   function void post_randomize();
     riscv_instr_base instr[];
-    `uvm_info(`gfn, "riscv_jump_instr post", UVM_LOW)
     // Generate some random instructions to mix with jump instructions
     reserved_rd = {addi.rs1};
     initialize_instr_list(mixed_instr_cnt);
-    `uvm_info(`gfn, "riscv_jump_instr 0", UVM_LOW)
     gen_instr(1'b1);
-    `uvm_info(`gfn, "riscv_jump_instr 1", UVM_LOW)
     la.imm_str = target_program_label;
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
@@ -165,7 +161,6 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
       instr_list[i].has_label = 1'b0;
       instr_list[i].atomic = 1'b1;
     end
-    `uvm_info(`gfn, "riscv_jump_instr 2", UVM_LOW)
     jump.has_label = 1'b1;
     jump.label = $sformatf("j_%0s_%0s_%0d", label, target_program_label, idx);
     branch.imm_str = jump.label;

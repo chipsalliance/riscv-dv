@@ -261,13 +261,11 @@ class riscv_asm_program_gen extends uvm_object;
             idx++;
             pid = callstack_gen.program_h[i].sub_program_id[j] - 1;
             `uvm_info(get_full_name(), $sformatf(
-                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_LOW)
+                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_HIGH)
             if(i == 0)
               main_program.insert_jump_instr(sub_program_name[pid], idx);
             else
               sub_program[i-1].insert_jump_instr(sub_program_name[pid], idx);
-            `uvm_info(get_full_name(), $sformatf(
-                      "Gen jump instr %0d -> sub[%0d] %0d...done", i, j, pid+1), UVM_LOW)
           end
         end
       end else begin
