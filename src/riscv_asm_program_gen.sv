@@ -91,7 +91,7 @@ class riscv_asm_program_gen extends uvm_object;
         bin_program.hint_instr_pct = $urandom_range(5, 20);
       end
       `DV_CHECK_RANDOMIZE_FATAL(bin_program)
-      bin_program.gen_instr(.is_main_program(0), .enable_hint_instr(cfg.enable_hint_instruction));
+      bin_program.gen_instr(.is_main_program(0));
       bin_program.post_process_instr();
       bin_program.generate_binary_stream(instr_binary);
     end
@@ -261,17 +261,20 @@ class riscv_asm_program_gen extends uvm_object;
             idx++;
             pid = callstack_gen.program_h[i].sub_program_id[j] - 1;
             `uvm_info(get_full_name(), $sformatf(
-                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_HIGH)
+                      "Gen jump instr %0d -> sub[%0d] %0d", i, j, pid+1), UVM_LOW)
             if(i == 0)
               main_program.insert_jump_instr(sub_program_name[pid], idx);
             else
               sub_program[i-1].insert_jump_instr(sub_program_name[pid], idx);
+            `uvm_info(get_full_name(), $sformatf(
+                      "Gen jump instr %0d -> sub[%0d] %0d...done", i, j, pid+1), UVM_LOW)
           end
         end
       end else begin
         `uvm_fatal(get_full_name(), "Failed to generate callstack")
       end
     end
+    `uvm_info(get_full_name(), "Randomizing call stack..done", UVM_LOW)
   endfunction
 
   virtual function void insert_sub_program(ref riscv_instr_sequence sub_program[],
@@ -1130,8 +1133,7 @@ class riscv_asm_program_gen extends uvm_object;
         debug_program.is_debug_program = 1;
         debug_program.cfg = cfg;
         `DV_CHECK_RANDOMIZE_FATAL(debug_program)
-        debug_program.gen_instr(.is_main_program(1'b1), .enable_hint_instr(1'b0),
-                                .no_branch(1'b0));
+        debug_program.gen_instr(.is_main_program(1'b1), .no_branch(1'b0));
         gen_callstack(debug_program, debug_sub_program, debug_sub_program_name,
                       cfg.num_debug_sub_program);
         debug_program.post_process_instr();
