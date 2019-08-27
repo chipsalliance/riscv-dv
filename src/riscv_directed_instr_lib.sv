@@ -94,6 +94,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
   rand riscv_instr_base    addi;
   rand riscv_pseudo_instr  la;
   rand riscv_rand_instr    branch;
+  rand int                 imm;
   rand bit                 enable_branch;
   rand int                 mixed_instr_cnt;
   riscv_instr_base         stack_exit_instr[];
@@ -110,6 +111,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     addi.rd  == la.rd;
     // Avoid using negative offset -1024
     addi.imm != 'hFFFF_FC00;
+    addi.imm != 1024;
     jump.imm == ~addi.imm + 1;
     jump.rs1 == addi.rd;
     addi.instr_name == ADDI;
@@ -131,14 +133,18 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
 
   function void pre_randomize();
     branch.cfg = cfg;
+    `uvm_info(`gfn, "riscv_jump_instr pre", UVM_LOW)
   endfunction
 
   function void post_randomize();
     riscv_instr_base instr[];
+    `uvm_info(`gfn, "riscv_jump_instr post", UVM_LOW)
     // Generate some random instructions to mix with jump instructions
     reserved_rd = {addi.rs1};
     initialize_instr_list(mixed_instr_cnt);
+    `uvm_info(`gfn, "riscv_jump_instr 0", UVM_LOW)
     gen_instr(1'b1);
+    `uvm_info(`gfn, "riscv_jump_instr 1", UVM_LOW)
     la.imm_str = target_program_label;
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
@@ -159,6 +165,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
       instr_list[i].has_label = 1'b0;
       instr_list[i].atomic = 1'b1;
     end
+    `uvm_info(`gfn, "riscv_jump_instr 2", UVM_LOW)
     jump.has_label = 1'b1;
     jump.label = $sformatf("j_%0s_%0s_%0d", label, target_program_label, idx);
     branch.imm_str = jump.label;
@@ -335,9 +342,7 @@ class riscv_long_branch_instr extends riscv_rand_instr_stream;
     backward_branch_instr_stream.initialize_instr_list(branch_instr_stream_len);
   endfunction
 
-  virtual function void gen_instr(bit no_branch = 1'b0,
-                                  bit no_load_store = 1'b1,
-                                  bit enable_hint_instr = 1'b0);
+  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
     int branch_offset;
     super.gen_instr(1'b1);
     forward_branch_instr_stream.gen_instr();
