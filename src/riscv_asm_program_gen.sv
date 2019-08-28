@@ -1120,12 +1120,14 @@ class riscv_asm_program_gen extends uvm_object;
     string dret;
     string debug_sub_program_name[$] = {};
     if (riscv_instr_pkg::support_debug_mode) begin
-      // Signal that the core entered the debug rom regardless of whether the
-      // main debug rom program has been generated
-      gen_signature_handshake(instr, CORE_STATUS, IN_DEBUG_MODE);
-      format_section(instr);
       // The main debug rom
       if (cfg.gen_debug_section) begin
+        // Signal that the core entered debug rom only if the rom is actually
+        // being filled with random instructions to prevent stress tests from
+        // having to execute unnecessary push/pop of GPRs on the stack ever
+        // time a debug request is sent
+        gen_signature_handshake(instr, CORE_STATUS, IN_DEBUG_MODE);
+        format_section(instr);
         gen_sub_program(debug_sub_program, debug_sub_program_name,
                         cfg.num_debug_sub_program, 1'b1, "debug_sub");
         debug_program = riscv_instr_sequence::type_id::create("debug_program");
