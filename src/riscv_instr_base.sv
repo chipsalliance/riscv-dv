@@ -244,6 +244,7 @@ class riscv_instr_base extends uvm_object;
   `add_instr(URET,    I_FORMAT, SYSTEM, RV32I)
   `add_instr(SRET,    I_FORMAT, SYSTEM, RV32I)
   `add_instr(MRET,    I_FORMAT, SYSTEM, RV32I)
+  `add_instr(DRET,    I_FORMAT, SYSTEM, RV32I)
   `add_instr(WFI,     I_FORMAT, INTERRUPT, RV32I)
   // CSR instructions
   `add_instr(CSRRW,  R_FORMAT, CSR, RV32I, UIMM)
@@ -604,7 +605,7 @@ class riscv_instr_base extends uvm_object;
       FENCE, FENCEI                                                : get_opcode = 7'b0001111;
       ECALL, EBREAK, CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI   : get_opcode = 7'b1110011;
       ADDW, SUBW, SLLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW, REMUW : get_opcode = 7'b0111011;
-      ECALL, EBREAK, URET, SRET, MRET, WFI, SFENCE_VMA             : get_opcode = 7'b1110011;
+      ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA       : get_opcode = 7'b1110011;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
     endcase
   endfunction
@@ -746,7 +747,7 @@ class riscv_instr_base extends uvm_object;
       C_SWSP     : get_func3 = 3'b110;
       C_FSWSP    : get_func3 = 3'b111;
       C_SDSP     : get_func3 = 3'b111;
-      ECALL, EBREAK, URET, SRET, MRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
+      ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
     endcase
   endfunction
@@ -796,6 +797,7 @@ class riscv_instr_base extends uvm_object;
       URET   : get_func7 = 7'b0000000;
       SRET   : get_func7 = 7'b0001000;
       MRET   : get_func7 = 7'b0011000;
+      DRET   : get_func7 = 7'b0111101;
       WFI    : get_func7 = 7'b0001000;
       SFENCE_VMA: get_func7 = 7'b0001001;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
@@ -822,6 +824,8 @@ class riscv_instr_base extends uvm_object;
             binary = $sformatf("%8h", {get_func7(), 18'b0, get_opcode()});
           else if(instr_name inside {URET, SRET, MRET})
             binary = $sformatf("%8h", {get_func7(), 5'b10, 13'b0, get_opcode()});
+          else if(instr_name inside {DRET})
+            binary = $sformatf("%8h", {get_func7(), 5'b10010, 13'b0, get_opcode()});
           else if(instr_name == EBREAK)
             binary = $sformatf("%8h", {get_func7(), 5'b01, 13'b0, get_opcode()});
           else if(instr_name == WFI)

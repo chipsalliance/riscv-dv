@@ -791,7 +791,7 @@ class riscv_asm_program_gen extends uvm_object;
   // PC + 4 is a valid instruction boundary.
   virtual function void gen_illegal_instr_handler();
     string instr[$];
-    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
+    gen_signature_handshake(instr, CORE_STATUS, ILLEGAL_INSTR_EXCEPTION);
     instr = {instr,
             "csrr  x31, mepc",
             "addi  x31, x31, 4",

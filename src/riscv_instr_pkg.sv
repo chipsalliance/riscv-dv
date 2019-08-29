@@ -261,6 +261,7 @@ package riscv_instr_pkg;
     AMOMINU_D,
     AMOMAXU_D,
     // Supervisor instruction
+    DRET,
     MRET,
     URET,
     SRET,

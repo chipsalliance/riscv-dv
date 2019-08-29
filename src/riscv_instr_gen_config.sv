@@ -92,6 +92,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    no_load_store;    // No load/store instruction
   bit                    no_csr_instr;     // No csr instruction
   bit                    no_ebreak = 1;    // No ebreak instruction
+  bit                    no_dret = 1;      // No dret instruction
   bit                    no_fence;         // No fence instruction
   bit                    no_wfi = 1;       // No WFI instruction
   bit                    enable_unaligned_load_store;
@@ -287,6 +288,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_int_arg_value("+num_of_sub_program=", num_of_sub_program);
     get_int_arg_value("+instr_cnt=", instr_cnt);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
+    get_bool_arg_value("+no_dret=", no_dret);
     get_bool_arg_value("+no_wfi=", no_wfi);
     get_bool_arg_value("+no_branch_jump=", no_branch_jump);
     get_bool_arg_value("+no_load_store=", no_load_store);
@@ -465,6 +467,9 @@ class riscv_instr_gen_config extends uvm_object;
     while (instr_name != instr_name.first);
     if (no_ebreak == 0) begin
       basic_instr = {basic_instr, EBREAK};
+    end
+    if (no_dret == 0) begin
+      basic_instr = {basic_instr, DRET};
     end
     if (no_fence == 0) begin
       basic_instr = {basic_instr, instr_category[SYNCH]};

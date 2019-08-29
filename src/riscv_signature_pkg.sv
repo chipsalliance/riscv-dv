@@ -42,7 +42,8 @@ package riscv_signature_pkg;
     IN_SUPERVISOR_MODE,
     IN_USER_MODE,
     HANDLING_IRQ,
-    HANDLING_EXCEPTION
+    HANDLING_EXCEPTION,
+    ILLEGAL_INSTR_EXCEPTION
   } core_status_t;
 
   typedef enum bit {
