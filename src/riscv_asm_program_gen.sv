@@ -772,7 +772,7 @@ class riscv_asm_program_gen extends uvm_object;
   // TODO: Support ebreak exception delegation
   virtual function void gen_ebreak_handler();
     string instr[$];
-    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
+    gen_signature_handshake(instr, CORE_STATUS, EBREAK_EXCEPTION);
     instr = {instr,
             "csrr  x31, mepc",
             "addi  x31, x31, 4",
@@ -1111,22 +1111,83 @@ class riscv_asm_program_gen extends uvm_object;
     end
   endfunction
 
+  //---------------------------------------------------------------------------------------
+  // Generate the debug rom, and any related programs
+  //---------------------------------------------------------------------------------------
+
   // Generate the program in the debug ROM
   // Processor will fetch instruction from here upon receiving debug request from debug module
   virtual function void gen_debug_rom();
-    string push_gpr[$];
-    string pop_gpr[$];
     string instr[$];
+    string debug_end[$];
     string dret;
     string debug_sub_program_name[$] = {};
+    string str[$];
     if (riscv_instr_pkg::support_debug_mode) begin
+      dret = {format_string(" ", LABEL_STR_LEN), "dret"};
       // The main debug rom
-      if (cfg.gen_debug_section) begin
+      if (!cfg.gen_debug_section) begin
+        // If the debug section should not be generated, we just populate it
+        // with a dret instruction.
+        instr = {dret};
+        gen_section("debug_rom", instr);
+      end else begin
+        if (cfg.enable_ebreak_in_debug_rom) begin
+          // As execution of ebreak in D mode causes core to
+          // re-enter D mode, this directed sequence will be a loop that ensures the
+          // ebreak instruction will only be executed once to prevent infinitely
+          // looping back to the beginning of the debug rom.
+          // Write dscratch to random GPR and branch to debug_end if greater
+          // than 0, for ebreak loops.
+          // Use dscratch1 to store original GPR value.
+          str = {$sformatf("csrw 0x%0x, x%0d", DSCRATCH1, cfg.scratch_reg),
+                 $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH0)};
+          instr = {instr, str};
+          // send dpc and dcsr to testbench, as this handshake will be
+          // executed twice due to the ebreak loop, there should be no change
+          // in their values as by the Debug Mode Spec Ch. 4.1.8
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DPC));
+          str = {$sformatf("beq x%0d, x0, 1f", cfg.scratch_reg),
+                 $sformatf("j debug_end"),
+                 $sformatf("1: csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH1)};
+          instr = {instr, str};
+        end
+        // Need to save off GPRs to avoid modifying program flow
+        push_gpr_to_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
         // Signal that the core entered debug rom only if the rom is actually
         // being filled with random instructions to prevent stress tests from
         // having to execute unnecessary push/pop of GPRs on the stack ever
         // time a debug request is sent
         gen_signature_handshake(instr, CORE_STATUS, IN_DEBUG_MODE);
+        if (cfg.set_dcsr_ebreak) begin
+          // We want to set dcsr.ebreak(m/s/u) to 1'b1, depending on what modes
+          // are available.
+          // TODO(udinator) - randomize the dcsr.ebreak setup
+          gen_dcsr_ebreak(instr);
+        end
+        // Check dcsr.cause, and update dpc by 0x4 if the cause is ebreak, as
+        // ebreak will set set dpc to its own address, which will cause an
+        // infinite loop.
+        str = {$sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DCSR),
+               $sformatf("slli x%0d, x%0d, 0x17", cfg.scratch_reg, cfg.scratch_reg),
+               $sformatf("srli x%0d, x%0d, 0x1d", cfg.scratch_reg, cfg.scratch_reg),
+               $sformatf("li x%0d, 0x1", cfg.signature_data_reg),
+               $sformatf("bne x%0d, x%0d, 2f", cfg.scratch_reg, cfg.signature_data_reg)};
+        instr = {instr, str};
+        increment_csr(DPC, 4, instr);
+        str = {"2: nop"};
+        instr = {instr, str};
+        // write DCSR to the testbench for any analysis
+        gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
+        // Increment dscratch0 by 1 to update the loop counter for all ebreak
+        // tests
+        if (cfg.enable_ebreak_in_debug_rom || cfg.set_dcsr_ebreak) begin
+          // Add 1 to dscratch0
+          increment_csr(DSCRATCH0, 1, instr);
+          str = {$sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH1)};
+          instr = {instr, str};
+        end
         format_section(instr);
         gen_sub_program(debug_sub_program, debug_sub_program_name,
                         cfg.num_debug_sub_program, 1'b1, "debug_sub");
@@ -1140,17 +1201,28 @@ class riscv_asm_program_gen extends uvm_object;
                       cfg.num_debug_sub_program);
         debug_program.post_process_instr();
         debug_program.generate_instr_stream(.no_label(1'b1));
-        // Need to save off GPRs to avoid modifying program flow
-        push_gpr_to_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, push_gpr);
-        format_section(push_gpr);
-        pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, pop_gpr);
-        format_section(pop_gpr);
-        instr = {push_gpr, instr, debug_program.instr_string_list, pop_gpr};
         insert_sub_program(debug_sub_program, instr_stream);
+        instr = {instr, debug_program.instr_string_list};
+        gen_section("debug_rom", instr);
+        // Set dscratch0 back to 0x0 to prepare for the next entry into debug
+        // mode, and write dscratch0 and dcsr to the testbench for any
+        // analysis
+        if (cfg.enable_ebreak_in_debug_rom) begin
+          str = {$sformatf("csrwi 0x%0x, 0x0", DSCRATCH0)};
+          debug_end = {debug_end, str};
+        end
+        pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, debug_end);
+        // We have been using dscratch1 to store the
+        // value of our given scratch register for use in ebreak loop, so we
+        // need to restore its value before returning from D mode
+        if (cfg.enable_ebreak_in_debug_rom) begin
+          str = {$sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH1)};
+          debug_end = {debug_end, str};
+        end
+        format_section(debug_end);
+        debug_end = {debug_end, dret};
+        gen_section("debug_end", debug_end);
       end
-      dret = {format_string(" ", LABEL_STR_LEN), "dret"};
-      instr = {instr, dret};
-      gen_section("debug_rom", instr);
     end
   endfunction
 
@@ -1161,6 +1233,40 @@ class riscv_asm_program_gen extends uvm_object;
       instr = {"dret"};
       gen_section("debug_exception", instr);
     end
+  endfunction
+
+  // Set dcsr.ebreak(m/s/u)
+  // TODO(udinator) - randomize the setup for these fields
+  virtual function void gen_dcsr_ebreak(ref string instr[$]);
+    string str;
+    if (MACHINE_MODE inside {riscv_instr_pkg::supported_privileged_mode}) begin
+      str = $sformatf("li x%0d, 0x8000", cfg.scratch_reg);
+      instr.push_back(str);
+      str = $sformatf("csrs dcsr, x%0d", cfg.scratch_reg);
+      instr.push_back(str);
+    end
+    if (SUPERVISOR_MODE inside {riscv_instr_pkg::supported_privileged_mode}) begin
+      str = $sformatf("li x%0d, 0x2000", cfg.scratch_reg);
+      instr.push_back(str);
+      str = $sformatf("csrs dcsr, x%0d", cfg.scratch_reg);
+      instr.push_back(str);
+    end
+    if (USER_MODE inside {riscv_instr_pkg::supported_privileged_mode}) begin
+      str = $sformatf("li x%0d, 0x1000", cfg.scratch_reg);
+      instr.push_back(str);
+      str = $sformatf("csrs dcsr, x%0d", cfg.scratch_reg);
+      instr.push_back(str);
+    end
+  endfunction
+
+  virtual function void increment_csr(privileged_reg_t csr, int val, ref string instr[$]);
+    string str;
+    str = $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, csr);
+    instr.push_back(str);
+    str = $sformatf("addi x%0d, x%0d, 0x%0x", cfg.scratch_reg, cfg.scratch_reg, val);
+    instr.push_back(str);
+    str = $sformatf("csrw 0x%0x, x%0d", csr, cfg.scratch_reg);
+    instr.push_back(str);
   endfunction
 
 endclass

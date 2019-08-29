@@ -192,10 +192,11 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     end
   endfunction
 
-  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1,
+                                  bit is_debug_program = 1'b0);
     setup_allowed_instr(no_branch, no_load_store);
     foreach(instr_list[i]) begin
-      randomize_instr(instr_list[i]);
+      randomize_instr(instr_list[i], is_debug_program);
     end
     // Do not allow branch instruction as the last instruction because there's no
     // forward branch target
@@ -206,14 +207,23 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
   endfunction
 
   function void randomize_instr(riscv_instr_base instr,
+                                bit is_in_debug = 1'b0,
                                 bit skip_rs1 = 1'b0,
                                 bit skip_rs2 = 1'b0,
                                 bit skip_rd  = 1'b0,
                                 bit skip_imm = 1'b0,
                                 bit skip_csr = 1'b0);
     riscv_instr_name_t instr_name;
-    `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(instr_name,
+    // if set_dcsr_ebreak is set, we do not want to generate any ebreak
+    // instructions inside the debug_rom
+    if (!cfg.enable_ebreak_in_debug_rom && is_in_debug) begin
+      `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(instr_name,
+                                        instr_name inside {allowed_instr};
+                                        !(instr_name inside {EBREAK, C_EBREAK});)
+    end else begin
+      `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(instr_name,
                                        instr_name inside {allowed_instr};)
+    end
     instr.copy_base_instr(cfg.instr_template[instr_name]);
     `uvm_info(`gfn, $sformatf("%s: rs1:%0d, rs2:%0d, rd:%0d, imm:%0d",
                               instr.instr_name.name(),

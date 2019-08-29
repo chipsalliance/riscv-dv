@@ -571,7 +571,8 @@ package riscv_instr_pkg;
     TDATA3          = 'h7A3,  // Third Debug/Trace trigger data register
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
-    DSCRATCH        = 'h7B2   // Debug scratch register
+    DSCRATCH0       = 'h7B2,  // Debug scratch register
+    DSCRATCH1       = 'h7B3   // Debug scratch register
   } privileged_reg_t;
 
   typedef enum bit [5:0] {
