@@ -78,7 +78,8 @@ class riscv_instr_sequence extends uvm_sequence;
                                instr_stream.instr_list.size()), UVM_LOW)
     // Do not generate load/store instruction here
     // The load/store instruction will be inserted as directed instruction stream
-    instr_stream.gen_instr(.no_branch(no_branch), .no_load_store(1'b1));
+    instr_stream.gen_instr(.no_branch(no_branch), .no_load_store(1'b1),
+                           .is_debug_program(is_debug_program));
     if(!is_main_program) begin
       gen_stack_enter_instr();
       gen_stack_exit_instr();

@@ -337,7 +337,8 @@ class riscv_long_branch_instr extends riscv_rand_instr_stream;
     backward_branch_instr_stream.initialize_instr_list(branch_instr_stream_len);
   endfunction
 
-  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  virtual function void gen_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1,
+                                  bit is_debug_program = 1'b0);
     int branch_offset;
     super.gen_instr(1'b1);
     forward_branch_instr_stream.gen_instr();

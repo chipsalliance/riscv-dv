@@ -124,12 +124,20 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    require_signature_addr = 1'b0;
   rand riscv_reg_t       signature_addr_reg;
   rand riscv_reg_t       signature_data_reg;
-  bit                    gen_debug_section = 1'b0;
+  // Register that will be used to handle any DCSR operations inside of the
+  // debug rom
+  rand riscv_reg_t       scratch_reg;
   // Enable a full or empty debug_rom section.
   // Full debug_rom will contain random instruction streams.
   // Empty debug_rom will contain just dret instruction and will return immediately.
   // Will be empty by default.
-  bit                    empty_debug_section = 1'b0;
+  bit                    gen_debug_section = 1'b0;
+  // Enable generation of a directed sequence of instructions containing
+  // ebreak inside the debug_rom.
+  // Disabled by default.
+  bit                    enable_ebreak_in_debug_rom = 1'b0;
+  // Enable setting dcsr.ebreak(m/s/u)
+  bit                    set_dcsr_ebreak = 1'b0;
   // Number of sub programs in the debug rom
   int                    num_debug_sub_program = 0;
   // Stack space allocated to each program, need to be enough to store necessary context
@@ -258,7 +266,10 @@ class riscv_instr_gen_config extends uvm_object;
     }
     !(signature_addr_reg inside {ZERO, default_reserved_regs, loop_regs});
     !(signature_data_reg inside {ZERO, default_reserved_regs, loop_regs});
+    !(scratch_reg inside {ZERO, default_reserved_regs, loop_regs});
     signature_addr_reg != signature_data_reg;
+    signature_addr_reg != scratch_reg;
+    signature_data_reg != scratch_reg;
   }
 
   constraint legal_loop_regs_c {
@@ -310,6 +321,8 @@ class riscv_instr_gen_config extends uvm_object;
     end
     get_bool_arg_value("+gen_debug_section=", gen_debug_section);
     get_int_arg_value("+num_debug_sub_program=", num_debug_sub_program);
+    get_bool_arg_value("+enable_ebreak_in_debug_rom=", enable_ebreak_in_debug_rom);
+    get_bool_arg_value("+set_dcsr_ebreak=", set_dcsr_ebreak);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
       `uvm_info(get_full_name(), $sformatf(
                 "Got boot mode option - %0s", boot_mode_opts), UVM_LOW)
@@ -385,7 +398,7 @@ class riscv_instr_gen_config extends uvm_object;
 
   function void post_randomize();
     // Setup the list all reserved registers
-    reserved_regs = {default_reserved_regs, loop_regs};
+    reserved_regs = {default_reserved_regs, loop_regs, scratch_reg};
     // Need to save all loop registers, and RA/T0
     min_stack_len_per_program = (max_nested_loop * 2 + 2) * (XLEN/8);
     // Check if the setting is legal
@@ -467,6 +480,12 @@ class riscv_instr_gen_config extends uvm_object;
     while (instr_name != instr_name.first);
     if (no_ebreak == 0) begin
       basic_instr = {basic_instr, EBREAK};
+      foreach(riscv_instr_pkg::supported_isa[i]) begin
+        if (riscv_instr_pkg::supported_isa[i] inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
+          basic_instr = {basic_instr, C_EBREAK};
+          break;
+        end
+      end
     end
     if (no_dret == 0) begin
       basic_instr = {basic_instr, DRET};
