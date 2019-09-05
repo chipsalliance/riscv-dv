@@ -95,9 +95,17 @@ class riscv_instr_stream extends uvm_object;
     if(replace) begin
       new_instr[0].label = instr_list[idx].label;
       new_instr[0].has_label = instr_list[idx].has_label;
-      instr_list = {instr_list[0:idx-1], new_instr, instr_list[idx+1:current_instr_cnt-1]};
+      if (idx == 0) begin
+        instr_list = {new_instr, instr_list[idx+1:current_instr_cnt-1]};
+      end else begin
+        instr_list = {instr_list[0:idx-1], new_instr, instr_list[idx+1:current_instr_cnt-1]};
+      end
     end else begin
-      instr_list = {instr_list[0:idx-1], new_instr, instr_list[idx:current_instr_cnt-1]};
+      if (idx == 0) begin
+        instr_list = {new_instr, instr_list[idx:current_instr_cnt-1]};
+      end else begin
+        instr_list = {instr_list[0:idx-1], new_instr, instr_list[idx:current_instr_cnt-1]};
+      end
     end
   endfunction
 
@@ -182,7 +190,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     end
   endfunction
 
-  virtual function setup_allowed_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  virtual function void setup_allowed_instr(bit no_branch = 1'b0, bit no_load_store = 1'b1);
     allowed_instr = cfg.basic_instr;
     if (no_branch == 0) begin
       allowed_instr = {allowed_instr, cfg.instr_category[BRANCH]};
