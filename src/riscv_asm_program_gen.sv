@@ -68,13 +68,15 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.delete();
     // Generate program header
     gen_program_header();
-    // Initialize general purpose registers
-    init_gpr();
-    setup_misa();
-    // Create all page tables
-    create_page_table();
-    // Setup privileged mode registers and enter target privileged mode
-    pre_enter_privileged_mode();
+    if (!cfg.bare_program_mode) begin
+      // Initialize general purpose registers
+      init_gpr();
+      setup_misa();
+      // Create all page tables
+      create_page_table();
+      // Setup privileged mode registers and enter target privileged mode
+      pre_enter_privileged_mode();
+    end
     // Generate sub program in binary format
     // Illegal instruction and hint instruction cannot pass compilation, need to directly generate
     // the instruction in binary format and store in data section to skip compilation.
@@ -137,20 +139,24 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back({indent, "ret"});
     end
     `uvm_info(`gfn, "Main/sub program generation...done", UVM_LOW)
-    // Privileged mode switch routine
-    gen_privileged_mode_switch_routine();
-    // Program end
-    gen_program_end();
-    // Generate debug rom section
-    gen_debug_rom();
-    // Generate debug mode exception handler
-    gen_debug_exception_handler();
+    if (!cfg.bare_program_mode) begin
+      // Privileged mode switch routine
+      gen_privileged_mode_switch_routine();
+      // Program end
+      gen_program_end();
+      // Generate debug rom section
+      gen_debug_rom();
+      // Generate debug mode exception handler
+      gen_debug_exception_handler();
+    end
     // Starting point of data section
     gen_data_page_begin();
     // Generate the sub program in binary format
     gen_bin_program();
     // Page table
-    gen_page_table_section();
+    if (!cfg.bare_program_mode) begin
+      gen_page_table_section();
+    end
     if(!cfg.no_data_page) begin
       // Data section
       gen_data_page();
@@ -158,14 +164,17 @@ class riscv_asm_program_gen extends uvm_object;
     gen_data_page_end();
     // Stack section
     gen_stack_section();
-    // Generate kernel program/data/stack section
-    gen_kernel_sections();
+    if (!cfg.bare_program_mode) begin
+      // Generate kernel program/data/stack section
+      gen_kernel_sections();
+    end
   endfunction
 
   //---------------------------------------------------------------------------------------
   // Generate kernel program/data/stack sections
   //---------------------------------------------------------------------------------------
   virtual function void gen_kernel_sections();
+    instr_stream.push_back(".text");
     instr_stream.push_back("_kernel_start: .align 12");
     // Kernel programs
     if (cfg.init_privileged_mode != MACHINE_MODE) begin
