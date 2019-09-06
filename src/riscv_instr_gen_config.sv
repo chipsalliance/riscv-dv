@@ -88,13 +88,13 @@ class riscv_instr_gen_config extends uvm_object;
   // For tests doesn't involve load/store, the data section generation could be skipped
   bit                    no_data_page;
   // Options to turn off some specific types of instructions
-  bit                    no_branch_jump;   // No branch/jump instruction
-  bit                    no_load_store;    // No load/store instruction
-  bit                    no_csr_instr;     // No csr instruction
-  bit                    no_ebreak = 1;    // No ebreak instruction
-  bit                    no_dret = 1;      // No dret instruction
-  bit                    no_fence;         // No fence instruction
-  bit                    no_wfi = 1;       // No WFI instruction
+  bit                    no_branch_jump;     // No branch/jump instruction
+  bit                    no_load_store;      // No load/store instruction
+  bit                    no_csr_instr;       // No csr instruction
+  bit                    no_ebreak = 1;      // No ebreak instruction
+  bit                    no_dret = 1;        // No dret instruction
+  bit                    no_fence;           // No fence instruction
+  bit                    no_wfi = 1;         // No WFI instruction
   bit                    enable_unaligned_load_store;
   bit                    enable_illegal_instruction;
   bit                    enable_hint_instruction;
@@ -107,6 +107,10 @@ class riscv_instr_gen_config extends uvm_object;
   string                 asm_test_suffix;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
   int                    enable_interrupt;
+  // Generate a bare program without any init/exit/error handling/page table routines
+  // The generated program can be integrated with a larger program.
+  // Note that the bare mode program is not expected to run in standalone mode
+  bit                    bare_program_mode;
   // Enable accessing illegal CSR instruction
   // - Accessing non-existence CSR
   // - Accessing CSR with wrong privileged mode
@@ -344,6 +348,7 @@ class riscv_instr_gen_config extends uvm_object;
       get_hex_arg_value("+signature_addr=", signature_addr);
     end
     get_bool_arg_value("+gen_debug_section=", gen_debug_section);
+    get_bool_arg_value("+bare_program_mode=", bare_program_mode);
     get_int_arg_value("+num_debug_sub_program=", num_debug_sub_program);
     get_bool_arg_value("+enable_ebreak_in_debug_rom=", enable_ebreak_in_debug_rom);
     get_bool_arg_value("+set_dcsr_ebreak=", set_dcsr_ebreak);
