@@ -201,8 +201,8 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       cmd = ("%s -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
              -nostartfiles %s \
-             -Tscripts/link.ld %s -o %s " % \
-             (get_env_var("RISCV_GCC"), asm, opts, elf))
+             -T%s/scripts/link.ld %s -o %s " % \
+             (get_env_var("RISCV_GCC"), asm, get_env_var("RISCV_DV_ROOT"), opts, elf))
       if 'gcc_opts' in test:
         cmd += test['gcc_opts']
       # If march/mabi is not defined in the test gcc_opts, use the default
@@ -376,7 +376,7 @@ def setup_logging(verbose):
 
 def main():
   """This is the main entry point."""
-
+  check_riscv_dv_setting()
   parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
