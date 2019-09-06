@@ -133,6 +133,8 @@ class riscv_instr_sequence extends uvm_sequence;
   virtual function void post_process_instr();
     int i;
     int label_idx;
+    int branch_cnt;
+    int unsigned branch_idx[];
     int branch_target[string] = '{default: 0};
     // Insert directed instructions, it's randomly mixed with the random instruction stream.
     foreach (directed_instr[i]) begin
@@ -170,6 +172,11 @@ class riscv_instr_sequence extends uvm_sequence;
       end
     end
     // Generate branch target
+    branch_idx = new[30];
+    `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(branch_idx,
+                                       foreach(branch_idx[i]) {
+                                         branch_idx[i] inside {[1:cfg.max_branch_step]};
+                                       })
     while(i < instr_stream.instr_list.size()) begin
       if((instr_stream.instr_list[i].category == BRANCH) &&
         (!instr_stream.instr_list[i].branch_assigned) &&
@@ -180,11 +187,15 @@ class riscv_instr_sequence extends uvm_sequence;
         // reserved loop registers
         int branch_target_label;
         int branch_byte_offset;
-        `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(branch_target_label,
-          branch_target_label >= instr_stream.instr_list[i].idx+1;
-          branch_target_label <= label_idx-1;
-          branch_target_label <= instr_stream.instr_list[i].idx+cfg.max_branch_step;,
-          "Cannot randomize branch_target_label")
+        branch_target_label = instr_stream.instr_list[i].idx + branch_idx[branch_cnt];
+        if (branch_target_label >= label_idx) begin
+          branch_target_label = label_idx-1;
+        end
+        branch_cnt++;
+        if (branch_cnt == branch_idx.size()) begin
+          branch_cnt = 0;
+          branch_idx.shuffle();
+        end
         `uvm_info(get_full_name(),
                   $sformatf("Processing branch instruction[%0d]:%0s # %0d -> %0d",
                   i, instr_stream.instr_list[i].convert2asm(),

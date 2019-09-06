@@ -113,16 +113,20 @@ class riscv_asm_program_gen extends uvm_object;
     main_program.gen_instr(1);
     // Setup jump instruction among main program and sub programs
     gen_callstack(main_program, sub_program, sub_program_name, cfg.num_of_sub_program);
+    `uvm_info(`gfn, "Generating callstack...done", UVM_LOW)
     if (bin_program != null) begin
       main_program.insert_jump_instr("sub_bin", 0);
     end
     main_program.post_process_instr();
+    `uvm_info(`gfn, "Post-processing main program...done", UVM_LOW)
     main_program.generate_instr_stream();
+    `uvm_info(`gfn, "Generating main program instruction stream...done", UVM_LOW)
     instr_stream = {instr_stream, main_program.instr_string_list};
     // Test done section
     gen_test_done();
     // Shuffle the sub programs and insert to the instruction stream
     insert_sub_program(sub_program, instr_stream);
+    `uvm_info(`gfn, "Inserting sub-programs...done", UVM_LOW)
     // Reserve some space to copy instruction from data section
     if (instr_binary.size() > 0) begin
       instr_stream.push_back(".align 2");
@@ -132,6 +136,7 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back({indent, ".endr"});
       instr_stream.push_back({indent, "ret"});
     end
+    `uvm_info(`gfn, "Main/sub program generation...done", UVM_LOW)
     // Privileged mode switch routine
     gen_privileged_mode_switch_routine();
     // Program end
