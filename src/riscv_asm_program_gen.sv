@@ -478,6 +478,8 @@ class riscv_asm_program_gen extends uvm_object;
     privil_seq = riscv_privileged_common_seq::type_id::create("privil_seq");
     foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
       string instr[$];
+      string csr_handshake[$];
+      string ret_instr;
       if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       `uvm_info(`gfn, $sformatf("Generating privileged mode routing for %0s",
                       riscv_instr_pkg::supported_privileged_mode[i].name()), UVM_LOW)
@@ -485,6 +487,27 @@ class riscv_asm_program_gen extends uvm_object;
       privil_seq.cfg = cfg;
       `DV_CHECK_RANDOMIZE_FATAL(privil_seq)
       privil_seq.enter_privileged_mode(riscv_instr_pkg::supported_privileged_mode[i], instr);
+      if (cfg.require_signature_addr) begin
+        ret_instr = instr.pop_back();
+        // Want to write the main system CSRs to the testbench before indicating that initialization
+        // is complete, for any initial state analysis
+        case(riscv_instr_pkg::supported_privileged_mode[i])
+          MACHINE_MODE: begin
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(MSTATUS));
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(MIE));
+          end
+          SUPERVISOR_MODE: begin
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(SSTATUS));
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(SIE));
+          end
+          USER_MODE: begin
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(USTATUS));
+            gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(UIE));
+          end
+        endcase
+        format_section(csr_handshake);
+        instr = {instr, csr_handshake, ret_instr};
+      end
       instr_stream = {instr_stream, instr};
     end
   endfunction
@@ -599,12 +622,12 @@ class riscv_asm_program_gen extends uvm_object;
       if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       case(riscv_instr_pkg::supported_privileged_mode[i])
         MACHINE_MODE:
-          gen_trap_handler_section("m", MCAUSE, MTVEC, MTVAL, MEPC, MSCRATCH, MSTATUS);
+          gen_trap_handler_section("m", MCAUSE, MTVEC, MTVAL, MEPC, MSCRATCH, MSTATUS, MIE, MIP);
         SUPERVISOR_MODE:
-          gen_trap_handler_section("s", SCAUSE, STVEC, STVAL, SEPC, SSCRATCH, SSTATUS);
+          gen_trap_handler_section("s", SCAUSE, STVEC, STVAL, SEPC, SSCRATCH, SSTATUS, SIE, SIP);
         USER_MODE:
           if(riscv_instr_pkg::support_umode_trap)
-            gen_trap_handler_section("u", UCAUSE, UTVEC, UTVAL, UEPC, USCRATCH, USTATUS);
+            gen_trap_handler_section("u", UCAUSE, UTVEC, UTVAL, UEPC, USCRATCH, USTATUS, UIE, UIP);
       endcase
     end
     // Ebreak handler
@@ -631,12 +654,13 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_trap_handler_section(string mode,
                                             privileged_reg_t cause, privileged_reg_t tvec,
                                             privileged_reg_t tval, privileged_reg_t epc,
-                                            privileged_reg_t scratch, privileged_reg_t status);
+                                            privileged_reg_t scratch, privileged_reg_t status,
+                                            privileged_reg_t ie, privileged_reg_t ip);
     bit is_interrupt = 'b1;
     string tvec_name;
     string instr[$];
     if (cfg.mtvec_mode == VECTORED) begin
-      gen_interrupt_vector_table(mode, status, cause, scratch, instr);
+      gen_interrupt_vector_table(mode, status, cause, ie, ip, scratch, instr);
     end else begin
       // Push user mode GPR to kernel stack before executing exception handling, this is to avoid
       // exception handling routine modify user program state unexpectedly
@@ -708,6 +732,8 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_interrupt_vector_table(string           mode,
                                                    privileged_reg_t status,
                                                    privileged_reg_t cause,
+                                                   privileged_reg_t ie,
+                                                   privileged_reg_t ip,
                                                    privileged_reg_t scratch,
                                                    ref string       instr[$]);
 
@@ -719,22 +745,27 @@ class riscv_asm_program_gen extends uvm_object;
     instr = {instr, ".option norvc;",
                     $sformatf("j %0smode_exception_handler", mode)};
     // Redirect the interrupt to the corresponding interrupt handler
-    for (int i = 1; i < 16; i++) begin
+    for (int i = 1; i < max_interrupt_vector_num; i++) begin
       instr.push_back($sformatf("j %0smode_intr_vector_%0d", mode, i));
     end
     instr = {instr, ".option rvc;"};
-    for (int i = 1; i < 16; i++) begin
+    for (int i = 1; i < max_interrupt_vector_num; i++) begin
       string intr_handler[$];
       push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, intr_handler);
-      gen_signature_handshake(intr_handler, CORE_STATUS, HANDLING_IRQ);
+      gen_signature_handshake(.instr(intr_handler), .signature_type(CORE_STATUS), .core_status(HANDLING_IRQ));
       intr_handler = {intr_handler,
-               $sformatf("csrr a1, 0x%0x # %0s", cause, cause.name()),
-               // Terminate the test if xCause[31] != 0 (indicating exception)
-               $sformatf("bltz a1, 1f"),
-               // TODO(taliu) write xCause to the signature address
+                      $sformatf("csrr a1, 0x%0x # %0s", cause, cause.name()),
+                      // Terminate the test if xCause[31] != 0 (indicating exception)
+                      $sformatf("srli a1, a1, 0x1f"),
+                      $sformatf("beqz a1, 1f")};
+      gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(status));
+      gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(cause));
+      gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(ie));
+      gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(ip));
                // Jump to commmon interrupt handling routine
-               $sformatf("j %0smode_intr_handler", mode),
-               "1: j test_done"};
+      intr_handler = {intr_handler,
+                      $sformatf("j %0smode_intr_handler", mode),
+                      "1: j test_done"};
       gen_section($sformatf("%0smode_intr_vector_%0d", mode, i), intr_handler);
     end
   endfunction
@@ -760,9 +791,11 @@ class riscv_asm_program_gen extends uvm_object;
   // guarantees that epc + 4 is a valid instruction boundary
   // TODO: Support random operations in debug mode
   // TODO: Support ebreak exception delegation
+  // TODO: handshake the correct Xcause CSR based on delegation privil. mode
   virtual function void gen_ebreak_handler();
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, EBREAK_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
     instr = {instr,
             "csrr  x31, mepc",
             "addi  x31, x31, 4",
@@ -779,9 +812,11 @@ class riscv_asm_program_gen extends uvm_object;
   // know the illegal instruction is compressed or not. This hanlder just simply adds the PC by
   // 4 and resumes execution. The way that the illegal instruction is injected guarantees that
   // PC + 4 is a valid instruction boundary.
+  // TODO: handshake the corret Xcause CSR based on delegation setup
   virtual function void gen_illegal_instr_handler();
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, ILLEGAL_INSTR_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
     instr = {instr,
             "csrr  x31, mepc",
             "addi  x31, x31, 4",
@@ -835,6 +870,10 @@ class riscv_asm_program_gen extends uvm_object;
   // In this case, the core will write to a specific location as the response to the interrupt, and
   // external PLIC unit can detect this response and process the interrupt clean up accordingly.
   virtual function void gen_plic_section(ref string interrupt_handler_instr[$]);
+    // Utilize the memory mapped handshake scheme to signal the testbench that the interrupt
+    // handling has been completed and we are about to xRET out of the handler
+    gen_signature_handshake(.instr(interrupt_handler_instr), .signature_type(CORE_STATUS),
+                            .core_status(FINISHED_IRQ));
   endfunction
 
   // Interrupt handler routine
@@ -937,39 +976,34 @@ class riscv_asm_program_gen extends uvm_object;
                                         input signature_type_t signature_type,
                                         core_status_t core_status = INITIALIZED,
                                         test_result_t test_result = TEST_FAIL,
-                                        privileged_reg_t csr = MSCRATCH);
+                                        privileged_reg_t csr = MSCRATCH,
+                                        string addr_label = "");
     if (cfg.require_signature_addr) begin
-      string str;
-      str = $sformatf("li x%0d, 0x%0h", cfg.signature_addr_reg, cfg.signature_addr);
-      instr.push_back(str);
+      string str[$];
+      str = {$sformatf("li x%0d, 0x%0h", cfg.signature_addr_reg, cfg.signature_addr)};
+      instr = {instr, str};
       case (signature_type)
         // A single data word is written to the signature address.
         // Bits [7:0] contain the signature_type of CORE_STATUS, and the upper
         // XLEN-8 bits contain the core_status_t data.
         CORE_STATUS: begin
-          str = $sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, core_status);
-          instr.push_back(str);
-          str = $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg);
-          instr.push_back(str);
-          str = $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
-                          cfg.signature_data_reg, signature_type);
-          instr.push_back(str);
-          str = $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg);
-          instr.push_back(str);
+          str = {$sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, core_status),
+                 $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg),
+                 $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
+                           cfg.signature_data_reg, signature_type),
+                 $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg)};
+          instr = {instr, str};
         end
         // A single data word is written to the signature address.
         // Bits [7:0] contain the signature_type of TEST_RESULT, and the upper
         // XLEN-8 bits contain the test_result_t data.
         TEST_RESULT: begin
-          str = $sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, test_result);
-          instr.push_back(str);
-          str = $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg);
-          instr.push_back(str);
-          str = $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
-                          cfg.signature_data_reg, signature_type);
-          instr.push_back(str);
-          str = $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg);
-          instr.push_back(str);
+          str = {$sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, test_result),
+                 $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg),
+                 $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
+                           cfg.signature_data_reg, signature_type),
+                 $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg)};
+          instr = {instr, str};
         end
         // The first write to the signature address contains just the
         // signature_type of WRITE_GPR.
@@ -977,13 +1011,12 @@ class riscv_asm_program_gen extends uvm_object;
         // each writing the data contained in one GPR, starting from x0 as the
         // first write, and ending with x31 as the 32nd write.
         WRITE_GPR: begin
-          str = $sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, signature_type);
-          instr.push_back(str);
-          str = $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg);
-          instr.push_back(str);
+          str = {$sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, signature_type),
+                 $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg)};
+          instr = {instr, str};
           for(int i = 0; i < 32; i++) begin
-            str = $sformatf("sw x%0x, 0(x%0d)", i, cfg.signature_addr_reg);
-            instr.push_back(str);
+            str = {$sformatf("sw x%0x, 0(x%0d)", i, cfg.signature_addr_reg)};
+            instr = {instr, str};
           end
         end
         // The first write to the signature address contains the
@@ -992,19 +1025,14 @@ class riscv_asm_program_gen extends uvm_object;
         // It is followed by a second write to the signature address,
         // containing the data stored in the specified CSR.
         WRITE_CSR: begin
-          str = $sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, csr);
-          instr.push_back(str);
-          str = $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg);
-          instr.push_back(str);
-          str = $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
-                          cfg.signature_data_reg, signature_type);
-          instr.push_back(str);
-          str = $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg);
-          instr.push_back(str);
-          str = $sformatf("csrr x%0d, 0x%0h", cfg.signature_data_reg, csr);
-          instr.push_back(str);
-          str = $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg);
-          instr.push_back(str);
+          str = {$sformatf("li x%0d, 0x%0h", cfg.signature_data_reg, csr),
+                 $sformatf("slli x%0d, x%0d, 8", cfg.signature_data_reg, cfg.signature_data_reg),
+                 $sformatf("addi x%0d, x%0d, 0x%0h", cfg.signature_data_reg,
+                           cfg.signature_data_reg, signature_type),
+                 $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg),
+                 $sformatf("csrr x%0d, 0x%0h", cfg.signature_data_reg, csr),
+                 $sformatf("sw x%0d, 0(x%0d)", cfg.signature_data_reg, cfg.signature_addr_reg)};
+          instr = {instr, str};
         end
         default: begin
           `uvm_fatal(`gfn, "signature_type is not defined")

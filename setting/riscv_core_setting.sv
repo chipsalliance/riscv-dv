@@ -35,6 +35,10 @@ riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C
 // Interrupt mode support
 mtvec_mode_t supported_interrupt_mode[$] = {DIRECT, VECTORED};
 
+// The number of interrupt vectors to be generated, only used if VECTORED interrupt mode is
+// supported
+int max_interrupt_vector_num = 16;
+
 // Debug mode support
 bit support_debug_mode = 0;
 
