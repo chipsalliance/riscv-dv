@@ -98,7 +98,7 @@
   iterations: 2
   gen_test: riscv_instr_base_test
   gen_opts: >
-    +instr_cnt=15000
+    +instr_cnt=10000
     +num_of_sub_program=20
     +directed_instr_0=riscv_load_store_rand_instr_stream,8
   rtl_test: core_base_test
