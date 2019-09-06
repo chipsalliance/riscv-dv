@@ -68,9 +68,9 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.delete();
     // Generate program header
     gen_program_header();
+    // Initialize general purpose registers
+    init_gpr();
     if (!cfg.bare_program_mode) begin
-      // Initialize general purpose registers
-      init_gpr();
       setup_misa();
       // Create all page tables
       create_page_table();
@@ -139,11 +139,11 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back({indent, "ret"});
     end
     `uvm_info(`gfn, "Main/sub program generation...done", UVM_LOW)
+    // Program end
+    gen_program_end();
     if (!cfg.bare_program_mode) begin
       // Privileged mode switch routine
       gen_privileged_mode_switch_routine();
-      // Program end
-      gen_program_end();
       // Generate debug rom section
       gen_debug_rom();
       // Generate debug mode exception handler
@@ -151,7 +151,7 @@ class riscv_asm_program_gen extends uvm_object;
     end
     // Starting point of data section
     gen_data_page_begin();
-    // Generate the sub program in binary format
+    // Generate the sub program in binary format (hint/illegal instructions)
     gen_bin_program();
     // Page table
     if (!cfg.bare_program_mode) begin
@@ -450,7 +450,11 @@ class riscv_asm_program_gen extends uvm_object;
     string str = format_string("test_done:", LABEL_STR_LEN);
     instr_stream.push_back(str);
     instr_stream.push_back({indent, "li gp, 1"});
-    instr_stream.push_back({indent, "ecall"});
+    if (cfg.bare_program_mode) begin
+      instr_stream.push_back({indent, "j write_tohost"});
+    end else begin
+      instr_stream.push_back({indent, "ecall"});
+    end
   endfunction
 
   // Dump all GPR to the starting point of the program
