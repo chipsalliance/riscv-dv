@@ -470,16 +470,35 @@ class riscv_instr_base extends uvm_object;
   function riscv_reg_t gen_rand_gpr(riscv_reg_t included_reg[] = {},
                                     riscv_reg_t excluded_reg[] = {});
     riscv_reg_t gpr;
-    `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(gpr,
-                                       if (is_compressed) {
-                                         gpr inside {[S0:A5]};
-                                       }
-                                       if (excluded_reg.size() != 0) {
-                                         !(gpr inside {excluded_reg});
-                                       }
-                                       if (included_reg.size() != 0) {
-                                         gpr inside {included_reg};
-                                       })
+    int unsigned i;
+    riscv_reg_t legal_gpr[$];
+    if (included_reg.size() > 0) begin
+      legal_gpr = included_reg;
+      while (is_compressed && (i < legal_gpr.size())) begin
+        if (legal_gpr[i] < S0 || legal_gpr[i] > A5) begin
+          legal_gpr.delete(i);
+        end else begin
+          i++;
+        end
+      end
+    end else if (is_compressed) begin
+      legal_gpr = riscv_instr_pkg::compressed_gpr;
+    end else begin
+      legal_gpr = riscv_instr_pkg::all_gpr;
+    end
+    if (excluded_reg.size() > 0) begin
+      i = 0;
+      while (i < legal_gpr.size()) begin
+        if (legal_gpr[i] inside {excluded_reg}) begin
+          legal_gpr.delete(i);
+        end else begin
+          i++;
+        end
+      end
+    end
+    `DV_CHECK_FATAL(legal_gpr.size() > 0)
+    `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(i, i < legal_gpr.size();)
+    gpr = legal_gpr[i];
     return gpr;
   endfunction
 

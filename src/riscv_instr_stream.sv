@@ -120,10 +120,8 @@ class riscv_instr_stream extends uvm_object;
     `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(insert_instr_position,
       foreach(insert_instr_position[i]) {
         insert_instr_position[i] inside {[0:current_instr_cnt-1]};
-        if(i > 0) {
-          insert_instr_position[i] >= insert_instr_position[i-1];
-        }
       })
+    insert_instr_position.sort();
     if(contained) begin
       insert_instr_position[0] = 0;
       if(new_instr_cnt > 1)
