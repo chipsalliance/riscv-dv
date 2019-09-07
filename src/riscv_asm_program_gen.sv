@@ -174,8 +174,8 @@ class riscv_asm_program_gen extends uvm_object;
   // Generate kernel program/data/stack sections
   //---------------------------------------------------------------------------------------
   virtual function void gen_kernel_sections();
+    instr_stream.push_back("_kernel_instr_start: .align 12");
     instr_stream.push_back(".text");
-    instr_stream.push_back("_kernel_start: .align 12");
     // Kernel programs
     if (cfg.init_privileged_mode != MACHINE_MODE) begin
       smode_accessible_umode_program = riscv_instr_sequence::type_id::
@@ -196,8 +196,10 @@ class riscv_asm_program_gen extends uvm_object;
     foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
       gen_interrupt_handler_section(riscv_instr_pkg::supported_privileged_mode[i]);
     end
+    instr_stream.push_back("_kernel_instr_end: nop");
     // Kernel data pages
-    gen_kernel_data_page_begin();
+    instr_stream.push_back("_kernel_data_start: .align 12");
+    instr_stream.push_back(".data");
     if(!cfg.no_data_page) begin
       // Data section
       gen_data_page(.is_kernel(1'b1));
@@ -205,7 +207,6 @@ class riscv_asm_program_gen extends uvm_object;
     gen_data_page_end();
     // Kernel stack section
     gen_kernel_stack_section();
-    instr_stream.push_back("_kernel_end: nop");
   endfunction
 
   virtual function void gen_kernel_program(riscv_instr_sequence seq);
@@ -304,10 +305,8 @@ class riscv_asm_program_gen extends uvm_object;
   //---------------------------------------------------------------------------------------
 
   virtual function void gen_program_header();
-    instr_stream.push_back(".macro init");
-    instr_stream.push_back(".endm");
-    instr_stream.push_back(".section .text.init");
     instr_stream.push_back(".globl _start");
+    instr_stream.push_back(".section .text");
     instr_stream.push_back("_start:");
   endfunction
 
@@ -323,11 +322,6 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".align 6; .global tohost; tohost: .dword 0;");
     instr_stream.push_back(".align 6; .global fromhost; fromhost: .dword 0;");
     instr_stream.push_back(".popsection;");
-    instr_stream.push_back(".align 4;");
-  endfunction
-
-  virtual function void gen_kernel_data_page_begin();
-    instr_stream.push_back(".data");
     instr_stream.push_back(".align 4;");
   endfunction
 
@@ -1110,6 +1104,7 @@ class riscv_asm_program_gen extends uvm_object;
     if (bin_program != null) begin
       string str;
       instr_stream.push_back("instr_bin:");
+      instr_stream.push_back(".data");
       instr_stream.push_back(".align 12");
       foreach (instr_binary[i]) begin
         if (((i+1) % 8 == 0) || (i == instr_binary.size() - 1)) begin
