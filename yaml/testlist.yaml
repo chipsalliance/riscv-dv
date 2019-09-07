@@ -118,11 +118,12 @@
     +directed_instr_3=riscv_multi_page_load_store_instr_stream,40
   rtl_test: core_base_test
 
+# TODO: Re-enable this test after all the data/instruction page organization changes are done
 - test: riscv_page_table_exception_test
   description: >
     Test random page table exception handling. An exception handling routine is
     designed to fix the page table error and resume execution.
-  iterations: 2
+  iterations: 0
   gen_test: riscv_rand_instr_test
   gen_opts: >
     +enable_page_table_exception=1

@@ -60,6 +60,7 @@ class riscv_data_page_gen extends uvm_object;
     page_size = is_kernel ? riscv_instr_pkg::kernel_data_page_size :
                             riscv_instr_pkg::data_page_size;
     for(int section_idx = 0; section_idx < page_cnt; section_idx++) begin
+      data_page_str.push_back(".data");
       if(is_kernel) begin
         data_page_str.push_back($sformatf("kernel_data_page_%0d:", section_idx));
       end else begin
