@@ -69,6 +69,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    check_misa_init_val = 1'b0;
   bit                    check_xstatus = 1'b1;
 
+  // Virtual address translation is on for this test
+  bit                    virtual_addr_translation_on;
 
   //-----------------------------------------------------------------------------
   //  User space memory region and stack setting
@@ -462,6 +464,9 @@ class riscv_instr_gen_config extends uvm_object;
     min_stack_len_per_program = (max_nested_loop * 2 + 2) * (XLEN/8);
     // Check if the setting is legal
     check_setting();
+    if ((init_privileged_mode != MACHINE_MODE) && (SATP_MODE != BARE)) begin
+      virtual_addr_translation_on = 1'b1;
+    end
   endfunction
 
   function void check_setting();

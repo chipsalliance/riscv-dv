@@ -177,14 +177,12 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back("_kernel_instr_start: .align 12");
     instr_stream.push_back(".text");
     // Kernel programs
-    if (cfg.init_privileged_mode != MACHINE_MODE) begin
+    if (cfg.virtual_addr_translation_on) begin
       smode_accessible_umode_program = riscv_instr_sequence::type_id::
                                        create("smode_accessible_umode_program");
       gen_kernel_program(smode_accessible_umode_program);
-    end
-    smode_program = riscv_instr_sequence::type_id::create("smode_program");
-    gen_kernel_program(smode_program);
-    if (cfg.init_privileged_mode != MACHINE_MODE) begin
+      smode_program = riscv_instr_sequence::type_id::create("smode_program");
+      gen_kernel_program(smode_program);
       smode_ls_umem_program = riscv_instr_sequence::type_id::create("smode_ls_umem_program");
       gen_kernel_program(smode_ls_umem_program);
     end
@@ -197,13 +195,17 @@ class riscv_asm_program_gen extends uvm_object;
       gen_interrupt_handler_section(riscv_instr_pkg::supported_privileged_mode[i]);
     end
     instr_stream.push_back("_kernel_instr_end: nop");
-    // Kernel data pages
-    instr_stream.push_back("_kernel_data_start: .align 12");
-    if(!cfg.no_data_page) begin
-      // Data section
-      gen_data_page(1'b1);
+    // User stack and data pages may not be accessible when executing trap handling programs in
+    // machine/supervisor mode. Generate separate kernel data/stack sections to solve it.
+    if (cfg.virtual_addr_translation_on) begin
+      // Kernel data pages
+      instr_stream.push_back("_kernel_data_start: .align 12");
+      if(!cfg.no_data_page) begin
+        // Data section
+        gen_data_page(1'b1);
+      end
+      gen_data_page_end();
     end
-    gen_data_page_end();
     // Kernel stack section
     gen_kernel_stack_section();
   endfunction
@@ -491,7 +493,7 @@ class riscv_asm_program_gen extends uvm_object;
     // Setup trap vector register
     trap_vector_init();
     // Initialize PTE (link page table based on their real physical address)
-    if((SATP_MODE != BARE) && (cfg.init_privileged_mode != MACHINE_MODE)) begin
+    if(cfg.virtual_addr_translation_on) begin
       page_table_list.process_page_table(instr);
       gen_section("process_pt", instr);
     end
@@ -519,7 +521,7 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[];
     string mode_name;
     instr = {"la x10, _init"};
-    if(SATP_MODE != BARE && cfg.init_privileged_mode != MACHINE_MODE) begin
+    if(cfg.virtual_addr_translation_on) begin
       // For supervisor and user mode, use virtual address instead of physical address.
       // Virtual address starts from address 0x0, here only the lower 12 bits are kept
       // as virtual address offset.
@@ -599,7 +601,7 @@ class riscv_asm_program_gen extends uvm_object;
       if (riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       tvec_name = trap_vec_reg.name();
       instr = {instr, $sformatf("la a0, %0s_handler", tvec_name.tolower())};
-      if(SATP_MODE != BARE && riscv_instr_pkg::supported_privileged_mode[i] != MACHINE_MODE) begin
+      if (SATP_MODE != BARE && riscv_instr_pkg::supported_privileged_mode[i] != MACHINE_MODE) begin
         // For supervisor and user mode, use virtual address instead of physical address.
         // Virtual address starts from address 0x0, here only the lower 20 bits are kept
         // as virtual address offset.
@@ -827,7 +829,7 @@ class riscv_asm_program_gen extends uvm_object;
   // all the other super pages are link PTE.
   virtual function void create_page_table();
     string instr[];
-    if((SATP_MODE != BARE) && (cfg.init_privileged_mode != MACHINE_MODE)) begin
+    if(cfg.virtual_addr_translation_on) begin
       page_table_list = riscv_page_table_list#(SATP_MODE)::
                         type_id::create("page_table_list");
       page_table_list.cfg = cfg;

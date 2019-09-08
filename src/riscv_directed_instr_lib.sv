@@ -130,10 +130,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     !(addi.rs1 inside {cfg.reserved_regs, ZERO});
     addi.rs1 == la.rd;
     addi.rd  == la.rd;
-    // Avoid using negative offset -1024
-    addi.imm != 'hFFFF_FC00;
-    addi.imm != 1024;
-    jump.imm == ~addi.imm + 1;
+    imm inside {[-1023:1023]};
     jump.rs1 == addi.rd;
     addi.instr_name == ADDI;
     branch.category == BRANCH;
@@ -163,6 +160,8 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     initialize_instr_list(mixed_instr_cnt);
     gen_instr(1'b1);
     la.imm_str = target_program_label;
+    addi.imm_str = $sformatf("%0d", imm);
+    jump.imm_str = $sformatf("%0d", -imm);
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
     // The purse of adding the branch instruction here is to cover branch -> jump scenario.
