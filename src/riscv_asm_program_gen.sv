@@ -158,7 +158,7 @@ class riscv_asm_program_gen extends uvm_object;
       gen_page_table_section();
     end
     if(!cfg.no_data_page) begin
-      // Data section
+      // Kernel data section
       gen_data_page();
     end
     gen_data_page_end();
@@ -199,10 +199,9 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back("_kernel_instr_end: nop");
     // Kernel data pages
     instr_stream.push_back("_kernel_data_start: .align 12");
-    instr_stream.push_back(".data");
     if(!cfg.no_data_page) begin
       // Data section
-      gen_data_page(.is_kernel(1'b1));
+      gen_data_page(1'b1);
     end
     gen_data_page_end();
     // Kernel stack section
@@ -210,12 +209,12 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   virtual function void gen_kernel_program(riscv_instr_sequence seq);
-    seq.instr_cnt = riscv_instr_pkg::kernel_program_instr_cnt;
+    seq.instr_cnt = cfg.kernel_program_instr_cnt;
     generate_directed_instr_stream(.label(seq.get_name()),
                                    .original_instr_cnt(seq.instr_cnt),
                                    .min_insert_cnt(0),
                                    .instr_stream(seq.directed_instr),
-                                   .access_u_mode_mem(1'b0));
+                                   .kernel_mode(1'b1));
     seq.label_name = seq.get_name();
     seq.is_debug_program = 0;
     seq.cfg = cfg;
@@ -339,24 +338,28 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Generate the user stack section
   virtual function void gen_stack_section();
+    instr_stream.push_back(".pushsection .user_stack,\"aw\",@progbits;");
     instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
     instr_stream.push_back("_user_stack_start:");
-    instr_stream.push_back($sformatf(".rept %0d", riscv_instr_pkg::stack_len - 1));
+    instr_stream.push_back($sformatf(".rept %0d", cfg.stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
     instr_stream.push_back(".endr");
     instr_stream.push_back("_user_stack_end:");
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
+    instr_stream.push_back(".popsection;");
   endfunction
 
   // The kernal stack is used to save user program context before executing exception handling
   virtual function void gen_kernel_stack_section();
+    instr_stream.push_back(".pushsection .kernel_stack,\"aw\",@progbits;");
     instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
     instr_stream.push_back("_kernel_stack_start:");
-    instr_stream.push_back($sformatf(".rept %0d", riscv_instr_pkg::kernel_stack_len - 1));
+    instr_stream.push_back($sformatf(".rept %0d", cfg.kernel_stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
     instr_stream.push_back(".endr");
     instr_stream.push_back("_kernel_stack_end:");
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
+    instr_stream.push_back(".popsection;");
   endfunction
 
   virtual function void gen_init_section();
@@ -844,10 +847,12 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_page_table_section();
     string page_table_section[$];
     if(page_table_list != null) begin
+      instr_stream.push_back(".pushsection .page_table,\"aw\",@progbits;");
       foreach(page_table_list.page_table[i]) begin
         page_table_list.page_table[i].gen_page_table_section(page_table_section);
         instr_stream = {instr_stream, page_table_section};
       end
+      instr_stream.push_back(".popsection;");
     end
   endfunction
 
@@ -1062,7 +1067,7 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void generate_directed_instr_stream(input string label,
                                                        input int unsigned original_instr_cnt,
                                                        input int unsigned min_insert_cnt = 0,
-                                                       input bit access_u_mode_mem = 1,
+                                                       input bit kernel_mode = 0,
                                                        output riscv_instr_stream instr_stream[]);
     uvm_object object_h;
     riscv_rand_instr_stream new_instr_stream;
@@ -1087,7 +1092,7 @@ class riscv_asm_program_gen extends uvm_object;
         if($cast(new_instr_stream, object_h)) begin
           new_instr_stream.cfg = cfg;
           new_instr_stream.label = $sformatf("%0s_instr_%0d", label, idx);
-          new_instr_stream.access_u_mode_mem = access_u_mode_mem;
+          new_instr_stream.kernel_mode = kernel_mode;
           `DV_CHECK_RANDOMIZE_FATAL(new_instr_stream)
           instr_stream = {instr_stream, new_instr_stream};
         end else begin

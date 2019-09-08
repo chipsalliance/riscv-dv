@@ -40,6 +40,27 @@ class riscv_directed_instr_stream extends riscv_rand_instr_stream;
 
 endclass
 
+// Base class for memory access stream
+class riscv_mem_access_stream extends riscv_directed_instr_stream;
+
+  int             max_data_page_id;
+  mem_region_t    data_page[$];
+  string          label;
+
+  `uvm_object_utils(riscv_mem_access_stream)
+  `uvm_object_new
+
+  function void pre_randomize();
+    if(kernel_mode) begin
+      data_page = cfg.s_mem_region;
+    end else begin
+      data_page = cfg.mem_region;
+    end
+    max_data_page_id = data_page.size();
+  endfunction
+
+endclass
+
 // Create a infinte zero instruction loop, test if we can interrupt or
 // enter debug mode while core is executing this loop
 class riscv_infinte_loop_instr extends riscv_directed_instr_stream;

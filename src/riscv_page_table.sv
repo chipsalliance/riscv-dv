@@ -51,7 +51,6 @@ class riscv_page_table#(satp_mode_t MODE = SV39) extends uvm_object;
     // Align the page table to 4K boundary
     instr = {instr,
              ".align 12",
-             ".data",
              $sformatf("%0s:", get_name())};
     foreach(pte_binary[i]) begin
       if (i % 8 == 0) begin

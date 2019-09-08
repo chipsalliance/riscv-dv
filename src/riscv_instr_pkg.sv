@@ -25,6 +25,13 @@ package riscv_instr_pkg;
 
   `define include_file(f) `include `"f`"
 
+  // Data section setting
+  typedef struct {
+    string         name;
+    int unsigned   size_in_bytes;
+    bit [2:0]      xwr; // Excutable,Writable,Readale
+  } mem_region_t;
+
   typedef enum bit [3:0] {
     BARE = 4'b0000,
     SV32 = 4'b0001,
