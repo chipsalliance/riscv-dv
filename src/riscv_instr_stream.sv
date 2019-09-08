@@ -121,7 +121,9 @@ class riscv_instr_stream extends uvm_object;
       foreach(insert_instr_position[i]) {
         insert_instr_position[i] inside {[0:current_instr_cnt-1]};
       })
-    insert_instr_position.sort();
+    if (insert_instr_position.size() > 0) begin
+      insert_instr_position.sort();
+    end
     if(contained) begin
       insert_instr_position[0] = 0;
       if(new_instr_cnt > 1)
@@ -150,9 +152,7 @@ endclass
 class riscv_rand_instr_stream extends riscv_instr_stream;
 
   riscv_instr_gen_config  cfg;
-  bit                     access_u_mode_mem = 1'b1;
-  int                     max_load_store_offset;
-  int                     max_data_page_id;
+  bit                     kernel_mode;
   riscv_instr_name_t      allowed_instr[$];
 
   // Some additional reserved registers that should not be used as rd register
@@ -175,16 +175,6 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     for(int i = 0; i < instr_cnt; i++) begin
       instr = riscv_instr_base::type_id::create($sformatf("instr_%0d", i));
       instr_list.push_back(instr);
-    end
-  endfunction
-
-  function void pre_randomize();
-    if(access_u_mode_mem) begin
-      max_load_store_offset = riscv_instr_pkg::data_page_size;
-      max_data_page_id = riscv_instr_pkg::num_of_data_pages;
-    end else begin
-      max_load_store_offset = riscv_instr_pkg::kernel_data_page_size;
-      max_data_page_id = riscv_instr_pkg::num_of_kernel_data_pages;
     end
   endfunction
 

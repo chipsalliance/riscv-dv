@@ -69,6 +69,36 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    check_misa_init_val = 1'b0;
   bit                    check_xstatus = 1'b1;
 
+
+  //-----------------------------------------------------------------------------
+  //  User space memory region and stack setting
+  //-----------------------------------------------------------------------------
+
+  mem_region_t mem_region[$] = '{
+    '{name:"region_0", size_in_bytes: 4096,      xwr: 3'b111},
+    '{name:"region_1", size_in_bytes: 4096 * 4,  xwr: 3'b111},
+    '{name:"region_2", size_in_bytes: 4096 * 2,  xwr: 3'b111},
+    '{name:"region_3", size_in_bytes: 512,       xwr: 3'b111},
+    '{name:"region_4", size_in_bytes: 4096,      xwr: 3'b111}
+  };
+
+  // Stack section word length
+  int stack_len = 5000;
+
+  //-----------------------------------------------------------------------------
+  // Kernel section setting, used by supervisor mode programs
+  //-----------------------------------------------------------------------------
+
+  mem_region_t s_mem_region[$] = '{
+    '{name:"s_region_0", size_in_bytes: 4096, xwr: 3'b111},
+    '{name:"s_region_1", size_in_bytes: 4096, xwr: 3'b111}};
+
+  // Kernel Stack section word length
+  int kernel_stack_len = 4000;
+
+  // Number of instructions for each kernel program
+  int kernel_program_instr_cnt = 400;
+
   //-----------------------------------------------------------------------------
   // Instruction list based on the config, generate by build_instruction_template
   //-----------------------------------------------------------------------------
