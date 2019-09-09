@@ -39,9 +39,6 @@ class riscv_instr_gen_config extends uvm_object;
   // Pattern of data section: RAND_DATA, ALL_ZERO, INCR_VAL
   rand data_pattern_t    data_page_pattern;
 
-  // Max depth for the nested loops
-  rand bit [1:0]         max_nested_loop;
-
   // Associate array for delegation configuration for each exception and interrupt
   // When the bit is 1, the corresponding delegation is enabled.
   rand bit               m_mode_exception_delegation[exception_cause_t];
@@ -177,7 +174,7 @@ class riscv_instr_gen_config extends uvm_object;
   // Number of sub programs in the debug rom
   int                    num_debug_sub_program = 0;
   // Stack space allocated to each program, need to be enough to store necessary context
-  // Example: RA, SP, T0, loop registers
+  // Example: RA, SP, T0
   int                    min_stack_len_per_program = 10 * (XLEN/8);
   int                    max_stack_len_per_program = 16 * (XLEN/8);
   // Maximum branch distance, avoid skipping large portion of the code
@@ -187,9 +184,6 @@ class riscv_instr_gen_config extends uvm_object;
   // Reserved registers
   // Default reserved registers, only used by special instructions
   riscv_reg_t            default_reserved_regs[];
-  // Reserve some registers for loop counter, make sure the loop can execute
-  // in a determinstic way and not affected by other random instructions
-  rand riscv_reg_t       loop_regs[];
   // All reserved regs
   riscv_reg_t            reserved_regs[];
 
@@ -295,23 +289,11 @@ class riscv_instr_gen_config extends uvm_object;
     }
   }
 
-  constraint reserve_loop_reg_c {
-    foreach (default_reserved_regs[i]) {
-      foreach (loop_regs[j]) {
-        default_reserved_regs[i] != loop_regs[j];
-      }
-    }
-  }
-
   constraint reserve_scratch_reg_c {
     scratch_reg != ZERO;
     foreach (default_reserved_regs[i]) {
       signature_data_reg != default_reserved_regs[i];
       signature_addr_reg != default_reserved_regs[i];
-    }
-    foreach (loop_regs[i]) {
-      signature_addr_reg != loop_regs[i];
-      signature_data_reg != loop_regs[i];
     }
   }
 
@@ -321,24 +303,10 @@ class riscv_instr_gen_config extends uvm_object;
         signature_addr_reg != default_reserved_regs[i];
         signature_data_reg != default_reserved_regs[i];
       }
-      foreach (loop_regs[i]) {
-        signature_addr_reg != loop_regs[i];
-        signature_data_reg != loop_regs[i];
-      }
       signature_data_reg != scratch_reg;
       signature_addr_reg != scratch_reg;
       signature_data_reg != ZERO;
       signature_addr_reg != ZERO;
-    }
-  }
-
-  constraint legal_loop_regs_c {
-    soft max_nested_loop != 0;
-    // One register for loop counter, one for loop limit
-    loop_regs.size() == max_nested_loop*2;
-    unique {loop_regs};
-    foreach(loop_regs[i]) {
-      loop_regs[i] != ZERO;
     }
   }
 
@@ -443,10 +411,8 @@ class riscv_instr_gen_config extends uvm_object;
   // Reserve below registers for special purpose instruction
   // The other normal instruction cannot use them as destination register
   virtual function void setup_default_reserved_regs();
-    default_reserved_regs = {RA, // x1, return address
-                             SP, // x2, stack pointer (user stack)
-                             TP, // x4, thread pointer, used as kernel stack pointer
-                             T0  // x5, alternative link pointer
+    default_reserved_regs = {SP, // x2, stack pointer (user stack)
+                             TP // x4, thread pointer, used as kernel stack pointer
                              };
   endfunction
 
@@ -459,9 +425,9 @@ class riscv_instr_gen_config extends uvm_object;
 
   function void post_randomize();
     // Setup the list all reserved registers
-    reserved_regs = {default_reserved_regs, loop_regs, scratch_reg};
+    reserved_regs = {default_reserved_regs, scratch_reg};
     // Need to save all loop registers, and RA/T0
-    min_stack_len_per_program = (max_nested_loop * 2 + 2) * (XLEN/8);
+    min_stack_len_per_program = 2 * (XLEN/8);
     // Check if the setting is legal
     check_setting();
     if ((init_privileged_mode != MACHINE_MODE) && (SATP_MODE != BARE)) begin
