@@ -182,6 +182,9 @@ class riscv_instr_base extends uvm_object;
       rs2 inside {[S0:A5]};
       rd  inside {[S0:A5]};
     }
+    if(format inside {CI_FORMAT, CR_FORMAT}) {
+      rs1 == rd;
+    }
     // C_ADDI16SP is only valid when rd == SP
     if(instr_name == C_ADDI16SP) {
       rd == SP;

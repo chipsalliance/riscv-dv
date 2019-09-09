@@ -25,6 +25,9 @@ class riscv_instr_stream extends uvm_object;
   string                label = "";
   // User can specify a small group of available registers to generate various hazard condition
   rand riscv_reg_t      avail_regs[];
+  // Some additional reserved registers that should not be used as rd register
+  // by this instruction stream
+  riscv_reg_t           reserved_rd[];
 
   `uvm_object_utils(riscv_instr_stream)
   `uvm_object_new
@@ -154,10 +157,6 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
   riscv_instr_gen_config  cfg;
   bit                     kernel_mode;
   riscv_instr_name_t      allowed_instr[$];
-
-  // Some additional reserved registers that should not be used as rd register
-  // by this instruction stream
-  riscv_reg_t             reserved_rd[];
 
   constraint avoid_reserved_rd_c {
     if(reserved_rd.size() > 0) {

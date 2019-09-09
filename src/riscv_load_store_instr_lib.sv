@@ -361,7 +361,7 @@ class riscv_mem_region_stress_test extends riscv_multi_page_load_store_instr_str
   `uvm_object_new
 
   constraint page_c {
-    num_of_instr_stream inside {[2:8]};
+    num_of_instr_stream inside {[2:5]};
     foreach (data_page_id[i]) {
       if (i > 0) {
         data_page_id[i] == data_page_id[i-1];

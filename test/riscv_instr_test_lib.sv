@@ -23,8 +23,7 @@ class riscv_rand_instr_test extends riscv_instr_base_test;
   virtual function void randomize_cfg();
     cfg.instr_cnt = 10000;
     cfg.num_of_sub_program = 5;
-    `DV_CHECK_RANDOMIZE_WITH_FATAL(cfg,
-                                   max_nested_loop == 2;)
+    `DV_CHECK_RANDOMIZE_FATAL(cfg)
     `uvm_info(`gfn, $sformatf("riscv_instr_gen_config is randomized:\n%0s",
                     cfg.sprint()), UVM_LOW)
   endfunction
