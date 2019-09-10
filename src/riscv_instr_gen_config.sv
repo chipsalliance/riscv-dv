@@ -103,7 +103,7 @@ class riscv_instr_gen_config extends uvm_object;
   //-----------------------------------------------------------------------------
   riscv_instr_base       instr_template[riscv_instr_name_t];
   riscv_instr_name_t     basic_instr[$];
-  riscv_instr_name_t     instr_group[riscv_instr_cateogry_t][$];
+  riscv_instr_name_t     instr_group[riscv_instr_group_t][$];
   riscv_instr_name_t     instr_category[riscv_instr_cateogry_t][$];
 
   //-----------------------------------------------------------------------------
