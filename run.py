@@ -201,8 +201,10 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       cmd = ("%s -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
              -nostartfiles %s \
+             -I%s/user_extension \
              -T%s/scripts/link.ld %s -o %s " % \
-             (get_env_var("RISCV_GCC"), asm, get_env_var("RISCV_DV_ROOT"), opts, elf))
+             (get_env_var("RISCV_GCC"), asm, get_env_var("RISCV_DV_ROOT"),
+              get_env_var("RISCV_DV_ROOT"), opts, elf))
       if 'gcc_opts' in test:
         cmd += test['gcc_opts']
       # If march/mabi is not defined in the test gcc_opts, use the default
@@ -399,6 +401,7 @@ def main():
     output_dir = "out_" + str(date.today())
   else:
     output_dir = args.o
+
   subprocess.run(["mkdir", "-p", output_dir])
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 

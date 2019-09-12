@@ -309,6 +309,7 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".globl _start");
     instr_stream.push_back(".section .text");
     instr_stream.push_back("_start:");
+    instr_stream.push_back(".include \"user_define.h\"");
   endfunction
 
   virtual function void gen_program_end();
