@@ -323,7 +323,6 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".align 6; .global tohost; tohost: .dword 0;");
     instr_stream.push_back(".align 6; .global fromhost; fromhost: .dword 0;");
     instr_stream.push_back(".popsection;");
-    instr_stream.push_back(".align 4;");
   endfunction
 
   virtual function void gen_data_page(bit is_kernel = 1'b0);
@@ -1110,9 +1109,9 @@ class riscv_asm_program_gen extends uvm_object;
   function void gen_bin_program();
     if (bin_program != null) begin
       string str;
-      instr_stream.push_back("instr_bin:");
-      instr_stream.push_back(".data");
       instr_stream.push_back(".align 12");
+      instr_stream.push_back(".pushsection .instr_bin,\"aw\",@progbits;");
+      instr_stream.push_back("instr_bin:");
       foreach (instr_binary[i]) begin
         if (((i+1) % 8 == 0) || (i == instr_binary.size() - 1)) begin
           if (str != "")
@@ -1128,6 +1127,7 @@ class riscv_asm_program_gen extends uvm_object;
           end
         end
       end
+      instr_stream.push_back(".popsection;");
     end
   endfunction
 
