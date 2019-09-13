@@ -278,6 +278,7 @@ class riscv_instr_sequence extends uvm_sequence;
       str = {prefix, instr_stream.instr_list[i].convert2asm()};
       instr_string_list.push_back(str);
     end
+    insert_illegal_hint_instr();
     prefix = format_string($sformatf("%0d:", i), LABEL_STR_LEN);
     if(!is_main_program) begin
       str = {prefix, "ret"};
@@ -285,53 +286,36 @@ class riscv_instr_sequence extends uvm_sequence;
     end
   endfunction
 
-  // Convert the instruction stream to binary format
-  function void generate_binary_stream(ref string binary[$]);
-    string instr_bin;
-    string remaining_bin;
+  function void insert_illegal_hint_instr();
+    int bin_instr_cnt;
+    int idx;
     string str;
-    illegal_instr.cfg = cfg;
-    foreach (instr_stream.instr_list[i]) begin
-      if (instr_stream.instr_list[i].is_illegal_instr) begin
-        // Replace the original instruction with illegal instruction binary
+    illegal_instr.init(cfg);
+    bin_instr_cnt = instr_cnt * cfg.illegal_instr_ratio / 1000;
+    if (bin_instr_cnt >= 0) begin
+      `uvm_info(`gfn, $sformatf("Injecting %0d illegal instructions, ratio %0d/100",
+                      bin_instr_cnt, cfg.illegal_instr_ratio), UVM_LOW)
+      repeat (bin_instr_cnt) begin
         `DV_CHECK_RANDOMIZE_WITH_FATAL(illegal_instr,
-                                       exception != kHintInstr;
-                                       compressed == instr_stream.instr_list[i].is_compressed;)
-        str = illegal_instr.get_bin_str();
-        `uvm_info(`gfn, $sformatf("Inject %0s [%0d] %0s replaced with %0s",
-                                  illegal_instr.exception.name(), i,
-                                  instr_stream.instr_list[i].convert2bin() ,str), UVM_HIGH)
-      end else if (instr_stream.instr_list[i].is_hint_instr) begin
-        // Replace the original instruction with HINT instruction binary
-        `DV_CHECK_RANDOMIZE_WITH_FATAL(illegal_instr,
-                                       exception == kHintInstr;
-                                       compressed == instr_stream.instr_list[i].is_compressed;)
-        str = illegal_instr.get_bin_str();
-        `uvm_info(`gfn, $sformatf("Inject %0s [%0d] %0s replaced with %0s",
-                                  illegal_instr.exception.name(), i,
-                                  instr_stream.instr_list[i].convert2bin() ,str), UVM_HIGH)
-      end else begin
-        str = instr_stream.instr_list[i].convert2bin();
+                                       exception != kHintInstr;)
+        str = {indent, $sformatf(".4byte 0x%s # %0s",
+                       illegal_instr.get_bin_str(), illegal_instr.exception.name())};
+        idx = $urandom_range(0, instr_string_list.size());
+        instr_string_list.insert(idx, str);
       end
-      instr_bin = {str, remaining_bin};
-      // Handle various instruction alignment
-      if (instr_bin.len() == 8) begin
-        binary.push_back({"0x", instr_bin});
-        remaining_bin = "";
-      end else if (instr_bin.len() == 12) begin
-        binary.push_back({"0x", instr_bin.substr(4, 11)});
-        remaining_bin = instr_bin.substr(0, 3);
-      end else if (instr_bin.len() == 4) begin
-        remaining_bin = instr_bin;
-      end else begin
-        `uvm_fatal(`gfn, $sformatf("Unexpected binary length :%0d", instr_bin.len()))
-      end
-      `uvm_info("BIN", $sformatf("%0s : %0s", instr_stream.instr_list[i].convert2bin(),
-                                 instr_stream.instr_list[i].convert2asm()), UVM_HIGH)
     end
-    // Attach a C_NOP(0x0001) to make the last entry 32b
-    if (remaining_bin != "") begin
-      binary.push_back({"0x0001", remaining_bin});
+    bin_instr_cnt = instr_cnt * cfg.hint_instr_ratio / 1000;
+    if (bin_instr_cnt >= 0) begin
+      `uvm_info(`gfn, $sformatf("Injecting %0d HINT instructions, ratio %0d/100",
+                      bin_instr_cnt, cfg.illegal_instr_ratio), UVM_LOW)
+      repeat (bin_instr_cnt) begin
+        `DV_CHECK_RANDOMIZE_WITH_FATAL(illegal_instr,
+                                       exception == kHintInstr;)
+        str = {indent, $sformatf(".2byte 0x%s # %0s",
+                       illegal_instr.get_bin_str(), illegal_instr.exception.name())};
+        idx = $urandom_range(0, instr_string_list.size());
+        instr_string_list.insert(idx, str);
+      end
     end
   endfunction
 
