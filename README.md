@@ -229,8 +229,8 @@ conditions for the load/store testing.
 | no_load_store               | Disable load/store instruction                    | 0       |
 | no_csr_instr                | Disable CSR instruction                           | 0       |
 | no_fence                    | Disable fence instruction                         | 0       |
-| enable_illegal_instruction  | Enable illegal instructions                       | 0       |
-| enable_hint_instruction     | Enable HINT instruction                           | 0       |
+| illegal_instr_ratio         | Number of illegal instructions every 1000 instr   | 0       |
+| hint_instr_ratio            | Number of HINT instructions every 1000 instr      | 0       |
 | boot_mode                   | m:Machine mode, s:Supervisor mode, u:User mode    | m       |
 | no_directed_instr           | Disable directed instruction stream               | 0       |
 | require_signature_addr      | Set to 1 if test needs to talk to testbench       | 0       |
