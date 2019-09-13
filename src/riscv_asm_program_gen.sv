@@ -29,8 +29,6 @@ class riscv_asm_program_gen extends uvm_object;
    // User mode programs
    riscv_instr_sequence                main_program;
    riscv_instr_sequence                sub_program[];
-   // Program in binary format, stored in the data section, used to inject illegal/HINT instruction
-   riscv_instr_sequence                bin_program;
    riscv_instr_sequence                debug_program;
    riscv_instr_sequence                debug_sub_program[];
    string                              instr_binary[$];
@@ -77,26 +75,6 @@ class riscv_asm_program_gen extends uvm_object;
       // Setup privileged mode registers and enter target privileged mode
       pre_enter_privileged_mode();
     end
-    // Generate sub program in binary format
-    // Illegal instruction and hint instruction cannot pass compilation, need to directly generate
-    // the instruction in binary format and store in data section to skip compilation.
-    if(cfg.enable_illegal_instruction || cfg.enable_hint_instruction) begin
-      bin_program = riscv_instr_sequence::type_id::create("bin_program");
-      bin_program.instr_cnt = cfg.bin_program_instr_cnt;
-      bin_program.is_debug_program = 0;
-      bin_program.label_name = bin_program.get_name();
-      bin_program.cfg = cfg;
-      if (cfg.enable_illegal_instruction) begin
-        bin_program.illegal_instr_pct = $urandom_range(5, 20);
-      end
-      if (cfg.enable_hint_instruction) begin
-        bin_program.hint_instr_pct = $urandom_range(5, 20);
-      end
-      `DV_CHECK_RANDOMIZE_FATAL(bin_program)
-      bin_program.gen_instr(.is_main_program(0));
-      bin_program.post_process_instr();
-      bin_program.generate_binary_stream(instr_binary);
-    end
     // Init section
     gen_init_section();
     // Generate sub program
@@ -116,9 +94,6 @@ class riscv_asm_program_gen extends uvm_object;
     // Setup jump instruction among main program and sub programs
     gen_callstack(main_program, sub_program, sub_program_name, cfg.num_of_sub_program);
     `uvm_info(`gfn, "Generating callstack...done", UVM_LOW)
-    if (bin_program != null) begin
-      main_program.insert_jump_instr("sub_bin", 0);
-    end
     main_program.post_process_instr();
     `uvm_info(`gfn, "Post-processing main program...done", UVM_LOW)
     main_program.generate_instr_stream();
@@ -151,8 +126,6 @@ class riscv_asm_program_gen extends uvm_object;
     end
     // Starting point of data section
     gen_data_page_begin();
-    // Generate the sub program in binary format (hint/illegal instructions)
-    gen_bin_program();
     // Page table
     if (!cfg.bare_program_mode) begin
       gen_page_table_section();
@@ -1104,32 +1077,6 @@ class riscv_asm_program_gen extends uvm_object;
       end
     end
     instr_stream.shuffle();
-  endfunction
-
-  // Generate sub-program in binary format, this is needed for illegal and HINT instruction
-  function void gen_bin_program();
-    if (bin_program != null) begin
-      string str;
-      instr_stream.push_back(".align 12");
-      instr_stream.push_back(".pushsection .instr_bin,\"aw\",@progbits;");
-      instr_stream.push_back("instr_bin:");
-      foreach (instr_binary[i]) begin
-        if (((i+1) % 8 == 0) || (i == instr_binary.size() - 1)) begin
-          if (str != "")
-            instr_stream.push_back($sformatf(".word %0s, %0s", str, instr_binary[i]));
-          else
-            instr_stream.push_back($sformatf(".word %0s", instr_binary[i]));
-          str = "";
-        end else begin
-          if (str != "") begin
-            str = {str, ", ", instr_binary[i]};
-          end else begin
-            str = instr_binary[i];
-          end
-        end
-      end
-      instr_stream.push_back(".popsection;");
-    end
   endfunction
 
   //---------------------------------------------------------------------------------------

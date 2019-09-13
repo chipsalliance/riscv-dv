@@ -168,7 +168,7 @@
   iterations: 2
   gen_test: riscv_rand_instr_test
   gen_opts: >
-    +enable_illegal_instruction=1
+    +illegal_instr_ratio=5
   rtl_test: core_base_test
 
 - test: riscv_hint_instr_test
@@ -178,7 +178,7 @@
   iterations: 2
   gen_test: riscv_rand_instr_test
   gen_opts: >
-    +enable_hint_instruction=1
+    +hint_instr_ratio=5
   rtl_test: core_base_test
 
 - test: riscv_ebreak_test

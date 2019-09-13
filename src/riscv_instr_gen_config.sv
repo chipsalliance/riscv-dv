@@ -125,9 +125,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    no_fence;           // No fence instruction
   bit                    no_wfi = 1;         // No WFI instruction
   bit                    enable_unaligned_load_store;
-  bit                    enable_illegal_instruction;
-  bit                    enable_hint_instruction;
-  int                    bin_program_instr_cnt = 200;
+  int                    illegal_instr_ratio;
+  int                    hint_instr_ratio;
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
@@ -338,9 +337,9 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_directed_instr=", no_directed_instr);
     get_bool_arg_value("+no_fence=", no_fence);
     get_bool_arg_value("+no_delegation=", no_delegation);
+    get_int_arg_value("+illegal_instr_ratio=", illegal_instr_ratio);
+    get_int_arg_value("+hint_instr_ratio=", hint_instr_ratio);
     get_bool_arg_value("+enable_unaligned_load_store=", enable_unaligned_load_store);
-    get_bool_arg_value("+enable_illegal_instruction=", enable_illegal_instruction);
-    get_bool_arg_value("+enable_hint_instruction=", enable_hint_instruction);
     get_bool_arg_value("+force_m_delegation=", force_m_delegation);
     get_bool_arg_value("+force_s_delegation=", force_s_delegation);
     get_bool_arg_value("+require_signature_addr=", require_signature_addr);
