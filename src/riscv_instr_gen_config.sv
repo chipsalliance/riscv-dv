@@ -49,6 +49,10 @@ class riscv_instr_gen_config extends uvm_object;
   // Priviledged mode after boot
   rand privileged_mode_t init_privileged_mode;
 
+  rand bit[XLEN-1:0] mstatus, mie,
+                     sstatus, sie,
+                     ustatus, uie;
+
   // Key fields in xSTATUS
   // Memory protection bits
   rand bit               mstatus_mprv;

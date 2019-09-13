@@ -42,6 +42,7 @@ package riscv_signature_pkg;
     IN_SUPERVISOR_MODE,
     IN_USER_MODE,
     HANDLING_IRQ,
+    FINISHED_IRQ,
     HANDLING_EXCEPTION,
     ILLEGAL_INSTR_EXCEPTION,
     EBREAK_EXCEPTION
@@ -51,6 +52,5 @@ package riscv_signature_pkg;
     TEST_PASS,
     TEST_FAIL
   } test_result_t;
-
 
 endpackage

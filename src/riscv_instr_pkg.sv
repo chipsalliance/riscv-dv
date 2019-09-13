@@ -598,7 +598,6 @@ package riscv_instr_pkg;
   } privileged_level_t;
 
   typedef enum bit [1:0] {
-    WIRI, // Reserved Writes Ignored, Reads Ignore Value
     WPRI, // Reserved Writes Preserve Values, Reads Ignore Value
     WLRL, // Write/Read Only Legal Values
     WARL  // Write Any Values, Reads Legal Values
