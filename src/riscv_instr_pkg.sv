@@ -781,10 +781,10 @@ package riscv_instr_pkg;
         instr.push_back($sformatf("srli sp, sp, %0d", XLEN - MAX_USED_VADDR_BITS));
       end
     end
-    // Reserve space from kernel stack to save all 32 GPR
-    instr.push_back($sformatf("1: addi sp, sp, -%0d", 32 * (XLEN/8)));
+    // Reserve space from kernel stack to save all 32 GPR except for x0
+    instr.push_back($sformatf("1: addi sp, sp, -%0d", 31 * (XLEN/8)));
     // Push all GPRs to kernel stack
-    for(int i = 0; i < 32; i++) begin
+    for(int i = 1; i < 32; i++) begin
       instr.push_back($sformatf("%0s  x%0d, %0d(sp)", store_instr, i, i * (XLEN/8)));
     end
   endfunction
@@ -796,11 +796,11 @@ package riscv_instr_pkg;
                                                     ref string instr[$]);
     string load_instr = (XLEN == 32) ? "lw" : "ld";
     // Pop user mode GPRs from kernel stack
-    for(int i = 0; i < 32; i++) begin
+    for(int i = 1; i < 32; i++) begin
       instr.push_back($sformatf("%0s  x%0d, %0d(sp)", load_instr, i, i * (XLEN/8)));
     end
     // Restore kernel stack pointer
-    instr.push_back($sformatf("addi sp, sp, %0d", 32 * (XLEN/8)));
+    instr.push_back($sformatf("addi sp, sp, %0d", 31 * (XLEN/8)));
     if (scratch inside {implemented_csr}) begin
       // Move SP to TP
       instr.push_back("add tp, sp, zero");
