@@ -356,24 +356,7 @@ def setup_parser():
   parser.set_defaults(co=False)
   parser.set_defaults(so=False)
   parser.set_defaults(verbose=False)
-
   return parser
-
-
-def setup_logging(verbose):
-  """Setup the root logger.
-
-  Args:
-    verbose: Verbose logging
-  """
-  if verbose:
-    logging.basicConfig(format="%(asctime)s %(filename)s:%(lineno)-5s %(levelname)-8s %(message)s",
-                        datefmt='%a, %d %b %Y %H:%M:%S',
-                        level=logging.DEBUG)
-  else:
-    logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s",
-                        datefmt='%a, %d %b %Y %H:%M:%S',
-                        level=logging.INFO)
 
 
 def main():

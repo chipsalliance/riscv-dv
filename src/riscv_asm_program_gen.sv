@@ -707,11 +707,11 @@ class riscv_asm_program_gen extends uvm_object;
              "beq a1, a2, ecall_handler",
              // Page table fault or access fault conditions
              $sformatf("li a2, 0x%0x", INSTRUCTION_ACCESS_FAULT),
-             "beq a1, a2, pt_fault_handler",
+             "beq a1, a2, 1f",
              $sformatf("li a2, 0x%0x", LOAD_ACCESS_FAULT),
-             "beq a1, a2, pt_fault_handler",
+             "beq a1, a2, 1f",
              $sformatf("li a2, 0x%0x", STORE_AMO_ACCESS_FAULT),
-             "beq a1, a2, pt_fault_handler",
+             "beq a1, a2, 1f",
              $sformatf("li a2, 0x%0x", INSTRUCTION_PAGE_FAULT),
              "beq a1, a2, pt_fault_handler",
              $sformatf("li a2, 0x%0x", LOAD_PAGE_FAULT),
@@ -756,7 +756,7 @@ class riscv_asm_program_gen extends uvm_object;
       intr_handler = {intr_handler,
                       $sformatf("csrr a1, 0x%0x # %0s", cause, cause.name()),
                       // Terminate the test if xCause[31] != 0 (indicating exception)
-                      $sformatf("srli a1, a1, 0x1f"),
+                      $sformatf("srli a1, a1, 0x%0x", XLEN-1),
                       $sformatf("beqz a1, 1f")};
       gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(status));
       gen_signature_handshake(.instr(intr_handler), .signature_type(WRITE_CSR), .csr(cause));
