@@ -381,13 +381,14 @@ customize the instruction generator while keeping the minimum effort of merging
 upstream changes.
 - Do not modify the upstream classes directly. When possible, extending from
   the upstream classses and implment your own functionalities.
+- Add your extensions under user_extension directory, and add the files to
+  user_extension/user_extension.svh. If you prefer to put your extensions in a
+  different directory, you can use "-ext <user_extension_path>" to override the
+  user extension path.
+- Create a new file for riscv_core_setting.sv, add the path with below option:
+  "-cs <new_core_setting_path>"
 - Use command line type override to use your extended classes.
   --sim_opts="+uvm_set_type_override=<upstream_class>,<extended_class>"
-- Create a new file list for your local modifications. Pass to the instruction
-  generator like below:
-  --cmp_opts "+define+RISCV_DV_EXT_FILE_LIST=<local_file_list>"
-- Create a new file for the core settings, add the path with below option:
-  --core_setting_dir "<new_core_setting_path>"
 
 You can refer to [riscv-dv extension for ibex](https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68) for a working example.
 

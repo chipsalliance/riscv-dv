@@ -16,6 +16,7 @@
   compile_cmd:
     - "vcs -file <cwd>/vcs.compile.option.f
             +incdir+<setting>
+            +incdir+<user_extension>
            -f <cwd>/files.f -full64
            -l <out>/compile.log
            -Mdir=<out>/vcs_simv.csrc
@@ -27,6 +28,7 @@
   compile_cmd:
     - "irun -64bit -access +rwc -f <cwd>/files.f
             +incdir+<setting>
+            +incdir+<user_extension>
             -q -sv -uvm -vlog_ext +.vh -I.
             -uvmhome CDNS-1.2
             -elaborate
@@ -39,6 +41,7 @@
     - "vmap mtiUvm $QUESTA_HOME/questasim/uvm-1.2"
     - "vlog -64
       +incdir+<setting>
+      +incdir+<user_extension>
       -access=rwc
       -f <cwd>/files.f
       -sv
@@ -63,6 +66,7 @@
               $UVM_HOME/src/uvm_pkg.sv
               +define+DSIM
               +incdir+<setting>
+              +incdir+<user_extension>
               -f <cwd>/files.f
               -l <out>/dsim/compile.log <cmp_opts>"
   sim_cmd: >
