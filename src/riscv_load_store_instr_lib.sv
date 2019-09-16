@@ -62,7 +62,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     offset = new[num_load_store];
     addr = new[num_load_store];
     for (int i=0; i<num_load_store; i++) begin
-      if !(std::randomize(offset_, addr_) with {
+      if (!std::randomize(offset_, addr_) with {
         // Locality
         if (locality == NARROW) {
           soft offset_ inside {[-16:16]};
