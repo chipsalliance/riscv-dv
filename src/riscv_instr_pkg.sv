@@ -830,5 +830,6 @@ package riscv_instr_pkg;
   `include "riscv_amo_instr_lib.sv"
   `include "riscv_instr_sequence.sv"
   `include "riscv_asm_program_gen.sv"
+  `include "user_extension.svh"
 
 endpackage
