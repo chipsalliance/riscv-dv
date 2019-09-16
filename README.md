@@ -385,8 +385,8 @@ upstream changes.
 - Create a new file list for your local modifications. Pass to the instruction
   generator like below:
   --cmp_opts "+define+RISCV_DV_EXT_FILE_LIST=<local_file_list>"
-- Create a new file for the core settings, and pass to the instruction generator:
-  --cmp_opts "+define+RISCV_CORE_SETTING=<your_core_setting.sv>"
+- Create a new file for the core settings, add the path with below option:
+  --core_setting_dir "<new_core_setting_path>"
 
 You can refer to [riscv-dv extension for ibex](https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68) for a working example.
 
