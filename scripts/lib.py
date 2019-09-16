@@ -108,6 +108,7 @@ def run_cmd(cmd, timeout_s = 999):
   Returns:
     command output
   """
+  logging.debug(cmd)
   try:
     ps = subprocess.Popen(cmd,
                           shell=True,
