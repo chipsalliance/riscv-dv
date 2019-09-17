@@ -636,6 +636,12 @@ class riscv_asm_program_gen extends uvm_object;
     gen_ecall_handler();
     // Illegal instruction handler
     gen_illegal_instr_handler();
+    // Instruction fault handler
+    gen_instr_fault_handler();
+    // Load fault handler
+    gen_load_fault_handler();
+    // Store fault handler
+    gen_store_fault_handler();
     // Generate page table fault handling routine
     // Page table fault is always handled in machine mode, as virtual address translation may be
     // broken when page fault happens.
@@ -707,11 +713,11 @@ class riscv_asm_program_gen extends uvm_object;
              "beq a1, a2, ecall_handler",
              // Page table fault or access fault conditions
              $sformatf("li a2, 0x%0x", INSTRUCTION_ACCESS_FAULT),
-             "beq a1, a2, 1f",
+             "beq a1, a2, instr_fault_handler",
              $sformatf("li a2, 0x%0x", LOAD_ACCESS_FAULT),
-             "beq a1, a2, 1f",
+             "beq a1, a2, load_fault_handler",
              $sformatf("li a2, 0x%0x", STORE_AMO_ACCESS_FAULT),
-             "beq a1, a2, 1f",
+             "beq a1, a2, store_fault_handler",
              $sformatf("li a2, 0x%0x", INSTRUCTION_PAGE_FAULT),
              "beq a1, a2, pt_fault_handler",
              $sformatf("li a2, 0x%0x", LOAD_PAGE_FAULT),
@@ -825,6 +831,36 @@ class riscv_asm_program_gen extends uvm_object;
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
     instr.push_back("mret");
     gen_section("illegal_instr_handler", instr);
+  endfunction
+
+  // TODO: handshake correct csr based on delegation
+  virtual function void gen_instr_fault_handler();
+    string instr[$];
+    gen_signature_handshake(instr, CORE_STATUS, INSTR_FAULT_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
+    instr.push_back("mret");
+    gen_section("instr_fault_handler", instr);
+  endfunction
+
+  // TODO: handshake correct csr based on delegation
+  virtual function void gen_load_fault_handler();
+    string instr[$];
+    gen_signature_handshake(instr, CORE_STATUS, LOAD_FAULT_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
+    instr.push_back("mret");
+    gen_section("load_fault_handler", instr);
+  endfunction
+
+  // TODO: handshake correct csr based on delegation
+  virtual function void gen_store_fault_handler();
+    string instr[$];
+    gen_signature_handshake(instr, CORE_STATUS, STORE_FAULT_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, instr);
+    instr.push_back("mret");
+    gen_section("store_fault_handler", instr);
   endfunction
 
   //---------------------------------------------------------------------------------------
