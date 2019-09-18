@@ -68,39 +68,19 @@ class riscv_instr_base_test extends uvm_test;
     super.report_phase(phase);
   endfunction
 
-  function void get_directed_instr_stream_opts();
-    string cmd_opts_prefix;
-    string opts;
-    string opt[$];
-    int i = 0;
-    while(1) begin
-      cmd_opts_prefix = $sformatf("directed_instr_%0d", i);
-      if($value$plusargs({cmd_opts_prefix, "=%0s"}, opts)) begin
-        uvm_split_string(opts, ",", opt);
-        `DV_CHECK_FATAL(opt.size() == 2)
-        asm_gen.add_directed_instr_stream(opt[0], opt[1].atoi());
-      end else begin
-        break;
-      end
-      `uvm_info(`gfn, $sformatf("Got directed instr[%0d] %0s, ratio = %0s/1000",
-                                 i, opt[0], opt[1]), UVM_LOW)
-      i++;
-    end
-
-  endfunction
-
   virtual function void apply_directed_instr();
   endfunction
 
   task run_phase(uvm_phase phase);
     int fd;
+    cfg.build_instruction_template();
     for(int i = 0; i < cfg.num_of_tests; i++) begin
       string test_name;
       randomize_cfg();
-      cfg.build_instruction_template();
+      cfg.build_instruction_list();
       asm_gen = riscv_asm_program_gen::type_id::create("asm_gen");
-      get_directed_instr_stream_opts();
       asm_gen.cfg = cfg;
+      asm_gen.get_directed_instr_stream();
       test_name = $sformatf("%0s_%0d.S", asm_file_name, i);
       apply_directed_instr();
       `uvm_info(`gfn, "All directed instruction is applied", UVM_LOW)
