@@ -314,7 +314,7 @@ class riscv_asm_program_gen extends uvm_object;
   // Generate the user stack section
   virtual function void gen_stack_section();
     instr_stream.push_back(".pushsection .user_stack,\"aw\",@progbits;");
-    instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
+    instr_stream.push_back(".align 12");
     instr_stream.push_back("_user_stack_start:");
     instr_stream.push_back($sformatf(".rept %0d", cfg.stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
@@ -327,7 +327,7 @@ class riscv_asm_program_gen extends uvm_object;
   // The kernal stack is used to save user program context before executing exception handling
   virtual function void gen_kernel_stack_section();
     instr_stream.push_back(".pushsection .kernel_stack,\"aw\",@progbits;");
-    instr_stream.push_back($sformatf(".align %0d", $clog2(XLEN)));
+    instr_stream.push_back(".align 12");
     instr_stream.push_back("_kernel_stack_start:");
     instr_stream.push_back($sformatf(".rept %0d", cfg.kernel_stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
