@@ -1083,6 +1083,7 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void add_directed_instr_stream(string name, int unsigned ratio);
     directed_instr_stream_ratio[name] = ratio;
+    `uvm_info(`gfn, $sformatf("Adding directed instruction stream:%0s ratio:%0d/1000", name, ratio), UVM_LOW)
   endfunction
 
   virtual function void get_directed_instr_stream();
