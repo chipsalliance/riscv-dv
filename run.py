@@ -118,7 +118,8 @@ def get_iss_cmd(base_cmd, elf, log):
 
 def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
-        cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov, log_suffix):
+        cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
+        log_suffix, batch_size):
   """Run the instruction generator
 
   Args:
@@ -140,6 +141,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     ext_dir               : User extension directory
     cov                   : Enable functional coverage
     log_suffix            : Simulation log file name suffix
+    batch_size            : Number of tests to generate per run
   """
   # Mutually exclusive options between compile_only and sim_only
   if compile_only and sim_only:
@@ -178,6 +180,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     logging.info("Running RISC-V instruction generator")
     for test in test_list:
       iterations = test['iterations']
+      logging.info("Generating %d %s" % (iterations, test['test']))
       if iterations > 0:
         """
         If we are running a CSR test, need to call a separate python script
@@ -190,23 +193,39 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
                 (" --iterations %i" % iterations) + \
                 (" --out %s/asm_tests" % output_dir) + \
                 (" --end_signature_addr %s" % end_signature_addr)
+          if lsf_cmd:
+            cmd_list.append(cmd)
+          else:
+            run_cmd(cmd, timeout_s)
         else:
-          rand_seed = get_seed(seed)
-          cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-                (" +num_of_tests=%i " % iterations) + \
-                (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-                (" -l %s/sim_%s%s.log " % (output_dir, test['test'], log_suffix))
-          cmd = re.sub("<seed>", str(rand_seed), cmd)
-          if "gen_opts" in test:
-            cmd += test['gen_opts']
-        if not re.search("c", isa):
-          cmd += "+disable_comparessed_instr=1";
-        logging.info("Generating %d %s" % (iterations, test['test']))
-        if lsf_cmd:
-          cmd_list.append(cmd)
-        else:
-          run_cmd(cmd, timeout_s)
+          if batch_size > 0:
+            batch_cnt = int((iterations + batch_size - 1)  / batch_size);
+          else:
+            batch_cnt = 1
+          logging.info("Running %s with %0d batches" % (test['test'], batch_cnt))
+          for i in range(0, batch_cnt):
+            rand_seed = get_seed(seed)
+            if i < batch_cnt - 1:
+              test_cnt = batch_size
+            else:
+              test_cnt = iterations - i * batch_size;
+            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
+                  (" +UVM_TESTNAME=%s " % test['gen_test']) + \
+                  (" +num_of_tests=%i " % test_cnt) + \
+                  (" +start_idx=%d " % (i*batch_size)) + \
+                  (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
+                  (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
+            cmd = re.sub("<seed>", str(rand_seed), cmd)
+            if "gen_opts" in test:
+              cmd += test['gen_opts']
+            if not re.search("c", isa):
+              cmd += "+disable_comparessed_instr=1";
+            if lsf_cmd:
+              cmd_list.append(cmd)
+            else:
+              logging.info("Running %s, batch %0d/%0d, test_cnt:%0d" %
+                           (test['test'], i+1, batch_cnt, test_cnt))
+              run_cmd(cmd, timeout_s)
     if lsf_cmd:
       run_parallel_cmd(cmd_list, timeout_s)
 
@@ -432,6 +451,9 @@ def setup_parser():
                       help="Directed assembly test")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
+  parser.add_argument("-bz", "--batch_size", type=int, default=0,
+                      help="Number of tests to generate per run. You can split a big"
+                           " job to small batches with this option")
   parser.set_defaults(co=False)
   parser.set_defaults(so=False)
   parser.set_defaults(verbose=False)
@@ -485,8 +507,8 @@ def main():
     gen(matched_list, args.csr_yaml, args.end_signature_addr, args.isa,
         args.simulator, args.simulator_yaml, output_dir, args.so,
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
-        args.sim_opts, args.gen_timeout,
-        args.core_setting_dir, args.user_extension_dir, args.cov, args.log_suffix)
+        args.sim_opts, args.gen_timeout, args.core_setting_dir,
+        args.user_extension_dir, args.cov, args.log_suffix, args.batch_size)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
