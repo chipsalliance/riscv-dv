@@ -111,7 +111,7 @@ class riscv_instr_cov_item extends riscv_instr_base;
   endfunction
 
   function special_val_e get_imm_special_val(bit [31:0] value);
-    randomize(imm_len);
+    void'(randomize(imm_len));
     if (value == 0) begin
       return ZERO_VAL;
     end else if (format == U_FORMAT) begin

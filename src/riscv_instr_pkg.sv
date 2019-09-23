@@ -19,6 +19,7 @@ package riscv_instr_pkg;
 
   `include "dv_defines.svh"
   `include "riscv_defines.svh"
+  `include "uvm_macros.svh"
 
   import uvm_pkg::*;
   import riscv_signature_pkg::*;
