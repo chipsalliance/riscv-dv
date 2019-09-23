@@ -118,7 +118,8 @@
 
 `define CG_END endgroup
 
-class riscv_instr_cover_group;
+class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
+                               riscv_instr_pkg::implemented_csr);
 
   riscv_instr_gen_config  cfg;
   riscv_instr_name_t      instr_name;
@@ -127,6 +128,7 @@ class riscv_instr_cover_group;
   int unsigned            instr_cnt;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
+  privileged_reg_t        privil_csr[$];
 
   ///////////// RV32I instruction functional coverage //////////////
 
@@ -776,13 +778,12 @@ class riscv_instr_cover_group;
   endfunction
 
   // Check if the privileged CSR is implemented
-  virtual function bit is_implemented_csr(bit [11:0] csr);
-    foreach (riscv_instr_pkg::implemented_csr[i]) begin
-      if (int'(riscv_instr_pkg::implemented_csr[i]) == csr) begin
-        return 1'b1;
-      end
+  virtual function bit is_implemented_csr(bit [11:0] pcsr);
+    if (pcsr inside {implemented_pcsr}) begin
+      return 1'b1;
+    end else begin
+      return 1'b0;
     end
-    return 1'b0;
   endfunction
 
   // Check if the instruction is supported
@@ -807,6 +808,9 @@ class riscv_instr_cover_group;
   virtual function void build_instr_list();
     riscv_instr_name_t instr_name;
     instr_name = instr_name.first;
+    foreach (riscv_instr_pkg::implemented_csr[i]) begin
+      privil_csr.push_back(riscv_instr_pkg::implemented_csr[i]);
+    end
     do begin
       riscv_instr_base instr;
       if (!(instr_name inside {unsupported_instr}) && (instr_name != INVALID_INSTR)) begin
