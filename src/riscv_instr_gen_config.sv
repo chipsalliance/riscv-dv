@@ -531,7 +531,7 @@ class riscv_instr_gen_config extends uvm_object;
     while (instr_name != instr_name.first);
   endfunction
 
-  virtual function build_instruction_list();
+  virtual function void build_instruction_list();
     basic_instr = {instr_category[SHIFT], instr_category[ARITHMETIC],
                    instr_category[LOGICAL], instr_category[COMPARE]};
     if (no_ebreak == 0) begin

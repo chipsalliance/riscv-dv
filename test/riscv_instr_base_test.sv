@@ -15,8 +15,6 @@
  */
 
 
-`include "uvm_macros.svh"
-
 // Base test
 class riscv_instr_base_test extends uvm_test;
 
