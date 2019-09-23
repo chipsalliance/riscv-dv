@@ -23,12 +23,14 @@ class riscv_instr_base_test extends uvm_test;
   string                  asm_file_name = "riscv_asm_test";
   riscv_asm_program_gen   asm_gen;
   string                  instr_seq;
+  int                     start_idx;
 
   `uvm_component_utils(riscv_instr_base_test)
 
   function new(string name="", uvm_component parent=null);
     super.new(name, parent);
     void'($value$plusargs("asm_file_name=%0s", asm_file_name));
+    void'($value$plusargs("start_idx=%0d", start_idx));
   endfunction
 
   virtual function void build_phase(uvm_phase phase);
@@ -79,7 +81,7 @@ class riscv_instr_base_test extends uvm_test;
       asm_gen = riscv_asm_program_gen::type_id::create("asm_gen");
       asm_gen.cfg = cfg;
       asm_gen.get_directed_instr_stream();
-      test_name = $sformatf("%0s_%0d.S", asm_file_name, i);
+      test_name = $sformatf("%0s_%0d.S", asm_file_name, i+start_idx);
       apply_directed_instr();
       `uvm_info(`gfn, "All directed instruction is applied", UVM_LOW)
       asm_gen.gen_program();
