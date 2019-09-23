@@ -114,7 +114,7 @@ class riscv_instr_base extends uvm_object;
     if (instr_name == C_JR) {
       rs1 != ZERO;
     }
-    if (instr_name == C_MV) {
+    if (instr_name inside {C_ADD, C_MV}) {
       rs2 != ZERO;
     }
   }
