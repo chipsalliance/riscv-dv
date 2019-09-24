@@ -562,6 +562,32 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
   `CR_INSTR_CG_BEGIN(c_addw)
   `CG_END
 
+  `INSTR_CG_BEGIN(hint)
+    cp_hint : coverpoint instr.binary[15:0] {
+      wildcard bins addi    = {16'b0000_1xxx_x000_0001,
+                               16'b0000_x1xx_x000_0001,
+                               16'b0000_xx1x_x000_0001,
+                               16'b0000_xxx1_x000_0001,
+                               16'b0000_xxxx_1000_0001};
+      wildcard bins li      = {16'b010x_0000_0xxx_xx01};
+      wildcard bins lui     = {16'b011x_0000_0xxx_xx01};
+      wildcard bins srli64  = {16'b1000_00xx_x000_0001};
+      wildcard bins srai64  = {16'b1000_01xx_x000_0001};
+      wildcard bins slli    = {16'b000x_0000_0xxx_xx10};
+      wildcard bins slli64  = {16'b0000_xxxx_x000_0010};
+      wildcard bins mv      = {16'b1000_0000_01xx_xx10,
+                               16'b1000_0000_0x1x_xx10,
+                               16'b1000_0000_0xx1_xx10,
+                               16'b1000_0000_0xxx_1x10,
+                               16'b1000_0000_0xxx_x110};
+      wildcard bins add     = {16'b1001_0000_01xx_xx10,
+                               16'b1001_0000_0x1x_xx10,
+                               16'b1001_0000_0xx1_xx10,
+                               16'b1001_0000_0xxx_1x10,
+                               16'b1001_0000_0xxx_x110};
+    }
+  `CG_END
+
   // Branch hit history
   covergroup branch_hit_history_cg;
     coverpoint branch_hit_history;
@@ -594,6 +620,7 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
+    hint_cg = new();
     // RV32I instruction functional coverage instantiation
     add_cg = new();
     sub_cg = new();
@@ -710,6 +737,9 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
     instr_cnt += 1;
     if (instr_cnt > 1) begin
       instr.check_hazard_condition(pre_instr);
+    end
+    if (instr.binary[1:0] != 2'b11) begin
+      hint_cg.sample(instr);
     end
     case (instr.instr_name)
       ADD        : add_cg.sample(instr);

@@ -19,6 +19,7 @@ class riscv_instr_cov_item extends riscv_instr_base;
   rand bit [XLEN-1:0]   rs1_value;
   rand bit [XLEN-1:0]   rs2_value;
   rand bit [XLEN-1:0]   rd_value;
+  bit [31:0]            binary;
   bit [XLEN-1:0]        pc;
   bit [XLEN-1:0]        mem_addr;
 
