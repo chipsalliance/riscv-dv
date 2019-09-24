@@ -544,6 +544,7 @@ package riscv_instr_pkg;
     MHPMCOUNTER29H  = 'hB9D,  // Upper 32 bits of HPMCOUNTER29, RV32I only
     MHPMCOUNTER30H  = 'hB9E,  // Upper 32 bits of HPMCOUNTER30, RV32I only
     MHPMCOUNTER31H  = 'hB9F,  // Upper 32 bits of HPMCOUNTER31, RV32I only
+    MCOUNTINHIBIT   = 'h320,  // Machine counter-inhibit register
     MHPMEVENT3      = 'h323,  // Machine performance-monitoring event selector
     MHPMEVENT4      = 'h324,  // Machine performance-monitoring event selector
     MHPMEVENT5      = 'h325,  // Machine performance-monitoring event selector

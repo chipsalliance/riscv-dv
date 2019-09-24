@@ -993,6 +993,11 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Dump performance CSRs if applicable
   virtual function void dump_perf_stats();
+    foreach(implemented_csr[i]) begin
+      if (implemented_csr[i] inside {[MCYCLE:MHPMCOUNTER31H]}) begin
+        gen_signature_handshake(.instr(instr_stream), .signature_type(WRITE_CSR), .csr(implemented_csr[i]));
+      end
+    end
   endfunction
 
   // Write the generated program to a file
