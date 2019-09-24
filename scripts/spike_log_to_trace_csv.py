@@ -39,7 +39,7 @@ HEX_RE   = re.compile(r"^0x")
 
 LOGGER = logging.getLogger()
 
-def process_spike_sim_log(spike_log, csv, full_trace = 1):
+def process_spike_sim_log(spike_log, csv, full_trace = 0):
   """Process SPIKE simulation log.
 
   Extract instruction and affected register information from spike simulation
