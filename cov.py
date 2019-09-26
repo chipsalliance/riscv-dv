@@ -72,6 +72,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
     base_sim_cmd = ("%s python3 run.py --so -o %s --cov -tl %s %s "
                     "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
                     (lsf_cmd, out, testlist, opts))
+    logging.info("Building the coverage collection framework")
     run_cmd(build_cmd)
     file_idx = 0
     trace_idx = 0
