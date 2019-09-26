@@ -165,13 +165,21 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
                          gpr_trace_1[gpr][trace_1_index].get_trace_string()))
               trace_2_index += 1
       # Check the final value match between the two traces
-      for gpr in gpr_trace_1:
+      for gpr in list(set(gpr_trace_1) | set(gpr_trace_2)):
         if not compare_final_value_only:
           if (len(gpr_trace_1[gpr]) == 0 or len(gpr_trace_2[gpr]) == 0):
             mismatch_cnt += 1
             fd.write("Zero GPR[%s] updates observed: %s:%d, %s:%d\n" % (gpr,
                      name1, len(gpr_trace_1[gpr]), name2, len(gpr_trace_2[gpr])))
         else:
+          if not gpr_trace_1.get(gpr):
+            trace = RiscvInstructiontTraceEntry()
+            trace.rd_val = "0"
+            trace.rd = gpr
+            trace.instr_str = ""
+            trace.binary = ""
+            trace.addr = ""
+            gpr_trace_1[gpr] = [trace]
           if not gpr_trace_2.get(gpr):
             trace = RiscvInstructiontTraceEntry()
             trace.rd_val = "0"
