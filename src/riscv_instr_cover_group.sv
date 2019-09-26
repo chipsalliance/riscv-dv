@@ -1,3 +1,20 @@
+/*
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 `define INSTR_CG_BEGIN(INSTR_NAME) \
   covergroup ``INSTR_NAME``_cg with function sample(riscv_instr_cov_item instr);
 
@@ -208,16 +225,28 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(srai)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(srai)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(slli)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(slli)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(srli)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(srli)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
   // Logical instructions
@@ -438,16 +467,28 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(sraiw)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(sraiw)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(slliw)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(slliw)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
-  `I_INSTR_CG_BEGIN(srliw)
-    cp_sign_cross: cross cp_rs1_sign, cp_imm_sign;
+  `INSTR_CG_BEGIN(srliw)
+    cp_rs1         : coverpoint instr.rs1;
+    cp_rd          : coverpoint instr.rd;
+    cp_rs1_sign    : coverpoint instr.rs1_sign;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    cp_gpr_harzard : coverpoint instr.gpr_hazard;
   `CG_END
 
   `R_INSTR_CG_BEGIN(addw)
@@ -518,13 +559,31 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
   `CB_INSTR_CG_BEGIN(c_bnez)
   `CG_END
 
-  `CB_INSTR_CG_BEGIN(c_srli)
+  `INSTR_CG_BEGIN(c_srli)
+    cp_rs1      : coverpoint instr.rs1 {
+      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
+    }
+    cp_gpr_harzard : coverpoint instr.gpr_hazard {
+      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
+    }
   `CG_END
 
-  `CB_INSTR_CG_BEGIN(c_srai)
+  `INSTR_CG_BEGIN(c_srai)
+    cp_rs1      : coverpoint instr.rs1 {
+      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
+    }
+    cp_gpr_harzard : coverpoint instr.gpr_hazard {
+      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
+    }
   `CG_END
 
-  `CI_INSTR_CG_BEGIN(c_slli)
+  `INSTR_CG_BEGIN(c_slli)
+    cp_rs1      : coverpoint instr.rs1 {
+      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
+    }
+    cp_gpr_harzard : coverpoint instr.gpr_hazard {
+      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
+    }
   `CG_END
 
   `CJ_INSTR_CG_BEGIN(c_j)
