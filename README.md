@@ -447,6 +447,16 @@ in parallel.
 python3 cov.py --dir out/spike_sim --lsf_cmd "bsub ....." -bz 5
 ```
 
+There is also a debug mode which allow you randomize the instruction and sample
+coverage directly. This is only used to test the new functional coverage
+implmentation.
+
+```
+// Randomly generate 100000 instructions, split to 20000 instructions per batch
+python3 cov.py -d -i 100000 -bz 20000
+```
+
+
 ## Supporting model
 
 Please file an issue under this repository for any bug report / integration
