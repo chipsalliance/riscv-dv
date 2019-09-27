@@ -90,7 +90,7 @@
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_csr         : coverpoint instr.csr { \
-      bins csr[] = cp_csr with (is_implemented_csr(item)); \
+      bins csr[] = cp_csr with (item inside {implemented_csr}); \
     } \
     cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd; \
@@ -177,8 +177,7 @@
 
 `define CG_END endgroup
 
-class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
-                               riscv_instr_pkg::implemented_csr);
+class riscv_instr_cover_group;
 
   riscv_instr_gen_config  cfg;
   riscv_instr_cov_item    cur_instr;
@@ -187,7 +186,6 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
   int unsigned            instr_cnt;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
-  privileged_reg_t        privil_csr[$];
 
   ///////////// RV32I instruction functional coverage //////////////
 
@@ -672,7 +670,30 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
   endgroup
   */
 
-  // TODO: Add covergroup for various hazard conditions
+  // Privileged CSR covergroup
+  covergroup mcause_exception_cg with function sample(exception_cause_t exception);
+    cp_exception: coverpoint exception {
+       bins exception[] = cp_exception with (item inside {implemented_exception});
+    }
+  endgroup
+
+  covergroup mcause_interrupt_cg with function sample(interrupt_cause_t interrupt);
+    cp_interrupt: coverpoint interrupt {
+       bins interrupt[] = cp_interrupt with (item inside {implemented_interrupt});
+    }
+  endgroup
+
+  covergroup mepc_cg with function sample(bit [XLEN-1:0] val);
+    cp_align: coverpoint val[1:0] {
+      bins alignment[] = {2'b00, 2'b10};
+    }
+  endgroup
+
+  covergroup mstatus_m_cg with function sample(bit [XLEN-1:0] val);
+    cp_mie  : coverpoint val[3];
+    cp_mpie : coverpoint val[7];
+    cp_mpp  : coverpoint val[12:11];
+  endgroup
 
   function new(riscv_instr_gen_config cfg);
     this.cfg = cfg;
@@ -790,6 +811,10 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
       c_subw_cg = new();
       c_addw_cg = new();
     end
+    mcause_exception_cg = new();
+    mcause_interrupt_cg = new();
+    mepc_cg = new();
+    mstatus_m_cg = new();
   endfunction
 
   function void sample(riscv_instr_cov_item instr);
@@ -906,20 +931,32 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
         branch_hit_history_cg.sample();
       end
     end
+    if (instr.category == CSR) begin
+      case (instr.csr)
+        MCAUSE: begin
+          if (instr.rd_value[XLEN-1]) begin
+            interrupt_cause_t interrupt;
+            if ($cast(interrupt, instr.rd_value[3:0])) begin
+              mcause_interrupt_cg.sample(interrupt);
+            end
+          end else begin
+            exception_cause_t exception;
+            if ($cast(exception, instr.rd_value[3:0])) begin
+              mcause_exception_cg.sample(exception);
+            end
+          end
+        end
+        MEPC: mepc_cg.sample(instr.rd_value);
+        MSTATUS: begin
+          mstatus_m_cg.sample(instr.rd_value);
+        end
+      endcase
+    end
     if (instr_cnt > 1) begin
       // instr_trans_cg.sample();
     end
     pre_instr.copy_base_instr(instr);
     pre_instr.mem_addr = instr.mem_addr;
-  endfunction
-
-  // Check if the privileged CSR is implemented
-  virtual function bit is_implemented_csr(bit [11:0] pcsr);
-    if (pcsr inside {implemented_pcsr}) begin
-      return 1'b1;
-    end else begin
-      return 1'b0;
-    end
   endfunction
 
   // Check if the instruction is supported
@@ -944,9 +981,6 @@ class riscv_instr_cover_group#(privileged_reg_t implemented_pcsr[] =
   virtual function void build_instr_list();
     riscv_instr_name_t instr_name;
     instr_name = instr_name.first;
-    foreach (riscv_instr_pkg::implemented_csr[i]) begin
-      privil_csr.push_back(riscv_instr_pkg::implemented_csr[i]);
-    end
     do begin
       riscv_instr_base instr;
       if (!(instr_name inside {unsupported_instr}) && (instr_name != INVALID_INSTR)) begin
