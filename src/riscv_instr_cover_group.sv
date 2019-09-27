@@ -89,9 +89,6 @@
 
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_csr         : coverpoint instr.csr { \
-      bins csr[] = cp_csr with (item inside {implemented_csr}); \
-    } \
     cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd; \
     cp_gpr_harzard : coverpoint instr.gpr_hazard;
@@ -670,6 +667,12 @@ class riscv_instr_cover_group;
   endgroup
   */
 
+  covergroup privileged_csr_cg with function sample(bit [11:0] csr);
+    cp_csr : coverpoint csr {
+      bins pcsr[] = cp_csr with (item inside {implemented_csr});
+    }
+  endgroup
+
   // Privileged CSR covergroup
   covergroup mcause_exception_cg with function sample(exception_cause_t exception);
     cp_exception: coverpoint exception {
@@ -811,6 +814,7 @@ class riscv_instr_cover_group;
       c_subw_cg = new();
       c_addw_cg = new();
     end
+    privileged_csr_cg = new();
     mcause_exception_cg = new();
     mcause_interrupt_cg = new();
     mepc_cg = new();
@@ -932,6 +936,7 @@ class riscv_instr_cover_group;
       end
     end
     if (instr.category == CSR) begin
+      privileged_csr_cg.sample(instr.csr);
       case (instr.csr)
         MCAUSE: begin
           if (instr.rd_value[XLEN-1]) begin
