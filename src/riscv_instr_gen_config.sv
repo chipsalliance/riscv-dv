@@ -310,6 +310,7 @@ class riscv_instr_gen_config extends uvm_object;
     foreach (default_reserved_regs[i]) {
       signature_data_reg != default_reserved_regs[i];
       signature_addr_reg != default_reserved_regs[i];
+      scratch_reg != default_reserved_regs[i];
     }
   }
 
