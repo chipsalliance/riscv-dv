@@ -282,6 +282,9 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".include \"user_define.h\"");
     instr_stream.push_back(".globl _start");
     instr_stream.push_back(".section .text");
+    if (!cfg.disable_compressed_instr) begin
+      instr_stream.push_back(".option norvc;");
+    end
     instr_stream.push_back("_start:");
   endfunction
 
@@ -754,7 +757,9 @@ class riscv_asm_program_gen extends uvm_object;
     for (int i = 1; i < max_interrupt_vector_num; i++) begin
       instr.push_back($sformatf("j %0smode_intr_vector_%0d", mode, i));
     end
-    instr = {instr, ".option rvc;"};
+    if (!cfg.disable_compressed_instr) begin
+      instr = {instr, ".option rvc;"};
+    end
     for (int i = 1; i < max_interrupt_vector_num; i++) begin
       string intr_handler[$];
       push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, intr_handler);
