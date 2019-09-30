@@ -67,11 +67,11 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
         logging.error("Full trace for %s is not supported yet" % iss)
         sys.exit(1)
   if steps == "all" or re.match("cov", steps):
-    build_cmd = ("%s python3 run.py --co -o %s --cov -tl %s %s" %
-                 (lsf_cmd, out, testlist, opts))
-    base_sim_cmd = ("%s python3 run.py --so -o %s --cov -tl %s %s "
+    build_cmd = ("python3 run.py --co -o %s --cov -tl %s %s" %
+                 (out, testlist, opts))
+    base_sim_cmd = ("python3 run.py --so -o %s --cov -tl %s %s "
                     "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
-                    (lsf_cmd, out, testlist, opts))
+                    (out, testlist, opts))
     logging.info("Building the coverage collection framework")
     run_cmd(build_cmd)
     file_idx = 0
@@ -98,6 +98,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
           logging.info("Processing batch %0d/%0d" % (file_idx+1, batch_cnt))
           run_cmd(sim_cmd)
         else:
+          sim_cmd += (" --lsf_cmd \"%s\"" % lsf_cmd)
           sim_cmd_list.append(sim_cmd)
         trace_csv_opts = ""
     if lsf_cmd != "":
@@ -119,13 +120,13 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd, time
   """
   sim_cmd_list = []
   logging.info("Building the coverage collection framework")
-  build_cmd = ("%s python3 run.py --co -o %s --cov -tl %s %s" %
-               (lsf_cmd, out, testlist, opts))
+  build_cmd = ("python3 run.py --co -o %s --cov -tl %s %s" %
+               (out, testlist, opts))
   run_cmd(build_cmd)
-  base_sim_cmd = ("%s python3 run.py --so -o %s --cov -tl %s %s "
+  base_sim_cmd = ("python3 run.py --so -o %s --cov -tl %s %s "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
-                  (lsf_cmd, out, testlist, opts))
+                  (out, testlist, opts))
   if batch_size > 0:
     batch_cnt = int((instr_cnt+batch_size-1)/batch_size)
     logging.info("Batch size: %0d, Batch cnt:%0d" % (batch_size, batch_cnt))
@@ -146,6 +147,7 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd, time
       logging.info("Running batch %0d/%0d" % (i+1, batch_cnt))
       run_cmd(sim_cmd)
     else:
+      sim_cmd += (" --lsf_cmd \"%s\"" % lsf_cmd)
       sim_cmd_list.append(sim_cmd)
   if lsf_cmd != "":
     run_parallel_cmd(sim_cmd_list, timeout)
