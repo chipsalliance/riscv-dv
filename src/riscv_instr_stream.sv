@@ -209,7 +209,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                                         !(instr_name inside {EBREAK, C_EBREAK});)
     end else begin
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(instr_name,
-                                       instr_name inside {allowed_instr};)
+                                         instr_name inside {allowed_instr};)
     end
     instr.copy_base_instr(cfg.instr_template[instr_name]);
     `uvm_info(`gfn, $sformatf("%s: rs1:%0d, rs2:%0d, rd:%0d, imm:%0d",

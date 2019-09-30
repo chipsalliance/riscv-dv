@@ -155,6 +155,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    force_m_delegation = 0;
   bit                    force_s_delegation = 0;
   bit                    support_supervisor_mode;
+  bit                    disable_compressed_instr;
   // "Memory mapped" address that when written to will indicate some event to
   // the testbench - testbench will take action based on the value written
   int                    signature_addr = 32'hdead_beef;
@@ -367,6 +368,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+force_m_delegation=", force_m_delegation);
     get_bool_arg_value("+force_s_delegation=", force_s_delegation);
     get_bool_arg_value("+require_signature_addr=", require_signature_addr);
+    get_bool_arg_value("+disable_compressed_instr=", disable_compressed_instr);
     get_bool_arg_value("+randomize_csr=", randomize_csr);
     if (this.require_signature_addr) begin
       get_hex_arg_value("+signature_addr=", signature_addr);
@@ -518,7 +520,8 @@ class riscv_instr_gen_config extends uvm_object;
       if (!(instr_name inside {unsupported_instr, excluded_instr})) begin
         instr = riscv_instr_base::type_id::create("instr");
         `DV_CHECK_RANDOMIZE_WITH_FATAL(instr, instr_name == local::instr_name;)
-        if (instr.group inside {supported_isa}) begin
+        if ((instr.group inside {supported_isa}) &&
+           !(disable_compressed_instr && instr.is_compressed)) begin
           `uvm_info(`gfn, $sformatf("Adding [%s] %s to the list",
                           instr.group.name(), instr.instr_name.name()), UVM_HIGH)
           instr_group[instr.group].push_back(instr_name);
