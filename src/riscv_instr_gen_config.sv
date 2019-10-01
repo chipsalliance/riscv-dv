@@ -182,6 +182,10 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    set_dcsr_ebreak = 1'b0;
   // Number of sub programs in the debug rom
   int                    num_debug_sub_program = 0;
+  // Enable debug single stepping
+  bit                    enable_debug_single_step = 0;
+  // Number of single stepping iterations
+  rand int               single_step_iterations;
   // Stack space allocated to each program, need to be enough to store necessary context
   // Example: RA, SP, T0
   int                    min_stack_len_per_program = 10 * (XLEN/8);
@@ -235,6 +239,13 @@ class riscv_instr_gen_config extends uvm_object;
          main_program_instr_cnt == instr_cnt;
        }
     `endif
+  }
+
+  // Keep the number of single step iterations relatively small
+  constraint debug_single_step_c {
+    if (enable_debug_single_step) {
+      single_step_iterations inside {[10 : 50]};
+    }
   }
 
   // Boot privileged mode distribution
@@ -378,6 +389,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_int_arg_value("+num_debug_sub_program=", num_debug_sub_program);
     get_bool_arg_value("+enable_ebreak_in_debug_rom=", enable_ebreak_in_debug_rom);
     get_bool_arg_value("+set_dcsr_ebreak=", set_dcsr_ebreak);
+    get_bool_arg_value("+enable_debug_single_step=", enable_debug_single_step);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
       `uvm_info(get_full_name(), $sformatf(
                 "Got boot mode option - %0s", boot_mode_opts), UVM_LOW)
