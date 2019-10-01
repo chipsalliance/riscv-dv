@@ -421,6 +421,8 @@ The functional covergroup is defined in [riscv_instr_cover_group.sv](https://git
 - Positive/negative immediate value
 - Forward/backward branches, branch hit history
 - Hint instruction
+- Illegal instruction
+- All compressed and non-compressed opcode
 - Access to all implemened privieleged CSR
 - Exception and interrupt
 

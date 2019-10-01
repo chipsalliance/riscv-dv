@@ -87,6 +87,14 @@
     cp_imm_sign    : coverpoint instr.imm_sign; \
     cp_gpr_harzard : coverpoint instr.gpr_hazard;
 
+
+`define J_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_imm_sign    : coverpoint instr.imm_sign; \
+    cp_imm_lsb     : coverpoint instr.imm[1:0]; \
+    cp_rd          : coverpoint instr.rd; \
+
+
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rs1         : coverpoint instr.rs1; \
@@ -348,6 +356,15 @@ class riscv_instr_cover_group;
     cp_misalign: coverpoint instr.unaligned_mem_access;
   `CG_END
 
+  // JUMP instruction
+  `J_INSTR_CG_BEGIN(jal)
+  `CG_END
+
+  `J_INSTR_CG_BEGIN(jalr)
+    cp_rs1_eq_rd : coverpoint instr.rs1 iff (instr.rs1 == instr.rd);
+    cp_rs1_ne_rd : coverpoint instr.rs1 iff (instr.rs1 != instr.rd);
+  `CG_END
+
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
     cp_rs2 : coverpoint instr.rs1;
@@ -373,6 +390,12 @@ class riscv_instr_cover_group;
     cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
+  covergroup rv32i_misc_cg with function sample(riscv_instr_cov_item instr);
+    cp_misc : coverpoint instr.instr_name {
+      bins instr[] = {FENCE, FENCE_I, EBREAK, ECALL, MRET, WFI};
+    }
+  endgroup
+
   // RV32M
 
   `R_INSTR_CG_BEGIN(mul)
@@ -392,48 +415,66 @@ class riscv_instr_cover_group;
   `CG_END
 
   `R_INSTR_CG_BEGIN(div)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(divu)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(rem)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(remu)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   // RV64M
+  // Below instructions only do calculation based on lower 32 bits, and extend the result to 64
+  // bits. Add special covergroup for corner cases
 
   `R_INSTR_CG_BEGIN(mulw)
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(divw)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
+    cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
+      bins zero     = {0};
+      bins non_zero = default;
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(divuw)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
+    cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
+      bins zero     = {0};
+      bins non_zero = default;
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(remw)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
+    cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
+      bins zero     = {0};
+      bins non_zero = default;
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
   `R_INSTR_CG_BEGIN(remuw)
-    cp_rs2_val   : coverpoint instr.rs2_special_val;
+    cp_div_result: coverpoint instr.div_result;
+    cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
+      bins zero     = {0};
+      bins non_zero = default;
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
@@ -460,6 +501,19 @@ class riscv_instr_cover_group;
 
   `R_INSTR_CG_BEGIN(srlw)
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
+  `CG_END
+
+  // imm[5] could be 1 for RV64I SLLI/SRAI/SRLI
+  `INSTR_CG_BEGIN(srai64)
+    cp_imm: coverpoint instr.imm[5];
+  `CG_END
+
+  `INSTR_CG_BEGIN(slli64)
+    cp_imm: coverpoint instr.imm[5];
+  `CG_END
+
+  `INSTR_CG_BEGIN(srli64)
+    cp_imm: coverpoint instr.imm[5];
   `CG_END
 
   `INSTR_CG_BEGIN(sraiw)
@@ -642,9 +696,35 @@ class riscv_instr_cover_group;
     }
   `CG_END
 
+  // Cover all illegal instruction
+  covergroup illegal_cg with function sample(bit [31:0] binary);
+    cp_point : coverpoint binary {
+      wildcard bins c_addi4spn = {32'bxxxx_xxxxx_0000_0000_000x_xx00};
+      wildcard bins c_addiw    = {32'bxxxx_xxxxx_001x_0000_0xxx_xx01};
+      wildcard bins c_addi16sp = {32'bxxxx_xxxxx_0110_0001_0000_0001};
+      wildcard bins c_lui      = {32'bxxxx_xxxxx_0110_xxxx_1000_0001,
+                                  32'bxxxx_xxxxx_0110_xx1x_x000_0001,
+                                  32'bxxxx_xxxxx_0110_x1xx_x000_0001,
+                                  32'bxxxx_xxxxx_0110_1xxx_x000_0001};
+      wildcard bins c_jr       = {32'bxxxx_xxxxx_1000_0000_0000_0001};
+    }
+  endgroup
+
+  // Cover all non-compressed opcode
+  covergroup opcode_cg with function sample(bit [4:0] opcode);
+    cp_opcode: coverpoint opcode;
+  endgroup
+
+  // Cover all compressed instruction opcode
+  covergroup compressed_opcode_cg with function sample(bit [15:0] binary);
+    cp_00 : coverpoint binary[15:13] iff (binary[1:0] == 2'b00);
+    cp_01 : coverpoint binary[15:13] iff (binary[1:0] == 2'b01);
+    cp_10 : coverpoint binary[15:13] iff (binary[1:0] == 2'b10);
+  endgroup
+
   // Branch hit history
   covergroup branch_hit_history_cg;
-    coverpoint branch_hit_history;
+    cp_branch_history: coverpoint branch_hit_history;
   endgroup
 
   // Instruction transition for all supported instructions
@@ -726,6 +806,8 @@ class riscv_instr_cover_group;
     sltu_cg = new();
     slti_cg = new();
     sltiu_cg = new();
+    jal_cg = new();
+    jalr_cg = new();
     beq_cg = new();
     bne_cg = new();
     blt_cg = new();
@@ -748,6 +830,10 @@ class riscv_instr_cover_group;
     csrrci_cg = new();
     // instr_trans_cg = new();
     branch_hit_history_cg = new();
+    rv32i_misc_cg = new();
+    illegal_cg = new();
+    opcode_cg = new();
+    compressed_opcode_cg = new();
     if (RV32M inside {supported_isa}) begin
       mul_cg = new();
       mulh_cg = new();
@@ -768,6 +854,9 @@ class riscv_instr_cover_group;
       lwu_cg = new();
       ld_cg = new();
       sd_cg = new();
+      slli64_cg = new();
+      srli64_cg = new();
+      srai64_cg = new();
       sllw_cg = new();
       slliw_cg = new();
       srlw_cg = new();
@@ -828,6 +917,9 @@ class riscv_instr_cover_group;
     end
     if (instr.binary[1:0] != 2'b11) begin
       hint_cg.sample(instr);
+      compressed_opcode_cg.sample(instr.binary[15:0]);
+    end else begin
+      opcode_cg.sample(instr.binary[6:2]);
     end
     case (instr.instr_name)
       ADD        : add_cg.sample(instr);
@@ -838,7 +930,24 @@ class riscv_instr_cover_group;
       SLL        : sll_cg.sample(instr);
       SRL        : srl_cg.sample(instr);
       SRA        : sra_cg.sample(instr);
-      SLLI       : slli_cg.sample(instr);
+      SLLI       : begin
+                     slli_cg.sample(instr);
+                     if (RV64I inside {supported_isa}) begin
+                       slli64_cg.sample(instr);
+                     end
+                   end
+      SRLI       : begin
+                     srli_cg.sample(instr);
+                     if (RV64I inside {supported_isa}) begin
+                       srli64_cg.sample(instr);
+                     end
+                   end
+      SRAI       : begin
+                     slli_cg.sample(instr);
+                     if (RV64I inside {supported_isa}) begin
+                       slli64_cg.sample(instr);
+                     end
+                   end
       SRLI       : srli_cg.sample(instr);
       SRAI       : srai_cg.sample(instr);
       AND        : and_cg.sample(instr);
@@ -851,6 +960,8 @@ class riscv_instr_cover_group;
       SLTU       : sltu_cg.sample(instr);
       SLTI       : slti_cg.sample(instr);
       SLTIU      : sltiu_cg.sample(instr);
+      JAL        : jal_cg.sample(instr);
+      JALR       : jalr_cg.sample(instr);
       BEQ        : beq_cg.sample(instr);
       BNE        : bne_cg.sample(instr);
       BLT        : blt_cg.sample(instr);
@@ -927,6 +1038,12 @@ class riscv_instr_cover_group;
       C_SUBW     : c_subw_cg.sample(instr);
       C_ADDW     : c_addw_cg.sample(instr);
       C_ADDIW    : c_addiw_cg.sample(instr);
+      default: begin
+        illegal_cg.sample(instr.binary);
+        if (instr.group == RV32I) begin
+          rv32i_misc_cg.sample(instr);
+        end
+      end
     endcase
     if (instr.category == BRANCH) begin
       branch_hit_history = (branch_hit_history << 1) | instr.branch_hit;
