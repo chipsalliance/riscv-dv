@@ -503,7 +503,7 @@ def main():
       sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
   # Run instruction generator
-  if args.steps == "all" or re.match("gen", args.steps):
+  if args.steps == "all" or re.match(".*gen.*", args.steps):
     gen(matched_list, args.csr_yaml, args.end_signature_addr, args.isa,
         args.simulator, args.simulator_yaml, output_dir, args.so,
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
@@ -512,16 +512,16 @@ def main():
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
-    if args.steps == "all" or re.match("gcc_compile", args.steps):
+    if args.steps == "all" or re.match(".*gcc_compile.*", args.steps):
       gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.gcc_opts)
 
     # Run ISS simulation
-    if args.steps == "all" or re.match("iss_sim", args.steps):
+    if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
       iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
               args.isa, args.iss_timeout)
 
     # Compare ISS simulation result
-    if args.steps == "all" or re.match("iss_cmp", args.steps):
+    if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
       iss_cmp(matched_list, args.iss, output_dir, args.isa)
 
 if __name__ == "__main__":

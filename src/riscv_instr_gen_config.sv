@@ -64,6 +64,15 @@ class riscv_instr_gen_config extends uvm_object;
   // Enable sfence.vma instruction
   rand bit               enable_sfence;
 
+  // Reserved register
+  // Reserved for various hardcoded routines
+  rand riscv_reg_t       gpr[4];
+  // Used by any DCSR operations inside of the debug rom
+  rand riscv_reg_t       scratch_reg;
+  // Use a random register for stack pointer/thread pointer
+  rand riscv_reg_t       sp;
+  rand riscv_reg_t       tp;
+
   // Options for privileged mode CSR checking
   // Below checking can be made optional as the ISS implementation could be different with the
   // processor.
@@ -160,11 +169,6 @@ class riscv_instr_gen_config extends uvm_object;
   // the testbench - testbench will take action based on the value written
   int                    signature_addr = 32'hdead_beef;
   bit                    require_signature_addr = 1'b0;
-  rand riscv_reg_t       signature_addr_reg;
-  rand riscv_reg_t       signature_data_reg;
-  // Register that will be used to handle any DCSR operations inside of the
-  // debug rom
-  rand riscv_reg_t       scratch_reg;
   // Enable a full or empty debug_rom section.
   // Full debug_rom will contain random instruction streams.
   // Empty debug_rom will contain just dret instruction and will return immediately.
@@ -187,9 +191,6 @@ class riscv_instr_gen_config extends uvm_object;
   // Maximum directed instruction stream sequence count
   int                    max_directed_instr_stream_seq = 20;
   // Reserved registers
-  // Default reserved registers, only used by special instructions
-  riscv_reg_t            default_reserved_regs[];
-  // All reserved regs
   riscv_reg_t            reserved_regs[];
 
   uvm_cmdline_processor  inst;
@@ -306,23 +307,23 @@ class riscv_instr_gen_config extends uvm_object;
     }
   }
 
-  constraint reserve_scratch_reg_c {
-    scratch_reg != ZERO;
-    foreach (default_reserved_regs[i]) {
-      scratch_reg != default_reserved_regs[i];
-    }
+  constraint sp_tp_c {
+    sp != tp;
+    !(sp inside {GP, RA, ZERO});
+    !(tp inside {GP, RA, ZERO});
   }
 
-  constraint signature_addr_c {
-    foreach (default_reserved_regs[i]) {
-      signature_addr_reg != default_reserved_regs[i];
-      signature_data_reg != default_reserved_regs[i];
+  constraint reserve_scratch_reg_c {
+    scratch_reg != ZERO;
+    scratch_reg != sp;
+    scratch_reg != tp;
+  }
+
+  constraint gpr_c {
+    foreach (gpr[i]) {
+      !(gpr[i] inside {sp, tp, scratch_reg, ZERO, RA, GP});
     }
-    signature_addr_reg != signature_data_reg;
-    signature_data_reg != scratch_reg;
-    signature_addr_reg != scratch_reg;
-    signature_data_reg != ZERO;
-    signature_addr_reg != ZERO;
+    unique {gpr};
   }
 
   constraint addr_translaction_c {
@@ -342,7 +343,6 @@ class riscv_instr_gen_config extends uvm_object;
   function new (string name = "");
     string s;
     super.new(name);
-    setup_default_reserved_regs();
     init_delegation();
     inst = uvm_cmdline_processor::get_inst();
     get_int_arg_value("+num_of_tests=", num_of_tests);
@@ -434,14 +434,6 @@ class riscv_instr_gen_config extends uvm_object;
     while(intr_cause != intr_cause.first);
   endfunction
 
-  // Reserve below registers for special purpose instruction
-  // The other normal instruction cannot use them as destination register
-  virtual function void setup_default_reserved_regs();
-    default_reserved_regs = {SP, // x2, stack pointer (user stack)
-                             TP  // x4, thread pointer, used as kernel stack pointer
-                             };
-  endfunction
-
   function void pre_randomize();
     foreach (riscv_instr_pkg::supported_privileged_mode[i]) begin
       if(riscv_instr_pkg::supported_privileged_mode[i] == SUPERVISOR_MODE)
@@ -449,9 +441,12 @@ class riscv_instr_gen_config extends uvm_object;
     end
   endfunction
 
+  function void get_non_reserved_gpr();
+  endfunction
+
   function void post_randomize();
     // Setup the list all reserved registers
-    reserved_regs = {default_reserved_regs, scratch_reg};
+    reserved_regs = {tp, sp, scratch_reg};
     // Need to save all loop registers, and RA/T0
     min_stack_len_per_program = 2 * (XLEN/8);
     // Check if the setting is legal
