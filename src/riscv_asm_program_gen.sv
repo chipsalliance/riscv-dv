@@ -89,7 +89,7 @@ class riscv_asm_program_gen extends uvm_object;
                                    .instr_stream(main_program.directed_instr));
     main_program.cfg = cfg;
     `DV_CHECK_RANDOMIZE_FATAL(main_program)
-    main_program.gen_instr(1);
+    main_program.gen_instr(.is_main_program(1), .no_branch(cfg.no_branch_jump));
     // Setup jump instruction among main program and sub programs
     gen_callstack(main_program, sub_program, sub_program_name, cfg.num_of_sub_program);
     `uvm_info(`gfn, "Generating callstack...done", UVM_LOW)
@@ -184,7 +184,7 @@ class riscv_asm_program_gen extends uvm_object;
     seq.is_debug_program = 0;
     seq.cfg = cfg;
     `DV_CHECK_RANDOMIZE_FATAL(seq)
-    seq.gen_instr(0);
+    seq.gen_instr(.is_main_program(0), .no_branch(cfg.no_branch_jump));
     seq.post_process_instr();
     seq.generate_instr_stream();
     instr_stream = {instr_stream, seq.instr_string_list};
@@ -217,7 +217,7 @@ class riscv_asm_program_gen extends uvm_object;
         sub_program[i].label_name = sub_program[i].get_name();
         sub_program[i].cfg = cfg;
         `DV_CHECK_RANDOMIZE_FATAL(sub_program[i])
-        sub_program[i].gen_instr(0);
+        sub_program[i].gen_instr(.is_main_program(0), .no_branch(cfg.no_branch_jump));
         sub_program_name.push_back(sub_program[i].label_name);
       end
     end
@@ -1227,7 +1227,7 @@ class riscv_asm_program_gen extends uvm_object;
         debug_program.is_debug_program = 1;
         debug_program.cfg = cfg;
         `DV_CHECK_RANDOMIZE_FATAL(debug_program)
-        debug_program.gen_instr(.is_main_program(1'b1), .no_branch(1'b0));
+        debug_program.gen_instr(.is_main_program(1'b1), .no_branch(cfg.no_branch_jump));
         gen_callstack(debug_program, debug_sub_program, debug_sub_program_name,
                       cfg.num_debug_sub_program);
         debug_program.post_process_instr();

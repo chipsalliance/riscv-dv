@@ -36,8 +36,8 @@
     +instr_cnt=10000
     +num_of_sub_program=0
     +no_fence=1
-    +no_data_page=1'b1
-    +no_branch_jump=1'b1
+    +no_data_page=1
+    +no_branch_jump=1
     +boot_mode=m
   iterations: 2
   gen_test: riscv_instr_base_test
