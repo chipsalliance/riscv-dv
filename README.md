@@ -312,8 +312,10 @@ it with random instructions
 ## Compile generated programs with GCC
 
 - Install [riscv-gcc](https://github.com/riscv/riscv-gcc) toolchain
-- Set environment variable RISCV_GCC to the directory of the RISC-V gcc
+- Set environment variable RISCV_GCC to the RISC-V gcc executable
   executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
+- Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
+  executable. (example: <install_dir>/bin/riscv32-unknown-elf-objcopy)
 
 ## Run ISS (Instruction Set Simulator) simulation
 
