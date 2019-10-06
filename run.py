@@ -219,7 +219,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
             if "gen_opts" in test:
               cmd += test['gen_opts']
             if not re.search("c", isa):
-              cmd += "+disable_compressed_instr=1";
+              cmd += "+disable_compressed_instr=1 ";
             if lsf_cmd:
               cmd_list.append(cmd)
             else:
