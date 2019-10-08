@@ -53,7 +53,11 @@ bit support_sfence = 1;
 // ----------------------------------------------------------------------------
 
 // Implemented previlieged CSR list
+`ifdef DSIM
+privileged_reg_t implemented_csr[] = {
+`else
 parameter privileged_reg_t implemented_csr[] = {
+`endif
     // User mode CSR
     USTATUS,    // User status
     UIE,        // User interrupt-enable register
@@ -99,7 +103,11 @@ parameter privileged_reg_t implemented_csr[] = {
 // Supported interrupt/exception setting, used for functional coverage
 // ----------------------------------------------------------------------------
 
+`ifdef DSIM
+interrupt_cause_t implemented_interrupt[] = {
+`else
 parameter interrupt_cause_t implemented_interrupt[] = {
+`endif
     U_SOFTWARE_INTR,
     S_SOFTWARE_INTR,
     M_SOFTWARE_INTR,
@@ -111,7 +119,11 @@ parameter interrupt_cause_t implemented_interrupt[] = {
     M_EXTERNAL_INTR
 };
 
+`ifdef DSIM
+exception_cause_t implemented_exception[] = {
+`else
 parameter exception_cause_t implemented_exception[] = {
+`endif
     INSTRUCTION_ADDRESS_MISALIGNED,
     INSTRUCTION_ACCESS_FAULT,
     ILLEGAL_INSTRUCTION,
