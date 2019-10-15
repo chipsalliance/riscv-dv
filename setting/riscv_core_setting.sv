@@ -97,7 +97,9 @@ parameter privileged_reg_t implemented_csr[] = {
     MEPC,       // Machine exception program counter
     MCAUSE,     // Machine trap cause
     MTVAL,      // Machine bad address or instruction
-    MIP         // Machine interrupt pending
+    MIP,        // Machine interrupt pending
+    // Floating point CSR
+    FCSR        // Floating point control and status
 };
 
 // ----------------------------------------------------------------------------

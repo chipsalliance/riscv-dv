@@ -42,6 +42,14 @@ package riscv_instr_pkg;
     SV64 = 4'b1011
   } satp_mode_t;
 
+  typedef enum bit [2:0] {
+    RNE = 3'b000,
+    RTZ = 3'b001,
+    RDN = 3'b010,
+    RUP = 3'b011,
+    RMM = 3'b100
+  } f_rounding_mode_t;
+
   typedef enum bit [1:0] {
     DIRECT   = 2'b00,
     VECTORED = 2'b01
@@ -319,37 +327,8 @@ package riscv_instr_pkg;
 
   typedef enum bit [4:0] {
     ZERO = 5'b00000,
-    RA,
-    SP,
-    GP,
-    TP,
-    T0,
-    T1,
-    T2,
-    S0,
-    S1,
-    A0,
-    A1,
-    A2,
-    A3,
-    A4,
-    A5,
-    A6,
-    A7,
-    S2,
-    S3,
-    S4,
-    S5,
-    S6,
-    S7,
-    S8,
-    S9,
-    S10,
-    S11,
-    T3,
-    T4,
-    T5,
-    T6
+    RA, SP, GP, TP, T0, T1, T2, S0, S1, A0, A1, A2, A3, A4, A5, A6, A7,
+    S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
   } riscv_reg_t;
 
   typedef enum bit [4:0] {

@@ -62,6 +62,9 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit [1:0]         mstatus_fs;
   rand mtvec_mode_t      mtvec_mode;
 
+  // Floating point rounding mode
+  rand f_rounding_mode_t fcsr_rm;
+
   // Enable sfence.vma instruction
   rand bit               enable_sfence;
 
