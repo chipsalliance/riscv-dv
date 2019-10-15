@@ -255,3 +255,18 @@
     +directed_instr_0=riscv_lr_sc_instr_stream,10
     +directed_instr_1=riscv_amo_instr_stream,10
   rtl_test: core_base_test
+
+- test: riscv_floating_point_test
+  description: >
+    Enable floating point instructions
+  gen_opts: >
+    +instr_cnt=10000
+    +num_of_sub_program=0
+    +no_fence=1
+    +no_data_page=1
+    +no_branch_jump=1
+    +enable_floating_point=1
+    +boot_mode=m
+  iterations: 1
+  gen_test: riscv_instr_base_test
+  rtl_test: core_base_test

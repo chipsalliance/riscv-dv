@@ -249,6 +249,18 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
       instr.gen_rand_csr(.privileged_mode(cfg.init_privileged_mode),
                          .illegal_csr_instr(cfg.enable_illegal_csr_instruction));
     end
+    if (instr.has_fs1) begin
+      instr.fs1 = instr.gen_rand_fpr();
+    end
+    if (instr.has_fs2) begin
+      instr.fs2 = instr.gen_rand_fpr();
+    end
+    if (instr.has_fs3) begin
+      instr.fs3 = instr.gen_rand_fpr();
+    end
+    if (instr.has_fd) begin
+      instr.fd = instr.gen_rand_fpr();
+    end
   endfunction
 
 endclass

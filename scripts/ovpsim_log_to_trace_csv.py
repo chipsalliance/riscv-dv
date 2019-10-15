@@ -55,7 +55,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv):
         instr_cnt += 1
       else:
         # Extract register value information
-        n = re.search(r" (?P<rd>[a-z0-9]{2,3}?) (?P<pre>[a-f0-9]+?)" \
+        n = re.search(r" (?P<rd>[a-z]{1,3}[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
                        " -> (?P<val>[a-f0-9]+?)$", line)
         if n:
           # Write the extracted instruction to a csvcol buffer file
