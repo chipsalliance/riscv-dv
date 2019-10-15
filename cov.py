@@ -31,7 +31,7 @@ from scripts.sail_log_to_trace_csv import *
 
 LOGGER = logging.getLogger()
 
-def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, timeout):
+def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, timeout, args):
   """Collect functional coverage from the instruction trace
 
   Args:
@@ -63,15 +63,26 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
       logging.info("Process %0s log[%0d/%0d] : %s" % (iss, i+1, len(log_list), log))
       if iss == "spike":
         process_spike_sim_log(log, csv, 1)
+      elif iss == "ovpsim":
+        process_ovpsim_sim_log(log, csv, 1)
       else:
         logging.error("Full trace for %s is not supported yet" % iss)
         sys.exit(1)
   if steps == "all" or re.match("cov", steps):
-    build_cmd = ("python3 run.py --co -o %s --cov -tl %s %s" %
-                 (out, testlist, opts))
+    run_opts = ""
+    if args.simulator_yaml:
+        run_opts = run_opts + " --simulator_yaml "+args.simulator_yaml
+    if args.simulator:
+        run_opts = run_opts + " --simulator "+args.simulator
+    if args.isa:
+        run_opts = run_opts + " --isa "+args.isa
+    if args.core_setting_dir:
+        run_opts = run_opts + " --core_setting_dir "+args.core_setting_dir
+    build_cmd = ("python3 run.py --co -o %s --cov -tl %s %s %s" %
+                 (out, testlist, opts, run_opts))
     base_sim_cmd = ("python3 run.py --so -o %s --cov -tl %s %s "
-                    "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
-                    (out, testlist, opts))
+                 "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\" %s " %
+                 (out, testlist, opts, run_opts))
     logging.info("Building the coverage collection framework")
     run_cmd(build_cmd)
     file_idx = 0
@@ -172,7 +183,7 @@ def setup_parser():
   parser.add_argument("-d", "--debug_mode", dest="debug_mode", action="store_true",
                       help="Debug mode, randomize and sample the coverage directly")
   parser.add_argument("-i", "--instr_cnt", dest="instr_cnt", type=int, default=0,
-                      help="Random instruction count for debug mode")
+                      help="Rarv64gcndom instruction count for debug mode")
   parser.add_argument("-to", "--timeout", dest="timeout", type=int, default=1000,
                       help="Number of CSV to process per run")
   parser.add_argument("-s", "--steps", type=str, default="all",
@@ -186,6 +197,16 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
+                            
+  parser.add_argument("-si", "--simulator", type=str,
+                      help="Simulator used to run the generator, default VCS", dest="simulator")
+  parser.add_argument("--simulator_yaml", type=str, default="",
+                      help="RTL simulator setting YAML")
+  parser.add_argument("--isa", type=str,
+                      help="RISC-V ISA subset")
+  parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
+                      help="Path for the riscv_core_setting.sv")
+  
   parser.set_defaults(verbose=False)
   parser.set_defaults(debug_mode=False)
   return parser
@@ -216,7 +237,7 @@ def main():
                        args.batch_size, args.opts, args.lsf_cmd, args.timeout)
   else:
     collect_cov(args.dir, output_dir, args.iss, args.testlist, args.batch_size,
-                args.lsf_cmd, args.steps, args.opts, args.timeout)
+                args.lsf_cmd, args.steps, args.opts, args.timeout, args)
 
 if __name__ == "__main__":
   main()
