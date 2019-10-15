@@ -59,6 +59,7 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit               mstatus_mxr;
   rand bit               mstatus_sum;
   rand bit               mstatus_tvm;
+  rand bit [1:0]         mstatus_fs;
   rand mtvec_mode_t      mtvec_mode;
 
   // Enable sfence.vma instruction
@@ -196,6 +197,8 @@ class riscv_instr_gen_config extends uvm_object;
   int                    max_directed_instr_stream_seq = 20;
   // Reserved registers
   riscv_reg_t            reserved_regs[];
+  // Floating point support
+  bit                    enable_floating_point;
 
   uvm_cmdline_processor  inst;
 
@@ -346,6 +349,14 @@ class riscv_instr_gen_config extends uvm_object;
     }
   }
 
+  constraint floating_point_c {
+    if (enable_floating_point) {
+      mstatus_fs == 2'b01;
+    } else {
+      mstatus_fs == 2'b00;
+    }
+  }
+
   `uvm_object_utils_begin(riscv_instr_gen_config)
     `uvm_field_int(main_program_instr_cnt,       UVM_DEFAULT)
     `uvm_field_sarray_int(sub_program_instr_cnt, UVM_DEFAULT)
@@ -390,6 +401,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_ebreak_in_debug_rom=", enable_ebreak_in_debug_rom);
     get_bool_arg_value("+set_dcsr_ebreak=", set_dcsr_ebreak);
     get_bool_arg_value("+enable_debug_single_step=", enable_debug_single_step);
+    get_bool_arg_value("+enable_floating_point=", enable_floating_point);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
       `uvm_info(get_full_name(), $sformatf(
                 "Got boot mode option - %0s", boot_mode_opts), UVM_LOW)
@@ -528,7 +540,8 @@ class riscv_instr_gen_config extends uvm_object;
         instr = riscv_instr_base::type_id::create("instr");
         `DV_CHECK_RANDOMIZE_WITH_FATAL(instr, instr_name == local::instr_name;)
         if ((instr.group inside {supported_isa}) &&
-           !(disable_compressed_instr && instr.is_compressed)) begin
+            !(disable_compressed_instr && instr.is_compressed) &&
+            !(!enable_floating_point && (instr.group inside {RV32F, RV64F, RV32D, RV64D}))) begin
           `uvm_info(`gfn, $sformatf("Adding [%s] %s to the list",
                           instr.group.name(), instr.instr_name.name()), UVM_HIGH)
           instr_group[instr.group].push_back(instr_name);

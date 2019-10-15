@@ -337,6 +337,9 @@ class riscv_asm_program_gen extends uvm_object;
     // Init stack pointer to point to the end of the user stack
     str = {indent, $sformatf("la x%0d, _user_stack_end", cfg.sp)};
     instr_stream.push_back(str);
+    if (cfg.enable_floating_point) begin
+      init_floating_point_gpr();
+    end
     core_is_initialized();
   endfunction
 
@@ -354,7 +357,10 @@ class riscv_asm_program_gen extends uvm_object;
         RV32I, RV64I, RV128I : misa[MISA_EXT_I] = 1'b1;
         RV32M, RV64M         : misa[MISA_EXT_M] = 1'b1;
         RV32A, RV64A         : misa[MISA_EXT_A] = 1'b1;
-        default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported", supported_isa[i].name()))
+        RV32F, RV64F         : misa[MISA_EXT_F] = 1'b1;
+        RV32D, RV64D         : misa[MISA_EXT_D] = 1'b1;
+        default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported",
+                                   supported_isa[i].name()))
       endcase
     end
     if (SUPERVISOR_MODE inside {supported_privileged_mode}) begin
@@ -394,6 +400,23 @@ class riscv_asm_program_gen extends uvm_object;
           ['hF000_0000 : 'hFFFF_FFFF] :/ 1
         };)
       str = $sformatf("%0sli x%0d, 0x%0x", indent, i, reg_val);
+      instr_stream.push_back(str);
+    end
+  endfunction
+
+  // Initialize floating point general purpose registers
+  virtual function void init_floating_point_gpr();
+    int int_gpr;
+    string str;
+    // TODO: Initialize floating point GPR with more interesting numbers
+    for(int i = 0; i < 32; i++) begin
+      int_gpr = $urandom_range(0, 31);
+      // Use a random integer GPR to initialize floating point GPR
+      if (RV64F inside {supported_isa}) begin
+        str = $sformatf("%0sfcvt.s.l f%0d, x%0d", indent, i, int_gpr);
+      end else begin
+        str = $sformatf("%0sfcvt.s.w f%0d, x%0d", indent, i, int_gpr);
+      end
       instr_stream.push_back(str);
     end
   endfunction
