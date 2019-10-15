@@ -129,6 +129,9 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
              (RV32C inside {riscv_instr_pkg::supported_isa}) &&
              enable_compressed_load_store) begin
             allowed_instr = {C_LW, C_SW, allowed_instr};
+            if (cfg.enable_floating_point && (RV32FC inside {supported_isa})) begin
+              allowed_instr = {C_FLW, C_FSW, allowed_instr};
+            end
           end
         end
         if ((XLEN >= 64) && (addr[i] % 8 == 0)) begin
@@ -140,6 +143,9 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
              (RV64C inside {riscv_instr_pkg::supported_isa} &&
              enable_compressed_load_store)) begin
             allowed_instr = {C_LD, C_SD, allowed_instr};
+            if (cfg.enable_floating_point && (RV32DC inside {supported_isa})) begin
+              allowed_instr = {C_FLD, C_FSD, allowed_instr};
+            end
           end
         end
       end else begin

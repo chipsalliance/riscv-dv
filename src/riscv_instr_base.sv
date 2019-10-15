@@ -51,6 +51,7 @@ class riscv_instr_base extends uvm_object;
   bit                           has_fs2;
   bit                           has_fs3;
   bit                           has_fd;
+  bit                           is_floating_point;
   bit [31:0]                    imm_mask = '1;
   string                        imm_str;
   string                        comment;
@@ -476,7 +477,8 @@ class riscv_instr_base extends uvm_object;
       end
     end
     // TODO(taliu) Add support for compressed floating point format
-    if (group inside {RV32F, RV64F, RV32D, RV64D}) begin
+    if (group inside {RV32F, RV64F, RV32D, RV64D, RV32FC, RV32DC}) begin
+      is_floating_point = 1'b1;
       has_rs1 = 1'b0;
       has_rs2 = 1'b0;
       has_rd  = 1'b0;
@@ -503,7 +505,8 @@ class riscv_instr_base extends uvm_object;
         has_fd = 1'b0;
       end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
                                       FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
-                                      FCVT_D_LU, FCVT_D_WU, FLW, FLD, FSW, FSD}) begin
+                                      FCVT_D_LU, FCVT_D_WU, FLW, FLD, FSW, FSD,
+                                      C_FLW, C_FLD, C_FSW, C_FSD}) begin
         // Integer to floating point operation
         has_fd = 1'b1;
         has_fs1 = 1'b0;
@@ -587,22 +590,33 @@ class riscv_instr_base extends uvm_object;
     `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(fpr,
                                        if (excluded_reg.size() > 0) {
                                          !(fpr inside {excluded_reg});
+                                       }
+                                       if (is_compressed) {
+                                         fpr inside {[F8:F15]};
                                        });
     return fpr;
   endfunction
 
   function void gen_rand_csr(bit illegal_csr_instr = 0,
+                             bit enable_floating_point = 0,
                              privileged_mode_t privileged_mode = MACHINE_MODE);
+    privileged_reg_t preg[$];
     if (illegal_csr_instr) begin
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(csr, !(csr inside {implemented_csr});)
     end else begin
       // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
       if (privileged_mode == MACHINE_MODE)
-        csr = MSCRATCH;
+        preg = {MSCRATCH};
       else if (privileged_mode == SUPERVISOR_MODE)
-        csr = SSCRATCH;
+        preg = {SSCRATCH};
       else
-        csr = USCRATCH;
+        preg = {USCRATCH};
+      if (enable_floating_point) begin
+        preg = {preg, FFLAGS, FRM, FCSR};
+        `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(csr, csr inside {preg};)
+      end else begin
+        csr = preg[0];
+      end
     end
   endfunction
 
@@ -623,7 +637,7 @@ class riscv_instr_base extends uvm_object;
   virtual function string convert2asm(string prefix = "");
     string asm_str;
     asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
-    if (group inside {RV32F, RV32D, RV64F, RV64D}) begin
+    if (is_floating_point) begin
       case (format)
         I_FORMAT:
           if (category == LOAD) begin
@@ -652,6 +666,10 @@ class riscv_instr_base extends uvm_object;
         R4_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s, %0s, %0s", asm_str, fd.name(), fs1.name(),
                                                        fs2.name(), fs3.name());
+        CL_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
+        CS_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), rs1.name());
         default:
           `uvm_fatal(`gfn, $sformatf("Unsupported floating point format: %0s", format.name()))
       endcase
@@ -1133,34 +1151,35 @@ class riscv_instr_base extends uvm_object;
 
   // Copy the rand fields of the base instruction
   virtual function void copy_base_instr(riscv_instr_base obj);
-    this.group           = obj.group;
-    this.format          = obj.format;
-    this.category        = obj.category;
-    this.instr_name      = obj.instr_name;
-    this.rs2             = obj.rs2;
-    this.rs1             = obj.rs1;
-    this.rd              = obj.rd;
-    this.imm             = obj.imm;
-    this.imm_type        = obj.imm_type;
-    this.imm_len         = obj.imm_len;
-    this.imm_mask        = obj.imm_mask;
-    this.imm_str         = obj.imm_str;
-    this.is_pseudo_instr = obj.is_pseudo_instr;
-    this.aq              = obj.aq;
-    this.rl              = obj.rl;
-    this.is_compressed   = obj.is_compressed;
-    this.has_imm         = obj.has_imm;
-    this.has_rs1         = obj.has_rs1;
-    this.has_rs2         = obj.has_rs2;
-    this.has_rd          = obj.has_rd;
-    this.fs3             = obj.fs3;
-    this.fs2             = obj.fs2;
-    this.fs1             = obj.fs1;
-    this.fd              = obj.fd;
-    this.has_fs1         = obj.has_fs1;
-    this.has_fs2         = obj.has_fs2;
-    this.has_fs3         = obj.has_fs3;
-    this.has_fd          = obj.has_fd;
+    this.group             = obj.group;
+    this.format            = obj.format;
+    this.category          = obj.category;
+    this.instr_name        = obj.instr_name;
+    this.rs2               = obj.rs2;
+    this.rs1               = obj.rs1;
+    this.rd                = obj.rd;
+    this.imm               = obj.imm;
+    this.imm_type          = obj.imm_type;
+    this.imm_len           = obj.imm_len;
+    this.imm_mask          = obj.imm_mask;
+    this.imm_str           = obj.imm_str;
+    this.is_pseudo_instr   = obj.is_pseudo_instr;
+    this.aq                = obj.aq;
+    this.rl                = obj.rl;
+    this.is_compressed     = obj.is_compressed;
+    this.has_imm           = obj.has_imm;
+    this.has_rs1           = obj.has_rs1;
+    this.has_rs2           = obj.has_rs2;
+    this.has_rd            = obj.has_rd;
+    this.fs3               = obj.fs3;
+    this.fs2               = obj.fs2;
+    this.fs1               = obj.fs1;
+    this.fd                = obj.fd;
+    this.has_fs1           = obj.has_fs1;
+    this.has_fs2           = obj.has_fs2;
+    this.has_fs3           = obj.has_fs3;
+    this.has_fd            = obj.has_fd;
+    this.is_floating_point = obj.is_floating_point;
   endfunction
 
 endclass

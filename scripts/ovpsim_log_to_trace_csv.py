@@ -59,14 +59,14 @@ def process_ovpsim_sim_log(ovpsim_log, csv):
                        " -> (?P<val>[a-f0-9]+?)$", line)
         if n:
           # Write the extracted instruction to a csvcol buffer file
-          # print("%0s %0s = %0s" % (trace_instr, m.group("rd"), m.group("val")))
-          rv_instr_trace = RiscvInstructiontTraceEntry()
-          rv_instr_trace.rd = n.group("rd")
-          rv_instr_trace.rd_val = n.group("val")
-          rv_instr_trace.instr_str = trace_instr
-          rv_instr_trace.binary = trace_bin
-          rv_instr_trace.addr = trace_addr
-          trace_csv.write_trace_entry(rv_instr_trace)
+          if n.group("rd") != "frm":
+            rv_instr_trace = RiscvInstructiontTraceEntry()
+            rv_instr_trace.rd = n.group("rd")
+            rv_instr_trace.rd_val = n.group("val")
+            rv_instr_trace.instr_str = trace_instr
+            rv_instr_trace.binary = trace_bin
+            rv_instr_trace.addr = trace_addr
+            trace_csv.write_trace_entry(rv_instr_trace)
   logging.info("Processed instruction count : %d" % instr_cnt)
 
 
