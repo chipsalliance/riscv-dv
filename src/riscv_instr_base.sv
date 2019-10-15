@@ -502,8 +502,8 @@ class riscv_instr_base extends uvm_object;
         has_fs1 = 1'b1;
         has_fd = 1'b0;
       end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
-                                      FCVT_S_L, FCVT_D_L, FCVT_S_LU,
-                                      FCVT_D_W, FCVT_D_LU, FCVT_D_WU}) begin
+                                      FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
+                                      FCVT_D_LU, FCVT_D_WU, FLW, FLD, FSW, FSD}) begin
         // Integer to floating point operation
         has_fd = 1'b1;
         has_fs1 = 1'b0;
@@ -627,7 +627,7 @@ class riscv_instr_base extends uvm_object;
       case (format)
         I_FORMAT:
           if (category == LOAD) begin
-            asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), fs1.name());
+            asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
           end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
                                           FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D, FCVT_LU_S,
                                           FCVT_W_D, FCVT_WU_D}) begin
@@ -640,7 +640,7 @@ class riscv_instr_base extends uvm_object;
             asm_str = $sformatf("%0s%0s, %0s", asm_str, fd.name(), fs1.name());
           end
         S_FORMAT:
-          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), fs1.name());
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), rs1.name());
         R_FORMAT:
           if (category == COMPARE) begin
             asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), fs1.name(), fs2.name());
