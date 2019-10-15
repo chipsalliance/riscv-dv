@@ -413,7 +413,7 @@ class riscv_asm_program_gen extends uvm_object;
       int_gpr = $urandom_range(0, 31);
       // Use a random integer GPR to initialize floating point GPR
       if (RV64F inside {supported_isa}) begin
-        str = $sformatf("%0sfcvt.s.l f%0d, x%0d", indent, i, int_gpr);
+        str = $sformatf("%0sfcvt.d.l f%0d, x%0d", indent, i, int_gpr);
       end else begin
         str = $sformatf("%0sfcvt.s.w f%0d, x%0d", indent, i, int_gpr);
       end
