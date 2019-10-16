@@ -324,7 +324,6 @@ one of below to run ISS simulation.
 
 - [spike](https://github.com/riscv/riscv-isa-sim#) setup
   - Follow the [steps](https://github.com/riscv/riscv-isa-sim#build-steps) to build spike
-     - Make sure RISCV_ENABLE_COMMITLOG is defined in [config.h.in](https://github.com/riscv/riscv-isa-sim/blob/master/config.h.in)
   - Set environment variable SPIKE_PATH to the directory of the spike binary
 - [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
   - Download the riscv-ovpsim binary
