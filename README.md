@@ -389,8 +389,8 @@ it as a reference to setup end-to-end co-simulation flow.
 This repo is still under active development, here's recommended approach to
 customize the instruction generator while keeping the minimum effort of merging
 upstream changes.
-- Do not modify the upstream classes directly. When possible, extending from
-  the upstream classses and implment your own functionalities.
+- Do not modify the upstream classes directly. When possible, extend from
+  the upstream classses and implement your own functionalities.
 - Add your extensions under user_extension directory, and add the files to
   user_extension/user_extension.svh. If you prefer to put your extensions in a
   different directory, you can use "-ext <user_extension_path>" to override the
