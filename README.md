@@ -3,7 +3,7 @@
 RISCV-DV is a SV/UVM based open-source instruction generator for RISC-V
 processor verification. It currently supports the following features:
 
-- Supported instruction set: RV32IMAC, RV64IMAC
+- Supported instruction set: RV32IMAFDC, RV64IMAFDC
 - Supported privileged mode: machine mode, supervisor mode, user mode
 - Page table randomization and exception
 - Privileged CSR setup randomization
@@ -324,6 +324,7 @@ one of below to run ISS simulation.
 
 - [spike](https://github.com/riscv/riscv-isa-sim#) setup
   - Follow the [steps](https://github.com/riscv/riscv-isa-sim#build-steps) to build spike
+  - Install spike with "--enable-commitlog"
   - Set environment variable SPIKE_PATH to the directory of the spike binary
 - [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
   - Download the riscv-ovpsim binary
