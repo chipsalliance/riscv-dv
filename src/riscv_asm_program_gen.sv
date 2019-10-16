@@ -1199,14 +1199,8 @@ class riscv_asm_program_gen extends uvm_object;
           // than 0, for ebreak loops.
           // Use dscratch1 to store original GPR value.
           str = {$sformatf("csrw 0x%0x, x%0d", DSCRATCH1, cfg.scratch_reg),
-                 $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH0)};
-          instr = {instr, str};
-          // send dpc and dcsr to testbench, as this handshake will be
-          // executed twice due to the ebreak loop, there should be no change
-          // in their values as by the Debug Mode Spec Ch. 4.1.8
-          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
-          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DPC));
-          str = {$sformatf("beq x%0d, x0, 1f", cfg.scratch_reg),
+                 $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH0),
+                 $sformatf("beq x%0d, x0, 1f", cfg.scratch_reg),
                  $sformatf("j debug_end"),
                  $sformatf("1: csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH1)};
           instr = {instr, str};
@@ -1218,6 +1212,13 @@ class riscv_asm_program_gen extends uvm_object;
         // having to execute unnecessary push/pop of GPRs on the stack ever
         // time a debug request is sent
         gen_signature_handshake(instr, CORE_STATUS, IN_DEBUG_MODE);
+        if (cfg.enable_ebreak_in_debug_rom) begin
+          // send dpc and dcsr to testbench, as this handshake will be
+          // executed twice due to the ebreak loop, there should be no change
+          // in their values as by the Debug Mode Spec Ch. 4.1.8
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DPC));
+        end
         if (cfg.set_dcsr_ebreak) begin
           // We want to set dcsr.ebreak(m/s/u) to 1'b1, depending on what modes
           // are available.
@@ -1305,6 +1306,11 @@ class riscv_asm_program_gen extends uvm_object;
         // mode, and write dscratch0 and dcsr to the testbench for any
         // analysis
         if (cfg.enable_ebreak_in_debug_rom) begin
+          // send dpc and dcsr to testbench, as this handshake will be
+          // executed twice due to the ebreak loop, there should be no change
+          // in their values as by the Debug Mode Spec Ch. 4.1.8
+          gen_signature_handshake(.instr(debug_end), .signature_type(WRITE_CSR), .csr(DCSR));
+          gen_signature_handshake(.instr(debug_end), .signature_type(WRITE_CSR), .csr(DPC));
           str = {$sformatf("csrwi 0x%0x, 0x0", DSCRATCH0)};
           debug_end = {debug_end, str};
         end
