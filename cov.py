@@ -31,7 +31,8 @@ from scripts.sail_log_to_trace_csv import *
 
 LOGGER = logging.getLogger()
 
-def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, timeout, simulator, simulator_yaml, isa, core_setting_dir):
+def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
+                opts, timeout, simulator, simulator_yaml, core_setting_dir):
   """Collect functional coverage from the instruction trace
 
   Args:
@@ -46,7 +47,6 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
     timeout          : Timeout limit in seconds
     simulator        : RTL simulator used to run
     simulator_yaml   : RTL simulator configuration file in YAML format
-    isa              : Processor supported ISA subset
     core_setting_dir : Path for riscv_core_setting.sv
   """
   log_list = []
@@ -73,11 +73,13 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
         logging.error("Full trace for %s is not supported yet" % iss)
         sys.exit(1)
   if steps == "all" or re.match("cov", steps):
-    build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s --isa %s --core_setting_dir %s --co -o %s --cov -tl %s %s " %
-                 (simulator, simulator_yaml, isa, core_setting_dir, out, testlist, opts))
-    base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s --isa %s --core_setting_dir %s --so -o %s --cov -tl %s %s "
-                 "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
-                 (simulator, simulator_yaml, isa, core_setting_dir, out, testlist, opts))
+    build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+                 "--core_setting_dir %s --co -o %s --cov -tl %s %s " %
+                 (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
+    base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+                    "--core_setting_dir %s --so -o %s --cov -tl %s %s "
+                    "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
+                    (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
     logging.info("Building the coverage collection framework")
     run_cmd(build_cmd)
     file_idx = 0
@@ -112,31 +114,33 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, opts, t
     logging.info("Collecting functional coverage from %0d trace CSV...done" % len(csv_list))
 
 
-def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd, timeout, simulator, simulator_yaml, isa, core_setting_dir):
+def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
+                       timeout, simulator, simulator_yaml, core_setting_dir):
   """Collect functional coverage from the instruction trace
 
   Args:
-    out        : Output directory
-    instr_cnt  : Number of instruction to randomize
-    test_list  : Testlist of the coverage test
-    batch_size : Number of trace CSV to process per test
-    lsf_cmd    : LSF command used to run the instruction generator
-    opts       : Additional options to the instruction generator
-    timeout    : Timeout limit in seconds
+    out              : Output directory
+    instr_cnt        : Number of instruction to randomize
+    test_list        : Testlist of the coverage test
+    batch_size       : Number of trace CSV to process per test
+    lsf_cmd          : LSF command used to run the instruction generator
+    opts             : Additional options to the instruction generator
+    timeout          : Timeout limit in seconds
     simulator        : RTL simulator used to run
     simulator_yaml   : RTL simulator configuration file in YAML format
-    isa              : Processor supported ISA subset
     core_setting_dir : Path for riscv_core_setting.sv
   """
   sim_cmd_list = []
   logging.info("Building the coverage collection framework")
-  build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s --isa %s --core_setting_dir %s --co -o %s --cov -tl %s %s" %
-               (simulator, simulator_yaml, isa, core_setting_dir, out, testlist, opts))
+  build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+               "--core_setting_dir %s --co -o %s --cov -tl %s %s" %
+               (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
   run_cmd(build_cmd)
-  base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s --isa %s --core_setting_dir %s --so -o %s --cov -tl %s %s "
+  base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+                  "--core_setting_dir %s --so -o %s --cov -tl %s %s "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
-                  (simulator, simulator_yaml, isa, core_setting_dir, out, testlist, opts))
+                  (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
   if batch_size > 0:
     batch_cnt = int((instr_cnt+batch_size-1)/batch_size)
     logging.info("Batch size: %0d, Batch cnt:%0d" % (batch_size, batch_cnt))
@@ -200,8 +204,6 @@ def setup_parser():
                       help="Simulator used to run the generator, default VCS", dest="simulator")
   parser.add_argument("--simulator_yaml", type=str, default="",
                       help="RTL simulator setting YAML")
-  parser.add_argument("--isa", type=str,
-                      help="RISC-V ISA subset")
   parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
                       help="Path for the riscv_core_setting.sv")
   parser.set_defaults(verbose=False)
@@ -237,10 +239,12 @@ def main():
 
   if args.debug_mode:
     run_cov_debug_test(output_dir, args.instr_cnt, args.testlist,
-                args.batch_size, args.opts, args.lsf_cmd, args.timeout, args.simulator, args.simulator_yaml, args.isa, args.core_setting_dir)
+                       args.batch_size, args.opts, args.lsf_cmd, args.timeout,
+                       args.simulator, args.simulator_yaml, args.core_setting_dir)
   else:
     collect_cov(args.dir, output_dir, args.iss, args.testlist, args.batch_size,
-                args.lsf_cmd, args.steps, args.opts, args.timeout, args.simulator, args.simulator_yaml, args.isa, args.core_setting_dir)
+                args.lsf_cmd, args.steps, args.opts, args.timeout,
+                args.simulator, args.simulator_yaml, args.core_setting_dir)
 
 if __name__ == "__main__":
   main()
