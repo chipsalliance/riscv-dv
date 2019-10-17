@@ -466,6 +466,9 @@ def setup_parser():
                       help="Path for the user extension directory")
   parser.add_argument("--asm_test", type=str, default="",
                       help="Directed assembly test")
+  parser.add_argument("--target", type=str, default="",
+                      help="Run the generator with pre-defined targets: \
+                            rv32imc, rv32gc, rv64imc, rv64gc")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
@@ -495,7 +498,15 @@ def main():
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
-  if not args.testlist:
+  if args.target:
+    args.testlist = cwd + "/target/"+ args.target +"/testlist.yaml"
+    args.core_setting_dir = cwd + "/target/"+ args.target
+    if args.target == "rv32imc":
+      args.mabi = "ilp32"
+      args.isa  = "rv32imc"
+    else:
+      print ("Unsupported target: %0s" % args.target)
+  elif not args.testlist:
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   if args.asm_test != "":
