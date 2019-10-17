@@ -41,8 +41,40 @@ setup script, or run only one of the below commands:
 2) pip install bitstring
 ```
 
-### Running the generator
 
+### Setup RISCV-GCC compiler toolchain
+
+- Install [riscv-gcc](https://github.com/riscv/riscv-gcc) toolchain
+- Set environment variable RISCV_GCC to the RISC-V gcc executable
+  executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
+- Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
+  executable. (example: <install_dir>/bin/riscv32-unknown-elf-objcopy)
+
+```
+// Sample .bashrc setup
+export RISCV_TOOLCHAIN=<riscv_gcc_install_path>
+export RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
+export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy"
+export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
+```
+
+### Setup ISS (instruction set simulator)
+
+Currently three ISS are supported, the default ISS is spike. You can install any
+one of below to run ISS simulation.
+
+- [spike](https://github.com/riscv/riscv-isa-sim#) setup
+  - Follow the [steps](https://github.com/riscv/riscv-isa-sim#build-steps) to build spike
+  - Install spike with "--enable-commitlog"
+  - Set environment variable SPIKE_PATH to the directory of the spike binary
+- [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
+  - Download the riscv-ovpsim binary
+  - Set environment variable OVPSIM_PATH to the directory of the ovpsim binary
+- [sail-riscv](https://github.com/rems-project/sail-riscv) setup
+  - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
+  - Set environment variable SAIL_RISCV to the sail-riscv binary
+
+## Running the generator
 
 A simple script "run.py" is provided for you to run a single test or a regression.
 
@@ -100,6 +132,39 @@ python3 run.py --test riscv_arithmetic_basic_test --steps gen
 python3 run.py --test riscv_arithmetic_basic_test --co
 
 ....
+```
+
+### Run ISS simulation
+
+You can use -iss to run with different ISS.
+
+```
+// Run ISS with spike
+python3 run.py --test riscv_arithmetic_basic_test --iss spike
+
+// Run ISS with riscv-ovpsim
+python3 run.py --test riscv_rand_instr_test --iss ovpsim
+
+// Run ISS with sail-riscv
+python3 run.py --test riscv_rand_instr_test --iss sail
+```
+
+To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
+line like this:
+
+```
+// Run a full regression with RV32IMC
+python3 run.py --isa rv32imc --mabi ilp32
+```
+
+We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
+the instruction trace from these runs will be cross compared. This could greatly
+speed up your development of new test without the need to simulate against a
+real RISC-V processor.
+
+```
+python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
+python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 ```
 
 ## Configuration
@@ -317,71 +382,7 @@ it with random instructions
 +directed_instr_5=riscv_multi_page_load_store_instr_stream,4
 ```
 
-## Compile generated programs with GCC
-
-- Install [riscv-gcc](https://github.com/riscv/riscv-gcc) toolchain
-- Set environment variable RISCV_GCC to the RISC-V gcc executable
-  executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
-- Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
-  executable. (example: <install_dir>/bin/riscv32-unknown-elf-objcopy)
-
-```
-// Sample .bashrc setup
-export RISCV_TOOLCHAIN=<riscv_gcc_install_path>
-export RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
-export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy"
-export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
-
-```
-
-## Run ISS (Instruction Set Simulator) simulation
-
-Currently three ISS are supported, the default ISS is spike. You can install any
-one of below to run ISS simulation.
-
-- [spike](https://github.com/riscv/riscv-isa-sim#) setup
-  - Follow the [steps](https://github.com/riscv/riscv-isa-sim#build-steps) to build spike
-  - Install spike with "--enable-commitlog"
-  - Set environment variable SPIKE_PATH to the directory of the spike binary
-- [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
-  - Download the riscv-ovpsim binary
-  - Set environment variable OVPSIM_PATH to the directory of the ovpsim binary
-- [sail-riscv](https://github.com/rems-project/sail-riscv) setup
-  - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
-  - Set environment variable SAIL_RISCV to the sail-riscv binary
-
-You can use -iss to run with different ISS.
-
-```
-// Run ISS with spike
-python3 run.py --test riscv_arithmetic_basic_test --iss spike
-
-// Run ISS with riscv-ovpsim
-python3 run.py --test riscv_rand_instr_test --iss ovpsim
-
-// Run ISS with sail-riscv
-python3 run.py --test riscv_rand_instr_test --iss sail
-```
-
-To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
-line like this:
-
-```
-// Run a full regression with RV32IMC
-python3 run.py --isa rv32imc --mabi ilp32
-```
-
-We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
-the instruction trace from these runs will be cross compared. This could greatly
-speed up your development of new test without the need to simulate against a
-real RISC-V processor.
-
-```
-python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
-python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
-```
-
-### Integrate a new ISS
+## Integrate a new ISS
 
 You can add a new entry in [iss.yaml](https://github.com/google/riscv-dv/blob/master/yaml/iss.yaml)
 
