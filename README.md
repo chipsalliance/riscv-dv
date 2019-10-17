@@ -102,24 +102,75 @@ python3 run.py --test riscv_arithmetic_basic_test --co
 ....
 ```
 
-### Privileged CSR Test Generation
-
-The CSR generation script is located at
-[scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).
-The CSR test code that this script generates will execute every CSR instruction
-on every processor implemented CSR, writing values to the CSR and then using a
-prediction function to calculate a reference value that will be written into
-another GPR. The reference value will then be compared to the value actually
-stored in the CSR to determine whether to jump to the failure condition or
-continue executing, allowing it to be completely self checking. This script has
-been integrated with run.py. If you want to run it separately, you can get the
-command reference with --help:
-
-```
-python3 scripts/gen_csr_test.py --help
-```
-
 ## Configuration
+
+### Configure the generator to match your processor features
+
+The default configuration of the instruction generator is for **RV64GC** RISC-V
+processors with address translation capability. You might want to configure the
+generator according the feature of your processor.
+
+The static setting of the processor src/riscv_core_setting.sv
+
+```
+// Bit width of RISC-V GPR
+parameter int XLEN = 64;
+
+// Parameter for SATP mode, set to BARE if address translation is not supported
+parameter satp_mode_t SATP_MODE = SV39;
+
+// Supported Privileged mode
+privileged_mode_t supported_privileged_mode[] = {USER_MODE,
+                                                 SUPERVISOR_MODE,
+                                                 MACHINE_MODE};
+
+// Unsupported instructions
+riscv_instr_name_t unsupported_instr[] = {};
+
+// ISA supported by the processor
+riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
+
+...
+```
+
+A few pre-defined configurations can be found under "target" directory, you can
+run with these targets if it matches your processor specification.
+
+```
+// Run regression with RV32IMC configuration
+python3 run.py --target rv32imc
+```
+
+
+### Setup the memory map
+
+Here's a few cases that you might want to allocate the instruction and data
+sections to match the actual memory map
+- The processor has internal memories, and you want to test load/store from
+  various internal/externel memory regions
+- The processor implments the PMP feature, and you want to configure the memory
+  map to match PMP setting.
+- Virtual address translation is implmented and you want to test load/store from
+  sparse memory locations to verify data TLB replacement logic.
+
+You can configure the memory map in [riscv_instr_gen_config.sv](https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv)
+
+```
+  mem_region_t mem_region[$] = '{
+    '{name:"region_0", size_in_bytes: 4096,      xwr: 3'b111},
+    '{name:"region_1", size_in_bytes: 4096 * 4,  xwr: 3'b111},
+    '{name:"region_2", size_in_bytes: 4096 * 2,  xwr: 3'b111},
+    '{name:"region_3", size_in_bytes: 512,       xwr: 3'b111},
+    '{name:"region_4", size_in_bytes: 4096,      xwr: 3'b111}
+  };
+```
+
+Each memory region belongs to a separate section in the generated assembly
+program. You can modify the link script to link each section to the target
+memory location. Please avoid setting a large memory range as it could takes a
+long time to randomly initializing the memory. You can break down a large memory
+region to a few representative small regions which covers all the boundary
+conditions for the load/store testing.
 
 ### Setup regression test list
 
@@ -158,65 +209,6 @@ Note: To automatically generate CSR tests without having to explicitly run the
 script, include `riscv_csr_test` in the testlist as shown in the example YAML
 file above.
 
-
-### Configure the generator to match your processor features
-
-The default configuration of the instruction generator is for RV64IMC RISC-V
-processors with address translation capability. You might want to configure the
-generator according the feature of your processor.
-
-The static setting of the processor src/riscv_core_setting.sv
-
-```
-// Bit width of RISC-V GPR
-parameter int XLEN = 64;
-
-// Parameter for SATP mode, set to BARE if address translation is not supported
-parameter satp_mode_t SATP_MODE = SV39;
-
-// Supported Privileged mode
-privileged_mode_t supported_privileged_mode[] = {USER_MODE,
-                                                 SUPERVISOR_MODE,
-                                                 MACHINE_MODE};
-
-// Unsupported instructions
-riscv_instr_name_t unsupported_instr[] = {};
-
-// ISA supported by the processor
-riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
-
-...
-```
-
-### Setup the memory map
-
-Here's a few cases that you might want to allocate the instruction and data
-sections to match the actual memory map
-- The processor has internal memories, and you want to test load/store from
-  various internal/externel memory regions
-- The processor implments the PMP feature, and you want to configure the memory
-  map to match PMP setting.
-- Virtual address translation is implmented and you want to test load/store from
-  sparse memory locations to verify data TLB replacement logic.
-
-You can configure the memory map in [riscv_instr_gen_config.sv](https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv)
-
-```
-  mem_region_t mem_region[$] = '{
-    '{name:"region_0", size_in_bytes: 4096,      xwr: 3'b111},
-    '{name:"region_1", size_in_bytes: 4096 * 4,  xwr: 3'b111},
-    '{name:"region_2", size_in_bytes: 4096 * 2,  xwr: 3'b111},
-    '{name:"region_3", size_in_bytes: 512,       xwr: 3'b111},
-    '{name:"region_4", size_in_bytes: 4096,      xwr: 3'b111}
-  };
-```
-
-Each memory region belongs to a separate section in the generated assembly
-program. You can modify the link script to link each section to the target
-memory location. Please avoid setting a large memory range as it could takes a
-long time to randomly initializing the memory. You can break down a large memory
-region to a few representative small regions which covers all the boundary
-conditions for the load/store testing.
 
 
 ### Runtime options of the generator
@@ -296,6 +288,22 @@ format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml)
 To specify what ISA width should be generated in the test, simply include the
 matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.
 
+### Privileged CSR Test Generation
+
+The CSR generation script is located at
+[scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).
+The CSR test code that this script generates will execute every CSR instruction
+on every processor implemented CSR, writing values to the CSR and then using a
+prediction function to calculate a reference value that will be written into
+another GPR. The reference value will then be compared to the value actually
+stored in the CSR to determine whether to jump to the failure condition or
+continue executing, allowing it to be completely self checking. This script has
+been integrated with run.py. If you want to run it separately, you can get the
+command reference with --help:
+
+```
+python3 scripts/gen_csr_test.py --help
+```
 
 ### Adding new instruction stream and test
 
@@ -316,6 +324,15 @@ it with random instructions
   executable. (example: <install_dir>/bin/riscv32-unknown-elf-gcc)
 - Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
   executable. (example: <install_dir>/bin/riscv32-unknown-elf-objcopy)
+
+```
+// Sample .bashrc setup
+export RISCV_TOOLCHAIN=<riscv_gcc_install_path>
+export RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
+export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy"
+export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
+
+```
 
 ## Run ISS (Instruction Set Simulator) simulation
 
