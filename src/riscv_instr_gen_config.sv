@@ -560,13 +560,11 @@ class riscv_instr_gen_config extends uvm_object;
   virtual function void build_instruction_list();
     basic_instr = {instr_category[SHIFT], instr_category[ARITHMETIC],
                    instr_category[LOGICAL], instr_category[COMPARE]};
-    if (no_ebreak == 0) begin
-      basic_instr = {basic_instr, EBREAK};
-      foreach(riscv_instr_pkg::supported_isa[i]) begin
-        if (riscv_instr_pkg::supported_isa[i] inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
-          basic_instr = {basic_instr, C_EBREAK};
-          break;
-        end
+    basic_instr = {basic_instr, EBREAK};
+    foreach(riscv_instr_pkg::supported_isa[i]) begin
+      if (riscv_instr_pkg::supported_isa[i] inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
+        basic_instr = {basic_instr, C_EBREAK};
+        break;
       end
     end
     if (no_dret == 0) begin
