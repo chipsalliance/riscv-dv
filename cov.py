@@ -196,7 +196,7 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
-  parser.add_argument("-si", "--simulator", type=str,
+  parser.add_argument("-si", "--simulator", type=str, default="vcs",
                       help="Simulator used to run the generator, default VCS", dest="simulator")
   parser.add_argument("--simulator_yaml", type=str, default="",
                       help="RTL simulator setting YAML")
@@ -244,6 +244,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-  
-  
