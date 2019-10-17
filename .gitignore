@@ -3,3 +3,6 @@
 out_*/
 work/
 *.pyc
+/.cproject
+/.project
+/outdir/
