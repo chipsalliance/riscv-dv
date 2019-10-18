@@ -76,6 +76,7 @@ class riscv_instr_gen_config extends uvm_object;
   // Use a random register for stack pointer/thread pointer
   rand riscv_reg_t       sp;
   rand riscv_reg_t       tp;
+  rand riscv_reg_t       ra;
 
   // Options for privileged mode CSR checking
   // Below checking can be made optional as the ISS implementation could be different with the
@@ -322,6 +323,12 @@ class riscv_instr_gen_config extends uvm_object;
         m_mode_interrupt_delegation[i] == 0;
       }
     }
+  }
+
+  constraint ra_c {
+    ra != sp;
+    ra != tp;
+    ra != ZERO;
   }
 
   constraint sp_tp_c {

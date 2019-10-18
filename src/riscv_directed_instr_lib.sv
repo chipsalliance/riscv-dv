@@ -169,7 +169,7 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     `DV_CHECK_RANDOMIZE_WITH_FATAL(jump,
       (use_jalr) -> (instr_name == JALR);
       instr_name dist {JAL := 1, JALR := 9};
-      rd == RA;
+      rd == cfg.ra;
       rs1 == gpr;
     )
     `DV_CHECK_RANDOMIZE_WITH_FATAL(addi,
@@ -235,8 +235,8 @@ class riscv_push_stack_instr extends riscv_rand_instr_stream;
 
   function void init();
     // Save RA, T0
-    reserved_rd = {RA, T0};
-    saved_regs = {RA, T0};
+    reserved_rd = {cfg.ra};
+    saved_regs = {cfg.ra};
     num_of_reg_to_save = saved_regs.size();
     if(num_of_reg_to_save * (XLEN/8) > stack_len) begin
       `uvm_fatal(get_full_name(), $sformatf("stack len [%0d] is not enough to store %d regs",
@@ -317,7 +317,7 @@ class riscv_pop_stack_instr extends riscv_rand_instr_stream;
   endfunction
 
   function void init();
-    reserved_rd = {RA, T0};
+    reserved_rd = {cfg.ra};
     num_of_reg_to_save = saved_regs.size();
     if(num_of_reg_to_save * 4 > stack_len) begin
       `uvm_fatal(get_full_name(), $sformatf("stack len [%0d] is not enough to store %d regs",
