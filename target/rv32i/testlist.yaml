@@ -71,17 +71,6 @@
     +directed_instr_1=riscv_loop_instr,20
   rtl_test: core_base_test
 
-- test: riscv_non_compressed_instr_test
-  description: >
-    Random instruction test without compressed instructions
-  iterations: 1
-  gen_test: riscv_rand_instr_test
-  gen_opts: >
-    +disable_compressed_instr=1
-  gcc_opts: >
-    -march=rv64im
-  rtl_test: core_base_test
-
 - test: riscv_rand_jump_test
   description: >
     Jump among large number of sub-programs, stress testing iTLB operations.
@@ -128,16 +117,6 @@
   gen_test: riscv_rand_instr_test
   gen_opts: >
     +illegal_instr_ratio=5
-  rtl_test: core_base_test
-
-- test: riscv_hint_instr_test
-  description: >
-    HINT instruction test, verify the processor can detect HINT instruction
-    treat it as NOP. No illegal instruction exception is expected
-  iterations: 2
-  gen_test: riscv_rand_instr_test
-  gen_opts: >
-    +hint_instr_ratio=5
   rtl_test: core_base_test
 
 - test: riscv_ebreak_test

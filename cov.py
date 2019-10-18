@@ -200,6 +200,9 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
+  parser.add_argument("--target", type=str, default="",
+                      help="Run the generator with pre-defined targets: \
+                            rv32imc, rv32i, rv64imc")
   parser.add_argument("-si", "--simulator", type=str, default="vcs",
                       help="Simulator used to run the generator, default VCS", dest="simulator")
   parser.add_argument("--simulator_yaml", type=str, default="",
@@ -226,7 +229,9 @@ def main():
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
-  if not args.core_setting_dir:
+  if args.target:
+    args.core_setting_dir = cwd + "/target/"+ args.target
+  elif not args.core_setting_dir:
     args.core_setting_dir = cwd + "/setting/"
 
   # Create output directory

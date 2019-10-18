@@ -468,7 +468,7 @@ def setup_parser():
                       help="Directed assembly test")
   parser.add_argument("--target", type=str, default="",
                       help="Run the generator with pre-defined targets: \
-                            rv32imc, rv32gc, rv64imc, rv64gc")
+                            rv32imc, rv32i, rv64imc")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
@@ -504,6 +504,12 @@ def main():
     if args.target == "rv32imc":
       args.mabi = "ilp32"
       args.isa  = "rv32imc"
+    elif args.target == "rv32i":
+      args.mabi = "ilp32"
+      args.isa  = "rv32i"
+    elif args.target == "rv64imc":
+      args.mabi = "ilp64"
+      args.isa  = "rv64imc"
     else:
       print ("Unsupported target: %0s" % args.target)
   elif not args.testlist:
