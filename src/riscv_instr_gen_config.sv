@@ -437,6 +437,9 @@ class riscv_instr_gen_config extends uvm_object;
         end
       end
     end
+    if (!(RV32C inside {supported_isa})) begin
+      disable_compressed_instr = 1;
+    end
   endfunction
 
   // Initialize the exception/interrupt delegation associate array, set all delegation default to 0

@@ -738,7 +738,7 @@ class riscv_instr_base extends uvm_object;
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
       // This is needed to resume execution from epc+4 after ebreak handling
       if(instr_name == EBREAK) begin
-        asm_str = ".option norvc;ebreak;.option rvc;";
+        asm_str = ".4byte 0x00100073 # ebreak";
       end else if(instr_name == C_EBREAK) begin
         asm_str = "c.ebreak;c.nop;";
       end
