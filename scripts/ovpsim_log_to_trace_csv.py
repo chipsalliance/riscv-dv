@@ -35,6 +35,37 @@ REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
         "t3","t4","t5","t6"]
 
+def process_jalr(trace, operands, gpr):
+  ## jalr x3
+  ## jalr 9(x3)
+  ## jalr x2,x3
+  ## jalr x2,4(x3)
+  if len(operands) == 1:
+    trace.rd = 'zero'
+    trace.rd_val  = '0'
+    m = ADDR_RE.search(operands[0])
+    if m: # jalr 9(x3)
+      trace.rs1 = m.group('rs1')
+      trace.rs1_val = gpr[trace.rs1]
+      trace.imm = get_imm_hex_val(m.group('imm'))
+    else: # jalr x3
+      trace.rs1 = operands[0]
+      trace.rs1_val = gpr[trace.rs1]
+      trace.imm = get_imm_hex_val('0')
+  elif len(operands) == 2:
+      trace.rd = operands[0]
+      trace.rd_val = gpr[trace.rd]
+      m = ADDR_RE.search(operands[1])
+      if m: # jalr x2,4(x3)
+        trace.rs1 = m.group('rs1')
+        trace.rs1_val = gpr[trace.rs1]
+        trace.imm = get_imm_hex_val(m.group('imm'))
+      else: # jalr x2,x3
+        trace.rs1 = operands[1]
+        trace.rs1_val = gpr[trace.rs1]
+        trace.imm = get_imm_hex_val('0')
+
+
 def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
   """Process SPIKE simulation log.
 
@@ -108,7 +139,10 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
             if o:
                 operand_str = o.group("operand").replace(" ", "")
                 operands = operand_str.split(",")
-                assign_operand(prev_trace, operands, gpr)
+                if (trace.instr in ['jalr']):
+                  process_jalr(prev_trace, operands, gpr)
+                else:
+                  assign_operand(prev_trace, operands, gpr)
                 # sys.exit(-1)
             else:
                 # print("no operand for [%s] in [%s]" % (trace_instr, trace_instr_str))
