@@ -97,7 +97,6 @@
 
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd; \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard;
 
@@ -361,21 +360,30 @@ class riscv_instr_cover_group;
   `CG_END
 
   `J_INSTR_CG_BEGIN(jalr)
-    cp_rs1_eq_rd : coverpoint instr.rs1 iff (instr.rs1 == instr.rd);
-    cp_rs1_ne_rd : coverpoint instr.rs1 iff (instr.rs1 != instr.rd);
+    cp_rs1_link : coverpoint instr.rs1 {
+      bins ra = {RA};
+      bins t1 = {T1};
+      bins non_link = default;
+    }
+    cp_rd_link : coverpoint instr.rd {
+      bins ra = {RA};
+      bins t1 = {T1};
+      bins non_link = default;
+    }
+    cp_ras : cross cp_rs1_link, cp_rd_link;
   `CG_END
 
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
-    cp_rs2 : coverpoint instr.rs1;
+    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrs)
-    cp_rs2 : coverpoint instr.rs1;
+    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrc)
-    cp_rs2 : coverpoint instr.rs1;
+    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrwi)
@@ -783,7 +791,6 @@ class riscv_instr_cover_group;
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
-    hint_cg = new();
     // RV32I instruction functional coverage instantiation
     add_cg = new();
     sub_cg = new();
@@ -833,7 +840,10 @@ class riscv_instr_cover_group;
     rv32i_misc_cg = new();
     illegal_cg = new();
     opcode_cg = new();
-    compressed_opcode_cg = new();
+    if (RV32C inside {supported_isa}) begin
+      compressed_opcode_cg = new();
+      hint_cg = new();
+    end
     if (RV32M inside {supported_isa}) begin
       mul_cg = new();
       mulh_cg = new();
@@ -915,7 +925,7 @@ class riscv_instr_cover_group;
     if (instr_cnt > 1) begin
       instr.check_hazard_condition(pre_instr);
     end
-    if (instr.binary[1:0] != 2'b11) begin
+    if ((instr.binary[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
       hint_cg.sample(instr);
       compressed_opcode_cg.sample(instr.binary[15:0]);
     end else begin
@@ -943,13 +953,11 @@ class riscv_instr_cover_group;
                      end
                    end
       SRAI       : begin
-                     slli_cg.sample(instr);
+                     srai_cg.sample(instr);
                      if (RV64I inside {supported_isa}) begin
-                       slli64_cg.sample(instr);
+                       srai64_cg.sample(instr);
                      end
                    end
-      SRLI       : srli_cg.sample(instr);
-      SRAI       : srai_cg.sample(instr);
       AND        : and_cg.sample(instr);
       OR         : or_cg.sample(instr);
       XOR        : xor_cg.sample(instr);

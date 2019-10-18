@@ -291,34 +291,14 @@ def assign_operand(trace, operands, gpr):
     else:
       trace.imm = get_imm_hex_val(operands[1])
   elif trace.instr in ['jalr']:
-    ## jalr x3
-    ## jalr 9(x3)
-    ## jalr x2,x3
-    ## jalr x2,4(x3)
     if len(operands) == 1:
-      trace.rd = 'zero'
-      trace.rd_val  = '0'
-      m = ADDR_RE.search(operands[0])
-      if m: # jalr 9(x3)
-        trace.rs1 = m.group('rs1')
-        trace.rs1_val = gpr[trace.rs1]
-        trace.imm = get_imm_hex_val(m.group('imm'))
-      else: # jalr x3
-        trace.rs1 = operands[0]
-        trace.rs1_val = gpr[trace.rs1]
-        trace.imm = get_imm_hex_val('0')
-    elif len(operands) == 2:
-        trace.rd = operands[0]
-        trace.rd_val = gpr[trace.rd]
-        m = ADDR_RE.search(operands[1])
-        if m: # jalr x2,4(x3)
-          trace.rs1 = m.group('rs1')
-          trace.rs1_val = gpr[trace.rs1]
-          trace.imm = get_imm_hex_val(m.group('imm'))
-        else: # jalr x2,x3
-          trace.rs1 = operands[1]
-          trace.rs1_val = gpr[trace.rs1]
-          trace.imm = get_imm_hex_val('0')
+      trace.rs1 = operands[0]
+      trace.rs1_val = gpr[trace.rs1]
+      trace.imm = get_imm_hex_val('0')
+    else:
+      trace.rs1 = operands[1]
+      trace.rs1_val = gpr[trace.rs1]
+      trace.imm = get_imm_hex_val(operands[2])
   elif trace.instr in ['c.j', 'c.jal']:
     trace.imm = get_imm_hex_val(operands[0])
   # Pseudo instruction convertion below
