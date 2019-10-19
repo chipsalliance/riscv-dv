@@ -188,6 +188,11 @@ class riscv_instr_base extends uvm_object;
     if(instr_name == C_ADDI16SP) {
       rd == SP;
     }
+
+    if(instr_name inside {C_JR, C_JALR}) {
+      rs2 == ZERO;
+      rs1 != ZERO;
+    }
   }
 
   ////////////  RV32I instructions  //////////////
@@ -363,8 +368,8 @@ class riscv_instr_base extends uvm_object;
   // RV32IC
   `add_instr(C_LW,       CL_FORMAT, LOAD, RV32C, UIMM)
   `add_instr(C_SW,       CS_FORMAT, STORE, RV32C, UIMM)
-  `add_instr(C_LWSP,     CI_FORMAT, LOAD, RV64C, UIMM)
-  `add_instr(C_SWSP,     CSS_FORMAT, STORE, RV64C, UIMM)
+  `add_instr(C_LWSP,     CI_FORMAT, LOAD, RV32C, UIMM)
+  `add_instr(C_SWSP,     CSS_FORMAT, STORE, RV32C, UIMM)
   `add_instr(C_ADDI4SPN, CIW_FORMAT, ARITHMETIC, RV32C, NZUIMM)
   `add_instr(C_ADDI,     CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
   `add_instr(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
@@ -724,7 +729,11 @@ class riscv_instr_base extends uvm_object;
         CSS_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rs2.name(), get_imm());
         CR_FORMAT:
-          asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
+          if (instr_name inside {C_JR, C_JALR}) begin
+            asm_str = $sformatf("%0s%0s", asm_str, rs1.name());
+          end else begin
+            asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
+          end
         CJ_FORMAT:
           asm_str = $sformatf("%0s%0s", asm_str, get_imm());
       endcase
