@@ -91,8 +91,8 @@
 `define J_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign    : coverpoint instr.imm_sign; \
-    cp_imm_lsb     : coverpoint instr.imm[1:0]; \
     cp_rd          : coverpoint instr.rd; \
+    cp_rd_align    : coverpoint instr.rd_value[1];
 
 
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
@@ -649,10 +649,17 @@ class riscv_instr_cover_group;
   `CJ_INSTR_CG_BEGIN(c_jal)
   `CG_END
 
-  `CR_INSTR_CG_BEGIN(c_jr)
+  `INSTR_CG_BEGIN(c_jr)
+    cp_rs1      : coverpoint instr.rs1 {
+      ignore_bins zero = {ZERO};
+    }
   `CG_END
 
-  `CR_INSTR_CG_BEGIN(c_jalr)
+  `INSTR_CG_BEGIN(c_jalr)
+    cp_rs1      : coverpoint instr.rs1 {
+      ignore_bins zero = {ZERO};
+    }
+    cp_rd_align : coverpoint instr.rd_value[1];
   `CG_END
 
   // RV64C

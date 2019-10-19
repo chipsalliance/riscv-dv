@@ -225,8 +225,7 @@ def assign_operand(trace, operands, gpr):
     trace.rs1_val = gpr[trace.rs1]
     trace.rs2 = operands[2]
     trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['c.add', 'c.addw', 'c.mv', 'c.sub', 'c.jr', 'c.and', 'c.or',
-                       'c.xor', 'c.subw']:
+  elif trace.instr in ['c.add', 'c.addw', 'c.mv', 'c.sub', 'c.and', 'c.or', 'c.xor', 'c.subw']:
     # CR type
     trace.rd = operands[0]
     trace.rd_val = gpr[trace.rd]
@@ -234,6 +233,18 @@ def assign_operand(trace, operands, gpr):
     trace.rs1_val = gpr[trace.rs1]
     trace.rs2 = operands[1]
     trace.rs2_val = gpr[trace.rs2]
+  elif trace.instr in ['c.jr']:
+    trace.rs1 = operands[0]
+    trace.rs1_val = gpr[trace.rs1]
+    trace.rs2 = 'zero'
+    trace.rs2_val = '0'
+    trace.rd = 'zero'
+    trace.rd_val = '0'
+  elif trace.instr in ['c.jr', 'c.jalr']:
+    trace.rs1 = operands[0]
+    trace.rs1_val = gpr[trace.rs1]
+    trace.rs2 = 'zero'
+    trace.rs2_val = '0'
   elif trace.instr in ['slli', 'srli', 'srai', 'addi', 'xori', 'ori', 'andi', 'slti',
                        'sltiu', 'slliw', 'sllid', 'srliw', 'srlid', 'sraiw', 'sraid',
                        'addiw', 'addid']:
@@ -243,7 +254,13 @@ def assign_operand(trace, operands, gpr):
     trace.rs1 = operands[1]
     trace.rs1_val = gpr[trace.rs1]
     trace.imm = get_imm_hex_val(operands[2])
-  elif trace.instr in ['c.addi', 'c.addiw', 'c.addi16sp', 'c.addi4spn', 'c.li', 'c.lui',
+  elif trace.instr in ['c.addi16sp', 'c.addi4spn']:
+    trace.rs1 = 'sp'
+    trace.rs1_val = gpr[trace.rs1]
+    trace.rd = operands[0]
+    trace.rd_val = gpr[trace.rd]
+    trace.imm = get_imm_hex_val(operands[-1])
+  elif trace.instr in ['c.addi', 'c.addiw', 'c.li', 'c.lui',
                        'c.slli', 'c.srai', 'c.srli', 'c.andi']:
     # CI/CIW type
     trace.rd = operands[0]

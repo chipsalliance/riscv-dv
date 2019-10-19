@@ -168,7 +168,10 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     riscv_instr_base instr[];
     `DV_CHECK_RANDOMIZE_WITH_FATAL(jump,
       (use_jalr) -> (instr_name == JALR);
-      instr_name dist {JAL := 1, JALR := 9};
+      instr_name dist {JAL := 2, JALR := 6, C_JALR := 2};
+      if (cfg.disable_compressed_instr || (cfg.ra != RA)) {
+        instr_name != C_JALR;
+      }
       rd == cfg.ra;
       rs1 == gpr;
     )
@@ -198,6 +201,8 @@ class riscv_jump_instr extends riscv_rand_instr_stream;
     end
     if(jump.instr_name == JAL) begin
       jump.imm_str = target_program_label;
+    end else if (jump.instr_name == C_JALR) begin
+      instr = {la, instr};
     end else begin
       instr = {la, addi, instr};
     end
