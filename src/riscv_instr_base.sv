@@ -132,16 +132,6 @@ class riscv_instr_base extends uvm_object;
     }
   }
 
-  // Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
-  // and CB formats
-  constraint compressed_three_bits_csr_c {
-    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT}) {
-      rs1 inside {[S0:A5]};
-      rs2 inside {[S0:A5]};
-      rd  inside {[S0:A5]};
-    }
-  }
-
   // Cannot shift more than the width of the bus
   constraint shift_imm_val_c {
     solve category before imm;
@@ -177,16 +167,16 @@ class riscv_instr_base extends uvm_object;
   }
 
   constraint rvc_csr_c {
-    //  Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
-    //  and CB formats
-    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT}) {
+    //  Registers specified by the three-bit rs1’, rs2’, and rd’
+    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT, CA_FORMAT}) {
       rs1 inside {[S0:A5]};
       rs2 inside {[S0:A5]};
       rd  inside {[S0:A5]};
     }
     // C_ADDI16SP is only valid when rd == SP
     if(instr_name == C_ADDI16SP) {
-      rd == SP;
+      rd  == SP;
+      rs1 == SP;
     }
 
     if(instr_name inside {C_JR, C_JALR}) {
@@ -375,14 +365,14 @@ class riscv_instr_base extends uvm_object;
   `add_instr(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
   `add_instr(C_LI,       CI_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_LUI,      CI_FORMAT, ARITHMETIC, RV32C, NZUIMM)
-  `add_instr(C_SUB,      CS_FORMAT, ARITHMETIC, RV32C)
+  `add_instr(C_SUB,      CA_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_ADD,      CR_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_NOP,      CI_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_MV,       CR_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_ANDI,     CB_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_XOR,      CS_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_OR,       CS_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_AND,      CS_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_XOR,      CA_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_OR,       CA_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_AND,      CA_FORMAT, LOGICAL, RV32C)
   `add_instr(C_BEQZ,     CB_FORMAT, BRANCH, RV32C)
   `add_instr(C_BNEZ,     CB_FORMAT, BRANCH, RV32C)
   `add_instr(C_SRLI,     CB_FORMAT, SHIFT, RV32C, NZUIMM)
@@ -396,8 +386,8 @@ class riscv_instr_base extends uvm_object;
 
   // RV64C
   `add_instr(C_ADDIW,  CI_FORMAT, ARITHMETIC, RV64C)
-  `add_instr(C_SUBW,   CS_FORMAT, ARITHMETIC, RV64C)
-  `add_instr(C_ADDW,   CS_FORMAT, ARITHMETIC, RV64C)
+  `add_instr(C_SUBW,   CA_FORMAT, ARITHMETIC, RV64C)
+  `add_instr(C_ADDW,   CA_FORMAT, ARITHMETIC, RV64C)
   `add_instr(C_LD,     CL_FORMAT, LOAD, RV64C, UIMM)
   `add_instr(C_SD,     CS_FORMAT, STORE, RV64C, UIMM)
   `add_instr(C_LDSP,   CI_FORMAT, LOAD, RV64C, UIMM)
@@ -466,10 +456,12 @@ class riscv_instr_base extends uvm_object;
         update_imm_str();
       end
     end
-    if (format inside {R_FORMAT, S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT, CR_FORMAT}) begin
+    if (format inside {R_FORMAT, S_FORMAT, B_FORMAT, CSS_FORMAT,
+                       CS_FORMAT, CR_FORMAT, CA_FORMAT}) begin
       has_rs2 = 1'b1;
     end
-    if (!(format inside {J_FORMAT, U_FORMAT, CJ_FORMAT, CSS_FORMAT, CR_FORMAT, CI_FORMAT})) begin
+    if (!(format inside {J_FORMAT, U_FORMAT, CJ_FORMAT, CSS_FORMAT,
+                         CA_FORMAT, CR_FORMAT, CI_FORMAT})) begin
       has_rs1 = 1'b1;
     end else if (instr_name inside {C_JR, C_JALR}) begin
       has_rs1 = 1'b1;
@@ -573,7 +565,8 @@ class riscv_instr_base extends uvm_object;
           end
         end
       end
-    end else if (is_compressed && !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
+    end else if (is_compressed &&
+                 !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
       legal_gpr = riscv_instr_pkg::compressed_gpr;
     end else begin
       legal_gpr = riscv_instr_pkg::all_gpr;
@@ -722,6 +715,8 @@ class riscv_instr_base extends uvm_object;
         CI_FORMAT, CIW_FORMAT:
           if(instr_name == C_NOP)
             asm_str = "c.nop";
+          else if(instr_name == C_ADDI16SP)
+            asm_str = $sformatf("%0ssp, %0s", asm_str, get_imm());
           else
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), get_imm());
         CL_FORMAT:
@@ -731,6 +726,8 @@ class riscv_instr_base extends uvm_object;
             asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, rs2.name(), get_imm(), rs1.name());
           else
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rs1.name(), rs2.name());
+        CA_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
         CB_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rs1.name(), get_imm());
         CSS_FORMAT:
