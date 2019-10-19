@@ -152,7 +152,8 @@ class riscv_instr_cov_test extends uvm_test;
       end
     end
     if (instr.has_rs1) begin
-      if (instr.format inside {CI_FORMAT, CR_FORMAT, CB_FORMAT}) begin
+      if (instr.format inside {CI_FORMAT, CR_FORMAT, CB_FORMAT} &&
+          !(instr.instr_name inside {C_JR, C_JALR})) begin
         instr.rs1 = instr.rd;
       end else begin
         if (get_gpr(trace["rs1"], gpr)) begin
