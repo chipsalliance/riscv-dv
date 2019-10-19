@@ -265,6 +265,8 @@ def assign_operand(trace, operands, gpr):
     # CI/CIW type
     trace.rd = operands[0]
     trace.rd_val = gpr[trace.rd]
+    trace.rs1 = operands[0]
+    trace.rs1_val = gpr[trace.rs1]
     trace.imm = get_imm_hex_val(operands[-1])
   elif trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
     # SB type instruction

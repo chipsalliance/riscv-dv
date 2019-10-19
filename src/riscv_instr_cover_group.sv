@@ -88,7 +88,6 @@
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rd          : coverpoint instr.rd; \
     cp_rd_sign     : coverpoint instr.rd_sign; \
-    cp_imm_sign    : coverpoint instr.imm_sign; \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard;
 
 
@@ -132,7 +131,7 @@
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rd       : coverpoint instr.rd { \
-      bins gpr[] = cp_rd with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
@@ -142,24 +141,31 @@
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs1      : coverpoint instr.rs1 { \
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_rd       : coverpoint instr.rd { \
-      bins gpr[] = cp_rd with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard; \
     cp_lsu_hazard  : coverpoint instr.lsu_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
     }
 
+`define CL_SP_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_imm_sign : coverpoint instr.imm_sign; \
+    cp_rd       : coverpoint instr.rd { \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+    }
+
 `define CS_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs1      : coverpoint instr.rs1 { \
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_rs2      : coverpoint instr.rs2 { \
-      bins gpr[] = cp_rs2 with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
@@ -168,12 +174,28 @@
       bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
     }
 
+`define CS_SP_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_imm_sign : coverpoint instr.imm_sign; \
+    cp_rs2      : coverpoint instr.rs2 { \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+    }
+
+`define CA_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_rd      : coverpoint instr.rd { \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+    } \
+    cp_rs2      : coverpoint instr.rs2 { \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+    } \
+    cp_gpr_hazard  : coverpoint instr.gpr_hazard;
+
 
 `define CB_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs1      : coverpoint instr.rs1 { \
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item))); \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
@@ -211,11 +233,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `U_INSTR_CG_BEGIN(lui)
-    cp_sign_cross: cross cp_imm_sign, cp_rd_sign;
   `CG_END
 
   `U_INSTR_CG_BEGIN(auipc)
-    cp_sign_cross: cross cp_imm_sign, cp_rd_sign;
   `CG_END
 
   // Shift instructions
@@ -391,15 +411,12 @@ class riscv_instr_cover_group;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrwi)
-    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrsi)
-    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrci)
-    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
   covergroup rv32i_misc_cg with function sample(riscv_instr_cov_item instr);
@@ -569,13 +586,13 @@ class riscv_instr_cover_group;
   `CL_INSTR_CG_BEGIN(c_lw)
   `CG_END
 
-  `CL_INSTR_CG_BEGIN(c_lwsp)
+  `CL_SP_INSTR_CG_BEGIN(c_lwsp)
   `CG_END
 
   `CS_INSTR_CG_BEGIN(c_sw)
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_swsp)
+  `CS_SP_INSTR_CG_BEGIN(c_swsp)
   `CG_END
 
   `CIW_INSTR_CG_BEGIN(c_addi4spn)
@@ -594,10 +611,13 @@ class riscv_instr_cover_group;
   `CI_INSTR_CG_BEGIN(c_li)
   `CG_END
 
-  `CI_INSTR_CG_BEGIN(c_lui)
+  `INSTR_CG_BEGIN(c_lui)
+    cp_rd : coverpoint instr.rd {
+      ignore_bins bin = {ZERO, SP};
+    }
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_sub)
+  `CA_INSTR_CG_BEGIN(c_sub)
   `CG_END
 
   `CR_INSTR_CG_BEGIN(c_add)
@@ -607,45 +627,34 @@ class riscv_instr_cover_group;
   `CG_END
 
   `CB_INSTR_CG_BEGIN(c_andi)
+    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_xor)
+  `CA_INSTR_CG_BEGIN(c_xor)
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_or)
+  `CA_INSTR_CG_BEGIN(c_or)
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_and)
+  `CA_INSTR_CG_BEGIN(c_and)
   `CG_END
 
   `CB_INSTR_CG_BEGIN(c_beqz)
+    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
   `CB_INSTR_CG_BEGIN(c_bnez)
+    cp_imm_sign : coverpoint instr.imm_sign;
   `CG_END
 
-  `INSTR_CG_BEGIN(c_srli)
-    cp_rs1      : coverpoint instr.rs1 {
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
-    }
-    cp_gpr_hazard  : coverpoint instr.gpr_hazard {
-      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
-    }
+  `CB_INSTR_CG_BEGIN(c_srli)
   `CG_END
 
-  `INSTR_CG_BEGIN(c_srai)
-    cp_rs1      : coverpoint instr.rs1 {
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
-    }
-    cp_gpr_hazard  : coverpoint instr.gpr_hazard {
-      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
-    }
+  `CB_INSTR_CG_BEGIN(c_srai)
   `CG_END
 
   `INSTR_CG_BEGIN(c_slli)
-    cp_rs1      : coverpoint instr.rs1 {
-      bins gpr[] = cp_rs1 with (is_compressed_gpr(riscv_reg_t'(item)));
-    }
+    cp_rd          : coverpoint instr.rd;
     cp_gpr_hazard  : coverpoint instr.gpr_hazard {
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
     }
@@ -675,22 +684,22 @@ class riscv_instr_cover_group;
   `CL_INSTR_CG_BEGIN(c_ld)
   `CG_END
 
-  `CL_INSTR_CG_BEGIN(c_ldsp)
+  `CL_SP_INSTR_CG_BEGIN(c_ldsp)
   `CG_END
 
   `CS_INSTR_CG_BEGIN(c_sd)
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_sdsp)
+  `CS_SP_INSTR_CG_BEGIN(c_sdsp)
   `CG_END
 
   `CI_INSTR_CG_BEGIN(c_addiw)
   `CG_END
 
-  `CS_INSTR_CG_BEGIN(c_subw)
+  `CA_INSTR_CG_BEGIN(c_subw)
   `CG_END
 
-  `CR_INSTR_CG_BEGIN(c_addw)
+  `CA_INSTR_CG_BEGIN(c_addw)
   `CG_END
 
   `INSTR_CG_BEGIN(hint)
@@ -943,7 +952,8 @@ class riscv_instr_cover_group;
     if ((instr.binary[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
       hint_cg.sample(instr);
       compressed_opcode_cg.sample(instr.binary[15:0]);
-    end else begin
+    end
+    if (instr.binary[1:0] == 2'b11) begin
       opcode_cg.sample(instr.binary[6:2]);
     end
     case (instr.instr_name)

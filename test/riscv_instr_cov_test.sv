@@ -117,6 +117,12 @@ class riscv_instr_cov_test extends uvm_test;
       bit [XLEN-1:0] val;
       get_val(trace["binary"], val);
       instr_cg.illegal_cg.sample(val);
+      if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
+        instr_cg.compressed_opcode_cg.sample(val[15:0]);
+      end
+      if (val[1:0] == 2'b11) begin
+        instr_cg.opcode_cg.sample(val[6:2]);
+      end
       return 1'b1;
     end
     illegal_instr_cnt++;
@@ -152,7 +158,7 @@ class riscv_instr_cov_test extends uvm_test;
       end
     end
     if (instr.has_rs1) begin
-      if (instr.format inside {CI_FORMAT, CR_FORMAT, CB_FORMAT} &&
+      if (instr.format inside {CI_FORMAT, CR_FORMAT} &&
           !(instr.instr_name inside {C_JR, C_JALR})) begin
         instr.rs1 = instr.rd;
       end else begin
