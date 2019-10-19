@@ -471,6 +471,8 @@ class riscv_instr_base extends uvm_object;
     end
     if (!(format inside {J_FORMAT, U_FORMAT, CJ_FORMAT, CSS_FORMAT, CR_FORMAT, CI_FORMAT})) begin
       has_rs1 = 1'b1;
+    end else if (instr_name inside {C_JR, C_JALR}) begin
+      has_rs1 = 1'b1;
     end
     if (!(format inside {CJ_FORMAT, CB_FORMAT, CS_FORMAT, CSS_FORMAT, B_FORMAT, S_FORMAT})) begin
       has_rd = 1'b1;
@@ -562,17 +564,22 @@ class riscv_instr_base extends uvm_object;
     riscv_reg_t legal_gpr[$];
     if (included_reg.size() > 0) begin
       legal_gpr = included_reg;
-      while (is_compressed && (i < legal_gpr.size())) begin
-        if (legal_gpr[i] < S0 || legal_gpr[i] > A5) begin
-          legal_gpr.delete(i);
-        end else begin
-          i++;
+      if (is_compressed && !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
+        while (i < legal_gpr.size()) begin
+          if (legal_gpr[i] < S0 || legal_gpr[i] > A5) begin
+            legal_gpr.delete(i);
+          end else begin
+            i++;
+          end
         end
       end
-    end else if (is_compressed) begin
+    end else if (is_compressed && !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
       legal_gpr = riscv_instr_pkg::compressed_gpr;
     end else begin
       legal_gpr = riscv_instr_pkg::all_gpr;
+    end
+    if (format inside {CR_FORMAT, CI_FORMAT}) begin
+      excluded_reg = {excluded_reg, ZERO};
     end
     if (excluded_reg.size() > 0) begin
       i = 0;

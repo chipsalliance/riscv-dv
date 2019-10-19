@@ -51,7 +51,9 @@
 
 `define STORE_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs1         : coverpoint instr.rs1 { \
+      ignore_bins zero = {ZERO}; \
+    } \
     cp_rs2         : coverpoint instr.rs2; \
     cp_imm_sign    : coverpoint instr.imm_sign; \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
@@ -63,7 +65,9 @@
 
 `define LOAD_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs1         : coverpoint instr.rs1 { \
+      ignore_bins zero = {ZERO}; \
+    } \
     cp_rd          : coverpoint instr.rd; \
     cp_imm_sign    : coverpoint instr.imm_sign; \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard; \
@@ -580,7 +584,11 @@ class riscv_instr_cover_group;
   `CI_INSTR_CG_BEGIN(c_addi)
   `CG_END
 
-  `CI_INSTR_CG_BEGIN(c_addi16sp)
+  `INSTR_CG_BEGIN(c_addi16sp)
+    cp_imm_sign : coverpoint instr.imm_sign;
+    cp_gpr_hazard  : coverpoint instr.gpr_hazard {
+      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD};
+    }
   `CG_END
 
   `CI_INSTR_CG_BEGIN(c_li)
