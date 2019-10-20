@@ -65,8 +65,6 @@ parameter privileged_reg_t implemented_csr[] = {
     MHARTID,    // Hardware thread ID
     MSTATUS,    // Machine status
     MISA,       // ISA and extensions
-    MEDELEG,    // Machine exception delegation register
-    MIDELEG,    // Machine interrupt delegation register
     MIE,        // Machine interrupt-enable register
     MTVEC,      // Machine trap-handler base address
     MCOUNTEREN, // Machine counter enable
