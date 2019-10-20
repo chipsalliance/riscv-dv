@@ -44,7 +44,7 @@
     cp_rs2_sign    : coverpoint instr.rs2_sign; \
     cp_imm_sign    : coverpoint instr.imm_sign; \
     cp_branch_hit  : coverpoint instr.branch_hit; \
-    cp_sign_cross  : cross cp_rs1_sign, cp_rs2_sign, cp_imm_sign; \
+    cp_sign_cross  : cross cp_rs1_sign, cp_rs2_sign; \
     cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
     }
@@ -729,7 +729,7 @@ class riscv_instr_cover_group;
   `CG_END
 
   // Cover all illegal instruction
-  covergroup illegal_cg with function sample(bit [31:0] binary);
+  covergroup illegal_compressed_instr_cg with function sample(bit [31:0] binary);
     cp_point : coverpoint binary {
       wildcard bins c_addi4spn = {32'bxxxx_xxxxx_0000_0000_000x_xx00};
       wildcard bins c_addiw    = {32'bxxxx_xxxxx_001x_0000_0xxx_xx01};
@@ -798,7 +798,7 @@ class riscv_instr_cover_group;
     }
   endgroup
 
-  covergroup mepc_cg with function sample(bit [XLEN-1:0] val);
+  covergroup mepc_alignment_cg with function sample(bit [XLEN-1:0] val);
     cp_align: coverpoint val[1:0] {
       bins alignment[] = {2'b00, 2'b10};
     }
@@ -862,7 +862,9 @@ class riscv_instr_cover_group;
     // instr_trans_cg = new();
     branch_hit_history_cg = new();
     rv32i_misc_cg = new();
-    illegal_cg = new();
+    if (!cfg.disable_compressed_instr) begin
+      illegal_compressed_instr_cg = new();
+    end
     opcode_cg = new();
     if (RV32C inside {supported_isa}) begin
       compressed_opcode_cg = new();
@@ -924,7 +926,9 @@ class riscv_instr_cover_group;
       c_srai_cg = new();
       c_slli_cg = new();
       c_j_cg = new();
-      c_jal_cg = new();
+      if (XLEN == 32) begin
+        c_jal_cg = new();
+      end
       c_jr_cg = new();
       c_jalr_cg = new();
     end
@@ -940,7 +944,9 @@ class riscv_instr_cover_group;
     privileged_csr_cg = new();
     mcause_exception_cg = new();
     mcause_interrupt_cg = new();
-    mepc_cg = new();
+    if (!cfg.disable_compressed_instr) begin
+      mepc_alignment_cg = new();
+    end
     mstatus_m_cg = new();
   endfunction
 
@@ -1072,7 +1078,9 @@ class riscv_instr_cover_group;
       C_ADDW     : c_addw_cg.sample(instr);
       C_ADDIW    : c_addiw_cg.sample(instr);
       default: begin
-        illegal_cg.sample(instr.binary);
+        if (!cfg.disable_compressed_instr) begin
+          illegal_compressed_instr_cg.sample(instr.binary);
+        end
         if (instr.group == RV32I) begin
           rv32i_misc_cg.sample(instr);
         end
@@ -1101,7 +1109,11 @@ class riscv_instr_cover_group;
             end
           end
         end
-        MEPC: mepc_cg.sample(instr.rd_value);
+        MEPC: begin
+          if (!cfg.disable_compressed_instr) begin
+            mepc_alignment_cg.sample(instr.rd_value);
+          end
+        end
         MSTATUS: begin
           mstatus_m_cg.sample(instr.rd_value);
         end
