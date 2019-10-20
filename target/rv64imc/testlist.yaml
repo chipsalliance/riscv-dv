@@ -44,6 +44,7 @@
   gen_test: riscv_instr_base_test
   rtl_test: core_base_test
 
+
 - test: riscv_rand_instr_test
   description: >
     Random instruction stress test
@@ -58,6 +59,18 @@
     +directed_instr_3=riscv_load_store_hazard_instr_stream,4
     +directed_instr_4=riscv_multi_page_load_store_instr_stream,4
     +directed_instr_5=riscv_mem_region_stress_test,4
+    +directed_instr_6=riscv_jal_instr,4
+  rtl_test: core_base_test
+
+- test: riscv_jump_stress_test
+  description: >
+    Stress back-to-back jump instruction test
+  iterations: 2
+  gen_test: riscv_instr_base_test
+  gen_opts: >
+    +instr_cnt=5000
+    +num_of_sub_program=5
+    +directed_instr_1=riscv_jal_instr,20
   rtl_test: core_base_test
 
 - test: riscv_loop_test

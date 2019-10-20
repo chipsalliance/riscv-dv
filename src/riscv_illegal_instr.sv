@@ -143,6 +143,7 @@ class riscv_illegal_instr extends uvm_object;
   }
 
   constraint illegal_opcode_c {
+    solve opcode before instr_bin;
     if (exception == kIllegalOpcode) {
       !(opcode inside {legal_opcode});
       opcode[1:0] == 2'b11;

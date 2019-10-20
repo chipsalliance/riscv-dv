@@ -508,7 +508,7 @@ def main():
       args.mabi = "ilp32"
       args.isa  = "rv32i"
     elif args.target == "rv64imc":
-      args.mabi = "ilp64"
+      args.mabi = "lp64"
       args.isa  = "rv64imc"
     else:
       print ("Unsupported target: %0s" % args.target)
