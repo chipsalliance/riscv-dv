@@ -76,7 +76,7 @@ class riscv_instr_cov_test extends uvm_test;
               continue;
             end
             if (!sample()) begin
-             `uvm_info(`gfn, $sformatf("Skipping illegal instr name: %0s [%0s]",
+             `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_LOW)
             end
           end
@@ -105,6 +105,7 @@ class riscv_instr_cov_test extends uvm_test;
 
   function bit sample();
     riscv_instr_name_t instr_name;
+    bit [XLEN-1:0] val;
     if (instr_enum::from_name(process_instr_name(trace["instr"]), instr_name)) begin
       if (cfg.instr_template.exists(instr_name)) begin
         instr.copy_base_instr(cfg.instr_template[instr_name]);
@@ -113,17 +114,16 @@ class riscv_instr_cov_test extends uvm_test;
         instr_cg.sample(instr);
         return 1'b1;
       end
-    end else if (trace["instr"] == "") begin
-      bit [XLEN-1:0] val;
-      get_val(trace["binary"], val);
-      if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
-        instr_cg.compressed_opcode_cg.sample(val[15:0]);
-        instr_cg.illegal_compressed_instr_cg.sample(val);
-      end
-      if (val[1:0] == 2'b11) begin
-        instr_cg.opcode_cg.sample(val[6:2]);
-      end
-      return 1'b1;
+    end
+    get_val(trace["binary"], val);
+    if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
+      instr_cg.compressed_opcode_cg.sample(val[15:0]);
+      instr_cg.illegal_compressed_instr_cg.sample(val);
+    end
+    if (val[1:0] == 2'b11) begin
+      `uvm_info("DBG", $sformatf("Sample illegal opcode: %0x [%0s]",
+                                 val[6:2], trace["instr_str"]), UVM_LOW)
+      instr_cg.opcode_cg.sample(val[6:2]);
     end
     illegal_instr_cnt++;
     return 1'b0;

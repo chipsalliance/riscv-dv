@@ -78,6 +78,8 @@ def process_spike_sim_log(spike_log, csv, full_trace = 0):
         if nextline != "":
           if ILLE_RE.search(nextline):
             if full_trace:
+              logging.debug("Illegal instruction: %s, opcode:%s" %
+                            (rv_instr_trace.instr_str, rv_instr_trace.binary))
               trace_csv.write_trace_entry(rv_instr_trace)
             continue
           m = RD_RE.search(nextline)

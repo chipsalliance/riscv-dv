@@ -728,7 +728,6 @@ class riscv_instr_cover_group;
   covergroup illegal_compressed_instr_cg with function sample(bit [31:0] binary);
     cp_point : coverpoint binary {
       wildcard bins c_addi4spn = {32'bxxxx_xxxxx_0000_0000_000x_xx00};
-      wildcard bins c_addiw    = {32'bxxxx_xxxxx_001x_0000_0xxx_xx01};
       wildcard bins c_addi16sp = {32'bxxxx_xxxxx_0110_0001_0000_0001};
       wildcard bins c_lui      = {32'bxxxx_xxxxx_0110_xxxx_1000_0001,
                                   32'bxxxx_xxxxx_0110_xx1x_x000_0001,
@@ -874,6 +873,7 @@ class riscv_instr_cover_group;
       div_cg = new();
       divu_cg = new();
       rem_cg = new();
+      remu_cg = new();
     end
     if (RV64M inside {supported_isa}) begin
       mulw_cg = new();
@@ -1024,6 +1024,7 @@ class riscv_instr_cover_group;
       DIV        : div_cg.sample(instr);
       DIVU       : divu_cg.sample(instr);
       REM        : rem_cg.sample(instr);
+      REMU       : remu_cg.sample(instr);
       MULW       : mulw_cg.sample(instr);
       DIVW       : divw_cg.sample(instr);
       DIVUW      : divuw_cg.sample(instr);
