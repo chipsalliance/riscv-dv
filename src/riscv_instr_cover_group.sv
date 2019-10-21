@@ -139,7 +139,6 @@
 
 `define CL_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs1      : coverpoint instr.rs1 { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
@@ -153,14 +152,12 @@
 
 `define CL_SP_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rd       : coverpoint instr.rd { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     }
 
 `define CS_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs1      : coverpoint instr.rs1 { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
@@ -176,7 +173,6 @@
 
 `define CS_SP_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_imm_sign : coverpoint instr.imm_sign; \
     cp_rs2      : coverpoint instr.rs2 { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     }

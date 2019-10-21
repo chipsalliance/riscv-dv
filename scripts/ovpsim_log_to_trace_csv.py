@@ -139,7 +139,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
             if o:
                 operand_str = o.group("operand").replace(" ", "")
                 operands = operand_str.split(",")
-                if (trace.instr in ['jalr']):
+                if (prev_trace.instr in ['jalr']):
                   process_jalr(prev_trace, operands, gpr)
                 else:
                   assign_operand(prev_trace, operands, gpr)

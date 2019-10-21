@@ -334,6 +334,7 @@ class riscv_instr_gen_config extends uvm_object;
 
   constraint sp_tp_c {
     sp != tp;
+    sp dist {SP := 6, RA := 1, [GP:T6] :/ 3};
     !(sp inside {GP, RA, ZERO});
     !(tp inside {GP, RA, ZERO});
   }
