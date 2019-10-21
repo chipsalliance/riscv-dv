@@ -92,7 +92,7 @@ def parse_iss_yaml(iss, iss_yaml, isa):
       cmd = entry['cmd'].rstrip()
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
       if iss == "ovpsim":
-        cmd = re.sub("\<variant\>", isa.upper(), cmd)
+        cmd = re.sub("\<variant\>", isa, cmd)
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd

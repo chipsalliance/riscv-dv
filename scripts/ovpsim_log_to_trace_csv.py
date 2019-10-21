@@ -65,9 +65,13 @@ def process_jalr(trace, operands, gpr):
         trace.rs1_val = gpr[trace.rs1]
         trace.imm = get_imm_hex_val('0')
 
+def process_if_compressed(prev_trace):
+  if len(prev_trace.binary) == 4: # compressed are always 4 hex digits
+    prev_trace.instr = "c."+prev_trace.instr
+    # logging.debug("process_if_compressed(%s, %s)" % (prev_trace.instr, prev_trace.binary))
 
 def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
-  """Process SPIKE simulation log.
+  """Process OVPsim simulation log.
 
   Extract instruction and affected register information from ovpsim simulation
   log and save to a list.
@@ -113,7 +117,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
         prev_trace.binary = trace_bin
         prev_trace.addr = trace_addr
         #prev_trace.privileged_mode = trace_mode
-        prev_trace.instr = trace_instr
+        prev_trace.instr = trace_instr # wrong
 
         if 0:
             print ("line ::"+line)
@@ -135,6 +139,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
                # this will probably need also doing for things like wfi too
               trace_instr = trace_instr_str
             prev_trace.instr = trace_instr
+            process_if_compressed(prev_trace)
             o = re.search (r"(?P<instr>[a-z]*?)\s(?P<operand>.*)", trace_instr_str)
             if o:
                 operand_str = o.group("operand").replace(" ", "")
@@ -167,12 +172,13 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
             rv_instr_trace.rs2 = prev_trace.rs2
             rv_instr_trace.rs2_val = prev_trace.rs2_val
             rv_instr_trace.instr_str = trace_instr_str
+            rv_instr_trace.instr = prev_trace.instr
             rv_instr_trace.binary = trace_bin
             rv_instr_trace.addr = trace_addr
             #rv_instr_trace.privileged_mode = trace_mode
             gpr[rv_instr_trace.rd] = rv_instr_trace.rd_val
             if full_trace:
-                rv_instr_trace.instr = trace_instr
+                rv_instr_trace.instr = prev_trace.instr
             trace_csv.write_trace_entry(rv_instr_trace)
             prev_trace = 0 # we wrote out as it had data, so no need to write it next time round
             if 0:
@@ -186,6 +192,9 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
                 print ("write previous entry: [%s] %s " % (str(instr_cnt), line))
                 sys.exit(-1)
   logging.info("Processed instruction count : %d" % instr_cnt)
+  if instr_cnt == 0:
+    logging.error ("No Instructions in logfile: %s" % ovpsim_log)
+    sys.exit(-1)
   logging.info("CSV saved to : %s" % csv)
 
 

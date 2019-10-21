@@ -341,8 +341,8 @@ def assign_operand(trace, operands, gpr):
     trace.rd_val = gpr[trace.rd]
     trace.rs1 = 'zero'
     trace.rs1_val = '0'
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
+    trace.rs2 = operands[1]
+    trace.rs2_val = gpr[trace.rs2]
   elif trace.instr in ['negw']:
     trace.instr = 'subw'
     trace.rd = operands[0]
