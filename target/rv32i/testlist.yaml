@@ -163,6 +163,7 @@
   iterations: 2
   gen_test: riscv_rand_instr_test
   gen_opts: >
+    +enable_interrupt=1
   rtl_test: core_base_test
   sim_opts: >
     +enable_irq_seq=1

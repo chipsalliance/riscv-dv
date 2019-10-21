@@ -183,6 +183,7 @@
     Random instruction test with complete interrupt handling
   iterations: 2
   gen_test: riscv_rand_instr_test
+    +enable_interrupt=1
   gen_opts: >
   rtl_test: core_base_test
   sim_opts: >
