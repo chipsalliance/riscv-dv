@@ -206,9 +206,15 @@ class riscv_jal_instr extends riscv_rand_instr_stream;
     order.shuffle();
     setup_allowed_instr(1, 1);
     jal = {JAL};
-    if (!cfg.disable_compressed_instr) begin
-      jal = (XLEN == 32) ? {jal, C_J, C_JAL} : {jal, C_J};
-    end
+	`ifdef DSIM
+	// if (!cfg.disable_compressed_instr) begin
+	//   jal = (XLEN == 32) ? {jal, C_J, C_JAL} : {jal, C_J};
+	// end
+	`else
+		if (!cfg.disable_compressed_instr) begin
+			jal = (XLEN == 32) ? {jal, C_J, C_JAL} : {jal, C_J};
+		end
+	`endif
     // First instruction
     jump_start = riscv_instr_base::type_id::create("jump_start");
     `DV_CHECK_RANDOMIZE_WITH_FATAL(jump_start,
