@@ -380,6 +380,10 @@ it with random instructions
 ```
 //+directed_instr_n=instr_sequence_name,frequency(number of insertions per 1000 instructions)
 +directed_instr_5=riscv_multi_page_load_store_instr_stream,4
+
+// An alternative command line options for directed instruction stream
++stream_name_0=riscv_multi_page_load_store_instr_stream
++stream_freq_0=4
 ```
 
 ## Integrate a new ISS

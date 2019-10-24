@@ -1103,9 +1103,14 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void get_directed_instr_stream();
     string args, val;
+    string stream_name_opts, stream_freq_opts;
+    string stream_name;
+    int stream_freq;
     string opts[$];
     for (int i=0; i<cfg.max_directed_instr_stream_seq; i++) begin
       args = $sformatf("directed_instr_%0d=", i);
+      stream_name_opts = $sformatf("stream_name_%0d=", i);
+      stream_freq_opts = $sformatf("stream_freq_%0d=", i);
       if ($value$plusargs({args,"%0s"}, val)) begin
         uvm_split_string(val, ",", opts);
         if (opts.size() != 2) begin
@@ -1114,6 +1119,9 @@ class riscv_asm_program_gen extends uvm_object;
         end else begin
           add_directed_instr_stream(opts[0], opts[1].atoi());
         end
+      end else if ($value$plusargs({stream_name_opts,"%0s"}, stream_name) &&
+                   $value$plusargs({stream_freq_opts,"%0d"}, stream_freq)) begin
+        add_directed_instr_stream(stream_name, stream_freq);
       end
     end
   endfunction
