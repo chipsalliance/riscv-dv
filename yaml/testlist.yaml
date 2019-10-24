@@ -90,7 +90,8 @@
   gen_opts: >
     +instr_cnt=5000
     +num_of_sub_program=5
-    +directed_instr_1=riscv_jal_instr,20
+    +stream_name_0=riscv_jal_instr
+    +stream_freq_0=10
   rtl_test: core_base_test
 
 - test: riscv_loop_test
