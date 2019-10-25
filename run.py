@@ -72,19 +72,21 @@ def get_generator_cmd(simulator, simulator_yaml, cov):
   sys.exit(1)
 
 
-def parse_iss_yaml(iss, iss_yaml, isa):
+def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
   """Parse ISS YAML to get the simulation command
 
   Args:
-    iss        : target ISS used to look up in ISS YAML
-    iss_yaml   : ISS configuration file in YAML format
-    isa        : ISA variant passed to the ISS
+    iss         : target ISS used to look up in ISS YAML
+    iss_yaml    : ISS configuration file in YAML format
+    isa         : ISA variant passed to the ISS
+    setting_dir : Generator setting directory
 
   Returns:
-    cmd        : ISS run command
+    cmd         : ISS run command
   """
   logging.info("Processing ISS setup file : %s" % iss_yaml)
   yaml_data = read_yaml(iss_yaml)
+  cwd = os.path.dirname(os.path.realpath(__file__))
   # Search for matched ISS
   for entry in yaml_data:
     if entry['iss'] == iss:
@@ -92,7 +94,7 @@ def parse_iss_yaml(iss, iss_yaml, isa):
       cmd = entry['cmd'].rstrip()
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
       if iss == "ovpsim":
-        cmd = re.sub("\<variant\>", isa, cmd)
+        cmd = re.sub("\<cfg_path\>", setting_dir , cmd)
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
@@ -159,10 +161,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
       logging.info("Building RISC-V instruction generator")
       for cmd in compile_cmd:
         cmd = re.sub("<out>", os.path.abspath(output_dir), cmd)
-        if core_setting_dir == "":
-          cmd = re.sub("<setting>", "<cwd>/setting", cmd)
-        else:
-          cmd = re.sub("<setting>", core_setting_dir, cmd)
+        cmd = re.sub("<setting>", core_setting_dir, cmd)
         if ext_dir == "":
           cmd = re.sub("<user_extension>", "<cwd>/user_extension", cmd)
         else:
@@ -327,20 +326,21 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss):
   logging.info("[%0s] Running ISS simulation: %s ...done" % (iss, elf))
 
 
-def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, timeout_s):
+def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout_s):
   """Run ISS simulation with the generated test program
 
   Args:
-    test_list  : List of assembly programs to be compiled
-    output_dir : Output directory of the ELF files
-    iss_list   : List of instruction set simulators
-    iss_yaml   : ISS configuration file in YAML format
-    isa        : ISA variant passed to the ISS
-    timeout_s  : Timeout limit in seconds
+    test_list   : List of assembly programs to be compiled
+    output_dir  : Output directory of the ELF files
+    iss_list    : List of instruction set simulators
+    iss_yaml    : ISS configuration file in YAML format
+    isa         : ISA variant passed to the ISS
+    setting_dir : Generator setting directory
+    timeout_s   : Timeout limit in seconds
   """
   for iss in iss_list.split(","):
     log_dir = ("%s/%s_sim" % (output_dir, iss))
-    base_cmd = parse_iss_yaml(iss, iss_yaml, isa)
+    base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir)
     logging.info("%s sim log dir: %s" % (iss, log_dir))
     subprocess.run(["mkdir", "-p", log_dir])
     for test in test_list:
@@ -513,6 +513,7 @@ def main():
     else:
       print ("Unsupported target: %0s" % args.target)
   elif not args.testlist:
+    args.core_setting_dir = cwd + "/setting"
     args.testlist = cwd + "/yaml/testlist.yaml"
 
   if args.asm_test != "":
@@ -553,7 +554,7 @@ def main():
     # Run ISS simulation
     if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
       iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
-              args.isa, args.iss_timeout)
+              args.isa, args.core_setting_dir, args.iss_timeout)
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
