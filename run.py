@@ -454,7 +454,7 @@ def setup_parser():
                       help="Generator timeout limit in seconds")
   parser.add_argument("--end_signature_addr", type=str, default="0",
                       help="Address that privileged CSR test writes to at EOT")
-  parser.add_argument("--iss_timeout", type=int, default=25,
+  parser.add_argument("--iss_timeout", type=int, default=10,
                       help="ISS sim timeout limit in seconds")
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
