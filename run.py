@@ -260,6 +260,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       asm = prefix + ".S"
       elf = prefix + ".o"
       binary = prefix + ".bin"
+      test_isa = isa
       # gcc comilation
       cmd = ("%s -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
@@ -270,10 +271,14 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
               get_env_var("RISCV_DV_ROOT"), opts, elf))
       if 'gcc_opts' in test:
         cmd += test['gcc_opts']
+      if 'gen_opts' in test:
+        # Disable compressed instruction
+        if re.search('disable_compressed_instr', test['gen_opts']):
+          test_isa = re.sub("c",  "", test_isa)
       # If march/mabi is not defined in the test gcc_opts, use the default
       # setting from the command line.
       if not re.search('march', cmd):
-        cmd += (" -march=%s" % isa)
+        cmd += (" -march=%s" % test_isa)
       if not re.search('mabi', cmd):
         cmd += (" -mabi=%s" % mabi)
       logging.info("Compiling %s" % asm)
@@ -531,6 +536,8 @@ def main():
 
   # Process regression test list
   matched_list = []
+
+  logging.info(args.sim_opts)
 
   if not args.co:
     process_regression_list(args.testlist, args.test, args.iterations, matched_list)
