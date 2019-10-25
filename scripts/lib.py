@@ -112,6 +112,7 @@ def run_cmd(cmd, timeout_s = 999):
   try:
     ps = subprocess.Popen("exec " + cmd,
                           shell=True,
+                          executable='/bin/bash',
                           universal_newlines=True,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT)
@@ -141,6 +142,7 @@ def run_parallel_cmd(cmd_list, timeout_s = 999):
   for cmd in cmd_list:
     ps = subprocess.Popen("exec " + cmd,
                           shell=True,
+                          executable='/bin/bash',
                           universal_newlines=True,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT)

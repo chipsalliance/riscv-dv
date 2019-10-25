@@ -942,8 +942,6 @@ class riscv_instr_base extends uvm_object;
       AND    : get_func7 = 7'b0000000;
       FENCE  : get_func7 = 7'b0000000;
       FENCE_I : get_func7 = 7'b0000000;
-      ECALL  : get_func7 = 7'b0000000;
-      EBREAK : get_func7 = 7'b0000000;
       SLLIW  : get_func7 = 7'b0000000;
       SRLIW  : get_func7 = 7'b0000000;
       SRAIW  : get_func7 = 7'b0100000;
