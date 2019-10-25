@@ -122,7 +122,7 @@ class riscv_instr_gen_config extends uvm_object;
   riscv_instr_base       instr_template[riscv_instr_name_t];
   riscv_instr_name_t     basic_instr[$];
   riscv_instr_name_t     instr_group[riscv_instr_group_t][$];
-  riscv_instr_name_t     instr_category[riscv_instr_cateogry_t][$];
+  riscv_instr_name_t     instr_category[riscv_instr_category_t][$];
 
   //-----------------------------------------------------------------------------
   // Command line options or control knobs
@@ -203,6 +203,12 @@ class riscv_instr_gen_config extends uvm_object;
   riscv_reg_t            reserved_regs[];
   // Floating point support
   bit                    enable_floating_point;
+
+  //-----------------------------------------------------------------------------
+  // Command line options for instruction distribution control
+  //-----------------------------------------------------------------------------
+  int                    dist_control_mode;
+  int unsigned           category_dist[riscv_instr_category_t];
 
   uvm_cmdline_processor  inst;
 
@@ -448,6 +454,30 @@ class riscv_instr_gen_config extends uvm_object;
     end
     if (!(RV32C inside {supported_isa})) begin
       disable_compressed_instr = 1;
+    end
+    setup_instr_distribution();
+  endfunction
+
+  function void setup_instr_distribution();
+    string opts;
+    int val;
+    get_int_arg_value("+dist_control_mode=", dist_control_mode);
+    if (dist_control_mode == 1) begin
+      riscv_instr_category_t category;
+      category = category.first;
+      do begin
+        opts = {$sformatf("dist_%0s=", category.name()), "%d"};
+        opts = opts.tolower();
+        if ($value$plusargs(opts, val)) begin
+          category_dist[category] = val;
+        end else begin
+          category_dist[category] = 10; // Default ratio
+        end
+        `uvm_info(`gfn, $sformatf("Set dist[%0s] = %0d",
+                        category.name(), category_dist[category]), UVM_LOW)
+        category = category.next;
+      end
+      while(category != category.first);
     end
   endfunction
 

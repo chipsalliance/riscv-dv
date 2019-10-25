@@ -18,7 +18,7 @@ class riscv_instr_base extends uvm_object;
 
   rand riscv_instr_group_t      group;
   rand riscv_instr_format_t     format;
-  rand riscv_instr_cateogry_t   category;
+  rand riscv_instr_category_t   category;
   rand riscv_instr_name_t       instr_name;
   rand bit [11:0]               csr;
 
