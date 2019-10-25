@@ -32,15 +32,11 @@ which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
 
-To be able to run the CSR generation script, the open-source `bitstring`
-Python library is required ([bitstring](https://github.com/scott-griffiths/bitstring)).
-To install this library, either clone the repository and run the `setup.py`
-setup script, or run only one of the below commands:
-```
-1) sudo apt-get install python3-bitstring (or your OS-specific package manager)
-2) pip install bitstring
-```
+Install YAML python package:
 
+```
+pip3 install PyYAML
+```
 
 ### Setup RISCV-GCC compiler toolchain
 
@@ -55,7 +51,6 @@ setup script, or run only one of the below commands:
 export RISCV_TOOLCHAIN=<riscv_gcc_install_path>
 export RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
 export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy"
-export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
 ```
 
 ### Setup ISS (instruction set simulator)
@@ -65,7 +60,7 @@ one of below to run ISS simulation.
 
 - [spike](https://github.com/riscv/riscv-isa-sim#) setup
   - Follow the [steps](https://github.com/riscv/riscv-isa-sim#build-steps) to build spike
-  - Install spike with "--enable-commitlog"
+  - Build spike with "--enable-commitlog"
   - Set environment variable SPIKE_PATH to the directory of the spike binary
 - [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
   - Download the riscv-ovpsim binary
@@ -73,6 +68,10 @@ one of below to run ISS simulation.
 - [sail-riscv](https://github.com/rems-project/sail-riscv) setup
   - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
   - Set environment variable SAIL_RISCV to the sail-riscv binary
+
+```
+export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
+```
 
 ## Running the generator
 
@@ -306,7 +305,7 @@ file above.
 | randomize_csr               | Fully randomize main CSRs (xSTATUS, xIE)          | 0       |
 
 
-### Setup Privileged CSR description
+### Setup Privileged CSR description (optional)
 
 This YAML description file of all CSRs is only required for the privileged CSR
 test. All other standard tests do not use this description.
@@ -353,7 +352,17 @@ format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml)
 To specify what ISA width should be generated in the test, simply include the
 matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.
 
-### Privileged CSR Test Generation
+### Privileged CSR Test Generation (optional)
+
+To be able to run the CSR generation script, the open-source `bitstring`
+Python library is required ([bitstring](https://github.com/scott-griffiths/bitstring)).
+To install this library, either clone the repository and run the `setup.py`
+setup script, or run only one of the below commands:
+
+```
+1) sudo apt-get install python3-bitstring (or your OS-specific package manager)
+2) pip install bitstring
+```
 
 The CSR generation script is located at
 [scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).
