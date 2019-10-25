@@ -15,4 +15,5 @@
 --override riscvOVPsim/cpu/cycle_undefined=F
 --override riscvOVPsim/cpu/instret_undefined=F
 --override riscvOVPsim/cpu/time_undefined=T
+--override riscvOVPsim/cpu/reset_address=0x80000000
 --override riscvOVPsim/cpu/simulateexceptions=T
