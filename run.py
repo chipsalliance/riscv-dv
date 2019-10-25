@@ -537,8 +537,6 @@ def main():
   # Process regression test list
   matched_list = []
 
-  logging.info(args.sim_opts)
-
   if not args.co:
     process_regression_list(args.testlist, args.test, args.iterations, matched_list)
     if len(matched_list) == 0:
