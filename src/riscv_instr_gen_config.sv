@@ -152,7 +152,10 @@ class riscv_instr_gen_config extends uvm_object;
   // A name suffix for the generated assembly program
   string                 asm_test_suffix;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
-  int                    enable_interrupt;
+  bit                    enable_interrupt;
+  // We need a separate control knob for enabling timer interrupts, as Spike
+  // throws an exception if xIE.xTIE is enabled
+  bit                    enable_timer_irq;
   // Generate a bare program without any init/exit/error handling/page table routines
   // The generated program can be integrated with a larger program.
   // Note that the bare mode program is not expected to run in standalone mode
@@ -387,7 +390,8 @@ class riscv_instr_gen_config extends uvm_object;
     inst = uvm_cmdline_processor::get_inst();
     get_int_arg_value("+num_of_tests=", num_of_tests);
     get_int_arg_value("+enable_page_table_exception=", enable_page_table_exception);
-    get_int_arg_value("+enable_interrupt=", enable_interrupt);
+    get_bool_arg_value("+enable_interrupt=", enable_interrupt);
+    get_bool_arg_value("+enable_timer_irq=", enable_timer_irq);
     get_int_arg_value("+num_of_sub_program=", num_of_sub_program);
     get_int_arg_value("+instr_cnt=", instr_cnt);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
