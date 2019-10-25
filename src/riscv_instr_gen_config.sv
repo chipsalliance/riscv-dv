@@ -460,19 +460,21 @@ class riscv_instr_gen_config extends uvm_object;
 
   function void setup_instr_distribution();
     string opts;
-    int unsigned val;
+    int val;
     get_int_arg_value("+dist_control_mode=", dist_control_mode);
     if (dist_control_mode == 1) begin
       riscv_instr_category_t category;
       category = category.first;
       do begin
-        opts = {$sformatf("+dist_%0s=", category.name()), "=%d"};
+        opts = {$sformatf("dist_%0s=", category.name()), "%d"};
         opts = opts.tolower();
         if ($value$plusargs(opts, val)) begin
           category_dist[category] = val;
         end else begin
           category_dist[category] = 10; // Default ratio
         end
+        `uvm_info(`gfn, $sformatf("Set dist[%0s] = %0d",
+                        category.name(), category_dist[category]), UVM_LOW)
         category = category.next;
       end
       while(category != category.first);

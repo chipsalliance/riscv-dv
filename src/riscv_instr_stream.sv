@@ -178,13 +178,20 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     if (no_load_store == 0) begin
       allowed_instr = {allowed_instr, cfg.instr_category[LOAD], cfg.instr_category[STORE]};
     end
-    category_dist = cfg.category_dist;
-    if (no_branch) begin
-      category_dist[BRANCH] = 0;
-    end
-    if (no_load_store) begin
-      category_dist[LOAD] = 0;
-      category_dist[STORE] = 0;
+    setup_instruction_dist(no_branch, no_load_store);
+  endfunction
+
+  function setup_instruction_dist(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+    if (cfg.dist_control_mode) begin
+      category_dist = cfg.category_dist;
+      if (no_branch) begin
+        category_dist[BRANCH] = 0;
+      end
+      if (no_load_store) begin
+        category_dist[LOAD] = 0;
+        category_dist[STORE] = 0;
+      end
+      `uvm_info(`gfn, $sformatf("setup_instruction_dist: %0d", category_dist.size()), UVM_LOW)
     end
   endfunction
 
@@ -208,9 +215,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                                 bit skip_rs2 = 1'b0,
                                 bit skip_rd  = 1'b0,
                                 bit skip_imm = 1'b0,
-                                bit skip_csr = 1'b0);
+                                bit skip_csr = 1'b0,
+                                bit disable_dist = 1'b0);
     riscv_instr_name_t instr_name;
-    if (cfg.dist_control_mode == 1) begin
+    if ((cfg.dist_control_mode == 1) && !disable_dist) begin
       riscv_instr_category_t category;
       int unsigned idx;
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(category,
@@ -222,7 +230,6 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                        COMPARE    := category_dist[COMPARE],
                        BRANCH     := category_dist[BRANCH],
                        SYNCH      := category_dist[SYNCH],
-                       SYSTEM     := category_dist[SYSTEM],
                        CSR        := category_dist[CSR]};)
       idx = $urandom_range(0, cfg.instr_category[category].size() - 1);
       instr_name = cfg.instr_category[category][idx];
