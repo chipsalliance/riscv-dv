@@ -345,8 +345,8 @@ class riscv_asm_program_gen extends uvm_object;
   // Setup MISA based on supported extensions
   virtual function void setup_misa();
     bit [XLEN-1:0] misa;
-    misa[XLEN-1:XLEN-3] = (XLEN == 32) ? 1 :
-                          (XLEN == 64) ? 2 : 3;
+    misa[XLEN-1:XLEN-2] = (XLEN == 32) ? 2'b01 :
+                          (XLEN == 64) ? 2'b10 : 2'b11;
     if (cfg.check_misa_init_val) begin
       instr_stream.push_back({indent, "csrr x15, misa"});
     end
