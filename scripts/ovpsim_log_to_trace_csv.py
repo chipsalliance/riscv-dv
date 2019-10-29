@@ -95,7 +95,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
     gpr[g] = 0
 
   with open(ovpsim_log, "r") as f, open(csv, "w") as csv_fd:
-    trace_csv = RiscvInstructiontTraceCsv(csv_fd)
+    trace_csv = RiscvInstructionTraceCsv(csv_fd)
     trace_csv.start_new_trace()
     prev_trace = 0
     for line in f:
@@ -164,7 +164,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 0):
           # Write the extracted instruction to a csvcol buffer file
           # print("%0s %0s = %0s" % (trace_instr_str, m.group("rd"), m.group("val")))
           if n.group("rd") != "frm":
-            rv_instr_trace = RiscvInstructiontTraceEntry()
+            rv_instr_trace = RiscvInstructionTraceEntry()
             rv_instr_trace.rd = n.group("rd")
             rv_instr_trace.rd_val = n.group("val")
             rv_instr_trace.rs1 = prev_trace.rs1
