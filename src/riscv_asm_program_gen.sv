@@ -35,12 +35,12 @@ class riscv_asm_program_gen extends uvm_object;
    // These programs are called in the interrupt/exception handling routine based on the privileged
    // mode settings. For example, when the interrupt/exception is delegated to S-mode, if both SUM
    // and MPRV equal 1, kernel program can fetch/load/store from U-mode pages,
-   // smode_accessible_umode_program is designed for this purpose. There can be other cases that
+   // umode_program is designed for this purpose. There can be other cases that
    // instruction can only be fetched from S-mode pages but load/store can access U-mode pages, or
    // everything needs to be in S-mode pages.
-   riscv_instr_sequence                smode_accessible_umode_program;
+   riscv_instr_sequence                umode_program;
    riscv_instr_sequence                smode_program;
-   riscv_instr_sequence                smode_ls_umem_program;
+   riscv_instr_sequence                smode_lsu_program;
    riscv_instr_stream                  directed_instr[];
    string                              instr_stream[$];
    riscv_callstack_gen                 callstack_gen;
@@ -141,13 +141,12 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".text");
     // Kernel programs
     if (cfg.virtual_addr_translation_on) begin
-      smode_accessible_umode_program = riscv_instr_sequence::type_id::
-                                       create("smode_accessible_umode_program");
-      gen_kernel_program(smode_accessible_umode_program);
+      umode_program = riscv_instr_sequence::type_id::create("umode_program");
+      gen_kernel_program(umode_program);
       smode_program = riscv_instr_sequence::type_id::create("smode_program");
       gen_kernel_program(smode_program);
-      smode_ls_umem_program = riscv_instr_sequence::type_id::create("smode_ls_umem_program");
-      gen_kernel_program(smode_ls_umem_program);
+      smode_lsu_program = riscv_instr_sequence::type_id::create("smode_lsu_program");
+      gen_kernel_program(smode_lsu_program);
     end
     // All trap/interrupt handling is in the kernel region
     // Trap/interrupt delegation to user mode is not supported now
@@ -346,8 +345,8 @@ class riscv_asm_program_gen extends uvm_object;
   // Setup MISA based on supported extensions
   virtual function void setup_misa();
     bit [XLEN-1:0] misa;
-    misa[XLEN-1:XLEN-3] = (XLEN == 32) ? 1 :
-                          (XLEN == 64) ? 2 : 3;
+    misa[XLEN-1:XLEN-2] = (XLEN == 32) ? 2'b01 :
+                          (XLEN == 64) ? 2'b10 : 2'b11;
     if (cfg.check_misa_init_val) begin
       instr_stream.push_back({indent, "csrr x15, misa"});
     end
@@ -357,8 +356,8 @@ class riscv_asm_program_gen extends uvm_object;
         RV32I, RV64I, RV128I : misa[MISA_EXT_I] = 1'b1;
         RV32M, RV64M         : misa[MISA_EXT_M] = 1'b1;
         RV32A, RV64A         : misa[MISA_EXT_A] = 1'b1;
-        RV32F, RV64F         : misa[MISA_EXT_F] = 1'b1;
-        RV32D, RV64D         : misa[MISA_EXT_D] = 1'b1;
+        RV32F, RV64F, RV32FC : misa[MISA_EXT_F] = 1'b1;
+        RV32D, RV64D, RV32DC : misa[MISA_EXT_D] = 1'b1;
         default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported",
                                    supported_isa[i].name()))
       endcase
@@ -419,6 +418,9 @@ class riscv_asm_program_gen extends uvm_object;
       end
       instr_stream.push_back(str);
     end
+    // Initialize rounding mode of FCSR
+    str = $sformatf("%0sfsrmi %0d", indent, cfg.fcsr_rm);
+    instr_stream.push_back(str);
   endfunction
 
   // Generate "test_done" section, test is finished by an ECALL instruction
@@ -1101,9 +1103,14 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void get_directed_instr_stream();
     string args, val;
+    string stream_name_opts, stream_freq_opts;
+    string stream_name;
+    int stream_freq;
     string opts[$];
     for (int i=0; i<cfg.max_directed_instr_stream_seq; i++) begin
       args = $sformatf("directed_instr_%0d=", i);
+      stream_name_opts = $sformatf("stream_name_%0d=", i);
+      stream_freq_opts = $sformatf("stream_freq_%0d=", i);
       if ($value$plusargs({args,"%0s"}, val)) begin
         uvm_split_string(val, ",", opts);
         if (opts.size() != 2) begin
@@ -1112,6 +1119,9 @@ class riscv_asm_program_gen extends uvm_object;
         end else begin
           add_directed_instr_stream(opts[0], opts[1].atoi());
         end
+      end else if ($value$plusargs({stream_name_opts,"%0s"}, stream_name) &&
+                   $value$plusargs({stream_freq_opts,"%0d"}, stream_freq)) begin
+        add_directed_instr_stream(stream_name, stream_freq);
       end
     end
   endfunction
@@ -1152,7 +1162,7 @@ class riscv_asm_program_gen extends uvm_object;
         end
         if($cast(new_instr_stream, object_h)) begin
           new_instr_stream.cfg = cfg;
-          new_instr_stream.label = $sformatf("%0s_instr_%0d", label, idx);
+          new_instr_stream.label = $sformatf("%0s_%0d", label, idx);
           new_instr_stream.kernel_mode = kernel_mode;
           `DV_CHECK_RANDOMIZE_FATAL(new_instr_stream)
           instr_stream = {instr_stream, new_instr_stream};
@@ -1196,14 +1206,8 @@ class riscv_asm_program_gen extends uvm_object;
           // than 0, for ebreak loops.
           // Use dscratch1 to store original GPR value.
           str = {$sformatf("csrw 0x%0x, x%0d", DSCRATCH1, cfg.scratch_reg),
-                 $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH0)};
-          instr = {instr, str};
-          // send dpc and dcsr to testbench, as this handshake will be
-          // executed twice due to the ebreak loop, there should be no change
-          // in their values as by the Debug Mode Spec Ch. 4.1.8
-          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
-          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DPC));
-          str = {$sformatf("beq x%0d, x0, 1f", cfg.scratch_reg),
+                 $sformatf("csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH0),
+                 $sformatf("beq x%0d, x0, 1f", cfg.scratch_reg),
                  $sformatf("j debug_end"),
                  $sformatf("1: csrr x%0d, 0x%0x", cfg.scratch_reg, DSCRATCH1)};
           instr = {instr, str};
@@ -1215,6 +1219,13 @@ class riscv_asm_program_gen extends uvm_object;
         // having to execute unnecessary push/pop of GPRs on the stack ever
         // time a debug request is sent
         gen_signature_handshake(instr, CORE_STATUS, IN_DEBUG_MODE);
+        if (cfg.enable_ebreak_in_debug_rom) begin
+          // send dpc and dcsr to testbench, as this handshake will be
+          // executed twice due to the ebreak loop, there should be no change
+          // in their values as by the Debug Mode Spec Ch. 4.1.8
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DCSR));
+          gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(DPC));
+        end
         if (cfg.set_dcsr_ebreak) begin
           // We want to set dcsr.ebreak(m/s/u) to 1'b1, depending on what modes
           // are available.
@@ -1302,6 +1313,11 @@ class riscv_asm_program_gen extends uvm_object;
         // mode, and write dscratch0 and dcsr to the testbench for any
         // analysis
         if (cfg.enable_ebreak_in_debug_rom) begin
+          // send dpc and dcsr to testbench, as this handshake will be
+          // executed twice due to the ebreak loop, there should be no change
+          // in their values as by the Debug Mode Spec Ch. 4.1.8
+          gen_signature_handshake(.instr(debug_end), .signature_type(WRITE_CSR), .csr(DCSR));
+          gen_signature_handshake(.instr(debug_end), .signature_type(WRITE_CSR), .csr(DPC));
           str = {$sformatf("csrwi 0x%0x, 0x0", DSCRATCH0)};
           debug_end = {debug_end, str};
         end

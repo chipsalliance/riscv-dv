@@ -116,28 +116,40 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       // Assign the allowed load/store instructions based on address alignment
       // This is done separately rather than a constraint to improve the randomization performance
       allowed_instr = {LB, LBU, SB};
-      if (addr[i][0] == 1'b0) begin
-        allowed_instr = {LH, LHU, SH, allowed_instr};
-      end
       if (!cfg.enable_unaligned_load_store) begin
+        if (addr[i][0] == 1'b0) begin
+          allowed_instr = {LH, LHU, SH, allowed_instr};
+        end
         if (addr[i] % 4 == 0) begin
           allowed_instr = {LW, SW, allowed_instr};
+          if (cfg.enable_floating_point) begin
+            allowed_instr = {FLW, FSW, allowed_instr};
+          end
           if((offset[i] inside {[0:127]}) && (offset[i] % 4 == 0) &&
              (RV32C inside {riscv_instr_pkg::supported_isa}) &&
              enable_compressed_load_store) begin
             allowed_instr = {C_LW, C_SW, allowed_instr};
+            if (cfg.enable_floating_point && (RV32FC inside {supported_isa})) begin
+              allowed_instr = {C_FLW, C_FSW, allowed_instr};
+            end
           end
         end
         if ((XLEN >= 64) && (addr[i] % 8 == 0)) begin
           allowed_instr = {LWU, LD, SD, allowed_instr};
+          if (cfg.enable_floating_point && (RV32D inside {supported_isa})) begin
+            allowed_instr = {FLD, FSD, allowed_instr};
+          end
           if((offset[i] inside {[0:255]}) && (offset[i] % 8 == 0) &&
              (RV64C inside {riscv_instr_pkg::supported_isa} &&
              enable_compressed_load_store)) begin
             allowed_instr = {C_LD, C_SD, allowed_instr};
+            if (cfg.enable_floating_point && (RV32DC inside {supported_isa})) begin
+              allowed_instr = {C_FLD, C_FSD, allowed_instr};
+            end
           end
         end
       end else begin
-        allowed_instr = {LW, SW, allowed_instr};
+        allowed_instr = {LW, SW, LH, LHU, SH, allowed_instr};
         if ((offset[i] inside {[0:127]}) && (offset[i] % 4 == 0) &&
             (RV32C inside {riscv_instr_pkg::supported_isa}) &&
             enable_compressed_load_store) begin
@@ -152,7 +164,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
            end
         end
       end
-      randomize_instr(instr, .skip_rs1(1'b1), .skip_imm(1'b1));
+      randomize_instr(instr, .skip_rs1(1'b1), .skip_imm(1'b1), .disable_dist(1'b1));
       instr.rs1 = rs1_reg;
       instr.set_imm(offset[i]);
       instr.process_load_store = 0;
@@ -170,7 +182,7 @@ class riscv_single_load_store_instr_stream extends riscv_load_store_base_instr_s
     num_mixed_instr < 5;
   }
 
-  `uvm_object_utils(riscv_load_store_base_instr_stream)
+  `uvm_object_utils(riscv_single_load_store_instr_stream)
   `uvm_object_new
 
 endclass

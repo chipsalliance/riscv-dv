@@ -62,6 +62,9 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit [1:0]         mstatus_fs;
   rand mtvec_mode_t      mtvec_mode;
 
+  // Floating point rounding mode
+  rand f_rounding_mode_t fcsr_rm;
+
   // Enable sfence.vma instruction
   rand bit               enable_sfence;
 
@@ -73,6 +76,7 @@ class riscv_instr_gen_config extends uvm_object;
   // Use a random register for stack pointer/thread pointer
   rand riscv_reg_t       sp;
   rand riscv_reg_t       tp;
+  rand riscv_reg_t       ra;
 
   // Options for privileged mode CSR checking
   // Below checking can be made optional as the ISS implementation could be different with the
@@ -118,7 +122,7 @@ class riscv_instr_gen_config extends uvm_object;
   riscv_instr_base       instr_template[riscv_instr_name_t];
   riscv_instr_name_t     basic_instr[$];
   riscv_instr_name_t     instr_group[riscv_instr_group_t][$];
-  riscv_instr_name_t     instr_category[riscv_instr_cateogry_t][$];
+  riscv_instr_name_t     instr_category[riscv_instr_category_t][$];
 
   //-----------------------------------------------------------------------------
   // Command line options or control knobs
@@ -148,7 +152,10 @@ class riscv_instr_gen_config extends uvm_object;
   // A name suffix for the generated assembly program
   string                 asm_test_suffix;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
-  int                    enable_interrupt;
+  bit                    enable_interrupt;
+  // We need a separate control knob for enabling timer interrupts, as Spike
+  // throws an exception if xIE.xTIE is enabled
+  bit                    enable_timer_irq;
   // Generate a bare program without any init/exit/error handling/page table routines
   // The generated program can be integrated with a larger program.
   // Note that the bare mode program is not expected to run in standalone mode
@@ -199,6 +206,12 @@ class riscv_instr_gen_config extends uvm_object;
   riscv_reg_t            reserved_regs[];
   // Floating point support
   bit                    enable_floating_point;
+
+  //-----------------------------------------------------------------------------
+  // Command line options for instruction distribution control
+  //-----------------------------------------------------------------------------
+  int                    dist_control_mode;
+  int unsigned           category_dist[riscv_instr_category_t];
 
   uvm_cmdline_processor  inst;
 
@@ -321,8 +334,16 @@ class riscv_instr_gen_config extends uvm_object;
     }
   }
 
+  constraint ra_c {
+    ra dist {RA := 5, T1 := 2, [SP:T0] :/ 1, [T2:T6] :/ 2};
+    ra != sp;
+    ra != tp;
+    ra != ZERO;
+  }
+
   constraint sp_tp_c {
     sp != tp;
+    sp dist {SP := 6, RA := 1, [GP:T6] :/ 3};
     !(sp inside {GP, RA, ZERO});
     !(tp inside {GP, RA, ZERO});
   }
@@ -369,7 +390,8 @@ class riscv_instr_gen_config extends uvm_object;
     inst = uvm_cmdline_processor::get_inst();
     get_int_arg_value("+num_of_tests=", num_of_tests);
     get_int_arg_value("+enable_page_table_exception=", enable_page_table_exception);
-    get_int_arg_value("+enable_interrupt=", enable_interrupt);
+    get_bool_arg_value("+enable_interrupt=", enable_interrupt);
+    get_bool_arg_value("+enable_timer_irq=", enable_timer_irq);
     get_int_arg_value("+num_of_sub_program=", num_of_sub_program);
     get_int_arg_value("+instr_cnt=", instr_cnt);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
@@ -433,6 +455,33 @@ class riscv_instr_gen_config extends uvm_object;
                      "Invalid march %0s specified in command line", cmdline_march_list[i]))
         end
       end
+    end
+    if (!(RV32C inside {supported_isa})) begin
+      disable_compressed_instr = 1;
+    end
+    setup_instr_distribution();
+  endfunction
+
+  function void setup_instr_distribution();
+    string opts;
+    int val;
+    get_int_arg_value("+dist_control_mode=", dist_control_mode);
+    if (dist_control_mode == 1) begin
+      riscv_instr_category_t category;
+      category = category.first;
+      do begin
+        opts = {$sformatf("dist_%0s=", category.name()), "%d"};
+        opts = opts.tolower();
+        if ($value$plusargs(opts, val)) begin
+          category_dist[category] = val;
+        end else begin
+          category_dist[category] = 10; // Default ratio
+        end
+        `uvm_info(`gfn, $sformatf("Set dist[%0s] = %0d",
+                        category.name(), category_dist[category]), UVM_LOW)
+        category = category.next;
+      end
+      while(category != category.first);
     end
   endfunction
 
@@ -557,13 +606,11 @@ class riscv_instr_gen_config extends uvm_object;
   virtual function void build_instruction_list();
     basic_instr = {instr_category[SHIFT], instr_category[ARITHMETIC],
                    instr_category[LOGICAL], instr_category[COMPARE]};
-    if (no_ebreak == 0) begin
-      basic_instr = {basic_instr, EBREAK};
-      foreach(riscv_instr_pkg::supported_isa[i]) begin
-        if (riscv_instr_pkg::supported_isa[i] inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
-          basic_instr = {basic_instr, C_EBREAK};
-          break;
-        end
+    basic_instr = {basic_instr, EBREAK};
+    foreach(riscv_instr_pkg::supported_isa[i]) begin
+      if (riscv_instr_pkg::supported_isa[i] inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
+        basic_instr = {basic_instr, C_EBREAK};
+        break;
       end
     end
     if (no_dret == 0) begin

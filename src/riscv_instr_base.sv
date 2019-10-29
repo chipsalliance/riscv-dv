@@ -18,7 +18,7 @@ class riscv_instr_base extends uvm_object;
 
   rand riscv_instr_group_t      group;
   rand riscv_instr_format_t     format;
-  rand riscv_instr_cateogry_t   category;
+  rand riscv_instr_category_t   category;
   rand riscv_instr_name_t       instr_name;
   rand bit [11:0]               csr;
 
@@ -51,6 +51,7 @@ class riscv_instr_base extends uvm_object;
   bit                           has_fs2;
   bit                           has_fs3;
   bit                           has_fd;
+  bit                           is_floating_point;
   bit [31:0]                    imm_mask = '1;
   string                        imm_str;
   string                        comment;
@@ -131,16 +132,6 @@ class riscv_instr_base extends uvm_object;
     }
   }
 
-  // Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
-  // and CB formats
-  constraint compressed_three_bits_csr_c {
-    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT}) {
-      rs1 inside {[S0:A5]};
-      rs2 inside {[S0:A5]};
-      rd  inside {[S0:A5]};
-    }
-  }
-
   // Cannot shift more than the width of the bus
   constraint shift_imm_val_c {
     solve category before imm;
@@ -176,16 +167,21 @@ class riscv_instr_base extends uvm_object;
   }
 
   constraint rvc_csr_c {
-    //  Registers specified by the three-bit rs1’, rs2’, and rd’ fields of the CIW, CL, CS,
-    //  and CB formats
-    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT}) {
+    //  Registers specified by the three-bit rs1’, rs2’, and rd’
+    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT, CA_FORMAT}) {
       rs1 inside {[S0:A5]};
       rs2 inside {[S0:A5]};
       rd  inside {[S0:A5]};
     }
     // C_ADDI16SP is only valid when rd == SP
     if(instr_name == C_ADDI16SP) {
-      rd == SP;
+      rd  == SP;
+      rs1 == SP;
+    }
+
+    if(instr_name inside {C_JR, C_JALR}) {
+      rs2 == ZERO;
+      rs1 != ZERO;
     }
   }
 
@@ -362,21 +358,21 @@ class riscv_instr_base extends uvm_object;
   // RV32IC
   `add_instr(C_LW,       CL_FORMAT, LOAD, RV32C, UIMM)
   `add_instr(C_SW,       CS_FORMAT, STORE, RV32C, UIMM)
-  `add_instr(C_LWSP,     CI_FORMAT, LOAD, RV64C, UIMM)
-  `add_instr(C_SWSP,     CSS_FORMAT, STORE, RV64C, UIMM)
+  `add_instr(C_LWSP,     CI_FORMAT, LOAD, RV32C, UIMM)
+  `add_instr(C_SWSP,     CSS_FORMAT, STORE, RV32C, UIMM)
   `add_instr(C_ADDI4SPN, CIW_FORMAT, ARITHMETIC, RV32C, NZUIMM)
   `add_instr(C_ADDI,     CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
   `add_instr(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
   `add_instr(C_LI,       CI_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_LUI,      CI_FORMAT, ARITHMETIC, RV32C, NZUIMM)
-  `add_instr(C_SUB,      CS_FORMAT, ARITHMETIC, RV32C)
+  `add_instr(C_SUB,      CA_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_ADD,      CR_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_NOP,      CI_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_MV,       CR_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_ANDI,     CB_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_XOR,      CS_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_OR,       CS_FORMAT, LOGICAL, RV32C)
-  `add_instr(C_AND,      CS_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_XOR,      CA_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_OR,       CA_FORMAT, LOGICAL, RV32C)
+  `add_instr(C_AND,      CA_FORMAT, LOGICAL, RV32C)
   `add_instr(C_BEQZ,     CB_FORMAT, BRANCH, RV32C)
   `add_instr(C_BNEZ,     CB_FORMAT, BRANCH, RV32C)
   `add_instr(C_SRLI,     CB_FORMAT, SHIFT, RV32C, NZUIMM)
@@ -390,8 +386,8 @@ class riscv_instr_base extends uvm_object;
 
   // RV64C
   `add_instr(C_ADDIW,  CI_FORMAT, ARITHMETIC, RV64C)
-  `add_instr(C_SUBW,   CS_FORMAT, ARITHMETIC, RV64C)
-  `add_instr(C_ADDW,   CS_FORMAT, ARITHMETIC, RV64C)
+  `add_instr(C_SUBW,   CA_FORMAT, ARITHMETIC, RV64C)
+  `add_instr(C_ADDW,   CA_FORMAT, ARITHMETIC, RV64C)
   `add_instr(C_LD,     CL_FORMAT, LOAD, RV64C, UIMM)
   `add_instr(C_SD,     CS_FORMAT, STORE, RV64C, UIMM)
   `add_instr(C_LDSP,   CI_FORMAT, LOAD, RV64C, UIMM)
@@ -460,10 +456,14 @@ class riscv_instr_base extends uvm_object;
         update_imm_str();
       end
     end
-    if (format inside {R_FORMAT, S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT, CR_FORMAT}) begin
+    if (format inside {R_FORMAT, S_FORMAT, B_FORMAT, CSS_FORMAT,
+                       CS_FORMAT, CR_FORMAT, CA_FORMAT}) begin
       has_rs2 = 1'b1;
     end
-    if (!(format inside {J_FORMAT, U_FORMAT, CJ_FORMAT, CSS_FORMAT, CR_FORMAT, CI_FORMAT})) begin
+    if (!(format inside {J_FORMAT, U_FORMAT, CJ_FORMAT, CSS_FORMAT,
+                         CA_FORMAT, CR_FORMAT, CI_FORMAT})) begin
+      has_rs1 = 1'b1;
+    end else if (instr_name inside {C_JR, C_JALR}) begin
       has_rs1 = 1'b1;
     end
     if (!(format inside {CJ_FORMAT, CB_FORMAT, CS_FORMAT, CSS_FORMAT, B_FORMAT, S_FORMAT})) begin
@@ -476,7 +476,8 @@ class riscv_instr_base extends uvm_object;
       end
     end
     // TODO(taliu) Add support for compressed floating point format
-    if (group inside {RV32F, RV64F, RV32D, RV64D}) begin
+    if (group inside {RV32F, RV64F, RV32D, RV64D, RV32FC, RV32DC}) begin
+      is_floating_point = 1'b1;
       has_rs1 = 1'b0;
       has_rs2 = 1'b0;
       has_rd  = 1'b0;
@@ -502,8 +503,9 @@ class riscv_instr_base extends uvm_object;
         has_fs1 = 1'b1;
         has_fd = 1'b0;
       end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
-                                      FCVT_S_L, FCVT_D_L, FCVT_S_LU,
-                                      FCVT_D_W, FCVT_D_LU, FCVT_D_WU}) begin
+                                      FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
+                                      FCVT_D_LU, FCVT_D_WU, FLW, FLD, FSW, FSD,
+                                      C_FLW, C_FLD, C_FSW, C_FSD}) begin
         // Integer to floating point operation
         has_fd = 1'b1;
         has_fs1 = 1'b0;
@@ -554,17 +556,23 @@ class riscv_instr_base extends uvm_object;
     riscv_reg_t legal_gpr[$];
     if (included_reg.size() > 0) begin
       legal_gpr = included_reg;
-      while (is_compressed && (i < legal_gpr.size())) begin
-        if (legal_gpr[i] < S0 || legal_gpr[i] > A5) begin
-          legal_gpr.delete(i);
-        end else begin
-          i++;
+      if (is_compressed && !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
+        while (i < legal_gpr.size()) begin
+          if (legal_gpr[i] < S0 || legal_gpr[i] > A5) begin
+            legal_gpr.delete(i);
+          end else begin
+            i++;
+          end
         end
       end
-    end else if (is_compressed) begin
+    end else if (is_compressed &&
+                 !(format inside {CR_FORMAT, CI_FORMAT, CSS_FORMAT})) begin
       legal_gpr = riscv_instr_pkg::compressed_gpr;
     end else begin
       legal_gpr = riscv_instr_pkg::all_gpr;
+    end
+    if (format inside {CR_FORMAT, CI_FORMAT}) begin
+      excluded_reg = {excluded_reg, ZERO};
     end
     if (excluded_reg.size() > 0) begin
       i = 0;
@@ -587,22 +595,33 @@ class riscv_instr_base extends uvm_object;
     `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(fpr,
                                        if (excluded_reg.size() > 0) {
                                          !(fpr inside {excluded_reg});
+                                       }
+                                       if (is_compressed) {
+                                         fpr inside {[F8:F15]};
                                        });
     return fpr;
   endfunction
 
   function void gen_rand_csr(bit illegal_csr_instr = 0,
+                             bit enable_floating_point = 0,
                              privileged_mode_t privileged_mode = MACHINE_MODE);
+    privileged_reg_t preg[$];
     if (illegal_csr_instr) begin
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(csr, !(csr inside {implemented_csr});)
     end else begin
       // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
       if (privileged_mode == MACHINE_MODE)
-        csr = MSCRATCH;
+        preg = {MSCRATCH};
       else if (privileged_mode == SUPERVISOR_MODE)
-        csr = SSCRATCH;
+        preg = {SSCRATCH};
       else
-        csr = USCRATCH;
+        preg = {USCRATCH};
+      if (enable_floating_point) begin
+        preg = {preg, FFLAGS, FRM, FCSR};
+        `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(csr, csr inside {preg};)
+      end else begin
+        csr = preg[0];
+      end
     end
   endfunction
 
@@ -623,11 +642,11 @@ class riscv_instr_base extends uvm_object;
   virtual function string convert2asm(string prefix = "");
     string asm_str;
     asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
-    if (group inside {RV32F, RV32D, RV64F, RV64D}) begin
+    if (is_floating_point) begin
       case (format)
         I_FORMAT:
           if (category == LOAD) begin
-            asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), fs1.name());
+            asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
           end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
                                           FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D, FCVT_LU_S,
                                           FCVT_W_D, FCVT_WU_D}) begin
@@ -640,7 +659,7 @@ class riscv_instr_base extends uvm_object;
             asm_str = $sformatf("%0s%0s, %0s", asm_str, fd.name(), fs1.name());
           end
         S_FORMAT:
-          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), fs1.name());
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), rs1.name());
         R_FORMAT:
           if (category == COMPARE) begin
             asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), fs1.name(), fs2.name());
@@ -652,6 +671,10 @@ class riscv_instr_base extends uvm_object;
         R4_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s, %0s, %0s", asm_str, fd.name(), fs1.name(),
                                                        fs2.name(), fs3.name());
+        CL_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
+        CS_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fs2.name(), get_imm(), rs1.name());
         default:
           `uvm_fatal(`gfn, $sformatf("Unsupported floating point format: %0s", format.name()))
       endcase
@@ -692,6 +715,8 @@ class riscv_instr_base extends uvm_object;
         CI_FORMAT, CIW_FORMAT:
           if(instr_name == C_NOP)
             asm_str = "c.nop";
+          else if(instr_name == C_ADDI16SP)
+            asm_str = $sformatf("%0ssp, %0s", asm_str, get_imm());
           else
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), get_imm());
         CL_FORMAT:
@@ -701,12 +726,18 @@ class riscv_instr_base extends uvm_object;
             asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, rs2.name(), get_imm(), rs1.name());
           else
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rs1.name(), rs2.name());
+        CA_FORMAT:
+          asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
         CB_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rs1.name(), get_imm());
         CSS_FORMAT:
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rs2.name(), get_imm());
         CR_FORMAT:
-          asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
+          if (instr_name inside {C_JR, C_JALR}) begin
+            asm_str = $sformatf("%0s%0s", asm_str, rs1.name());
+          end else begin
+            asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
+          end
         CJ_FORMAT:
           asm_str = $sformatf("%0s%0s", asm_str, get_imm());
       endcase
@@ -720,7 +751,7 @@ class riscv_instr_base extends uvm_object;
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
       // This is needed to resume execution from epc+4 after ebreak handling
       if(instr_name == EBREAK) begin
-        asm_str = ".option norvc;ebreak;.option rvc;";
+        asm_str = ".4byte 0x00100073 # ebreak";
       end else if(instr_name == C_EBREAK) begin
         asm_str = "c.ebreak;c.nop;";
       end
@@ -911,8 +942,6 @@ class riscv_instr_base extends uvm_object;
       AND    : get_func7 = 7'b0000000;
       FENCE  : get_func7 = 7'b0000000;
       FENCE_I : get_func7 = 7'b0000000;
-      ECALL  : get_func7 = 7'b0000000;
-      EBREAK : get_func7 = 7'b0000000;
       SLLIW  : get_func7 = 7'b0000000;
       SRLIW  : get_func7 = 7'b0000000;
       SRAIW  : get_func7 = 7'b0100000;
@@ -1133,34 +1162,35 @@ class riscv_instr_base extends uvm_object;
 
   // Copy the rand fields of the base instruction
   virtual function void copy_base_instr(riscv_instr_base obj);
-    this.group           = obj.group;
-    this.format          = obj.format;
-    this.category        = obj.category;
-    this.instr_name      = obj.instr_name;
-    this.rs2             = obj.rs2;
-    this.rs1             = obj.rs1;
-    this.rd              = obj.rd;
-    this.imm             = obj.imm;
-    this.imm_type        = obj.imm_type;
-    this.imm_len         = obj.imm_len;
-    this.imm_mask        = obj.imm_mask;
-    this.imm_str         = obj.imm_str;
-    this.is_pseudo_instr = obj.is_pseudo_instr;
-    this.aq              = obj.aq;
-    this.rl              = obj.rl;
-    this.is_compressed   = obj.is_compressed;
-    this.has_imm         = obj.has_imm;
-    this.has_rs1         = obj.has_rs1;
-    this.has_rs2         = obj.has_rs2;
-    this.has_rd          = obj.has_rd;
-    this.fs3             = obj.fs3;
-    this.fs2             = obj.fs2;
-    this.fs1             = obj.fs1;
-    this.fd              = obj.fd;
-    this.has_fs1         = obj.has_fs1;
-    this.has_fs2         = obj.has_fs2;
-    this.has_fs3         = obj.has_fs3;
-    this.has_fd          = obj.has_fd;
+    this.group             = obj.group;
+    this.format            = obj.format;
+    this.category          = obj.category;
+    this.instr_name        = obj.instr_name;
+    this.rs2               = obj.rs2;
+    this.rs1               = obj.rs1;
+    this.rd                = obj.rd;
+    this.imm               = obj.imm;
+    this.imm_type          = obj.imm_type;
+    this.imm_len           = obj.imm_len;
+    this.imm_mask          = obj.imm_mask;
+    this.imm_str           = obj.imm_str;
+    this.is_pseudo_instr   = obj.is_pseudo_instr;
+    this.aq                = obj.aq;
+    this.rl                = obj.rl;
+    this.is_compressed     = obj.is_compressed;
+    this.has_imm           = obj.has_imm;
+    this.has_rs1           = obj.has_rs1;
+    this.has_rs2           = obj.has_rs2;
+    this.has_rd            = obj.has_rd;
+    this.fs3               = obj.fs3;
+    this.fs2               = obj.fs2;
+    this.fs1               = obj.fs1;
+    this.fd                = obj.fd;
+    this.has_fs1           = obj.has_fs1;
+    this.has_fs2           = obj.has_fs2;
+    this.has_fs3           = obj.has_fs3;
+    this.has_fd            = obj.has_fd;
+    this.is_floating_point = obj.is_floating_point;
   endfunction
 
 endclass
