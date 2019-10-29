@@ -42,7 +42,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv):
   os.system(cmd)
 
   with open(ovpsim_log, "r") as f, open(csv, "w") as csv_fd:
-    trace_csv = RiscvInstructiontTraceCsv(csv_fd)
+    trace_csv = RiscvInstructionTraceCsv(csv_fd)
     trace_csv.start_new_trace()
     for line in f:
       # Extract instruction infromation
@@ -60,7 +60,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv):
         if n:
           # Write the extracted instruction to a csvcol buffer file
           # print("%0s %0s = %0s" % (trace_instr, m.group("rd"), m.group("val")))
-          rv_instr_trace = RiscvInstructiontTraceEntry()
+          rv_instr_trace = RiscvInstructionTraceEntry()
           rv_instr_trace.rd = n.group("rd")
           rv_instr_trace.rd_val = n.group("val")
           rv_instr_trace.instr_str = trace_instr
