@@ -49,6 +49,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
     simulator_yaml   : RTL simulator configuration file in YAML format
     core_setting_dir : Path for riscv_core_setting.sv
   """
+  cwd = os.path.dirname(os.path.realpath(__file__))
   log_list = []
   csv_list = []
   trace_log = ("%s/%s_trace_log" % (out, iss))
@@ -73,13 +74,13 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
         logging.error("Full trace for %s is not supported yet" % iss)
         sys.exit(1)
   if steps == "all" or re.match("cov", steps):
-    build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+    build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                  "--core_setting_dir %s --co -o %s --cov -tl %s %s " %
-                 (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
-    base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+                 (cwd, simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
+    base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                     "--core_setting_dir %s --so -o %s --cov -tl %s %s "
                     "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
-                    (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
+                    (cwd, simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
     logging.info("Building the coverage collection framework")
     run_cmd(build_cmd)
     file_idx = 0
@@ -130,17 +131,18 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
     simulator_yaml   : RTL simulator configuration file in YAML format
     core_setting_dir : Path for riscv_core_setting.sv
   """
+  cwd = os.path.dirname(os.path.realpath(__file__))
   sim_cmd_list = []
   logging.info("Building the coverage collection framework")
-  build_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+  build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                "--core_setting_dir %s --co -o %s --cov -tl %s %s" %
-               (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
+               (cwd, simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
   run_cmd(build_cmd)
-  base_sim_cmd = ("python3 run.py --simulator %s --simulator_yaml %s "
+  base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                   "--core_setting_dir %s --so -o %s --cov -tl %s %s "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
-                  (simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
+                  (cwd, simulator, simulator_yaml, core_setting_dir, out, testlist, opts))
   if batch_size > 0:
     batch_cnt = int((instr_cnt+batch_size-1)/batch_size)
     logging.info("Batch size: %0d, Batch cnt:%0d" % (batch_size, batch_cnt))
