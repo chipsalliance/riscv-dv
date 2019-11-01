@@ -252,6 +252,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
     isa        : ISA variant passed to GCC
     mabi       : MABI variant passed to GCC
   """
+  cwd = os.path.dirname(os.path.realpath(__file__))
   for test in test_list:
     for i in range(0, test['iterations']):
       if 'no_gcc' in test and test['no_gcc'] == 1:
@@ -267,8 +268,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
              -nostartfiles %s \
              -I%s/user_extension \
              -T%s/scripts/link.ld %s -o %s " % \
-             (get_env_var("RISCV_GCC"), asm, get_env_var("RISCV_DV_ROOT"),
-              get_env_var("RISCV_DV_ROOT"), opts, elf))
+             (get_env_var("RISCV_GCC"), asm, cwd, cwd, opts, elf))
       if 'gcc_opts' in test:
         cmd += test['gcc_opts']
       if 'gen_opts' in test:
@@ -302,6 +302,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss):
     mabi       : MABI variant passed to GCC
     iss        : Instruction set simulators
   """
+  cwd = os.path.dirname(os.path.realpath(__file__))
   asm = asm_test
   elf = asm_test + ".o"
   binary = asm_test + ".bin"
@@ -313,8 +314,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss):
          -nostartfiles %s \
          -I%s/user_extension \
          -T%s/scripts/link.ld -o %s " % \
-         (get_env_var("RISCV_GCC"), asm, get_env_var("RISCV_DV_ROOT"),
-          get_env_var("RISCV_DV_ROOT"), elf))
+         (get_env_var("RISCV_GCC"), asm, cwd, cwd, elf))
   cmd += (" -march=%s" % isa)
   cmd += (" -mabi=%s" % mabi)
   logging.info("Compiling %s" % asm)
@@ -488,10 +488,10 @@ def setup_parser():
 
 def main():
   """This is the main entry point."""
-  check_riscv_dv_setting()
   parser = setup_parser()
   args = parser.parse_args()
   cwd = os.path.dirname(os.path.realpath(__file__))
+  os.environ["RISCV_DV_ROOT"] = cwd
   setup_logging(args.verbose)
 
   if not args.csr_yaml:
