@@ -34,7 +34,7 @@ make sure the EDA tool environment is properly setup before running the generato
 
 Install YAML python package:
 
-```
+```bash
 pip3 install PyYAML
 ```
 
@@ -46,8 +46,8 @@ pip3 install PyYAML
 - Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
   executable. (example: <install_dir>/bin/riscv32-unknown-elf-objcopy)
 
-```
-// Sample .bashrc setup
+```bash
+# Sample .bashrc setup
 export RISCV_TOOLCHAIN=<riscv_gcc_install_path>
 export RISCV_GCC="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc"
 export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy"
@@ -69,7 +69,7 @@ one of below to run ISS simulation.
   - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
   - Set environment variable SAIL_RISCV to the sail-riscv binary
 
-```
+```bash
 export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
 ```
 
@@ -79,18 +79,18 @@ A simple script "run.py" is provided for you to run a single test or a regressio
 
 You can use --help to get the complete command reference:
 
-```
+```bash
 python3 run.py --help
 ```
 
 Here is the command to run a single test:
 
-```
+```bash
 python3 run.py --test=riscv_arithmetic_basic_test
 ```
 You can specify the simulator by "-simulator" option
 
-```
+```bash
 python3 run.py --test riscv_arithmetic_basic_test --simulator ius
 python3 run.py --test riscv_arithmetic_basic_test --simulator vcs
 python3 run.py --test riscv_arithmetic_basic_test --simulator questa
@@ -99,35 +99,35 @@ python3 run.py --test riscv_arithmetic_basic_test --simulator dsim
 The complete test list can be found in [yaml/testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/testlist.yaml). To run a full
 regression, simply use below command
 
-```
+```bash
 python3 run.py
 ```
 
 You can also run multiple generator jobs in parallel through LSF
 
-```
+```bash
 python3 run.py --lsf_cmd="bsub -Is"
 ```
 
 Here's a few more examples of the run command:
 
-```
-// Run a single test 10 times
+```bash
+# Run a single test 10 times
 python3 run.py --test riscv_arithmetic_basic_test --iterations 10
 
-// Run a test with verbose logging
+# Run a test with verbose logging
 python3 run.py --test riscv_arithmetic_basic_test --verbose
 
-// Run a test with a specified seed
+# Run a test with a specified seed
 python3 run.py --test riscv_arithmetic_basic_test --seed 123
 
-// Skip the generation, run ISS simulation with previously generated program
+# Skip the generation, run ISS simulation with previously generated program
 python3 run.py --test riscv_arithmetic_basic_test --steps iss_sim
 
-// Run the generator only, do not compile and simluation with ISS
+# Run the generator only, do not compile and simluation with ISS
 python3 run.py --test riscv_arithmetic_basic_test --steps gen
 
-// Compile the generator only, do not simulate
+# Compile the generator only, do not simulate
 python3 run.py --test riscv_arithmetic_basic_test --co
 
 ....
@@ -137,22 +137,22 @@ python3 run.py --test riscv_arithmetic_basic_test --co
 
 You can use -iss to run with different ISS.
 
-```
-// Run ISS with spike
+```bash
+# Run ISS with spike
 python3 run.py --test riscv_arithmetic_basic_test --iss spike
 
-// Run ISS with riscv-ovpsim
+# Run ISS with riscv-ovpsim
 python3 run.py --test riscv_rand_instr_test --iss ovpsim
 
-// Run ISS with sail-riscv
+# Run ISS with sail-riscv
 python3 run.py --test riscv_rand_instr_test --iss sail
 ```
 
 To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
 line like this:
 
-```
-// Run a full regression with RV32IMC
+```bash
+# Run a full regression with RV32IMC
 python3 run.py --isa rv32imc --mabi ilp32
 ```
 
@@ -161,7 +161,7 @@ the instruction trace from these runs will be cross compared. This could greatly
 speed up your development of new test without the need to simulate against a
 real RISC-V processor.
 
-```
+```bash
 python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
 python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 ```
@@ -174,7 +174,7 @@ The default configuration of the instruction generator is **RV32IMC** (machine
 mode only). A few pre-defined configurations can be found under "target" directory,
 you can run with these targets if it matches your processor specification.
 
-```
+```bash
 python3 run.py                   # Default target rv32imc
 python3 run.py --target rv32i    # rv32i, machine mode only
 python3 run.py --target rv32imc  # rv32imc, machine mode only
@@ -186,7 +186,7 @@ If you want to have a custom setting for your processor, you can make a copy of
 existing target directory as the template, and modify riscv_core_setting.sv to
 match your processor capability.
 
-```
+```verilog
 // Bit width of RISC-V GPR
 parameter int XLEN = 64;
 
@@ -209,8 +209,8 @@ riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
 
 You can then run the generator with "--custom_target <target_dir>"
 
-```
-// You need to manually specify isa and mabi for your custom target
+```bash
+# You need to manually specify isa and mabi for your custom target
 python3 run.py --custom_target <target_dir> --isa <isa> --mabi <mabi>
 ...
 ```
@@ -228,7 +228,7 @@ sections to match the actual memory map
 
 You can configure the memory map in [riscv_instr_gen_config.sv](https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv)
 
-```
+```verilog
   mem_region_t mem_region[$] = '{
     '{name:"region_0", size_in_bytes: 4096,      xwr: 3'b111},
     '{name:"region_1", size_in_bytes: 4096 * 4,  xwr: 3'b111},
@@ -249,7 +249,7 @@ conditions for the load/store testing.
 
 [Test list in YAML format](https://github.com/google/riscv-dv/blob/master/yaml/testlist.yaml)
 
-```
+```yaml
 # test            : Assembly test name
 # description     : Description of this test
 # gen_opts        : Instruction generator options
@@ -322,7 +322,7 @@ test. All other standard tests do not use this description.
 [CSR descriptions in YAML
 format](https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml)
 
-```
+```yaml
 - csr: CSR_NAME
   description: >
     BRIEF_DESCRIPTION
@@ -368,9 +368,9 @@ Python library is required ([bitstring](https://github.com/scott-griffiths/bitst
 To install this library, either clone the repository and run the `setup.py`
 setup script, or run only one of the below commands:
 
-```
-1) sudo apt-get install python3-bitstring (or your OS-specific package manager)
-2) pip install bitstring
+```bash
+sudo apt-get install python3-bitstring (or your OS-specific package manager)
+pip install bitstring
 ```
 
 The CSR generation script is located at
@@ -384,7 +384,7 @@ continue executing, allowing it to be completely self checking. This script has
 been integrated with run.py. If you want to run it separately, you can get the
 command reference with --help:
 
-```
+```bash
 python3 scripts/gen_csr_test.py --help
 ```
 
@@ -395,7 +395,7 @@ add a new instruction stream.
 After the new instruction stream is created, you can use a runtime option to mix
 it with random instructions
 
-```
+```bash
 //+directed_instr_n=instr_sequence_name,frequency(number of insertions per 1000 instructions)
 +directed_instr_5=riscv_multi_page_load_store_instr_stream,4
 
@@ -408,7 +408,7 @@ it with random instructions
 
 You can add a new entry in [iss.yaml](https://github.com/google/riscv-dv/blob/master/yaml/iss.yaml)
 
-```
+```yaml
 - iss: new_iss_name
   path_var: ISS_PATH
   cmd: >
@@ -417,7 +417,7 @@ You can add a new entry in [iss.yaml](https://github.com/google/riscv-dv/blob/ma
 
 Simulate with the new ISS
 
-```
+```bash
 python3 run.py --test riscv_arithmetic_basic_test --iss new_iss_name
 ```
 
@@ -474,14 +474,14 @@ add anything you are interested or file a bug for any feature request.
 Before start, please check the you have modified riscv_core_setting.sv to match your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don't need to deal with excluding unrelated coverpoint later. You also need to get spike ISS setup before running this flow.
 
 
-```
-// Process spike simulation log and collect functional coverage
+```bash
+# Process spike simulation log and collect functional coverage
 python3 cov.py --dir out/spike_sim
 
-// Get the command reference
+# Get the command reference
 python3 cov.py --help
 
-// Run the coverage flow with predefined targets
+# Run the coverage flow with predefined targets
 python3 cov.py --dir out/spike_sim --target rv32imc
 ```
 
@@ -490,7 +490,7 @@ number of log to process. You can split them to small batches and run with LSF
 in parallel.
 
 ```
-// Split the run to process 5 CSV at a time, and run with LSF
+# Split the run to process 5 CSV at a time, and run with LSF
 python3 cov.py --dir out/spike_sim --lsf_cmd "bsub ....." -bz 5
 ```
 
@@ -498,8 +498,8 @@ There is also a debug mode which allow you randomize the instruction and sample
 coverage directly. This is only used to test the new functional coverage
 implmentation.
 
-```
-// Randomly generate 100000 instructions, split to 20000 instructions per batch
+```bash
+# Randomly generate 100000 instructions, split to 20000 instructions per batch
 python3 cov.py -d -i 100000 -bz 20000
 ```
 
