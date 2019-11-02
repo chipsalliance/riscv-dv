@@ -170,11 +170,21 @@ python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 
 ### Configure the generator to match your processor features
 
-The default configuration of the instruction generator is for **RV64GC** RISC-V
-processors with address translation capability. You might want to configure the
-generator according the feature of your processor.
+The default configuration of the instruction generator is **RV32IMC** (machine
+mode only). A few pre-defined configurations can be found under "target" directory,
+you can run with these targets if it matches your processor specification.
 
-The static setting of the processor src/riscv_core_setting.sv
+```
+python3 run.py                   # Default target rv32imc
+python3 run.py --target rv32i    # rv32i, machine mode only
+python3 run.py --target rv32imc  # rv32imc, machine mode only
+python3 run.py --target rv64imc  # rv64imc, machine mode only
+python3 run.py --target rv64gc   # rv64gc, SV39, M/S/U mode
+```
+
+If you want to have a custom setting for your processor, you can make a copy of
+existing target directory as the template, and modify riscv_core_setting.sv to
+match your processor capability.
 
 ```
 // Bit width of RISC-V GPR
@@ -197,14 +207,13 @@ riscv_instr_group_t supported_isa[] = {RV32I, RV32M, RV64I, RV64M};
 ...
 ```
 
-A few pre-defined configurations can be found under "target" directory, you can
-run with these targets if it matches your processor specification.
+You can then run the generator with "--custom_target <target_dir>"
 
 ```
-// Run regression with RV32IMC configuration
-python3 run.py --target rv32imc
+// You need to manually specify isa and mabi for your custom target
+python3 run.py --custom_target <target_dir> --isa <isa> --mabi <mabi>
+...
 ```
-
 
 ### Setup the memory map
 
@@ -426,8 +435,8 @@ upstream changes.
   user_extension/user_extension.svh. If you prefer to put your extensions in a
   different directory, you can use "-ext <user_extension_path>" to override the
   user extension path.
-- Create a new file for riscv_core_setting.sv, add the path with below option:
-  "-cs <new_core_setting_path>"
+- Create a new target directory and customize the setting and testlist
+- Run the generator with "--custom_target <target_dir> --isa <isa> --mabi <mabi>"
 - Use command line type override to use your extended classes.
   --sim_opts="+uvm_set_type_override=<upstream_class>,<extended_class>"
 
@@ -462,7 +471,7 @@ The functional covergroup is defined in [riscv_instr_cover_group.sv](https://git
 The functional covergroup is still under active development. Please feel free to
 add anything you are interested or file a bug for any feature request. 
 
-Before start, please check the you have modified [riscv_core_setting.sv](https://github.com/google/riscv-dv/blob/master/setting/riscv_core_setting.sv) to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don't need to deal with excluding unrelated coverpoint later. You also need to get spike ISS setup before running this flow.
+Before start, please check the you have modified riscv_core_setting.sv to match your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don't need to deal with excluding unrelated coverpoint later. You also need to get spike ISS setup before running this flow.
 
 
 ```
@@ -471,6 +480,9 @@ python3 cov.py --dir out/spike_sim
 
 // Get the command reference
 python3 cov.py --help
+
+// Run the coverage flow with predefined targets
+python3 cov.py --dir out/spike_sim --target rv32imc
 ```
 
 The coverage sampling from the CSV could be time consuming if you have a large
