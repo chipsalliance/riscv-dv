@@ -410,6 +410,9 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
+  parser.add_argument("--target", type=str, default="rv64imc",
+                      help="Run the generator with pre-defined targets: \
+                            rv32imc, rv32i, rv64imc, rv64gc")
   parser.add_argument("-o", "--output", type=str,
                       help="Output directory name", dest="o")
   parser.add_argument("-tl", "--testlist", type=str, default="",
@@ -443,10 +446,10 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
-  parser.add_argument("--isa", type=str, default="rv64gc",
+  parser.add_argument("--isa", type=str, default="",
                       help="RISC-V ISA subset")
-  parser.add_argument("-m", "--mabi", type=str, default="lp64",
-                      help="mabi used for compilation, lp32 or lp64", dest="mabi")
+  parser.add_argument("-m", "--mabi", type=str, default="",
+                      help="mabi used for compilation", dest="mabi")
   parser.add_argument("--gen_timeout", type=int, default=360,
                       help="Generator timeout limit in seconds")
   parser.add_argument("--end_signature_addr", type=str, default="0",
@@ -462,15 +465,14 @@ def setup_parser():
   parser.add_argument("--seed_yaml", type=str, default="",
                       help="Rerun the generator with the seed specification \
                             from a prior regression")
+  parser.add_argument("-ct", "--custom_target", type=str, default="",
+                      help="Directory name of the custom target")
   parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
                       help="Path for the riscv_core_setting.sv")
   parser.add_argument("-ext", "--user_extension_dir", type=str, default="",
                       help="Path for the user extension directory")
   parser.add_argument("--asm_test", type=str, default="",
                       help="Directed assembly test")
-  parser.add_argument("--target", type=str, default="",
-                      help="Run the generator with pre-defined targets: \
-                            rv32imc, rv32i, rv64imc")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
@@ -500,8 +502,17 @@ def main():
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
-  if args.target:
-    args.testlist = cwd + "/target/"+ args.target +"/testlist.yaml"
+  # Keep the core_setting_dir option to be backward compatible, suggest to use
+  # --custom_target
+  if args.core_setting_dir:
+    if not args.custom_target:
+      args.custom_target = args.core_setting_dir
+  else:
+    args.core_setting_dir = args.custom_target
+
+  if not args.custom_target:
+    if not args.testlist:
+      args.testlist = cwd + "/target/"+ args.target +"/testlist.yaml"
     args.core_setting_dir = cwd + "/target/"+ args.target
     if args.target == "rv32imc":
       args.mabi = "ilp32"
@@ -516,10 +527,12 @@ def main():
       args.mabi = "lp64"
       args.isa  = "rv64imc"
     else:
-      print ("Unsupported target: %0s" % args.target)
-  elif not args.testlist:
-    args.core_setting_dir = cwd + "/setting"
-    args.testlist = cwd + "/yaml/testlist.yaml"
+      print ("Unsupported pre-defined target: %0s" % args.target)
+  else:
+    if (not args.mabi) or (not args.isa):
+      sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
+    if not args.testlist:
+      args.testlist = args.custom_target + "/testlist.yaml"
 
   if args.asm_test != "":
     run_assembly(args.asm_test, args.iss_yaml, args.isa, args.mabi, args.iss)
