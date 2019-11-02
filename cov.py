@@ -220,7 +220,7 @@ def setup_parser():
   parser.add_argument("--lsf_cmd", type=str, default="",
                       help="LSF command. Run in local sequentially if lsf \
                             command is not specified")
-  parser.add_argument("--target", type=str, default="rv64imc",
+  parser.add_argument("--target", type=str, default="rv32imc",
                       help="Run the generator with pre-defined targets: \
                             rv32imc, rv32i, rv64imc, rv64gc")
   parser.add_argument("-si", "--simulator", type=str, default="vcs",
@@ -250,6 +250,10 @@ def main():
 
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
+
+  # Debug mode only works for RV64GC target
+  if args.debug_mode:
+    args.target = "rv64gc"
 
   # Keep the core_setting_dir option to be backward compatible, suggest to use
   # --custom_target
