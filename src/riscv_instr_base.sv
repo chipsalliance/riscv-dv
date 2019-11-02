@@ -159,6 +159,12 @@ class riscv_instr_base extends uvm_object;
     }
   }
 
+  constraint jal_c {
+    if (XLEN != 32) {
+      soft instr_name != C_JAL;
+    }
+  }
+
   constraint system_instr_c {
     if (category inside {SYSTEM, SYNCH}) {
       rd  == ZERO;
