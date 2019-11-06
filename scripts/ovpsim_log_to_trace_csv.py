@@ -252,7 +252,7 @@ def main():
   parser.set_defaults(verbose=False)
   args = parser.parse_args()
   setup_logging(args.verbose)
-  # Process ovpsim log
+  # Process ovpsim logxx
   process_ovpsim_sim_log(args.log, args.csv, args.full_trace)
 
 
