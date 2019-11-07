@@ -39,7 +39,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
     log_dir          : ISS log directory
     out              : Output directory
     iss              : Instruction set simulator
-    test_list        : Testlist of the coverage test
+    testlist        : Testlist of the coverage test
     batch_size       : Number of trace CSV to process per test
     lsf_cmd          : LSF command used to run the instruction generator
     steps            : csv:log to CSV, cov:sample coverage
@@ -267,6 +267,8 @@ def main():
     args.core_setting_dir = cwd + "/target/"+ args.target
   else:
     args.testlist = args.custom_target + "/testlist.yaml"
+
+  args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
   if args.o is None:
