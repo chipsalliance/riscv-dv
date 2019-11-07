@@ -268,7 +268,7 @@ def main():
   else:
     args.testlist = args.custom_target + "/testlist.yaml"
 
-  # args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
+  args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
   if args.o is None:
