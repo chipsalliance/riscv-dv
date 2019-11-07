@@ -356,8 +356,13 @@ def assign_operand(trace, operands, gpr, stop_on_first_error = 0):
       trace.rs1 = operands[1]
       trace.rs1_val = gpr[trace.rs1]
       trace.imm = get_imm_hex_val(operands[2])
-  elif trace.instr in ['c.j', 'c.jal']:
+  elif trace.instr in ['c.j']:
     trace.imm = get_imm_hex_val(operands[0])
+  elif trace.instr in ['c.jal']:
+    if len(operands) == 1:
+      trace.imm = get_imm_hex_val(operands[0])
+    else:
+      trace.imm = get_imm_hex_val(operands[1])
   # Pseudo instruction convertion below
   elif trace.instr in ['mv']:
     trace.instr = 'addi'
