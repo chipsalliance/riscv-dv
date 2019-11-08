@@ -31,8 +31,9 @@ try:
 except:
     def assign_operand_vector(a,b,c,d):
         """ stub version when no vector processing included """
-        logging.fatal("No OVPsim vector instruction processing included")
-        sys.exit(-1)
+        logging.info("No OVPsim vector instruction processing included")
+        if stop_on_first_error:
+            sys.exit(-1)
 
 stop_on_first_error = 0
 
@@ -43,9 +44,12 @@ def fatal (s):
 
 def convert_mode(pri, line):
     """ OVPsim uses text string, convert to numeric """
-    if "Machine" in pri: return str(3)
-    logging.info("convert_mode = UNKNOWN PRIV MODE  [%s]: %s" % (pri, line))
-    sys.exit(-1)
+    if "Machine"    in pri:    return str(3)
+    if "Supervisor" in pri:    return str(1)
+    if "User"       in pri:    return str(0)
+    logging.error("convert_mode = UNKNOWN PRIV MODE  [%s]: %s" % (pri, line))
+    if stop_on_first_error:
+        sys.exit(-1)
 
 REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "a0","a1","a2","a3","a4","a5","a6","a7",
@@ -169,6 +173,8 @@ def check_num_operands(instr_str, num_operands, n):
 
 def is_csr(r):
     """ see if r is a csr """
+    
+    # add more as needed
     if r in ["mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch","mcause",
             "mtval","vl","vtype"]:
         return True
@@ -183,26 +189,21 @@ def process_branch_offset (opn, operands, prev_trace):
     offset = hex(offset_dec)
     operands[opn] = offset
 
-
-def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
-    dont_truncate_after_first_ecall = 0):
+def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0, 
+    dont_truncate_after_first_ecall = 0,
+    verbose2 = False):
   """Process OVPsim simulation log.
 
   Extract instruction and affected register information from ovpsim simulation
   log and save to a list.
   """
+
   stop_on_first_error = stop
-
-  verbose2 = False
-
-  gpr = {}
-  csr = {}
 
   logging.info("Processing ovpsim log [%s %s %s]: %s" %
     ("full_trace" if full_trace else "", "stop_on_first_error" if stop else "",
-    "dont_truncate_after_fist_ecall" if dont_truncate_after_first_ecall else
+    "dont_truncate_after_first_ecall" if dont_truncate_after_first_ecall else
         "", ovpsim_log))
-  instr_cnt = 0
 
   # Remove the header part of ovpsim log
   cmd = ("sed -i '/Info 1:/,$!d' %s" % ovpsim_log)
@@ -216,14 +217,20 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
   os.system(cmd)
 
   # storage and initial values of gpr and csr
+  
+  gpr = {}
+  csr = {}
+  
   for g in REGS: # base base isa gprs
     gpr[g] = 0
   for i in range(32): # add in v0-v31 gprs
+  
     gpr["v"+str(i)] = 0
 
   csr["vl"]    = 0
   csr["vtype"] = 0
 
+  instr_cnt = 0
   with open(ovpsim_log, "r") as f, open(csv, "w") as csv_fd:
     trace_csv = RiscvInstructionTraceCsv(csv_fd)
     trace_csv.start_new_trace()
@@ -238,6 +245,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         # its instruction disassembly line
         if prev_trace: # write out the previous one when find next one
             check_conversion(prev_trace)
+            instr_cnt += 1
             trace_csv.write_trace_entry(prev_trace)
             if verbose2:
                 logging.debug("prev_trace:: "+str(prev_trace.__dict__))
@@ -247,7 +255,6 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                 # fatal ("stop for now")
                 pass
             prev_trace = 0
-        instr_cnt += 1
         prev_trace = RiscvInstructionTraceEntry()
         prev_trace.instr_str = m.group("instr_str")
         prev_trace.instr = prev_trace.instr_str.split(" ")[0]
@@ -268,6 +275,14 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         show_line_instr(line, prev_trace)
 
         if full_trace:
+            # TODO - when got full ins decode remove this
+            if  "fsriw" in line or \
+                "fsw" in line or \
+                "fsd" in line or \
+                "fnmsub.d" in line or \
+                "flw" in line:
+                    logging.debug ("Ignoring ins...(%s) " % (line))
+                    continue
             process_if_compressed(prev_trace)
             o = re.search (r"(?P<instr>[a-z]*?)\s(?P<operand>.*)",
                 prev_trace.instr_str)
@@ -282,6 +297,8 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                   if 'v' in prev_trace.instr[0]:
                     assign_operand_vector(prev_trace, operands, gpr,
                         stop_on_first_error)
+                  elif 'f' in prev_trace.instr[0] or "c.f" in prev_trace.instr[0:3]:
+                    pass # ignore floating point. TODO include them
                   else:
                     if prev_trace.instr in [
                         'beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
@@ -293,7 +310,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                     assign_operand(prev_trace, operands, gpr,
                         stop_on_first_error)
             else:
-                # print("no operand for [%s] in [%s]" % (trace_instr,
+                # logging.debug("no operand for [%s] in [%s]" % (trace_instr,
                 #   trace_instr_str))
                 pass
       else:
@@ -340,15 +357,22 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
             if len(split) == 1: continue
             item = split[1]
             if "----" in item: continue
-            if "REPORT" in line or item in [
+            if "REPORT" in line or item in [ # TODO sort csrs
                     "mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch",
-                        "mcause","mtval","vl","vtype"]:
+                        "mcause","mtval","vl","vtype","sstatus"]:
+                logging.debug("Ignoring: [%d]  [[%s]]" % (instr_cnt, line))
                 pass
+            elif "Warning (RISCV_" in line:
+                logging.debug("Skipping: [%d] (%s) [[%s]]" % 
+                    (instr_cnt, prev_trace.instr_str, line))
+                prev_trace.instr = "nop"
+                prev_trace.instr_str = "nop"
             else:
-                pass
-                #fatal ("<unknown> (%s) in line: [%s] %s " %
-                #      (item, str(instr_cnt), line))
-  logging.info("Processed instruction count : %d" % instr_cnt)
+                logging.debug("<unknown> (%s) in line: [%s] %s " %
+                        (item, str(instr_cnt), line))
+                if stop_on_first_error:
+                    fatal ("")
+  logging.info("Processed instruction count : %d " % instr_cnt)
   if instr_cnt == 0:
     logging.error ("No Instructions in logfile: %s" % ovpsim_log)
     sys.exit(-1)
@@ -361,27 +385,32 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--log", type=str, help="Input ovpsim simulation log")
   parser.add_argument("--csv", type=str, help="Output trace csv_buf file")
-  parser.add_argument("-f", "--full_trace", dest="full_trace",
+  parser.add_argument("--full_trace", dest="full_trace",
                                          action="store_true",
                                          help="Generate the full trace")
-  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+  parser.add_argument("--verbose", dest="verbose", action="store_true",
                                          help="Verbose logging")
+  parser.add_argument("--verbose2", dest="verbose2", action="store_true",
+                                         help="Verbose logging detail 2")
   parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
                                          action="store_true",
-                    help="Stop on first error")
+                                         help="Stop on first error")
   parser.add_argument("--dont_truncate_after_first_ecall",
                                          dest="dont_truncate_after_first_ecall",
                                          action="store_true",
                     help="Dont truncate on first ecall")
   parser.set_defaults(full_trace=False)
   parser.set_defaults(verbose=False)
+  parser.set_defaults(verbose2=False)
   parser.set_defaults(stop_on_first_error=False)
   parser.set_defaults(dont_truncate_after_first_ecall=False)
   args = parser.parse_args()
   setup_logging(args.verbose)
+  logging.debug("Logging Debug set")
   # Process ovpsim log
   process_ovpsim_sim_log(args.log, args.csv, args.full_trace,
-    args.stop_on_first_error, args.dont_truncate_after_first_ecall)
+    args.stop_on_first_error, args.dont_truncate_after_first_ecall,
+    args.verbose2)
 
 
 if __name__ == "__main__":

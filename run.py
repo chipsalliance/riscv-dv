@@ -121,7 +121,7 @@ def get_iss_cmd(base_cmd, elf, log):
 def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
         cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
-        log_suffix, batch_size, seed_yaml):
+        log_suffix, batch_size, seed_yaml, stop_on_first_error):
   """Run the instruction generator
 
   Args:
@@ -145,6 +145,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     log_suffix            : Simulation log file name suffix
     batch_size            : Number of tests to generate per run
     seed_yaml             : Seed specification from a prior regression
+    stop_on_first_error   : will end run on first error detected
   """
   # Mutually exclusive options between compile_only and sim_only
   if compile_only and sim_only:
@@ -170,7 +171,9 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
 
         logging.debug("Compile command: %s" % cmd)
-        logging.debug(run_cmd(cmd))
+        output = run_cmd(cmd)
+        logging.debug(output)
+        check_simulator_return(output, simulator, stop_on_first_error)
   # Run the instruction generator
   if not compile_only:
     cmd_list = []
@@ -201,7 +204,8 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
           if lsf_cmd:
             cmd_list.append(cmd)
           else:
-            run_cmd(cmd, timeout_s)
+            output = run_cmd(cmd, timeout_s)
+            check_simulator_return(output, simulator, stop_on_first_error)
         else:
           if batch_size > 0:
             batch_cnt = int((iterations + batch_size - 1)  / batch_size);
@@ -235,7 +239,8 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
             else:
               logging.info("Running %s, batch %0d/%0d, test_cnt:%0d" %
                            (test['test'], i+1, batch_cnt, test_cnt))
-              run_cmd(cmd, timeout_s)
+              output = run_cmd(cmd, timeout_s)
+              check_simulator_return(output, simulator, stop_on_first_error)
     if sim_seed:
       with open(('%s/seed.yaml' % os.path.abspath(output_dir)) , 'w') as outfile:
         yaml.dump(sim_seed, outfile, default_flow_style=False)
@@ -362,7 +367,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout
           logging.debug(cmd)
 
 
-def iss_cmp(test_list, iss, output_dir, isa):
+def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
   """Compare ISS simulation reult
 
   Args:
@@ -370,6 +375,7 @@ def iss_cmp(test_list, iss, output_dir, isa):
     iss            : List of instruction set simulators
     output_dir     : Output directory of the ELF files
     isa            : ISA
+    stop_on_first_error : will end run on first error detected
   """
   iss_list = iss.split(",")
   if len(iss_list) != 2:
@@ -390,7 +396,7 @@ def iss_cmp(test_list, iss, output_dir, isa):
         if iss == "spike":
           process_spike_sim_log(log, csv)
         elif iss == "ovpsim":
-          process_ovpsim_sim_log(log, csv)
+          process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
         elif iss == "sail":
           process_sail_sim_log(log, csv)
         else:
@@ -481,10 +487,13 @@ def setup_parser():
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
                       help="Number of tests to generate per run. You can split a big"
                            " job to small batches with this option")
+  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error", action="store_true",
+                      help="Stop on detecting first error")
   parser.set_defaults(co=False)
   parser.set_defaults(so=False)
   parser.set_defaults(verbose=False)
   parser.set_defaults(cov=False)
+  parser.set_defaults(stop_on_first_error=False)
   return parser
 
 
@@ -565,7 +574,7 @@ def main():
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
         args.sim_opts, args.gen_timeout, args.core_setting_dir,
         args.user_extension_dir, args.cov, args.log_suffix, args.batch_size,
-        args.seed_yaml)
+        args.seed_yaml, args.stop_on_first_error)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
@@ -579,7 +588,7 @@ def main():
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.isa)
+      iss_cmp(matched_list, args.iss, output_dir, args.isa, args.stop_on_first_error)
 
 if __name__ == "__main__":
   main()

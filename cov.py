@@ -32,7 +32,8 @@ from scripts.sail_log_to_trace_csv import *
 LOGGER = logging.getLogger()
 
 def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
-                opts, timeout, simulator, simulator_yaml, custom_target, target):
+                opts, timeout, simulator, simulator_yaml, custom_target,
+                    target, stop_on_first_error):
   """Collect functional coverage from the instruction trace
 
   Args:
@@ -49,6 +50,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
     simulator_yaml   : RTL simulator configuration file in YAML format
     custom_target    : Path for the custom target dir
     target           : Predefined target
+    stop_on_first_error : will end run on first error detected
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
   log_list = []
@@ -70,7 +72,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
       if iss == "spike":
         process_spike_sim_log(log, csv, 1)
       elif iss == "ovpsim":
-        process_ovpsim_sim_log(log, csv, 1)
+        process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
       else:
         logging.error("Full trace for %s is not supported yet" % iss)
         sys.exit(1)
@@ -91,7 +93,8 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
     if custom_target:
       base_sim_cmd += (" --custom_target %s" % custom_target)
     logging.info("Building the coverage collection framework")
-    run_cmd(build_cmd)
+    output = run_cmd(build_cmd)
+    check_simulator_return(output, simulator, stop_on_first_error)
     file_idx = 0
     trace_idx = 0
     trace_csv_opts = ""
@@ -115,6 +118,7 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
         if lsf_cmd == "":
           logging.info("Processing batch %0d/%0d" % (file_idx+1, batch_cnt))
           run_cmd(sim_cmd)
+          check_simulator_return(output, simulator, stop_on_first_error)
         else:
           sim_cmd += (" --lsf_cmd \"%s\"" % lsf_cmd)
           sim_cmd_list.append(sim_cmd)
@@ -224,15 +228,19 @@ def setup_parser():
                       help="Run the generator with pre-defined targets: \
                             rv32imc, rv32i, rv64imc, rv64gc")
   parser.add_argument("-si", "--simulator", type=str, default="vcs",
-                      help="Simulator used to run the generator, default VCS", dest="simulator")
+                      help="Simulator used to run the generator, \
+                            default VCS", dest="simulator")
   parser.add_argument("--simulator_yaml", type=str, default="",
                       help="RTL simulator setting YAML")
   parser.add_argument("-ct", "--custom_target", type=str, default="",
                       help="Directory name of the custom target")
   parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
                       help="Path for the riscv_core_setting.sv")
+  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error", 
+                      action="store_true", help="Stop on detecting first error")
   parser.set_defaults(verbose=False)
   parser.set_defaults(debug_mode=False)
+  parser.set_defaults(stop_on_first_error=False)
   return parser
 
 def main():
@@ -285,7 +293,8 @@ def main():
   else:
     collect_cov(args.dir, output_dir, args.iss, args.testlist, args.batch_size,
                 args.lsf_cmd, args.steps, args.opts, args.timeout,
-                args.simulator, args.simulator_yaml, args.custom_target, args.target)
+                args.simulator, args.simulator_yaml, args.custom_target, 
+                    args.target, args.stop_on_first_error)
 
 if __name__ == "__main__":
   main()
