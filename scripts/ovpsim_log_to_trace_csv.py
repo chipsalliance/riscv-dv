@@ -31,8 +31,9 @@ try:
 except:
     def assign_operand_vector(a,b,c,d):
         """ stub version when no vector processing included """
-        logging.fatal("No OVPsim vector instruction processing included")
-        sys.exit(-1)
+        logging.info("No OVPsim vector instruction processing included")
+        if stop_on_first_error:
+            sys.exit(-1)
 
 stop_on_first_error = 0
 
