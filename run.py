@@ -535,6 +535,9 @@ def main():
     elif args.target == "rv64imc":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
+    elif args.target == "rv64gc":
+      args.mabi = "lp64"
+      args.isa  = "rv64gc"
     elif args.target == "ml":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
