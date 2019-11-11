@@ -88,10 +88,14 @@ def collect_cov(log_dir, out, iss, testlist, batch_size, lsf_cmd, steps, \
       build_cmd += (" --target %s" % target)
     if custom_target:
       build_cmd += (" --custom_target %s" % custom_target)
+    if stop_on_first_error:
+      build_cmd += (" --stop_on_first_error")
     if target:
       base_sim_cmd += (" --target %s" % target)
     if custom_target:
       base_sim_cmd += (" --custom_target %s" % custom_target)
+    if stop_on_first_error:
+      base_sim_cmd += (" --stop_on_first_error")
     logging.info("Building the coverage collection framework")
     output = run_cmd(build_cmd)
     check_simulator_return(output, simulator, stop_on_first_error)

@@ -32,6 +32,9 @@ riscv_instr_name_t unsupported_instr[];
 // ISA supported by the processor
 riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C};
 
+// Coverage options for this variant
+riscv_coverage_options_t coverage_options[];
+
 // Interrupt mode support
 mtvec_mode_t supported_interrupt_mode[$] = {DIRECT, VECTORED};
 

@@ -86,8 +86,25 @@ package riscv_instr_pkg;
     RV32C,
     RV64C,
     RV128I,
-    RV128C
+    RV128C,
+    RV32V,
+    RV64V
   } riscv_instr_group_t;
+
+  typedef enum bit [4:0] {
+    NOCOV_RV32I,
+    NOCOV_RV32M,
+    NOCOV_RV32C,
+    NOCOV_RV64I,
+    NOCOV_RV64M,
+    NOCOV_RV64C,
+    NOCOV_ZICSR,
+    NOCOV_ZIFENCEI,
+    NOCOV_HAZARD,
+    NOCOV_MISC,
+    COV_RV64V,
+    STOP_ON_FIRST_ERROR
+  } riscv_coverage_options_t;
 
   typedef enum {
     // RV32I instructions
