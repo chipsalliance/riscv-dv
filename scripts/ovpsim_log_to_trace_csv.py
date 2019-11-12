@@ -75,9 +75,9 @@ def process_jalr(trace, operands, gpr):
   ## jalr x2,x3
   ## jalr x2,4(x3)
   if len(operands) == 1:
-    trace.rd = 'zero'
-    trace.rd_val  = '0'
     m = ADDR_RE.search(operands[0])
+    trace.rd = 'ra'
+    trace.rd_val = gpr['ra']
     if m: # jalr 9(x3)
       trace.rs1 = m.group('rs1')
       trace.rs1_val = gpr[trace.rs1]
