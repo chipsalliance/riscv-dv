@@ -27,6 +27,7 @@ from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
+from scripts.whisper_log_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
 
@@ -95,6 +96,16 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
       if iss == "ovpsim":
         cmd = re.sub("\<cfg_path\>", setting_dir, cmd)
+      elif iss == "whisper":
+        m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-z]+?)$", isa)
+        if m:
+          # TODO: Support u/s mode
+          cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
+          variant = re.sub('g', 'imafd',  m.group('variant'))
+          cmd = re.sub("\<variant\>", variant, cmd)
+        else:
+          logging.error("Illegal ISA %0s" % isa)
+        cmd = re.sub("\<xlen\>", setting_dir, cmd)
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
@@ -121,7 +132,7 @@ def get_iss_cmd(base_cmd, elf, log):
 def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
         cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
-        log_suffix, batch_size, seed_yaml, stop_on_first_error):
+        log_suffix, batch_size, seed_yaml, stop_on_first_error, verbose=False):
   """Run the instruction generator
 
   Args:
@@ -228,6 +239,8 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
                   (" +start_idx=%d " % (i*batch_size)) + \
                   (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
                   (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
+            if verbose:
+              cmd += "+UVM_VERBOSITY=UVM_HIGH "
             cmd = re.sub("<seed>", str(rand_seed), cmd)
             sim_seed[test_id] = str(rand_seed)
             if "gen_opts" in test:
@@ -399,6 +412,8 @@ def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
           process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
         elif iss == "sail":
           process_sail_sim_log(log, csv)
+        elif iss == "whisper":
+          process_whisper_sim_log(log, csv)
         else:
           logging.error("Unsupported ISS" % iss)
           sys.exit(1)
@@ -535,14 +550,18 @@ def main():
     elif args.target == "rv64imc":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
+    elif args.target == "rv64gc":
+      args.mabi = "lp64"
+      args.isa  = "rv64gc"
     elif args.target == "ml":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
     else:
       print ("Unsupported pre-defined target: %0s" % args.target)
   else:
-    if (not args.mabi) or (not args.isa):
-      sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
+    if re.match(".*gcc_compile.*", args.steps) or re.match(".*iss_sim.*", args.steps):
+      if (not args.mabi) or (not args.isa):
+        sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
     if not args.testlist:
       args.testlist = args.custom_target + "/testlist.yaml"
 
@@ -574,7 +593,7 @@ def main():
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
         args.sim_opts, args.gen_timeout, args.core_setting_dir,
         args.user_extension_dir, args.cov, args.log_suffix, args.batch_size,
-        args.seed_yaml, args.stop_on_first_error)
+        args.seed_yaml, args.stop_on_first_error, args.verbose)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
