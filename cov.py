@@ -261,6 +261,8 @@ def setup_parser():
   parser.set_defaults(verbose=False)
   parser.set_defaults(debug_mode=False)
   parser.set_defaults(stop_on_first_error=False)
+  parser.add_argument("--noclean", action="store_true",
+                      help="Do not clean the output of the previous runs")
   return parser
 
 def main():
@@ -302,9 +304,12 @@ def main():
 
   # Create output directory
   if args.o is None:
-    output_dir = "out_" + str(date.today())
+    output_dir = "cov_out_" + str(date.today())
   else:
     output_dir = args.o
+
+  if args.noclean is False:
+    os.system("rm -rf %s" % output_dir)
 
   subprocess.run(["mkdir", "-p", output_dir])
 
@@ -314,11 +319,11 @@ def main():
                        args.simulator, args.simulator_yaml, args.custom_target,
                        args.isa, args.target)
   else:
-    print(args.testlist)
     collect_cov(args.dir, output_dir, args.core, args.iss, args.testlist,
                 args.batch_size, args.lsf_cmd, args.steps, args.opts, args.timeout,
                 args.simulator, args.simulator_yaml, args.custom_target,
                 args.isa, args.target, args.stop_on_first_error)
+    logging.info("Coverage results are saved to %s" % output_dir)
 
 if __name__ == "__main__":
   main()
