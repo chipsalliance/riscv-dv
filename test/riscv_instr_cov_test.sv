@@ -4,6 +4,9 @@ class riscv_instr_cov_test extends uvm_test;
   typedef uvm_enum_wrapper#(riscv_instr_name_t) instr_enum;
   typedef uvm_enum_wrapper#(riscv_reg_t) gpr_enum;
   typedef uvm_enum_wrapper#(privileged_reg_t) preg_enum;
+  typedef uvm_enum_wrapper#(riscv_vtype_e_t) vtype_e_enum;
+  typedef uvm_enum_wrapper#(riscv_vtype_m_t) vtype_m_enum;
+  typedef uvm_enum_wrapper#(riscv_vtype_d_t) vtype_d_enum;
 
   riscv_instr_gen_config    cfg;
   riscv_instr_cover_group   instr_cg;
@@ -75,6 +78,8 @@ class riscv_instr_cov_test extends uvm_test;
               // TODO: Enable functional coverage for AMO test
               continue;
             end
+             `uvm_info(`gfn, $sformatf("SJD found  instr: %0s [%0s]",
+                             trace["instr"], line), UVM_LOW)
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_LOW)
@@ -103,6 +108,15 @@ class riscv_instr_cov_test extends uvm_test;
   virtual function void post_process_trace();
   endfunction
 
+  function void fatal (string str);
+    `uvm_info(`gfn, str, UVM_NONE);
+    if (STOP_ON_FIRST_ERROR inside {coverage_options}) begin
+        `uvm_info(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)", 
+            UVM_NONE);
+        $fatal();
+    end
+  endfunction
+  
   function bit sample();
     riscv_instr_name_t instr_name;
     bit [XLEN-1:0] val;
@@ -126,6 +140,7 @@ class riscv_instr_cov_test extends uvm_test;
       instr_cg.opcode_cg.sample(val[6:2]);
     end
     illegal_instr_cnt++;
+    fatal($sformatf("FATAL: sample(%0s) is ILLEGAL instruction (for the included ISAs)", instr_name));
     return 1'b0;
   endfunction
 
@@ -144,7 +159,7 @@ class riscv_instr_cov_test extends uvm_test;
         instr.rs2 = gpr;
         get_val(trace["rs2_val"], instr.rs2_value);
       end else begin
-        `uvm_error(`gfn, $sformatf("Unrecoganized rs2: [%0s] (%0s)",
+        `uvm_error(`gfn, $sformatf("Unrecognized rs2: [%0s] (%0s)",
                                    trace["rs2"], trace["csv_entry"]))
       end
     end
@@ -153,7 +168,7 @@ class riscv_instr_cov_test extends uvm_test;
         instr.rd = gpr;
         get_val(trace["rd_val"], instr.rd_value);
       end else begin
-        `uvm_error(`gfn, $sformatf("Unrecoganized rd: [%0s] (%0s)",
+        `uvm_error(`gfn, $sformatf("Unrecognized rd: [%0s] (%0s)",
                                    trace["rd"], trace["csv_entry"]))
       end
     end
@@ -166,7 +181,7 @@ class riscv_instr_cov_test extends uvm_test;
           instr.rs1 = gpr;
           get_val(trace["rs1_val"], instr.rs1_value);
         end else begin
-          `uvm_error(`gfn, $sformatf("Unrecoganized rs1: [%0s] (%0s)",
+          `uvm_error(`gfn, $sformatf("Unrecognized rs1: [%0s] (%0s)",
                                      trace["rs1"], trace["csv_entry"]))
         end
       end
@@ -194,6 +209,31 @@ class riscv_instr_cov_test extends uvm_test;
         instr.mem_addr = instr.rs1_value + {padding, instr.imm};
       end
     end
+    if (instr.category inside {VCONFIG}) begin
+        riscv_vtype_e_t vtype_e;
+        riscv_vtype_m_t vtype_m;
+        riscv_vtype_d_t vtype_d;
+        if (instr.instr_name inside {VSETVL}) begin
+            $cast(instr.vtype_m, instr.rs2_value[1:0]); // m is lmul
+            $cast(instr.vtype_e, instr.rs2_value[4:2]); // e is sew
+            $cast(instr.vtype_d, instr.rs2_value[6:5]); // d is ediv
+            `uvm_error(`gfn, $sformatf("vtype_e: [%0d] (%0d))",
+                                 instr.vtype_e, instr.rs2_value[4:2]));
+        end else begin // VSETVLI
+            $cast(instr.vtype_e, 0);
+            $cast(instr.vtype_m, 0);
+            $cast(instr.vtype_d, 0);
+            if (get_vtype_e(trace["vtype_e"], vtype_e)) begin
+                instr.vtype_e = vtype_e;
+            end
+            if (get_vtype_m(trace["vtype_m"], vtype_m)) begin
+                instr.vtype_m = vtype_m;
+            end
+            if (get_vtype_d(trace["vtype_d"], vtype_d)) begin
+                instr.vtype_d = vtype_d;
+            end
+        end
+    end
   endfunction
 
   function bit get_gpr(input string str, output riscv_reg_t gpr);
@@ -205,6 +245,33 @@ class riscv_instr_cov_test extends uvm_test;
     end
   endfunction
 
+  function bit get_vtype_e(input string str, output riscv_vtype_e_t vtype_e);
+    str = str.toupper();
+    if (vtype_e_enum::from_name(str, vtype_e)) begin
+      return 1'b1;
+    end else begin
+      return 1'b0;
+    end
+  endfunction
+  
+  function bit get_vtype_m(input string str, output riscv_vtype_m_t vtype_m);
+    str = str.toupper();
+    if (vtype_m_enum::from_name(str, vtype_m)) begin
+      return 1'b1;
+    end else begin
+      return 1'b0;
+    end
+  endfunction
+  
+  function bit get_vtype_d(input string str, output riscv_vtype_d_t vtype_d);
+    str = str.toupper();
+    if (vtype_d_enum::from_name(str, vtype_d)) begin
+      return 1'b1;
+    end else begin
+      return 1'b0;
+    end
+  endfunction
+  
   function void get_val(input string str, output bit [XLEN-1:0] val);
     val = str.atohex();
   endfunction

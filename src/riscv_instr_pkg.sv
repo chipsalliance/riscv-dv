@@ -336,6 +336,8 @@ package riscv_instr_pkg;
     WFI,
     SFENCE_VMA,
     // You can add other instructions here
+    VSETVL,
+    VSETVLI,
     INVALID_INSTR
   } riscv_instr_name_t;
 
@@ -348,12 +350,32 @@ package riscv_instr_pkg;
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
   } riscv_reg_t;
 
+  typedef enum bit [2:0] {
+    E8 = 3'b000,
+    E16, E32, E64, E128
+  } riscv_vtype_e_t;
+  
+  typedef enum bit [1:0] {
+    M1 = 2'b00,
+    M2, M4, M8
+  } riscv_vtype_m_t;
+  
+  typedef enum bit [1:0] {
+    D1 = 2'b00,
+    D2, D4, D8
+  } riscv_vtype_d_t;
+  
+  typedef enum bit [1:0] {
+    VT_NULL = 2'b00,
+    VT_0
+  } riscv_vm_t;  
+  
   typedef enum bit [4:0] {
     F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
     F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27, F28, F29, F30, F31
   } riscv_fpr_t;
 
-  typedef enum bit [3:0] {
+  typedef enum bit [4:0] {
     J_FORMAT = 0,
     U_FORMAT,
     I_FORMAT,
@@ -369,10 +391,11 @@ package riscv_instr_pkg;
     CL_FORMAT,
     CS_FORMAT,
     CSS_FORMAT,
-    CIW_FORMAT
+    CIW_FORMAT,
+    OPV_FORMAT
   } riscv_instr_format_t;
 
-  typedef enum bit [3:0] {
+  typedef enum bit [4:0] {
     LOAD = 0,
     STORE,
     SHIFT,
@@ -388,7 +411,8 @@ package riscv_instr_pkg;
     CHANGELEVEL,
     TRAP,
     INTERRUPT,
-    AMO
+    AMO,
+    VCONFIG
   } riscv_instr_category_t;
 
   typedef bit [11:0] riscv_csr_t;
@@ -619,7 +643,12 @@ package riscv_instr_pkg;
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
     DSCRATCH0       = 'h7B2,  // Debug scratch register
-    DSCRATCH1       = 'h7B3   // Debug scratch register
+    DSCRATCH1       = 'h7B3,  // Debug scratch register
+    VSTART          = 'h008,  // Vector start position
+    VXSTAT          = 'h009,  // Vector Fixed-Point Saturate FLag
+    VXRM            = 'h00A,  // Vector Fixed-Point Rounding Mode
+    VL              = 'hC20,  // Vector length
+    VTYPE           = 'hC21   // Vector data type register
   } privileged_reg_t;
 
   typedef enum bit [5:0] {

@@ -822,19 +822,41 @@ class riscv_instr_cover_group;
     }
   endgroup
 
-
   covergroup mstatus_m_cg with function sample(bit [XLEN-1:0] val);
     cp_mie  : coverpoint val[3];
     cp_mpie : coverpoint val[7];
     cp_mpp  : coverpoint val[12:11];
   endgroup
 
-
+  covergroup vsetvl_cg with function sample(riscv_instr_cov_item instr);
+    cp_rd  : coverpoint instr.rd;
+    cp_rs1 : coverpoint instr.rs1;
+    cp_rs2 : coverpoint instr.rs2;
+    cp_vtype_e : coverpoint instr.vtype_e;
+    cp_vtype_m : coverpoint instr.vtype_m;
+    cp_vtype_d : coverpoint instr.vtype_d;
+    cp_vtype_cross: cross cp_vtype_e, cp_vtype_m, cp_vtype_d;
+  endgroup
+  covergroup vsetvli_cg with function sample(riscv_instr_cov_item instr);
+    cp_rd  : coverpoint instr.rd;
+    cp_rs1 : coverpoint instr.rs1;
+    cp_vtype_e : coverpoint instr.vtype_e;
+    cp_vtype_m : coverpoint instr.vtype_m;
+    cp_vtype_d : coverpoint instr.vtype_d;
+    cp_vtype_cross: cross cp_vtype_e, cp_vtype_m, cp_vtype_d;
+  endgroup
+  
   function new(riscv_instr_gen_config cfg);
     this.cfg = cfg;
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
+    
+    if (COV_RV64V inside {coverage_options}) begin
+        vsetvl_cg   = new();
+        vsetvli_cg   = new();
+    end
+    
     // RV32I instruction functional coverage instantiation
     if ((RV32I inside {supported_isa}) && (!(NOCOV_RV32I inside {coverage_options}))) begin
         add_cg = new();
@@ -1120,6 +1142,8 @@ class riscv_instr_cover_group;
       C_SUBW     : c_subw_cg.sample(instr);
       C_ADDW     : c_addw_cg.sample(instr);
       C_ADDIW    : c_addiw_cg.sample(instr);
+      VSETVL     : vsetvl_cg.sample(instr);
+      VSETVLI    : vsetvli_cg.sample(instr);
       default: begin
         if (!cfg.disable_compressed_instr) begin
           if ( !(NOCOV_MISC inside {coverage_options})) begin
@@ -1218,7 +1242,7 @@ class riscv_instr_cover_group;
                      $sformatf("Instruction %0s randomization failure", instr_name.name()))
         end
         if ((instr.group inside {supported_isa}) &&
-            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C})) begin
+            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C, RV64V})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||

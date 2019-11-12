@@ -58,6 +58,16 @@ class riscv_instr_base extends uvm_object;
   string                        label;
   bit                           is_local_numeric_label;
   int                           idx = -1;
+  
+  // vector engine config
+  riscv_vtype_e_t               vtype_e;
+  riscv_vtype_m_t               vtype_m;
+  riscv_vtype_d_t               vtype_d;
+  riscv_vm_t                    vm;
+  bit                           vill;
+  bit [1:0]                     vediv;
+  bit [2:0]                     vsew;
+  bit [1:0]                     vlmul;
 
   `uvm_object_utils(riscv_instr_base)
 
@@ -448,6 +458,10 @@ class riscv_instr_base extends uvm_object;
 
   // Supervisor Instructions
   `add_instr(SFENCE_VMA, R_FORMAT,SYNCH,RV32I)
+  
+  // Vector Instructions
+  `add_instr(VSETVL,  OPV_FORMAT, VCONFIG, RV64V)
+  `add_instr(VSETVLI, OPV_FORMAT, VCONFIG, RV64V)
 
   function void post_randomize();
     if (group inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
@@ -516,6 +530,17 @@ class riscv_instr_base extends uvm_object;
         has_fd = 1'b1;
         has_fs1 = 1'b0;
         has_rs1 = 1'b1;
+      end
+    end
+    if (format == OPV_FORMAT) begin
+      if (category == VCONFIG) begin
+          has_rd = 1'b1;
+          has_rs1 = 1'b1;
+          if (instr_name inside {VSETVL}) begin
+              has_rs2 = 1'b1;
+          end else begin
+              // TODO add e, m, d, vm
+          end
       end
     end
   endfunction
@@ -752,6 +777,14 @@ class riscv_instr_base extends uvm_object;
         asm_str = $sformatf("%0s %0s, (%0s)", asm_str, rd.name(), rs1.name());
       end else begin
         asm_str = $sformatf("%0s %0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
+      end
+    end else if (group inside {RV64V}) begin
+      if (instr_name inside {VSETVL}) begin
+        asm_str = $sformatf("%0s %0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
+      end else if (instr_name inside {VSETVLI}) begin
+        asm_str = $sformatf("%0s %0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
+      end else begin
+        `uvm_fatal(`gfn, $sformatf("Unsupported VECTOR instruction: %0s", asm_str));
       end
     end else begin
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
