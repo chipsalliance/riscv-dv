@@ -65,12 +65,18 @@ one of below to run ISS simulation.
 - [riscv-ovpsim](https://github.com/riscv/riscv-ovpsim) setup
   - Download the riscv-ovpsim binary
   - Set environment variable OVPSIM_PATH to the directory of the ovpsim binary
+- [whisper(swerv-ISS)](https://github.com/westerndigitalcorporation/swerv-ISS) setup
+  - Follow the instruction to install the ISS, and set WHISPER_ISS to the
+    whisper binary
 - [sail-riscv](https://github.com/rems-project/sail-riscv) setup
   - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
   - Set environment variable SAIL_RISCV to the sail-riscv binary
 
 ```bash
 export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
+export SAIL_RISCV="xx/xxx/riscv_ocaml_sim_RV64"
+export OVPSIM_PATH=/xx/xxx/riscv-ovpsim/bin/Linux64
+export WHISPER_ISS="xx/xxx/swerv-ISS/build-Linux/whisper"
 ```
 
 ## Running the generator
@@ -144,6 +150,9 @@ python3 run.py --test riscv_arithmetic_basic_test --iss spike
 # Run ISS with riscv-ovpsim
 python3 run.py --test riscv_rand_instr_test --iss ovpsim
 
+# Run ISS with whisper (swerv-ISS)
+python3 run.py --test riscv_rand_instr_test --iss whisper
+
 # Run ISS with sail-riscv
 python3 run.py --test riscv_rand_instr_test --iss sail
 ```
@@ -163,6 +172,7 @@ real RISC-V processor.
 
 ```bash
 python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
+python3 run.py --test=riscv_rand_instr_test --iss=ovpsim,whisper
 python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 ```
 

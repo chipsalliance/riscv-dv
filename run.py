@@ -27,6 +27,7 @@ from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
+from scripts.whisper_log_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
 
@@ -95,6 +96,16 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
       if iss == "ovpsim":
         cmd = re.sub("\<cfg_path\>", setting_dir, cmd)
+      elif iss == "whisper":
+        m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-z]+?)$", isa)
+        if m:
+          # TODO: Support u/s mode
+          cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
+          variant = re.sub('g', 'imafd',  m.group('variant'))
+          cmd = re.sub("\<variant\>", variant, cmd)
+        else:
+          logging.error("Illegal ISA %0s" % isa)
+        cmd = re.sub("\<xlen\>", setting_dir, cmd)
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
@@ -401,6 +412,8 @@ def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
           process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
         elif iss == "sail":
           process_sail_sim_log(log, csv)
+        elif iss == "whisper":
+          process_whisper_sim_log(log, csv)
         else:
           logging.error("Unsupported ISS" % iss)
           sys.exit(1)
