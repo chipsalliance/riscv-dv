@@ -93,12 +93,12 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
           sys.exit(1)
   if steps == "all" or re.match("cov", steps):
     build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                 " --co -o %s --cov -tl %s --isa %s %s " %
-                 (cwd, simulator, simulator_yaml, out, testlist, isa, opts))
+                 " --co -o %s --cov -tl %s %s " %
+                 (cwd, simulator, simulator_yaml, out, testlist, opts))
     base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                    "--so -o %s --cov -tl %s --isa %s %s "
+                    "--so -o %s --cov -tl %s %s "
                     "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts>\"" %
-                    (cwd, simulator, simulator_yaml, out, testlist, isa, opts))
+                    (cwd, simulator, simulator_yaml, out, testlist, opts))
     if target:
       build_cmd += (" --target %s" % target)
     if custom_target:
