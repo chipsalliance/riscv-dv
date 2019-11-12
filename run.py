@@ -121,7 +121,7 @@ def get_iss_cmd(base_cmd, elf, log):
 def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
         cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
-        log_suffix, batch_size, seed_yaml, stop_on_first_error):
+        log_suffix, batch_size, seed_yaml, stop_on_first_error, verbose=False):
   """Run the instruction generator
 
   Args:
@@ -228,6 +228,8 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
                   (" +start_idx=%d " % (i*batch_size)) + \
                   (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
                   (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
+            if verbose:
+              cmd += "+UVM_VERBOSITY=UVM_HIGH "
             cmd = re.sub("<seed>", str(rand_seed), cmd)
             sim_seed[test_id] = str(rand_seed)
             if "gen_opts" in test:
@@ -578,7 +580,7 @@ def main():
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
         args.sim_opts, args.gen_timeout, args.core_setting_dir,
         args.user_extension_dir, args.cov, args.log_suffix, args.batch_size,
-        args.seed_yaml, args.stop_on_first_error)
+        args.seed_yaml, args.stop_on_first_error, args.verbose)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
