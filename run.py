@@ -434,7 +434,7 @@ def setup_parser():
   # Parse input arguments
   parser = argparse.ArgumentParser()
 
-  parser.add_argument("--target", type=str, default="rv64imc",
+  parser.add_argument("--target", type=str, default="rv32imc",
                       help="Run the generator with pre-defined targets: \
                             rv32imc, rv32i, rv64imc, rv64gc")
   parser.add_argument("-o", "--output", type=str,
