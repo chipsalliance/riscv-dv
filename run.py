@@ -544,8 +544,9 @@ def main():
     else:
       print ("Unsupported pre-defined target: %0s" % args.target)
   else:
-    if (not args.mabi) or (not args.isa):
-      sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
+    if re.match(".*gcc_compile.*", args.steps) or re.match(".*iss_sim.*", args.steps):
+      if (not args.mabi) or (not args.isa):
+        sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
     if not args.testlist:
       args.testlist = args.custom_target + "/testlist.yaml"
 
