@@ -4,9 +4,7 @@ class riscv_instr_cov_test extends uvm_test;
   typedef uvm_enum_wrapper#(riscv_instr_name_t) instr_enum;
   typedef uvm_enum_wrapper#(riscv_reg_t) gpr_enum;
   typedef uvm_enum_wrapper#(privileged_reg_t) preg_enum;
-  typedef uvm_enum_wrapper#(riscv_vtype_e_t) vtype_e_enum;
-  typedef uvm_enum_wrapper#(riscv_vtype_m_t) vtype_m_enum;
-  typedef uvm_enum_wrapper#(riscv_vtype_d_t) vtype_d_enum;
+  `VECTOR_INCLUDE("riscv_instr_cov_test_inc_1.sv")
 
   riscv_instr_gen_config    cfg;
   riscv_instr_cover_group   instr_cg;
@@ -78,8 +76,8 @@ class riscv_instr_cov_test extends uvm_test;
               // TODO: Enable functional coverage for AMO test
               continue;
             end
-             `uvm_info(`gfn, $sformatf("SJD found  instr: %0s [%0s]",
-                             trace["instr"], line), UVM_LOW)
+             `uvm_info(`gfn, $sformatf("SJD found  instr: %0s  {%0s} [%0s]",
+                             trace["instr"], trace["vm"], line), UVM_LOW)
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_LOW)
@@ -136,16 +134,19 @@ class riscv_instr_cov_test extends uvm_test;
     end
     if (val[1:0] == 2'b11) begin
       `uvm_info("DBG", $sformatf("Sample illegal opcode: %0x [%0s]",
-                                 val[6:2], trace["instr_str"]), UVM_LOW)
+                                 val[6:2], trace["instr"]), UVM_LOW)
       instr_cg.opcode_cg.sample(val[6:2]);
     end
     illegal_instr_cnt++;
-    fatal($sformatf("FATAL: sample(%0s) is ILLEGAL instruction (for the included ISAs)", instr_name));
+    fatal($sformatf(
+        "FATAL: sample(%0s) is ILLEGAL instruction (for the included ISAs)",
+            trace["instr"]));
     return 1'b0;
   endfunction
 
   virtual function void assign_trace_info_to_instr(riscv_instr_cov_item instr);
     riscv_reg_t gpr;
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_2.sv")
     privileged_reg_t preg;
     get_val(trace["addr"], instr.pc);
     get_val(trace["binary"], instr.binary);
@@ -209,31 +210,9 @@ class riscv_instr_cov_test extends uvm_test;
         instr.mem_addr = instr.rs1_value + {padding, instr.imm};
       end
     end
-    if (instr.category inside {VCONFIG}) begin
-        riscv_vtype_e_t vtype_e;
-        riscv_vtype_m_t vtype_m;
-        riscv_vtype_d_t vtype_d;
-        if (instr.instr_name inside {VSETVL}) begin
-            $cast(instr.vtype_m, instr.rs2_value[1:0]); // m is lmul
-            $cast(instr.vtype_e, instr.rs2_value[4:2]); // e is sew
-            $cast(instr.vtype_d, instr.rs2_value[6:5]); // d is ediv
-            `uvm_error(`gfn, $sformatf("vtype_e: [%0d] (%0d))",
-                                 instr.vtype_e, instr.rs2_value[4:2]));
-        end else begin // VSETVLI
-            $cast(instr.vtype_e, 0);
-            $cast(instr.vtype_m, 0);
-            $cast(instr.vtype_d, 0);
-            if (get_vtype_e(trace["vtype_e"], vtype_e)) begin
-                instr.vtype_e = vtype_e;
-            end
-            if (get_vtype_m(trace["vtype_m"], vtype_m)) begin
-                instr.vtype_m = vtype_m;
-            end
-            if (get_vtype_d(trace["vtype_d"], vtype_d)) begin
-                instr.vtype_d = vtype_d;
-            end
-        end
-    end
+
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_3.sv")
+
   endfunction
 
   function bit get_gpr(input string str, output riscv_reg_t gpr);
@@ -245,32 +224,7 @@ class riscv_instr_cov_test extends uvm_test;
     end
   endfunction
 
-  function bit get_vtype_e(input string str, output riscv_vtype_e_t vtype_e);
-    str = str.toupper();
-    if (vtype_e_enum::from_name(str, vtype_e)) begin
-      return 1'b1;
-    end else begin
-      return 1'b0;
-    end
-  endfunction
-  
-  function bit get_vtype_m(input string str, output riscv_vtype_m_t vtype_m);
-    str = str.toupper();
-    if (vtype_m_enum::from_name(str, vtype_m)) begin
-      return 1'b1;
-    end else begin
-      return 1'b0;
-    end
-  endfunction
-  
-  function bit get_vtype_d(input string str, output riscv_vtype_d_t vtype_d);
-    str = str.toupper();
-    if (vtype_d_enum::from_name(str, vtype_d)) begin
-      return 1'b1;
-    end else begin
-      return 1'b0;
-    end
-  endfunction
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_4.sv")
   
   function void get_val(input string str, output bit [XLEN-1:0] val);
     val = str.atohex();

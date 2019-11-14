@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-// TODO these could be set from a compiler +define or a simulator +arg
-//`define COVERAGE_WITH_NO_HAZARDS
-//`define COVERAGE_WITH_NO_IGNORES
-
 `ifdef COVERAGE_WITH_NO_HAZARDS
     `define CG_HAZARD_COV(CG_HAZARD_CODE) \
         // CG_HAZARD_CODE
@@ -828,35 +824,16 @@ class riscv_instr_cover_group;
     cp_mpp  : coverpoint val[12:11];
   endgroup
 
-  covergroup vsetvl_cg with function sample(riscv_instr_cov_item instr);
-    cp_rd  : coverpoint instr.rd;
-    cp_rs1 : coverpoint instr.rs1;
-    cp_rs2 : coverpoint instr.rs2;
-    cp_vtype_e : coverpoint instr.vtype_e;
-    cp_vtype_m : coverpoint instr.vtype_m;
-    cp_vtype_d : coverpoint instr.vtype_d;
-    cp_vtype_cross: cross cp_vtype_e, cp_vtype_m, cp_vtype_d;
-  endgroup
-  covergroup vsetvli_cg with function sample(riscv_instr_cov_item instr);
-    cp_rd  : coverpoint instr.rd;
-    cp_rs1 : coverpoint instr.rs1;
-    cp_vtype_e : coverpoint instr.vtype_e;
-    cp_vtype_m : coverpoint instr.vtype_m;
-    cp_vtype_d : coverpoint instr.vtype_d;
-    cp_vtype_cross: cross cp_vtype_e, cp_vtype_m, cp_vtype_d;
-  endgroup
-  
+`VECTOR_INCLUDE("riscv_instr_cover_group_inc_1.sv")
+
   function new(riscv_instr_gen_config cfg);
     this.cfg = cfg;
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
-    
-    if (COV_RV64V inside {coverage_options}) begin
-        vsetvl_cg   = new();
-        vsetvli_cg   = new();
-    end
-    
+
+   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_2.sv")
+
     // RV32I instruction functional coverage instantiation
     if ((RV32I inside {supported_isa}) && (!(NOCOV_RV32I inside {coverage_options}))) begin
         add_cg = new();
@@ -1142,8 +1119,7 @@ class riscv_instr_cover_group;
       C_SUBW     : c_subw_cg.sample(instr);
       C_ADDW     : c_addw_cg.sample(instr);
       C_ADDIW    : c_addiw_cg.sample(instr);
-      VSETVL     : vsetvl_cg.sample(instr);
-      VSETVLI    : vsetvli_cg.sample(instr);
+      `VECTOR_INCLUDE("riscv_instr_cover_group_inc_3.sv")
       default: begin
         if (!cfg.disable_compressed_instr) begin
           if ( !(NOCOV_MISC inside {coverage_options})) begin

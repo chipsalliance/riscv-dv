@@ -34,9 +34,10 @@ LOGGER = logging.getLogger()
 
 def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
                 opts, timeout, simulator, simulator_yaml, custom_target, \
-                isa, target, stop_on_first_error):
+                isa, target, stop_on_first_error,
+                dont_truncate_after_first_ecall,
+                enable_vectors, slen, elen, vlen):
   """Collect functional coverage from the instruction trace
-
   Args:
     log_dir             : Trace log directory
     out                 : Output directory
@@ -54,6 +55,10 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
     isa                 : RISC-V ISA variant
     target              : Predefined target
     stop_on_first_error : will end run on first error detected
+    enable_vectors      : Enable Vectors
+    slen                : vector SLEN value
+    elen                : vector ELEN value
+    vlen                : vector VLEN value
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
   log_list = []
@@ -88,18 +93,24 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
         if iss == "spike":
           process_spike_sim_log(log, csv, 1)
         elif iss == "ovpsim":
-          process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
+          process_ovpsim_sim_log(log, csv, 1, stop_on_first_error,
+                dont_truncate_after_first_ecall)
         else:
           logging.error("Full trace for %s is not supported yet" % iss)
           sys.exit(1)
   if steps == "all" or re.match("cov", steps):
+    opts_vec = ""
+    if enable_vectors:
+      opts_vec = \
+        ("+define+ENABLE_VECTORS +define+ELEN=%0s +define+VLEN=%0s +define+SLEN=%0s " %
+                                    (elen,          vlen,           slen))
     build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                 " --co -o %s --cov -tl %s %s " %
-                 (cwd, simulator, simulator_yaml, out, testlist, opts))
+                 " --co -o %s --cov -tl %s %s --cmp_opts \"%s\" " %
+                 (cwd, simulator, simulator_yaml, out, testlist, opts, opts_vec))
     base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                     "--so -o %s --cov -tl %s %s "
-                    "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts> +UVM_VERBOSITY=UVM_HIGH\" " %
-                    (cwd, simulator, simulator_yaml, out, testlist, opts))
+                    "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts> %s \" " %
+                    (cwd, simulator, simulator_yaml, out, testlist, opts, opts_vec))
     if target:
       build_cmd += (" --target %s" % target)
     if custom_target:
@@ -263,11 +274,26 @@ def setup_parser():
                       help="Path for the riscv_core_setting.sv")
   parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
                       action="store_true", help="Stop on detecting first error")
+  parser.add_argument("--dont_truncate_after_first_ecall", dest="dont_truncate_after_first_ecall",
+                      action="store_true", help="Do not truncate log and csv file on first ecall")
+  parser.add_argument("--noclean", action="store_true",
+                      help="Do not clean the output of the previous runs")
+  parser.add_argument("--enable_vectors", dest="enable_vectors",
+                      action="store_true", help="Enable Vectors")
+  parser.add_argument("--vector_slen", type=str, default="",
+                      help="Settings for vector engine SLEN")
+  parser.add_argument("--vector_elen", type=str, default="",
+                      help="Settings for vector engine SLEN")
+  parser.add_argument("--vector_vlen", type=str, default="",
+                      help="Settings for vector engine VLEN")
   parser.set_defaults(verbose=False)
   parser.set_defaults(debug_mode=False)
   parser.set_defaults(stop_on_first_error=False)
-  parser.add_argument("--noclean", action="store_true",
-                      help="Do not clean the output of the previous runs")
+  parser.set_defaults(dont_truncate_after_first_ecall=False)
+  parser.set_defaults(enable_vectors=False)
+  parser.set_defaults(vector_elen=64)
+  parser.set_defaults(vector_vlen=512)
+  parser.set_defaults(vector_slen=64)
   return parser
 
 def main():
@@ -327,7 +353,9 @@ def main():
     collect_cov(args.dir, output_dir, args.core, args.iss, args.testlist,
                 args.batch_size, args.lsf_cmd, args.steps, args.opts, args.timeout,
                 args.simulator, args.simulator_yaml, args.custom_target,
-                args.isa, args.target, args.stop_on_first_error)
+                args.isa, args.target, args.stop_on_first_error,
+                args.dont_truncate_after_first_ecall,
+                args.enable_vectors, args.vector_slen, args.vector_elen, args.vector_vlen)
     logging.info("Coverage results are saved to %s" % output_dir)
 
 if __name__ == "__main__":

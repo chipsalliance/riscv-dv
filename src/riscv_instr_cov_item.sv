@@ -46,6 +46,8 @@ class riscv_instr_cov_item extends riscv_instr_base;
   logical_similarity_e  logical_similarity;
   string                trace;
 
+  `VECTOR_INCLUDE("riscv_instr_cov_item_inc_1.sv")
+
   `uvm_object_utils(riscv_instr_cov_item)
   `uvm_object_new
 
