@@ -268,12 +268,12 @@ class riscv_instr_gen_config extends uvm_object;
   constraint boot_privileged_mode_dist_c {
     // Boot to higher privileged mode more often
     if(riscv_instr_pkg::supported_privileged_mode.size() == 2) {
-      init_privileged_mode dist {riscv_instr_pkg::supported_privileged_mode[0] := 9,
-                                 riscv_instr_pkg::supported_privileged_mode[1] := 1};
-    } else if (riscv_instr_pkg::supported_privileged_mode.size() == 3) {
       init_privileged_mode dist {riscv_instr_pkg::supported_privileged_mode[0] := 6,
+                                 riscv_instr_pkg::supported_privileged_mode[1] := 4};
+    } else if (riscv_instr_pkg::supported_privileged_mode.size() == 3) {
+      init_privileged_mode dist {riscv_instr_pkg::supported_privileged_mode[0] := 4,
                                  riscv_instr_pkg::supported_privileged_mode[1] := 3,
-                                 riscv_instr_pkg::supported_privileged_mode[2] := 1};
+                                 riscv_instr_pkg::supported_privileged_mode[2] := 3};
     } else {
       init_privileged_mode == riscv_instr_pkg::supported_privileged_mode[0];
     }

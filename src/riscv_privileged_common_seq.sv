@@ -38,10 +38,13 @@ class riscv_privileged_common_seq extends uvm_sequence;
     riscv_privil_reg regs[$];
     label = label.tolower();
     setup_mmode_reg(mode, regs);
-    if(mode != MACHINE_MODE) begin
+    if(mode == SUPERVISOR_MODE) begin
       setup_smode_reg(mode, regs);
       setup_satp(instrs);
       ret_instr.shuffle();
+    end
+    if(mode == USER_MODE) begin
+      setup_umode_reg(mode, regs);
     end
     gen_csr_instr(regs, instrs);
     // Use mret/sret to switch to the target privileged mode
@@ -140,6 +143,10 @@ class riscv_privileged_common_seq extends uvm_sequence;
   endfunction
 
   virtual function void setup_umode_reg(privileged_mode_t mode, ref riscv_privil_reg regs[$]);
+    // For implementations that do not provide any U-mode CSRs, return immediately
+    if (!cfg.support_umode_trap) begin
+      return;
+    end
     ustatus = riscv_privil_reg::type_id::create("ustatus");
     ustatus.init_reg(USTATUS);
     `DV_CHECK_RANDOMIZE_FATAL(ustatus, "cannot randomize ustatus")
