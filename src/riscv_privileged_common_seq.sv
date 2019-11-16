@@ -144,7 +144,7 @@ class riscv_privileged_common_seq extends uvm_sequence;
 
   virtual function void setup_umode_reg(privileged_mode_t mode, ref riscv_privil_reg regs[$]);
     // For implementations that do not provide any U-mode CSRs, return immediately
-    if (!cfg.support_umode_trap) begin
+    if (!riscv_instr_pkg::support_umode_trap) begin
       return;
     end
     ustatus = riscv_privil_reg::type_id::create("ustatus");

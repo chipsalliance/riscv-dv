@@ -403,7 +403,7 @@ class riscv_asm_program_gen extends uvm_object;
         instr.push_back($sformatf("csrw 0x%0x, x%0d", SIE, cfg.gpr[1]));
       end
       USER_MODE: begin
-        if (!cfg.support_umode_trap) begin
+        if (!riscv_instr_pkg::support_umode_trap) begin
           return;
         end
         instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], USTATUS));
