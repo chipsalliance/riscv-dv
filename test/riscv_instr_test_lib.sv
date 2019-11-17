@@ -37,7 +37,6 @@ class riscv_rand_instr_test extends riscv_instr_base_test;
     asm_gen.add_directed_instr_stream("riscv_load_store_hazard_instr_stream", 4);
     asm_gen.add_directed_instr_stream("riscv_multi_page_load_store_instr_stream", 4);
     asm_gen.add_directed_instr_stream("riscv_mem_region_stress_test", 4);
-    asm_gen.add_directed_instr_stream("riscv_load_store_rand_addr_instr_stream", 4);
   endfunction
 
 endclass

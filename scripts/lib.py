@@ -19,6 +19,7 @@ Parse the regression testlist in YAML format
 import os
 import random
 import sys
+import re
 import subprocess
 import time
 import yaml
@@ -165,13 +166,14 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0):
     logging.debug(output)
 
 
-def process_regression_list(testlist, test, iterations, matched_list):
+def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_root):
   """ Get the matched tests from the regression test list
 
   Args:
-    testlist     : Regression test list
-    test         : Test to run, "all" means all tests in the list
-    iterations   : Number of iterations for each test
+    testlist      : Regression test list
+    test          : Test to run, "all" means all tests in the list
+    iterations    : Number of iterations for each test
+    riscv_dv_root : Root directory of RISCV-DV
 
   Returns:
     matched_list : A list of matched tests
@@ -179,10 +181,14 @@ def process_regression_list(testlist, test, iterations, matched_list):
   logging.info("Processing regression test list : %s, test: %s" % (testlist, test))
   yaml_data = read_yaml(testlist)
   for entry in yaml_data:
-    if (entry['test'] == test) or (test == "all"):
-      if (iterations > 0 and  entry['iterations'] > 0):
-        entry['iterations'] = iterations
-      if entry['iterations'] > 0:
-        logging.info("Found matched tests: %s, iterations:%0d" %
-                    (entry['test'], entry['iterations']))
-        matched_list.append(entry)
+    if 'import' in entry:
+      sub_list = re.sub('<riscv_dv_root>', riscv_dv_root, entry['import'])
+      process_regression_list(sub_list, test, iterations, matched_list, riscv_dv_root)
+    else:
+      if (entry['test'] == test) or (test == "all"):
+        if (iterations > 0 and  entry['iterations'] > 0):
+          entry['iterations'] = iterations
+        if entry['iterations'] > 0:
+          logging.info("Found matched tests: %s, iterations:%0d" %
+                      (entry['test'], entry['iterations']))
+          matched_list.append(entry)
