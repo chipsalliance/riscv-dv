@@ -471,6 +471,7 @@ class riscv_instr_base extends uvm_object;
       has_rs1 = 1'b1;
     end else if (instr_name inside {C_JR, C_JALR}) begin
       has_rs1 = 1'b1;
+      has_rs2 = 1'b0;
     end
     if (!(format inside {CJ_FORMAT, CB_FORMAT, CS_FORMAT, CSS_FORMAT, B_FORMAT, S_FORMAT})) begin
       has_rd = 1'b1;

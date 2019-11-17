@@ -108,9 +108,6 @@ class riscv_instr_cov_test extends uvm_test;
     if ((skipped_cnt > 0) || (unexpected_illegal_instr_cnt > 0)) begin
       `uvm_error(`gfn, $sformatf("%0d instructions skipped, %0d illegal instruction",
                        skipped_cnt, unexpected_illegal_instr_cnt))
-
-    end else begin
-      `uvm_info(`gfn, "TEST PASSED", UVM_NONE);
     end
   endtask
 
@@ -251,6 +248,25 @@ class riscv_instr_cov_test extends uvm_test;
       end
       i++;
     end
+  endfunction
+
+  function void report_phase(uvm_phase phase);
+    uvm_report_server rs;
+    int error_count;
+
+    rs = uvm_report_server::get_server();
+
+    error_count = rs.get_severity_count(UVM_WARNING) +
+                  rs.get_severity_count(UVM_ERROR) +
+                  rs.get_severity_count(UVM_FATAL);
+
+    if (error_count == 0) begin
+      `uvm_info("", "TEST PASSED", UVM_NONE);
+    end else begin
+      `uvm_info("", "TEST FAILED", UVM_NONE);
+    end
+    `uvm_info("", "TEST GENERATION DONE", UVM_NONE);
+    super.report_phase(phase);
   endfunction
 
 endclass
