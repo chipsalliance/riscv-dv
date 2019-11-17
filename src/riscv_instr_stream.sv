@@ -54,7 +54,11 @@ class riscv_instr_stream extends uvm_object;
     if(idx == -1) begin
       idx = $urandom_range(0, current_instr_cnt-1);
       while(instr_list[idx].atomic) begin
-       idx = $urandom_range(0, current_instr_cnt-1);
+       idx += 1;
+       if (idx == current_instr_cnt - 1) begin
+         instr_list = {instr_list, instr};
+         return;
+       end
       end
     end else if((idx > current_instr_cnt) || (idx < 0)) begin
       `uvm_error(`gfn, $sformatf("Cannot insert instr:%0s at idx %0d",
