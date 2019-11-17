@@ -117,11 +117,12 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1):
     output = ""
     ps.kill()
   rc = ps.returncode
-  if rc > 0:
-    logging.info(output)
-    logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
-    if exit_on_error:
-      sys.exit(1)
+  if rc:
+    if rc > 0:
+      logging.info(output)
+      logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
+      if exit_on_error:
+        sys.exit(1)
   logging.debug(output)
   return output
 
@@ -153,11 +154,12 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0):
       logging.error("Timeout[%ds]: %s" % (timeout_s, cmd))
       children[i].kill()
     rc = children[i].returncode
-    if rc > 0:
-      logging.info(output)
-      logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
-      if exit_on_error:
-        sys.exit(1)
+    if rc:
+      if rc > 0:
+        logging.info(output)
+        logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
+        if exit_on_error:
+          sys.exit(1)
     # Restore stty setting otherwise the terminal may go crazy
     os.system("stty sane")
     logging.debug(output)
