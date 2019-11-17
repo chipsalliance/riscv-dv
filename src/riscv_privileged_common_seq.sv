@@ -40,11 +40,12 @@ class riscv_privileged_common_seq extends uvm_sequence;
     setup_mmode_reg(mode, regs);
     if(mode == SUPERVISOR_MODE) begin
       setup_smode_reg(mode, regs);
-      setup_satp(instrs);
-      ret_instr.shuffle();
     end
     if(mode == USER_MODE) begin
       setup_umode_reg(mode, regs);
+    end
+    if(cfg.virtual_addr_translation_on) begin
+      setup_satp(instrs);
     end
     gen_csr_instr(regs, instrs);
     // Use mret/sret to switch to the target privileged mode
