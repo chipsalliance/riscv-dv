@@ -578,7 +578,7 @@ def main():
   matched_list = []
 
   if not args.co:
-    process_regression_list(args.testlist, args.test, args.iterations, matched_list)
+    process_regression_list(args.testlist, args.test, args.iterations, matched_list, cwd)
     if len(matched_list) == 0:
       sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
