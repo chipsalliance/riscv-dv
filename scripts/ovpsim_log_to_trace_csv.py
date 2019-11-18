@@ -222,8 +222,8 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
 
   for g in REGS: # base base isa gprs
     gpr[g] = 0
-  for i in range(32): # add in v0-v31 gprs
 
+  for i in range(32): # add in v0-v31 gprs
     gpr["v"+str(i)] = 0
 
   csr["vl"]    = 0
@@ -296,8 +296,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                   process_jal(prev_trace, operands, gpr)
                 else:
                   if 'v' in prev_trace.instr[0]:
-                    assign_operand_vector(prev_trace, operands, gpr,
-                        stop_on_first_error)
+                    assign_operand_vector(prev_trace, operands, gpr, stop_on_first_error)
                   elif 'f' in prev_trace.instr[0] or "c.f" in prev_trace.instr[0:3]:
                     pass # ignore floating point. TODO include them
                   else:
@@ -341,8 +340,9 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                 gpr[n.group("r")] = n.group("val")
             else:
                 # backwards compatible
-                prev_trace.rd_val       = n.group("val")
-                gpr[prev_trace.rd]      = prev_trace.rd_val
+                prev_trace.rd       = n.group("r")
+                prev_trace.rd_val   = n.group("val")
+                gpr[prev_trace.rd]  = prev_trace.rd_val
             if 0:
               print (
                 "write entry [[%d]]: rd[%s] val[%s] instr(%s) bin(%s) addr(%s)"
@@ -379,6 +379,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
     logging.error ("No Instructions in logfile: %s" % ovpsim_log)
     sys.exit(-1)
   logging.info("CSV saved to : %s" % csv)
+
 
 def main():
   """ if used standalone set up for testing """
