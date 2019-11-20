@@ -55,6 +55,11 @@ REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "a0","a1","a2","a3","a4","a5","a6","a7",
         "s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
         "t3","t4","t5","t6"]
+FREGS = ["ft0","ft1","ft2","ft3","ft4","ft5","ft6","ft7","fs0",
+        "fs1",
+        "fa0","fa1","fa2","fa3","fa4","fa5","fa6","fa7",
+        "fs2","fs3","fs4","fs5","fs6","fs7","fs8","fs9","fs10","fs11",
+        "ft8","ft9","ft10","ft11"]
 
 def process_jal(trace, operands, gpr):
     """ correctly process jal """
@@ -162,8 +167,7 @@ def show_line_instr(line, i):
         logging.debug("%s" % (line.strip()))
         logging.debug(
             "  -->> instr_str(%s) binary(%s) addr(%s) mode(%s) instr(%s)"
-            % (      i.instr_str, i.binary,  i.addr, i.privileged_mode,
-                i.instr))
+            % (     i.instr_str, i.binary,  i.addr, i.privileged_mode,i.instr))
 
 def check_num_operands(instr_str, num_operands, n):
     """ ensure consistency """
@@ -221,11 +225,13 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
   gpr = {}
   csr = {}
   
-  for g in REGS: # base base isa gprs
+  for g in REGS: # base isa gprs
     gpr[g] = 0
   for i in range(32): # add in v0-v31 gprs
     gpr["v"+str(i)] = 0
-
+  for f in FREGS: # floating point gprs
+    gpr[f] = 0
+    
   csr["vl"]    = 0
   csr["vtype"] = 0
 
@@ -267,9 +273,9 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         #if prev_trace.instr in ["vsetvli"]:
         #if prev_trace.instr in ["vlh.v"]:
         #if prev_trace.instr in ["vmul.vx"]:
-        if prev_trace.instr in ["vmul.vx_XXX"]:
-            logit = 1
-            verbose2 = True
+        #if prev_trace.instr in ["vmul.vx_XXX"]:
+        #    logit = 1
+        #    verbose2 = True
 
         show_line_instr(line, prev_trace)
 
