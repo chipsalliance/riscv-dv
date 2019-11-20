@@ -227,6 +227,7 @@ class riscv_instr_cover_group;
   int unsigned            instr_cnt;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
+  bit                     default_cov = 'b1;
 
   ///////////// RV32I instruction functional coverage //////////////
 
@@ -827,15 +828,78 @@ class riscv_instr_cover_group;
 `VECTOR_INCLUDE("riscv_instr_cover_group_inc_1.sv")
 
   function new(riscv_instr_gen_config cfg);
+    riscv_instr_group_t cov_isa;
+    default_cov = 'b1;
     this.cfg = cfg;
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
 
+    // TODO should be moved out of coverage for reporting
+    if (has_vector_engine) begin
+        $display("vector_options: VLEN=%0d", VLEN);
+        $display("vector_options: ELEN=%0d", ELEN);
+        $display("vector_options: SLEN=%0d", SLEN);
+    end
+
+    // process coverage options
+    if ($test$plusargs("no_default_cov"))  begin
+        $display("coverage option: +no_default_cov");
+        default_cov = 'b0;
+    end
+    if ($test$plusargs("cov_isa=")) begin
+        string cov_isa_str;
+        riscv_instr_group_t isa;
+        bit got_one = 'b0;
+        void'($value$plusargs("cov_isa=%0s", cov_isa_str));
+        cov_isa_str = cov_isa_str.toupper();
+        $display("coverage option: +cov_isa=%0s", cov_isa_str);
+        isa = isa.first;
+        do begin
+            if (isa.name == cov_isa_str) begin
+                cov_isa = isa;
+                got_one = 'b1;
+                break;
+            end
+            isa =  isa.next;
+        end while (isa != isa.first);
+        if (got_one == 'b1) begin
+            //$display ($sformatf("GOT  cov_isa=%0s [%d]", cov_isa.name, cov_isa));
+        end else begin
+            cfatal ($sformatf("riscv_instr_gen_config cfg cant find enum for specifed cov_isa=%0s", cov_isa_str));
+        end
+    end
+    // TODO if we want to selectively enable/disable coverage based on categories...
+    // e.g. +cov_category=OPV_CONFIG
+    if ($test$plusargs("cov_category=")) begin
+        string cov_category_str;
+        void'($value$plusargs("cov_category=%0s", cov_category_str));
+        $display("coverage option: +cov_category=%0s", cov_category_str);
+        // used to further subset coverage (used by vectors)
+    end
+
+    // show coverage defines
+    // they will be set on command line and used before here...
+    `ifdef COVERAGE_WITH_NO_HAZARDS
+        $display("coverage option: +define+COVERAGE_WITH_NO_HAZARDS");
+    `endif
+    `ifdef COVERAGE_WITH_NO_IGNORES
+        $display("coverage option: +define+COVERAGE_WITH_NO_IGNORES");
+    `endif
+    `ifdef STOP_ON_FIRST_ERROR
+        $display("coverage option: +define+STOP_ON_FIRST_ERROR");
+    `endif
+
+    `define CG_SELECTOR_BEGIN(CG_ISA) \
+        if ((CG_ISA inside {supported_isa}) && (default_cov || (cov_isa == CG_ISA))) begin \
+
+    `define CG_SELECTOR_END \
+        end \
+
    `VECTOR_INCLUDE("riscv_instr_cover_group_inc_2.sv")
 
     // RV32I instruction functional coverage instantiation
-    if ((RV32I inside {supported_isa}) && (!(NOCOV_RV32I inside {coverage_options}))) begin
+    `CG_SELECTOR_BEGIN(RV32I)
         add_cg = new();
         sub_cg = new();
         addi_cg = new();
@@ -873,30 +937,29 @@ class riscv_instr_cover_group;
         sb_cg = new();
         sh_cg = new();
         sw_cg = new();
+    `CG_SELECTOR_END
+
+    // TODO sort when there is a RV32ZICSR isa enum
+    if (RV32I inside {supported_isa}) begin
+        if (default_cov) begin
+            csrrw_cg = new();
+            csrrs_cg = new();
+            csrrc_cg = new();
+            csrrwi_cg = new();
+            csrrsi_cg = new();
+            csrrci_cg = new();
+        end
     end
 
-    if (RV32I inside {supported_isa} && (!(NOCOV_ZICSR inside {coverage_options}))) begin
-        csrrw_cg = new();
-        csrrs_cg = new();
-        csrrc_cg = new();
-        csrrwi_cg = new();
-        csrrsi_cg = new();
-        csrrci_cg = new();
-    end
-
-    if (!(NOCOV_MISC inside {coverage_options})) begin
+    if (default_cov) begin
         // instr_trans_cg = new();
         branch_hit_history_cg = new();
         rv32i_misc_cg = new();
-    end
-
-    if ( !(NOCOV_MISC inside {coverage_options})) begin
         opcode_cg = new();
     end
+
     if (RV32C inside {supported_isa} || RV64C inside {supported_isa}) begin
-        if ( (!(NOCOV_RV32C inside {coverage_options})) &&
-                (!(NOCOV_RV64C inside {coverage_options})) &&
-                (!(NOCOV_MISC inside {coverage_options})) ) begin
+        if (default_cov) begin
             compressed_opcode_cg = new();
             hint_cg = new();
             if (!cfg.disable_compressed_instr) begin
@@ -904,7 +967,8 @@ class riscv_instr_cover_group;
             end
         end
     end
-    if (RV32M inside {supported_isa} && !(NOCOV_RV32M inside {coverage_options})) begin
+
+    `CG_SELECTOR_BEGIN(RV32M)
       mul_cg = new();
       mulh_cg = new();
       mulhsu_cg = new();
@@ -913,15 +977,17 @@ class riscv_instr_cover_group;
       divu_cg = new();
       rem_cg = new();
       remu_cg = new();
-    end
-    if (RV64M inside {supported_isa} && !(NOCOV_RV64M inside {coverage_options})) begin
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV64M)
       mulw_cg = new();
       divw_cg = new();
       divuw_cg = new();
       remw_cg = new();
       remuw_cg = new();
-    end
-    if (RV64I inside {supported_isa} && !(NOCOV_RV64I inside {coverage_options})) begin
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV64I)
       lwu_cg = new();
       ld_cg = new();
       sd_cg = new();
@@ -937,8 +1003,9 @@ class riscv_instr_cover_group;
       addw_cg = new();
       addiw_cg = new();
       subw_cg = new();
-    end
-    if (RV32C inside {supported_isa} && !(NOCOV_RV32C inside {coverage_options})) begin
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV32C)
       c_lw_cg = new();
       c_sw_cg = new();
       c_lwsp_cg = new();
@@ -966,8 +1033,9 @@ class riscv_instr_cover_group;
       end
       c_jr_cg = new();
       c_jalr_cg = new();
-    end
-    if (RV64C inside {supported_isa} && !(NOCOV_RV64C inside {coverage_options})) begin
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV64C)
       c_ld_cg = new();
       c_sd_cg = new();
       c_ldsp_cg = new();
@@ -975,8 +1043,9 @@ class riscv_instr_cover_group;
       c_addiw_cg = new();
       c_subw_cg = new();
       c_addw_cg = new();
-    end
-    if ( !(NOCOV_MISC inside {coverage_options})) begin
+    `CG_SELECTOR_END
+
+    if (default_cov) begin
         privileged_csr_cg = new();
         mcause_exception_cg = new();
         mcause_interrupt_cg = new();
@@ -993,13 +1062,13 @@ class riscv_instr_cover_group;
       instr.check_hazard_condition(pre_instr);
     end
     if ((instr.binary[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
-        if ( !(NOCOV_MISC inside {coverage_options})) begin
+        if (default_cov) begin
             hint_cg.sample(instr);
             compressed_opcode_cg.sample(instr.binary[15:0]);
         end
     end
     if (instr.binary[1:0] == 2'b11) begin
-        if ( !(NOCOV_MISC inside {coverage_options})) begin
+        if (default_cov) begin
             opcode_cg.sample(instr.binary[6:2]);
         end
     end
@@ -1056,12 +1125,12 @@ class riscv_instr_cover_group;
       SW         : sw_cg.sample(instr);
       SH         : sh_cg.sample(instr);
       SB         : sb_cg.sample(instr);
-//      CSRRW      : csrrw_cg.sample(instr);
-//      CSRRS      : csrrs_cg.sample(instr);
-//      CSRRC      : csrrc_cg.sample(instr);
-//      CSRRWI     : csrrwi_cg.sample(instr);
-//      CSRRSI     : csrrsi_cg.sample(instr);
-//      CSRRCI     : csrrci_cg.sample(instr);
+      CSRRW      : csrrw_cg.sample(instr);
+      CSRRS      : csrrs_cg.sample(instr);
+      CSRRC      : csrrc_cg.sample(instr);
+      CSRRWI     : csrrwi_cg.sample(instr);
+      CSRRSI     : csrrsi_cg.sample(instr);
+      CSRRCI     : csrrci_cg.sample(instr);
       MUL        : mul_cg.sample(instr);
       MULH       : mulh_cg.sample(instr);
       MULHSU     : mulhsu_cg.sample(instr);
@@ -1122,12 +1191,12 @@ class riscv_instr_cover_group;
       `VECTOR_INCLUDE("riscv_instr_cover_group_inc_3.sv")
       default: begin
         if (!cfg.disable_compressed_instr) begin
-          if ( !(NOCOV_MISC inside {coverage_options})) begin
+          if (default_cov) begin
             illegal_compressed_instr_cg.sample(instr.binary);
           end
         end
         if (instr.group == RV32I) begin
-          if ( !(NOCOV_MISC inside {coverage_options})) begin
+          if (default_cov) begin
             rv32i_misc_cg.sample(instr);
           end
         end
@@ -1137,13 +1206,13 @@ class riscv_instr_cover_group;
       branch_hit_history = (branch_hit_history << 1) | instr.branch_hit;
       branch_instr_cnt += 1;
       if (branch_instr_cnt >= $bits(branch_hit_history)) begin
-          if ( !(NOCOV_MISC inside {coverage_options})) begin
+          if (default_cov) begin
             branch_hit_history_cg.sample();
           end
       end
     end
     if (instr.category == CSR) begin
-          if ( !(NOCOV_MISC inside {coverage_options})) begin
+          if (default_cov) begin
             privileged_csr_cg.sample(instr.csr);
           end
       case (instr.csr)
@@ -1151,14 +1220,14 @@ class riscv_instr_cover_group;
           if (instr.rd_value[XLEN-1]) begin
             interrupt_cause_t interrupt;
             if ($cast(interrupt, instr.rd_value[3:0])) begin
-                if ( !(NOCOV_MISC inside {coverage_options})) begin
+                if (default_cov) begin
                     mcause_interrupt_cg.sample(interrupt);
                 end
             end
           end else begin
             exception_cause_t exception;
             if ($cast(exception, instr.rd_value[3:0])) begin
-                if ( !(NOCOV_MISC inside {coverage_options})) begin
+                if (default_cov) begin
                     mcause_exception_cg.sample(exception);
                 end
             end
@@ -1166,23 +1235,24 @@ class riscv_instr_cover_group;
         end
         MEPC: begin
           if (!cfg.disable_compressed_instr) begin
-            if ( !(NOCOV_MISC inside {coverage_options})) begin
+            if (default_cov) begin
               mepc_alignment_cg.sample(instr.rd_value);
             end
           end
         end
         MSTATUS: begin
-            if ( !(NOCOV_MISC inside {coverage_options})) begin
+            if (default_cov) begin
                 mstatus_m_cg.sample(instr.rd_value);
             end
         end
       endcase
     end
     if (instr_cnt > 1) begin
-        if ( !(NOCOV_MISC inside {coverage_options})) begin
+        if (default_cov) begin
             //instr_trans_cg.sample();
         end
     end
+   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_4.sv")
     pre_instr.copy_base_instr(instr);
     pre_instr.mem_addr = instr.mem_addr;
   endfunction
@@ -1240,6 +1310,13 @@ class riscv_instr_cover_group;
     instr_cnt = 0;
     branch_instr_cnt = 0;
     branch_hit_history = '0;
+  endfunction
+
+  function void cfatal (string str);
+    $display("FATAL Error: %0s", str);
+    `ifdef STOP_ON_FIRST_ERROR
+        $fatal();
+    `endif
   endfunction
 
 endclass

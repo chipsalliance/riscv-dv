@@ -76,8 +76,8 @@ class riscv_instr_cov_test extends uvm_test;
               // TODO: Enable functional coverage for AMO test
               continue;
             end
-             `uvm_info(`gfn, $sformatf("SJD found  instr: %0s  {%0s} [%0s]",
-                             trace["instr"], trace["vm"], line), UVM_LOW)
+            // `uvm_info(`gfn, $sformatf("SJD found  instr: %0s  {%0s} [%0s]",
+            //                 trace["instr"], trace["vm"], line), UVM_LOW)
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_LOW)
@@ -108,13 +108,13 @@ class riscv_instr_cov_test extends uvm_test;
 
   function void fatal (string str);
     `uvm_info(`gfn, str, UVM_NONE);
-    if (STOP_ON_FIRST_ERROR inside {coverage_options}) begin
+    `ifdef STOP_ON_FIRST_ERROR
         `uvm_info(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)", 
             UVM_NONE);
         $fatal();
-    end
+    `endif
   endfunction
-  
+
   function bit sample();
     riscv_instr_name_t instr_name;
     bit [XLEN-1:0] val;
@@ -225,7 +225,7 @@ class riscv_instr_cov_test extends uvm_test;
   endfunction
 
    `VECTOR_INCLUDE("riscv_instr_cov_test_inc_4.sv")
-  
+
   function void get_val(input string str, output bit [XLEN-1:0] val);
     val = str.atohex();
   endfunction

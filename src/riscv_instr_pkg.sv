@@ -91,21 +91,7 @@ package riscv_instr_pkg;
     RV64V
   } riscv_instr_group_t;
 
-  typedef enum bit [4:0] {
-    NOCOV_RV32I,
-    NOCOV_RV32M,
-    NOCOV_RV32C,
-    NOCOV_RV64I,
-    NOCOV_RV64M,
-    NOCOV_RV64C,
-    NOCOV_ZICSR,
-    NOCOV_ZIFENCEI,
-    NOCOV_MISC,
-    COV_RV64V,
-    STOP_ON_FIRST_ERROR
-  } riscv_coverage_options_t;
-
-  typedef enum {
+typedef enum {
     // RV32I instructions
     LUI,
     AUIPC,
@@ -355,7 +341,7 @@ package riscv_instr_pkg;
     F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27, F28, F29, F30, F31
   } riscv_fpr_t;
 
-  typedef enum bit [4:0] {
+  typedef enum bit [5:0] {
     J_FORMAT = 0,
     U_FORMAT,
     I_FORMAT,
@@ -375,7 +361,7 @@ package riscv_instr_pkg;
     CIW_FORMAT // (last one)
   } riscv_instr_format_t;
 
-  typedef enum bit [4:0] {
+  typedef enum bit [5:0] {
     LOAD = 0,
     STORE,
     SHIFT,
@@ -736,6 +722,19 @@ package riscv_instr_pkg;
   } hazard_e;
 
   `include "riscv_core_setting.sv"
+
+  // TODO hardware target definition so should move to riscv_core_setting.sv
+  `ifdef ENABLE_VECTORS
+    parameter bit has_vector_engine = 'b1;
+    parameter int VLEN = `VLEN;
+    parameter int ELEN = `ELEN;
+    parameter int SLEN = `SLEN;
+  `else
+    parameter bit has_vector_engine = 'b0;
+    parameter int VLEN = 512;
+    parameter int ELEN = 64;
+    parameter int SLEN = 64;
+  `endif
 
   `VECTOR_INCLUDE("riscv_instr_pkg_inc_1.sv")
 

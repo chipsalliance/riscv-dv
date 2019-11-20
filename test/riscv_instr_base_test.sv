@@ -65,7 +65,7 @@ class riscv_instr_base_test extends uvm_test;
       `uvm_info("", "TEST FAILED", UVM_NONE);
     end
     `uvm_info("", "TEST GENERATION DONE", UVM_NONE);
-    super.report_phase(phase);
+     super.report_phase(phase);
   endfunction
 
   virtual function void apply_directed_instr();

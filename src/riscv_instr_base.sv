@@ -450,7 +450,7 @@ class riscv_instr_base extends uvm_object;
 
   // Supervisor Instructions
   `add_instr(SFENCE_VMA, R_FORMAT,SYNCH,RV32I)
-  
+
   `VECTOR_INCLUDE("riscv_instr_base_inc_5.sv")
 
   function void post_randomize();
@@ -522,6 +522,7 @@ class riscv_instr_base extends uvm_object;
         has_rs1 = 1'b1;
       end
     end
+
     `VECTOR_INCLUDE("riscv_instr_base_inc_1.sv")
 
   endfunction

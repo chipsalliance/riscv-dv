@@ -224,7 +224,6 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
   for g in REGS: # base base isa gprs
     gpr[g] = 0
   for i in range(32): # add in v0-v31 gprs
-  
     gpr["v"+str(i)] = 0
 
   csr["vl"]    = 0
