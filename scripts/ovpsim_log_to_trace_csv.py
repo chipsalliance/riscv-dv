@@ -55,11 +55,9 @@ REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "a0","a1","a2","a3","a4","a5","a6","a7",
         "s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
         "t3","t4","t5","t6"]
-FREGS = ["ft0","ft1","ft2","ft3","ft4","ft5","ft6","ft7","fs0",
-        "fs1",
-        "fa0","fa1","fa2","fa3","fa4","fa5","fa6","fa7",
-        "fs2","fs3","fs4","fs5","fs6","fs7","fs8","fs9","fs10","fs11",
-        "ft8","ft9","ft10","ft11"]
+FREGS = ["ft0","ft1","ft2","ft3","ft4","ft5","ft6","ft7","fs0","fs1","fa0",
+        "fa1","fa2","fa3","fa4","fa5","fa6","fa7","fs2","fs3","fs4","fs5",
+        "fs6","fs7","fs8","fs9","fs10","fs11","ft8","ft9","ft10","ft11"]
 
 def process_jal(trace, operands, gpr):
     """ correctly process jal """
@@ -68,7 +66,7 @@ def process_jal(trace, operands, gpr):
     if len(operands) == 2:
         trace.rd = operands[0]
         trace.rd_val = gpr[trace.rd]
-        trace.imm = get_imm_hex_val(operands[1])
+        trace.imm = get_imm_hex_val("0x" + operands[1])
     else:
         fatal("process_jal(%s) wrong num operands (%d)" %
             (trace.instr, len(operands)))
@@ -161,6 +159,12 @@ def check_conversion(entry):
     if stop_on_first_error:
         sys.exit(-1)
 
+operands_list = ["rd","rs1","rs2","vd","vs1","vs2","vs3","fd","fs1","fs2"]
+def update_operands_values(trace, gpr):
+    """ ensure operands have been updated """
+    for op in operands_list:
+        exec("if trace.%0s in gpr: trace.%0s_val = gpr[trace.%0s]" % (op, op, op))
+
 def show_line_instr(line, i):
     """ show line """
     if i.instr_str[0] in ['v']:
@@ -177,8 +181,7 @@ def check_num_operands(instr_str, num_operands, n):
 
 def is_csr(r):
     """ see if r is a csr """
-    
-    # add more as needed
+    # TODO add more as needed - could look in the enum privileged_reg_t  or the cores settings: implemented_csr[]
     if r in ["mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch","mcause",
             "mtval","vl","vtype"]:
         return True
@@ -193,7 +196,7 @@ def process_branch_offset (opn, operands, prev_trace):
     offset = hex(offset_dec)
     operands[opn] = offset
 
-def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0, 
+def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
     dont_truncate_after_first_ecall = 0,
     verbose2 = False):
   """Process OVPsim simulation log.
@@ -221,17 +224,17 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
   os.system(cmd)
 
   # storage and initial values of gpr and csr
-  
+
   gpr = {}
   csr = {}
-  
+
   for g in REGS: # base isa gprs
     gpr[g] = 0
   for i in range(32): # add in v0-v31 gprs
     gpr["v"+str(i)] = 0
   for f in FREGS: # floating point gprs
     gpr[f] = 0
-    
+
   csr["vl"]    = 0
   csr["vtype"] = 0
 
@@ -250,6 +253,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         # its instruction disassembly line
         if prev_trace: # write out the previous one when find next one
             check_conversion(prev_trace)
+            update_operands_values(prev_trace, gpr)
             instr_cnt += 1
             trace_csv.write_trace_entry(prev_trace)
             if verbose2:
@@ -273,9 +277,9 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         #if prev_trace.instr in ["vsetvli"]:
         #if prev_trace.instr in ["vlh.v"]:
         #if prev_trace.instr in ["vmul.vx"]:
-        #if prev_trace.instr in ["vmul.vx_XXX"]:
-        #    logit = 1
-        #    verbose2 = True
+        if prev_trace.instr in ["vsetvl"]:
+            logit = 1
+            verbose2 = True
 
         show_line_instr(line, prev_trace)
 
@@ -312,6 +316,8 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                         'c.beqz', 'c.bnez', 'beqz', 'bnez', 'bgez',
                              'bltz', 'blez', 'bgtz']:
                         process_branch_offset (1, operands, prev_trace)
+                    if prev_trace.instr in ['j', 'c.j']:
+                        operands[0] = "0x" + operands[0] # ovpsim has no '0x' so need to add it.
                     assign_operand(prev_trace, operands, gpr,
                         stop_on_first_error)
             else:

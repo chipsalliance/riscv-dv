@@ -91,7 +91,7 @@ package riscv_instr_pkg;
     RV64V
   } riscv_instr_group_t;
 
-typedef enum {
+  typedef enum {
     // RV32I instructions
     LUI,
     AUIPC,
@@ -320,7 +320,7 @@ typedef enum {
     SRET,
     WFI,
     SFENCE_VMA,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_2.sv")
+    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_name_t.sv")
     // You can add other instructions here
     INVALID_INSTR
   } riscv_instr_name_t;
@@ -334,7 +334,7 @@ typedef enum {
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
   } riscv_reg_t;
 
-  `VECTOR_INCLUDE("riscv_instr_pkg_inc_6.sv")
+  `VECTOR_INCLUDE("riscv_instr_pkg_inc_enum.sv")
 
   typedef enum bit [4:0] {
     F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
@@ -357,7 +357,7 @@ typedef enum {
     CL_FORMAT,
     CS_FORMAT,
     CSS_FORMAT,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_3.sv")
+    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_format_t.sv")
     CIW_FORMAT // (last one)
   } riscv_instr_format_t;
 
@@ -377,7 +377,7 @@ typedef enum {
     CHANGELEVEL,
     TRAP,
     INTERRUPT,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_4.sv")
+    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_category_t.sv")
     AMO // (last one)
   } riscv_instr_category_t;
 
@@ -609,7 +609,7 @@ typedef enum {
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
     DSCRATCH0       = 'h7B2,  // Debug scratch register
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_5.sv")
+    `VECTOR_INCLUDE("riscv_instr_pkg_inc_privileged_reg_t.sv")
     DSCRATCH1       = 'h7B3  // Debug scratch register (last one)
   } privileged_reg_t;
 
@@ -736,7 +736,7 @@ typedef enum {
     parameter int SLEN = 64;
   `endif
 
-  `VECTOR_INCLUDE("riscv_instr_pkg_inc_1.sv")
+  `VECTOR_INCLUDE("riscv_instr_pkg_inc_variables.sv")
 
   typedef bit [15:0] program_id_t;
 
