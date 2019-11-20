@@ -1190,7 +1190,7 @@ class riscv_instr_cover_group;
       C_ADDIW    : c_addiw_cg.sample(instr);
       `VECTOR_INCLUDE("riscv_instr_cover_group_inc_3.sv")
       default: begin
-        if (!cfg.disable_compressed_instr) begin
+        if (RV32C inside {supported_isa}) begin
           if (default_cov) begin
             illegal_compressed_instr_cg.sample(instr.binary);
           end
@@ -1234,7 +1234,7 @@ class riscv_instr_cover_group;
           end
         end
         MEPC: begin
-          if (!cfg.disable_compressed_instr) begin
+          if (RV32C inside {supported_isa}) begin
             if (default_cov) begin
               mepc_alignment_cg.sample(instr.rd_value);
             end

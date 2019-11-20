@@ -76,8 +76,6 @@ class riscv_instr_cov_test extends uvm_test;
               // TODO: Enable functional coverage for AMO test
               continue;
             end
-            // `uvm_info(`gfn, $sformatf("SJD found  instr: %0s  {%0s} [%0s]",
-            //                 trace["instr"], trace["vm"], line), UVM_LOW)
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_LOW)

@@ -193,7 +193,7 @@ def process_branch_offset (opn, operands, prev_trace):
     offset = hex(offset_dec)
     operands[opn] = offset
 
-def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0, 
+def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
     dont_truncate_after_first_ecall = 0,
     verbose2 = False):
   """Process OVPsim simulation log.
