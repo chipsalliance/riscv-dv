@@ -46,12 +46,18 @@ class RiscvInstructionTraceEntry(object):
     self.vs2_val = ""
     self.vs3 = ""
     self.vs3_val = ""
-    self.vtype_e = ""
-    self.vtype_m = ""
-    self.vtype_d = ""
+    self.vtype_vsew = ""
+    self.vtype_vmul = ""
+    self.vtype_vediv = ""
     self.vm = ""
     self.updated_csr = ""
     self.updated_gpr = ""
+    self.fd = ""
+    self.fd_val = ""
+    self.fs1 = ""
+    self.fs1_val = ""
+    self.fs2 = ""
+    self.fs2_val = ""
 
   def get_trace_string(self):
     """Return a short string of the trace entry"""
@@ -75,7 +81,8 @@ class RiscvInstructionTraceCsv(object):
         "instr", "rd", "rd_val", "rs1", "rs1_val", "rs2", "rs2_val",
         "imm", "str", "addr", "binary", "csr", "mode",
         "vd", "vd_val", "vs1", "vs1_val","vs2", "vs2_val","vs3", "vs3_val",
-        "vtype_e", "vtype_m", "vtype_d", "vm", "updated_csr", "updated_gpr"]
+        "vtype_vsew", "vtype_vmul", "vtype_vediv", "vm", "updated_csr", "updated_gpr",
+        "fd", "fd_val", "fs1", "fs1_val","fs2", "fs2_val"]
     self.csv_writer = csv.DictWriter(self.csv_fd, fieldnames=fields)
     self.csv_writer.writeheader()
 
@@ -96,33 +103,39 @@ class RiscvInstructionTraceCsv(object):
   def write_trace_entry(self, entry):
     """Write a new trace entry to CSV"""
     self.gpr[entry.rd] = entry.rd_val
-    self.csv_writer.writerow({'str'        : entry.instr_str,
-                              'rd'         : entry.rd,
-                              'rd_val'     : entry.rd_val,
-                              'rs1'        : entry.rs1,
-                              'rs1_val'    : entry.rs1_val,
-                              'rs2'        : entry.rs2,
-                              'rs2_val'    : entry.rs2_val,
-                              'addr'       : entry.addr,
-                              'instr'      : entry.instr,
-                              'imm'        : entry.imm,
-                              'csr'        : entry.csr,
-                              'binary'     : entry.binary,
-                              'mode'       : entry.privileged_mode,
-                              'vd'         : entry.vd,
-                              'vd_val'     : entry.vd_val,
-                              'vs1'        : entry.vs1,
-                              'vs1_val'    : entry.vs1_val,
-                              'vs2'        : entry.vs2,
-                              'vs2_val'    : entry.vs2_val,
-                              'vs3'        : entry.vs3,
-                              'vs3_val'    : entry.vs3_val,
-                              'vtype_e'    : entry.vtype_e,
-                              'vtype_m'    : entry.vtype_m,
-                              'vtype_d'    : entry.vtype_d,
-                              'vm'         : entry.vm,
-                              'updated_csr': entry.updated_csr,
-                              'updated_gpr': entry.updated_gpr,
+    self.csv_writer.writerow({'str'           : entry.instr_str,
+                              'rd'            : entry.rd,
+                              'rd_val'        : entry.rd_val,
+                              'rs1'           : entry.rs1,
+                              'rs1_val'       : entry.rs1_val,
+                              'rs2'           : entry.rs2,
+                              'rs2_val'       : entry.rs2_val,
+                              'addr'          : entry.addr,
+                              'instr'         : entry.instr,
+                              'imm'           : entry.imm,
+                              'csr'           : entry.csr,
+                              'binary'        : entry.binary,
+                              'mode'          : entry.privileged_mode,
+                              'vd'            : entry.vd,
+                              'vd_val'        : entry.vd_val,
+                              'vs1'           : entry.vs1,
+                              'vs1_val'       : entry.vs1_val,
+                              'vs2'           : entry.vs2,
+                              'vs2_val'       : entry.vs2_val,
+                              'vs3'           : entry.vs3,
+                              'vs3_val'       : entry.vs3_val,
+                              'vtype_vsew'    : entry.vtype_vsew,
+                              'vtype_vmul'    : entry.vtype_vmul,
+                              'vtype_vediv'   : entry.vtype_vediv,
+                              'vm'            : entry.vm,
+                              'updated_csr'   : entry.updated_csr,
+                              'updated_gpr'   : entry.updated_gpr,
+                              'fd'            : entry.fd,
+                              'fd_val'        : entry.fd_val,
+                              'fs1'           : entry.fs1,
+                              'fs1_val'       : entry.fs1_val,
+                              'fs2'           : entry.fs2,
+                              'fs2_val'       : entry.fs2_val,
                 })
 
 

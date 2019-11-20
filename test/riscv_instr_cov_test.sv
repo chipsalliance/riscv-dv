@@ -4,7 +4,7 @@ class riscv_instr_cov_test extends uvm_test;
   typedef uvm_enum_wrapper#(riscv_instr_name_t) instr_enum;
   typedef uvm_enum_wrapper#(riscv_reg_t) gpr_enum;
   typedef uvm_enum_wrapper#(privileged_reg_t) preg_enum;
-  `VECTOR_INCLUDE("riscv_instr_cov_test_inc_1.sv")
+  `VECTOR_INCLUDE("riscv_instr_cov_test_inc_typedef.sv")
 
   riscv_instr_gen_config    cfg;
   riscv_instr_cover_group   instr_cg;
@@ -14,7 +14,7 @@ class riscv_instr_cov_test extends uvm_test;
   int unsigned              entry_cnt;
   int unsigned              total_entry_cnt;
   int unsigned              skipped_cnt;
-  int unsigned              illegal_instr_cnt;
+  int unsigned              unexpected_illegal_instr_cnt;
 
   `uvm_component_utils(riscv_instr_cov_test)
   `uvm_component_new
@@ -37,6 +37,8 @@ class riscv_instr_cov_test extends uvm_test;
       i++;
     end
     cfg = riscv_instr_gen_config::type_id::create("cfg");
+    // disable_compressed_instr is not relevant to coverage test
+    cfg.disable_compressed_instr = 0;
     cfg.build_instruction_template(.skip_instr_exclusion(1));
     instr = riscv_instr_cov_item::type_id::create("instr");
     instr.rand_mode(0);
@@ -45,8 +47,12 @@ class riscv_instr_cov_test extends uvm_test;
     instr_cg = new(cfg);
     `uvm_info(`gfn, $sformatf("%0d CSV trace files to be processed", trace_csv.size()), UVM_LOW)
     foreach (trace_csv[i]) begin
+      bit expect_illegal_instr;
       entry_cnt = 0;
       instr_cg.reset();
+      if (uvm_is_match("*illegal*", trace_csv[i])) begin
+        expect_illegal_instr = 1;
+      end
       `uvm_info(`gfn, $sformatf("Processing CSV trace[%0d]: %s", i, trace_csv[i]), UVM_LOW)
       fd = $fopen(trace_csv[i], "r");
       if (fd) begin
@@ -78,7 +84,7 @@ class riscv_instr_cov_test extends uvm_test;
             end
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
-                             trace["instr"], line), UVM_LOW)
+                             trace["instr"], line), UVM_HIGH)
             end
           end
           entry_cnt += 1;
@@ -92,9 +98,9 @@ class riscv_instr_cov_test extends uvm_test;
     end
     `uvm_info(`gfn, $sformatf("Finished processing %0d trace CSV, %0d instructions",
                      trace_csv.size(), total_entry_cnt), UVM_LOW)
-    if ((skipped_cnt > 0) || (illegal_instr_cnt > 0)) begin
+    if ((skipped_cnt > 0) || (unexpected_illegal_instr_cnt > 0)) begin
       `uvm_error(`gfn, $sformatf("%0d instructions skipped, %0d illegal instruction",
-                       skipped_cnt, illegal_instr_cnt))
+                       skipped_cnt, unexpected_illegal_instr_cnt))
 
     end else begin
       `uvm_info(`gfn, "TEST PASSED", UVM_NONE);
@@ -106,11 +112,11 @@ class riscv_instr_cov_test extends uvm_test;
 
   function void fatal (string str);
     `uvm_info(`gfn, str, UVM_NONE);
-    `ifdef STOP_ON_FIRST_ERROR
-        `uvm_info(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)", 
+    if ($test$plusargs("stop_on_first_error")) begin
+        `uvm_info(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)",
             UVM_NONE);
         $fatal();
-    `endif
+    end
   endfunction
 
   function bit sample();
@@ -135,7 +141,7 @@ class riscv_instr_cov_test extends uvm_test;
                                  val[6:2], trace["instr"]), UVM_LOW)
       instr_cg.opcode_cg.sample(val[6:2]);
     end
-    illegal_instr_cnt++;
+    unexpected_illegal_instr_cnt++;
     fatal($sformatf(
         "FATAL: sample(%0s) is ILLEGAL instruction (for the included ISAs)",
             trace["instr"]));
@@ -144,7 +150,7 @@ class riscv_instr_cov_test extends uvm_test;
 
   virtual function void assign_trace_info_to_instr(riscv_instr_cov_item instr);
     riscv_reg_t gpr;
-   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_2.sv")
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_assign_trace_info_to_instr_declares.sv")
     privileged_reg_t preg;
     get_val(trace["addr"], instr.pc);
     get_val(trace["binary"], instr.binary);
@@ -209,7 +215,7 @@ class riscv_instr_cov_test extends uvm_test;
       end
     end
 
-   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_3.sv")
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_assign_trace_info_to_instr.sv")
 
   endfunction
 
@@ -222,7 +228,7 @@ class riscv_instr_cov_test extends uvm_test;
     end
   endfunction
 
-   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_4.sv")
+   `VECTOR_INCLUDE("riscv_instr_cov_test_inc_assign_trace_info_to_instr_functions.sv")
 
   function void get_val(input string str, output bit [XLEN-1:0] val);
     val = str.atohex();
@@ -257,6 +263,25 @@ class riscv_instr_cov_test extends uvm_test;
       end
       i++;
     end
+  endfunction
+
+  function void report_phase(uvm_phase phase);
+    uvm_report_server rs;
+    int error_count;
+
+    rs = uvm_report_server::get_server();
+
+    error_count = rs.get_severity_count(UVM_WARNING) +
+                  rs.get_severity_count(UVM_ERROR) +
+                  rs.get_severity_count(UVM_FATAL);
+
+    if (error_count == 0) begin
+      `uvm_info("", "TEST PASSED", UVM_NONE);
+    end else begin
+      `uvm_info("", "TEST FAILED", UVM_NONE);
+    end
+    `uvm_info("", "TEST GENERATION DONE", UVM_NONE);
+    super.report_phase(phase);
   endfunction
 
 endclass

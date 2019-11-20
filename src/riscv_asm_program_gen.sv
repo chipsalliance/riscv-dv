@@ -340,7 +340,7 @@ class riscv_asm_program_gen extends uvm_object;
       init_floating_point_gpr();
     end
     core_is_initialized();
-    gen_dummy_csr_write();
+    gen_dummy_csr_write(); // TODO add a way to disable xStatus read
   endfunction
 
   // Setup MISA based on supported extensions

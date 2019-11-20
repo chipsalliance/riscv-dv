@@ -825,7 +825,7 @@ class riscv_instr_cover_group;
     cp_mpp  : coverpoint val[12:11];
   endgroup
 
-`VECTOR_INCLUDE("riscv_instr_cover_group_inc_1.sv")
+`VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_add.sv")
 
   function new(riscv_instr_gen_config cfg);
     riscv_instr_group_t cov_isa;
@@ -886,9 +886,9 @@ class riscv_instr_cover_group;
     `ifdef COVERAGE_WITH_NO_IGNORES
         $display("coverage option: +define+COVERAGE_WITH_NO_IGNORES");
     `endif
-    `ifdef STOP_ON_FIRST_ERROR
-        $display("coverage option: +define+STOP_ON_FIRST_ERROR");
-    `endif
+    if ($test$plusargs("stop_on_first_error")) begin
+        $display("coverage option: +stop_on_first_error");
+    end
 
     `define CG_SELECTOR_BEGIN(CG_ISA) \
         if ((CG_ISA inside {supported_isa}) && (default_cov || (cov_isa == CG_ISA))) begin \
@@ -896,7 +896,7 @@ class riscv_instr_cover_group;
     `define CG_SELECTOR_END \
         end \
 
-   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_2.sv")
+   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_instantiation.sv")
 
     // RV32I instruction functional coverage instantiation
     `CG_SELECTOR_BEGIN(RV32I)
@@ -1188,7 +1188,7 @@ class riscv_instr_cover_group;
       C_SUBW     : c_subw_cg.sample(instr);
       C_ADDW     : c_addw_cg.sample(instr);
       C_ADDIW    : c_addiw_cg.sample(instr);
-      `VECTOR_INCLUDE("riscv_instr_cover_group_inc_3.sv")
+      `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_sample.sv")
       default: begin
         if (RV32C inside {supported_isa}) begin
           if (default_cov) begin
@@ -1252,7 +1252,7 @@ class riscv_instr_cover_group;
             //instr_trans_cg.sample();
         end
     end
-   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_4.sv")
+   `VECTOR_INCLUDE("riscv_instr_cover_group_inc_sample.sv")
     pre_instr.copy_base_instr(instr);
     pre_instr.mem_addr = instr.mem_addr;
   endfunction
@@ -1314,9 +1314,9 @@ class riscv_instr_cover_group;
 
   function void cfatal (string str);
     $display("FATAL Error: %0s", str);
-    `ifdef STOP_ON_FIRST_ERROR
+    if ($test$plusargs("stop_on_first_error")) begin
         $fatal();
-    `endif
+    end
   endfunction
 
 endclass
