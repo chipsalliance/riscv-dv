@@ -389,34 +389,36 @@ class riscv_asm_program_gen extends uvm_object;
   // repeated writes to these CSRs.
   virtual function void gen_dummy_csr_write();
     string instr[$];
-    case (cfg.init_privileged_mode)
-      MACHINE_MODE: begin
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], MSTATUS));
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], MIE));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", MSTATUS, cfg.gpr[0]));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", MIE, cfg.gpr[1]));
-      end
-      SUPERVISOR_MODE: begin
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], SSTATUS));
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], SIE));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", SSTATUS, cfg.gpr[0]));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", SIE, cfg.gpr[1]));
-      end
-      USER_MODE: begin
-        if (!riscv_instr_pkg::support_umode_trap) begin
-          return;
+    if (cfg.enable_dummy_csr_write) begin
+      case (cfg.init_privileged_mode)
+        MACHINE_MODE: begin
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], MSTATUS));
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], MIE));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", MSTATUS, cfg.gpr[0]));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", MIE, cfg.gpr[1]));
         end
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], USTATUS));
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], UIE));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", USTATUS, cfg.gpr[0]));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", UIE, cfg.gpr[1]));
-      end
-      default: begin
-        `uvm_fatal(`gfn, "Unsupported boot mode")
-      end
-    endcase
-    format_section(instr);
-    instr_stream = {instr_stream, instr};
+        SUPERVISOR_MODE: begin
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], SSTATUS));
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], SIE));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", SSTATUS, cfg.gpr[0]));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", SIE, cfg.gpr[1]));
+        end
+        USER_MODE: begin
+          if (!riscv_instr_pkg::support_umode_trap) begin
+            return;
+          end
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], USTATUS));
+          instr.push_back($sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], UIE));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", USTATUS, cfg.gpr[0]));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", UIE, cfg.gpr[1]));
+        end
+        default: begin
+          `uvm_fatal(`gfn, "Unsupported boot mode")
+        end
+      endcase
+      format_section(instr);
+      instr_stream = {instr_stream, instr};
+    end
   endfunction
 
   // Initialize general purpose registers with random value
