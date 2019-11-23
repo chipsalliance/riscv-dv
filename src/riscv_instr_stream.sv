@@ -185,7 +185,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     setup_instruction_dist(no_branch, no_load_store);
   endfunction
 
-  function setup_instruction_dist(bit no_branch = 1'b0, bit no_load_store = 1'b1);
+  function void setup_instruction_dist(bit no_branch = 1'b0, bit no_load_store = 1'b1);
     if (cfg.dist_control_mode) begin
       category_dist = cfg.category_dist;
       if (no_branch) begin

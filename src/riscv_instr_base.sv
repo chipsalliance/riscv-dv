@@ -58,6 +58,7 @@ class riscv_instr_base extends uvm_object;
   string                        label;
   bit                           is_local_numeric_label;
   int                           idx = -1;
+  `VECTOR_INCLUDE("riscv_instr_base_inc_riscv_instr_base_declares.sv")
 
   `uvm_object_utils(riscv_instr_base)
 
@@ -369,6 +370,7 @@ class riscv_instr_base extends uvm_object;
   `add_instr(C_ADDI4SPN, CIW_FORMAT, ARITHMETIC, RV32C, NZUIMM)
   `add_instr(C_ADDI,     CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
   `add_instr(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM)
+
   `add_instr(C_LI,       CI_FORMAT, ARITHMETIC, RV32C)
   `add_instr(C_LUI,      CI_FORMAT, ARITHMETIC, RV32C, NZUIMM)
   `add_instr(C_SUB,      CA_FORMAT, ARITHMETIC, RV32C)
@@ -449,6 +451,8 @@ class riscv_instr_base extends uvm_object;
   // Supervisor Instructions
   `add_instr(SFENCE_VMA, R_FORMAT,SYNCH,RV32I)
 
+  `VECTOR_INCLUDE("riscv_instr_base_inc_add_instr.sv")
+
   function void post_randomize();
     if (group inside {RV32C, RV64C, RV128C, RV32DC, RV32FC}) begin
       is_compressed = 1'b1;
@@ -519,6 +523,9 @@ class riscv_instr_base extends uvm_object;
         has_rs1 = 1'b1;
       end
     end
+
+    `VECTOR_INCLUDE("riscv_instr_base_inc_post_randomize.sv")
+
   endfunction
 
   function void mask_imm();
@@ -758,6 +765,7 @@ class riscv_instr_base extends uvm_object;
       end else begin
         asm_str = $sformatf("%0s %0s, %0s, (%0s)", asm_str, rd.name(), rs2.name(), rs1.name());
       end
+    `VECTOR_INCLUDE("riscv_instr_base_inc_convert2asm.sv")
     end else begin
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
       // This is needed to resume execution from epc+4 after ebreak handling
@@ -1202,7 +1210,8 @@ class riscv_instr_base extends uvm_object;
     this.has_fs3           = obj.has_fs3;
     this.has_fd            = obj.has_fd;
     this.is_floating_point = obj.is_floating_point;
-  endfunction
+    `VECTOR_INCLUDE("riscv_instr_base_inc_copy_base_instr.sv")
+   endfunction
 
 endclass
 
