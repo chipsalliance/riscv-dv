@@ -83,14 +83,8 @@ class riscv_instr_cov_test extends uvm_test;
               continue;
             end
             if (!sample()) begin
-              if (expect_illegal_instr) begin
-                `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
-                                trace["instr"], line), UVM_HIGH)
-              end else begin
-                unexpected_illegal_instr_cnt += 1;
-                `uvm_error(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
-                                 trace["instr"], line))
-              end
+             `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
+                             trace["instr"], line), UVM_HIGH)
             end
           end
           entry_cnt += 1;
