@@ -569,7 +569,8 @@ class riscv_instr_gen_config extends uvm_object;
   // TODO(udi) - include performance/pmp/trigger CSRs?
   virtual function void get_invalid_priv_lvl_csr();
     string invalid_lvl[$];
-    string csr;
+    string csr_name;
+    privileged_reg_t csr;
     // Debug CSRs are inaccessible from all but Debug Mode, and we cannot boot into Debug Mode
     invalid_lvl.push_back("D");
     case (init_privileged_mode)
@@ -587,8 +588,9 @@ class riscv_instr_gen_config extends uvm_object;
       end
     endcase
     foreach (implemented_csr[i]) begin
-      csr = implemented_csr[i].name();
-      if (csr[0] inside {invalid_lvl}) begin
+      privileged_reg_t csr = implemented_csr[i];
+      csr_name = csr.name();
+      if (csr_name[0] inside {invalid_lvl}) begin
         invalid_priv_mode_csrs.push_back(implemented_csr[i]);
       end
     end
