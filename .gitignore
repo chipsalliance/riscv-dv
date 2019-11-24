@@ -7,3 +7,5 @@ work/
 /.project
 /outdir/
 ucli.key
+qrun.out/
+qrun.log
