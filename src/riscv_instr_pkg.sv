@@ -867,6 +867,35 @@ package riscv_instr_pkg;
 
   riscv_reg_t compressed_gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5};
 
+  riscv_instr_category_t all_categories[] = {
+    LOAD, STORE, SHIFT, ARITHMETIC, LOGICAL, COMPARE, BRANCH, JUMP,
+    SYNCH, SYSTEM, COUNTER, CSR, CHANGELEVEL, TRAP, INTERRUPT, AMO
+  };
+
+  // New experimenal instruction class
+  `ifdef EXPERIMENTAL
+    `include "isa/riscv_instr.sv"
+    `include "isa/riscv_amo_instr.sv"
+    `include "isa/riscv_floating_point_instr.sv"
+    `include "isa/riscv_vector_instr.sv"
+    `include "isa/riscv_compressed_instr.sv"
+    `include "isa/rv32a_instr.sv"
+    `include "isa/rv32c_instr.sv"
+    `include "isa/rv32dc_instr.sv"
+    `include "isa/rv32d_instr.sv"
+    `include "isa/rv32fc_instr.sv"
+    `include "isa/rv32f_instr.sv"
+    `include "isa/rv32i_instr.sv"
+    `include "isa/rv32m_instr.sv"
+    `include "isa/rv64a_instr.sv"
+    `include "isa/rv64c_instr.sv"
+    `include "isa/rv64d_instr.sv"
+    `include "isa/rv64f_instr.sv"
+    `include "isa/rv64i_instr.sv"
+    `include "isa/rv64m_instr.sv"
+    `include "isa/rv128c_instr.sv"
+  `endif
+
   `include "riscv_instr_base.sv"
   `include "riscv_instr_gen_config.sv"
   `include "riscv_illegal_instr.sv"

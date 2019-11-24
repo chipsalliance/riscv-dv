@@ -553,8 +553,11 @@ def main():
     elif args.target == "ml":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
+    elif args.target == "exp":
+      args.mabi = "lp64"
+      args.isa  = "rv64gc"
     else:
-      print ("Unsupported pre-defined target: %0s" % args.target)
+      sys.exit("Unsupported pre-defined target: %0s" % args.target)
   else:
     if re.match(".*gcc_compile.*", args.steps) or re.match(".*iss_sim.*", args.steps):
       if (not args.mabi) or (not args.isa):
