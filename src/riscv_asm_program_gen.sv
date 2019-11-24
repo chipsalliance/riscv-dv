@@ -1041,7 +1041,9 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void dump_perf_stats();
     foreach(implemented_csr[i]) begin
       if (implemented_csr[i] inside {[MCYCLE:MHPMCOUNTER31H]}) begin
-        gen_signature_handshake(.instr(instr_stream), .signature_type(WRITE_CSR), .csr(implemented_csr[i]));
+        gen_signature_handshake(.instr(instr_stream),
+                                .signature_type(WRITE_CSR),
+                                .csr(implemented_csr[i]));
       end
     end
   endfunction
