@@ -136,12 +136,11 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
       batch_cnt = (len(csv_list)+batch_size-1)/batch_size;
       logging.info("Batch size: %0d, Batch cnt:%0d" % (batch_size, batch_cnt))
     for i in range(len(csv_list)):
+      file_idx = 0
+      trace_idx = i
       if batch_size > 0:
         file_idx = i / batch_size;
         trace_idx = i % batch_size;
-      else:
-        file_idx = 0
-        trace_idx = i
       trace_csv_opts += (" +trace_csv_%0d=%s" % (trace_idx, csv_list[i]))
       if ((i == len(csv_list)-1) or ((batch_size > 0) and (trace_idx == batch_size-1))):
         sim_cmd = base_sim_cmd.replace("<trace_csv_opts>", trace_csv_opts)
@@ -196,20 +195,18 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
     base_sim_cmd += (" --target %s" % target)
   if custom_target:
     base_sim_cmd += (" --custom_target %s" % custom_target)
+  batch_cnt = 1
   if batch_size > 0:
     batch_cnt = int((instr_cnt+batch_size-1)/batch_size)
     logging.info("Batch size: %0d, Batch cnt:%0d" % (batch_size, batch_cnt))
-  else:
-    batch_cnt = 1
   logging.info("Randomizing %0d instructions in %0d batches", instr_cnt, batch_cnt)
   for i in range(batch_cnt):
+    batch_instr_cnt = instr_cnt
     if batch_size > 0:
       if i == batch_cnt - 1:
         batch_instr_cnt = instr_cnt - batch_size * (batch_cnt - 1)
       else:
         batch_instr_cnt = batch_size
-    else:
-      batch_instr_cnt = instr_cnt
     sim_cmd = base_sim_cmd.replace("<instr_cnt>", str(batch_instr_cnt))
     sim_cmd += ("  --log_suffix _%d" % i)
     if lsf_cmd == "":
