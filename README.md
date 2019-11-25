@@ -32,10 +32,10 @@ which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
 
-Install YAML python package:
+Install dependencies needed for running:
 
 ```bash
-pip3 install PyYAML
+pip3 install -r requirements.txt
 ```
 
 ### Setup RISCV-GCC compiler toolchain
@@ -373,16 +373,6 @@ To specify what ISA width should be generated in the test, simply include the
 matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.
 
 ### Privileged CSR Test Generation (optional)
-
-To be able to run the CSR generation script, the open-source `bitstring`
-Python library is required ([bitstring](https://github.com/scott-griffiths/bitstring)).
-To install this library, either clone the repository and run the `setup.py`
-setup script, or run only one of the below commands:
-
-```bash
-sudo apt-get install python3-bitstring (or your OS-specific package manager)
-pip install bitstring
-```
 
 The CSR generation script is located at
 [scripts/gen_csr_test.py](https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py).
