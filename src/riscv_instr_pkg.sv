@@ -88,7 +88,9 @@ package riscv_instr_pkg;
     RV128I,
     RV128C,
     RV32V,
-    RV64V
+    RV32B,
+    RV64V,
+    RV64B
   } riscv_instr_group_t;
 
   typedef enum {

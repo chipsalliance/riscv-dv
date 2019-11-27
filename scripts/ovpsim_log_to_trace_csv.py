@@ -34,6 +34,11 @@ except:
         logging.info("No OVPsim vector instruction processing included")
         if stop_on_first_error:
             sys.exit(-1)
+    def is_an_extension_instruction(instr):
+        if 'v' in instr[0]:
+            return True
+        return False
+
 
 stop_on_first_error = 0
 
@@ -167,7 +172,7 @@ def update_operands_values(trace, gpr):
 
 def show_line_instr(line, i):
     """ show line """
-    if i.instr_str[0] in ['v']:
+    if is_an_extension_instruction(i.instr):
         logging.debug("%s" % (line.strip()))
         logging.debug(
             "  -->> instr_str(%s) binary(%s) addr(%s) mode(%s) instr(%s)"
@@ -285,11 +290,11 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
 
         if full_trace:
             # TODO - when got full ins decode remove this
-            if  "fsriw" in line or \
-                "fsw" in line or \
-                "fsd" in line or \
+            if  "fsw" in line or \
                 "fnmsub.d" in line or \
-                "flw" in line:
+                "fsd" in line:
+                # "fsriw" in line or \
+                # "flw" in line or \
                     logging.debug ("Ignoring ins...(%s) " % (line))
                     continue
             process_if_compressed(prev_trace)
@@ -303,7 +308,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                 elif (prev_trace.instr in ['jal','c.jal']):
                   process_jal(prev_trace, operands, gpr)
                 else:
-                  if 'v' in prev_trace.instr[0]:
+                  if is_an_extension_instruction(prev_trace.instr):
                     assign_operand_vector(prev_trace, operands, gpr,
                         stop_on_first_error)
                   elif 'f' in prev_trace.instr[0] or "c.f" in prev_trace.instr[0:3]:
@@ -344,9 +349,8 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
           if verbose2: logging.debug(("n:gpr %0s = %0s" %
                 (n.group("r"), n.group("val"))))
           if n.group("r") != "frm":
-            # prev_trace.updated_gpr.append(n.group("r"))
             prev_trace.updated_gpr.append([n.group("r"), n.group("val")])
-            if 'v' in prev_trace.instr[0]:
+            if is_an_extension_instruction(prev_trace.instr):
                 gpr[n.group("r")] = n.group("val")
             else:
                 # backwards compatible

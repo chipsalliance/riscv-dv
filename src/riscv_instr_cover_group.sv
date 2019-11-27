@@ -229,6 +229,8 @@ class riscv_instr_cover_group;
   bit [4:0]               branch_hit_history; // The last 5 branch result
   bit                     default_cov = 'b1;
 
+`VECTOR_INCLUDE("riscv_instr_cover_group_inc_cpu_declare.sv")
+
   ///////////// RV32I instruction functional coverage //////////////
 
   // Arithmetic instructions
@@ -1288,7 +1290,7 @@ class riscv_instr_cover_group;
                      $sformatf("Instruction %0s randomization failure", instr_name.name()))
         end
         if ((instr.group inside {supported_isa}) &&
-            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C, RV64V})) begin
+            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C, RV32V, RV64V, RV64B, RV32B})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||
@@ -1310,6 +1312,7 @@ class riscv_instr_cover_group;
     instr_cnt = 0;
     branch_instr_cnt = 0;
     branch_hit_history = '0;
+    `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cpu_reset.sv")
   endfunction
 
   function void cfatal (string str);
