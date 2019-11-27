@@ -53,6 +53,21 @@
     +num_of_sub_program=5
   rtl_test: core_base_test
 
+# TODO: Only enable booting into U-mode for now, as OVPsim doesn't support some debug CSRs
+- test: riscv_invalid_csr_test
+  description: >
+    Boot core into random privileged mode and generate csr accesses to invalid CSRs (at a higher priv mode)
+  iterations: 2
+  gen_test: riscv_rand_instr_test
+  gen_opts: >
+    +require_signature_addr=1
+    +instr_cnt=6000
+    +num_of_sub_program=0
+    +enable_access_invalid_csr_level=1
+    +boot_mode=u
+  rtl_test: core_invalid_csr_test
+  sim_opts: >
+    +require_signature_addr=1
 
 # TODO: Re-enable this test after all the data/instruction page organization changes are done
 - test: riscv_page_table_exception_test

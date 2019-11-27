@@ -146,6 +146,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     sim_only              : Simulation only
     compile_only          : Compile the generator only
     lsf_cmd               : LSF command used to run the instruction generator
+    cwd                   : Filesystem path to RISCV-DV repo
     seed                  : Seed to the instruction generator
     cmp_opts              : Compile options for the generator
     sim_opts              : Simulation options for the generator
@@ -204,7 +205,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         to generate directed CSR test code, located at scripts/gen_csr_test.py.
         """
         if test['test'] == 'riscv_csr_test':
-          cmd = "python3 scripts/gen_csr_test.py" + \
+          cmd = "python3 " + cwd + "/scripts/gen_csr_test.py" + \
                 (" --csr_file %s" % csr_file) + \
                 (" --xlen %s" % re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen")) + \
                 (" --iterations %i" % iterations) + \
@@ -552,8 +553,11 @@ def main():
     elif args.target == "ml":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
+    elif args.target == "exp":
+      args.mabi = "lp64"
+      args.isa  = "rv64gc"
     else:
-      print ("Unsupported pre-defined target: %0s" % args.target)
+      sys.exit("Unsupported pre-defined target: %0s" % args.target)
   else:
     if re.match(".*gcc_compile.*", args.steps) or re.match(".*iss_sim.*", args.steps):
       if (not args.mabi) or (not args.isa):

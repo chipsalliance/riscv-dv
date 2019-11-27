@@ -285,7 +285,9 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     if ((instr.category == CSR) && !skip_csr) begin
       instr.gen_rand_csr(.privileged_mode(cfg.init_privileged_mode),
                          .enable_floating_point(cfg.enable_floating_point),
-                         .illegal_csr_instr(cfg.enable_illegal_csr_instruction));
+                         .illegal_csr_instr(cfg.enable_illegal_csr_instruction),
+                         .legal_invalid_csr_instr(cfg.enable_access_invalid_csr_level),
+                         .invalid_csrs(cfg.invalid_priv_mode_csrs));
     end
     if (instr.has_fs1) begin
       instr.fs1 = instr.gen_rand_fpr();

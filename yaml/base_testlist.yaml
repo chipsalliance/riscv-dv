@@ -153,7 +153,6 @@
     +no_ebreak=0
   rtl_test: core_base_test
   sim_opts: >
-    +require_signature_addr=1
     +enable_debug_seq=1
   compare_opts: >
     +compare_final_value_only=1
