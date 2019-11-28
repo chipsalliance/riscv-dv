@@ -142,7 +142,6 @@ def do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir, cmp_opts,
   """
   if (not((len(test_list) == 1) and (test_list[0]['test'] == 'riscv_csr_test'))):
     logging.info("Building RISC-V instruction generator")
-    logging.info(compile_cmd)
     for cmd in compile_cmd:
       cmd = re.sub("<out>", os.path.abspath(output_dir), cmd)
       cmd = re.sub("<setting>", core_setting_dir, cmd)
@@ -159,7 +158,8 @@ def do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir, cmp_opts,
 def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
                  end_signature_addr, timeout_s, output_dir):
   """Run CSR test
-     It calls a separate python script to generate directed CSR test code, located at scripts/gen_csr_test.py.
+     It calls a separate python script to generate directed CSR test code,
+     located at scripts/gen_csr_test.py.
   """
   cmd = "python3 " + cwd + "/scripts/gen_csr_test.py" + \
         (" --csr_file %s" % csr_file) + \
@@ -262,7 +262,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
   Args:
     test_list             : List of assembly programs to be compiled
     csr_file              : YAML file containing description of all CSRs
-    end_signature_addr    : Address that tests will write pass/fail signature to at end of test
+    end_signature_addr    : Address that tests will write pass/fail signature to
     isa                   : Processor supported ISA subset
     simulator             : RTL simulator used to run instruction generator
     simulator_yaml        : RTL simulator configuration file in YAML format
