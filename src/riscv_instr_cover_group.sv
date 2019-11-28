@@ -1322,11 +1322,4 @@ class riscv_instr_cover_group;
     end
   endfunction
 
-  function void cfatal (string str);
-    $display("FATAL Error: %0s", str);
-    if ($test$plusargs("stop_on_first_error")) begin
-        $fatal();
-    end
-  endfunction
-
 endclass
