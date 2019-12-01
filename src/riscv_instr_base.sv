@@ -32,9 +32,9 @@ class riscv_instr_base extends uvm_object;
   rand bit [31:0]               imm;
   rand imm_t                    imm_type;
   rand bit [4:0]                imm_len;
-  rand bit                      is_pseudo_instr;
   rand bit                      aq;
   rand bit                      rl;
+  bit                           is_pseudo_instr;
   bit                           is_branch_target;
   bit                           has_label = 1'b1;
   bit                           atomic = 0;
@@ -63,7 +63,6 @@ class riscv_instr_base extends uvm_object;
   `uvm_object_utils(riscv_instr_base)
 
   constraint default_c {
-    soft is_pseudo_instr == 0;
     instr_name != INVALID_INSTR;
   }
 
@@ -1216,22 +1215,19 @@ class riscv_instr_base extends uvm_object;
 endclass
 
 // Psuedo instructions are used to simplify assembly program writing
-class riscv_pseudo_instr extends riscv_instr_base;
+class riscv_pseudo_instr extends `INSTR;
 
   rand riscv_pseudo_instr_name_t  pseudo_instr_name;
 
-  constraint default_c {
-    is_pseudo_instr == 1'b1;
-  }
-
-  `add_pseudo_instr(LI,    I_FORMAT, LOAD, RV32I)
-  `add_pseudo_instr(LA,    I_FORMAT, LOAD, RV32I)
+  `add_pseudo_instr(LI, I_FORMAT, LOAD, RV32I)
+  `add_pseudo_instr(LA, I_FORMAT, LOAD, RV32I)
 
   `uvm_object_utils(riscv_pseudo_instr)
 
   function new(string name = "");
     super.new(name);
     process_load_store = 0;
+    this.format = I_FORMAT;
   endfunction
 
   // Convert the instruction to assembly code

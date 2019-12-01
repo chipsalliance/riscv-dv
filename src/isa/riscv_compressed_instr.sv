@@ -143,7 +143,7 @@ class riscv_compressed_instr extends riscv_instr;
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rs2.name(), get_imm());
         CR_FORMAT:
           if (instr_name inside {C_JR, C_JALR}) begin
-            asm_str = $sformatf("%0s%0s", asm_str, rs1.name());
+            asm_str = $sformatf("%0s%0s", asm_str, rd.name());
           end else begin
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
           end
