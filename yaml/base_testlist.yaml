@@ -59,7 +59,6 @@
     +directed_instr_4=riscv_multi_page_load_store_instr_stream,4
     +directed_instr_5=riscv_mem_region_stress_test,4
     +directed_instr_6=riscv_jal_instr,4
-    +directed_instr_7=riscv_load_store_rand_addr_instr_stream,4
   rtl_test: core_base_test
 
 - test: riscv_jump_stress_test

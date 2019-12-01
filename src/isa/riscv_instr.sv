@@ -20,12 +20,12 @@ class riscv_instr extends uvm_object;
   static bit                 instr_registry[riscv_instr_name_t];
 
   // Instruction list
-  static riscv_instr         instr[riscv_instr_name_t];
   static riscv_instr_name_t  instr_names[$];
 
   // Categorized instruction list
   static riscv_instr_name_t  instr_group[riscv_instr_group_t][$];
   static riscv_instr_name_t  instr_category[riscv_instr_category_t][$];
+  static riscv_instr_name_t  basic_instr[$];
 
   // Instruction attributes
   riscv_instr_group_t        group;
@@ -54,7 +54,6 @@ class riscv_instr extends uvm_object;
   bit                        is_hint_instr;
   bit                        has_imm;
   bit                        is_floating_point;
-  bit [31:0]                 imm_mask = '1;
   string                     imm_str;
   string                     comment;
   string                     label;
@@ -77,36 +76,80 @@ class riscv_instr extends uvm_object;
   // Create the list of instructions based on the supported ISA extensions and configuration of the
   // generator.
   static function void create_instr_list(riscv_instr_gen_config cfg);
-    uvm_object obj;
-    string instr_class_name;
-    uvm_coreservice_t coreservice = uvm_coreservice_t::get();
-    uvm_factory factory = coreservice.get_factory();
+    instr_names.delete();
+    instr_group.delete();
+    instr_category.delete();
     foreach (instr_registry[instr_name]) begin
       riscv_instr instr_inst;
-      instr_class_name = {"riscv_", instr_name.name(), "_instr"};
-      `uvm_info("riscv_instr", $sformatf("Creating instruction template : %s",
-                                         instr_class_name), UVM_LOW)
-      obj = factory.create_object_by_name(instr_class_name, "riscv_instr", instr_class_name);
-      if (obj == null) begin
-        `uvm_fatal("riscv_instr", $sformatf("Failed to create instr: %0s", instr_class_name))
-      end
-      if (!$cast(instr_inst, obj)) begin
-        `uvm_fatal("riscv_instr", $sformatf("Failed to cast instr: %0s", instr_class_name))
-      end
+      instr_inst = create_instr(instr_name);
       // C_JAL is RV32C only instruction
       if ((XLEN != 32) && (instr_name == C_JAL)) continue;
-      // TODO: gcc compile issue
+      if ((SP inside {cfg.reserved_regs}) &&
+          (instr_name inside {C_SWSP, C_SDSP, C_ADDI16SP})) begin
+        continue;
+      end
+      if (!cfg.enable_sfence && instr_name == SFENCE_VMA) continue;
+      if (cfg.no_fence && (instr_name inside {FENCE, FENCE_I, SFENCE_VMA})) continue;
+      // TODO: gcc compile issue, support c.addi4spn later
       if (instr_name == C_ADDI4SPN) continue;
-      if (instr_inst.group inside {supported_isa}) begin
-        instr[instr_name] = instr_inst;
+      if ((instr_inst.group inside {supported_isa}) &&
+          !(cfg.disable_compressed_instr &&
+            (instr_inst.group inside {RV32C, RV64C, RV32DC, RV32FC, RV128C})) &&
+          !(!cfg.enable_floating_point &&
+            (instr_inst.group inside {RV32F, RV64F, RV32D, RV64D}))) begin
         instr_category[instr_inst.category].push_back(instr_name);
         instr_group[instr_inst.group].push_back(instr_name);
         instr_names.push_back(instr_name);
       end
     end
+    build_basic_instruction_list(cfg);
   endfunction : create_instr_list
 
-  static function riscv_instr get_rand_instr(riscv_instr_name_t include_instr[] = {},
+  static function riscv_instr create_instr(riscv_instr_name_t instr_name);
+    uvm_object obj;
+    riscv_instr inst;
+    string instr_class_name;
+    uvm_coreservice_t coreservice = uvm_coreservice_t::get();
+    uvm_factory factory = coreservice.get_factory();
+    instr_class_name = {"riscv_", instr_name.name(), "_instr"};
+    obj = factory.create_object_by_name(instr_class_name, "riscv_instr", instr_class_name);
+    if (obj == null) begin
+      `uvm_fatal("riscv_instr", $sformatf("Failed to create instr: %0s", instr_class_name))
+    end
+    if (!$cast(inst, obj)) begin
+      `uvm_fatal("riscv_instr", $sformatf("Failed to cast instr: %0s", instr_class_name))
+    end
+    return inst;
+  endfunction : create_instr
+
+  static function void build_basic_instruction_list(riscv_instr_gen_config cfg);
+    basic_instr = {instr_category[SHIFT], instr_category[ARITHMETIC],
+                   instr_category[LOGICAL], instr_category[COMPARE]};
+    if (!cfg.no_ebreak) begin
+      basic_instr = {basic_instr, EBREAK};
+      foreach(riscv_instr_pkg::supported_isa[i]) begin
+        if (RV32C inside {riscv_instr_pkg::supported_isa[i]}) begin
+          basic_instr = {basic_instr, C_EBREAK};
+          break;
+        end
+      end
+    end
+    if (cfg.no_dret == 0) begin
+      basic_instr = {basic_instr, DRET};
+    end
+    if (cfg.no_fence == 0) begin
+      basic_instr = {basic_instr, instr_category[SYNCH]};
+    end
+    if ((cfg.no_csr_instr == 0) && (cfg.init_privileged_mode == MACHINE_MODE)) begin
+      basic_instr = {basic_instr, instr_category[CSR]};
+    end
+    if (cfg.no_wfi == 0) begin
+      basic_instr = {basic_instr, WFI};
+    end
+  endfunction : build_basic_instruction_list
+
+  static function riscv_instr get_rand_instr(riscv_instr instr_h = null,
+                                             riscv_instr_name_t include_instr[] = {},
                                              riscv_instr_name_t exclude_instr[] = {},
                                              riscv_instr_category_t include_category[] = {},
                                              riscv_instr_category_t exclude_category[] = {},
@@ -116,6 +159,9 @@ class riscv_instr extends uvm_object;
      riscv_instr_name_t allowed_instr[];
      riscv_instr_name_t disallowed_instr[];
      riscv_instr_category_t allowed_categories[];
+     if (instr_h == null) begin
+       instr_h = riscv_instr::type_id::create("instr_h");
+     end
      foreach (include_category[i]) begin
        allowed_instr = {allowed_instr, instr_category[include_category[i]]};
      end
@@ -145,13 +191,14 @@ class riscv_instr extends uvm_object;
      }) begin
        `uvm_fatal("riscv_instr", "Cannot generate random instruction")
      end
-     return instr[name];
+     return create_instr(name);
   endfunction : get_rand_instr
 
   // Disable the rand mode for unused operands to randomization performance
   virtual function void set_rand_mode();
     case (format) inside
       R_FORMAT, CR_FORMAT, CL_FORMAT : imm.rand_mode(0);
+    /*
       I_FORMAT, CI_FORMAT : rs2.rand_mode(0);
       S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT : rd.rand_mode(0);
       U_FORMAT, J_FORMAT, CJ_FORMAT, CIW_FORMAT: begin
@@ -162,6 +209,7 @@ class riscv_instr extends uvm_object;
         rd.rand_mode(0);
         rs2.rand_mode(0);
       end
+    */
     endcase
   endfunction
 
@@ -187,7 +235,6 @@ class riscv_instr extends uvm_object;
     if (sign && !((format == U_FORMAT) || (imm_type inside {UIMM, NZUIMM}))) begin
       imm = imm_mask | imm;
     end
-    comment = $sformatf("imm:0x%0x, imm_mask:0x%0x", imm, imm_mask);
   endfunction : extend_imm
 
   function void post_randomize();

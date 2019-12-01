@@ -29,6 +29,8 @@
 # gcc_opts        : gcc compile options
 # --------------------------------------------------------------------------------
 
+- import: <riscv_dv_root>/target/rv64imc/testlist.yaml
+
 - test: riscv_instr_test
   description: >
     New experimental instruction class test

@@ -390,8 +390,12 @@ class riscv_instr_gen_config extends uvm_object;
   }
 
   `uvm_object_utils_begin(riscv_instr_gen_config)
-    `uvm_field_int(main_program_instr_cnt,       UVM_DEFAULT)
+    `uvm_field_int(main_program_instr_cnt, UVM_DEFAULT)
     `uvm_field_sarray_int(sub_program_instr_cnt, UVM_DEFAULT)
+    `uvm_field_int(debug_program_instr_cnt, UVM_DEFAULT)
+    `uvm_field_enum(data_pattern_t, data_page_pattern, UVM_DEFAULT)
+    `uvm_field_enum(privileged_mode_t, init_privileged_mode, UVM_DEFAULT)
+    `uvm_field_array_enum(riscv_reg_t, reserved_regs, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
