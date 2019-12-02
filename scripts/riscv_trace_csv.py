@@ -46,6 +46,8 @@ class RiscvInstructionTraceEntry(object):
     self.vs2_val = ""
     self.vs3 = ""
     self.vs3_val = ""
+    self.rs3 = ""
+    self.rs3_val = ""
     self.vtype_vsew = ""
     self.vtype_vmul = ""
     self.vtype_vediv = ""
@@ -79,7 +81,7 @@ class RiscvInstructionTraceCsv(object):
     """Create a CSV file handle for a new trace"""
     fields = [
         "instr", "rd", "rd_val", "rs1", "rs1_val", "rs2", "rs2_val",
-        "imm", "str", "addr", "binary", "csr", "mode",
+        "rs3", "rs3_val", "imm", "str", "addr", "binary", "csr", "mode",
         "vd", "vd_val", "vs1", "vs1_val","vs2", "vs2_val","vs3", "vs3_val",
         "vtype_vsew", "vtype_vmul", "vtype_vediv", "vm", "updated_csr", "updated_gpr",
         "fd", "fd_val", "fs1", "fs1_val","fs2", "fs2_val"]
@@ -110,6 +112,8 @@ class RiscvInstructionTraceCsv(object):
                               'rs1_val'       : entry.rs1_val,
                               'rs2'           : entry.rs2,
                               'rs2_val'       : entry.rs2_val,
+                              'rs3'           : entry.rs3,
+                              'rs3_val'       : entry.rs3_val,
                               'addr'          : entry.addr,
                               'instr'         : entry.instr,
                               'imm'           : entry.imm,
