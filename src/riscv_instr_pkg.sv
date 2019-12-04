@@ -934,6 +934,7 @@ package riscv_instr_pkg;
 `endif
   `include "riscv_instr_sequence.sv"
   `include "riscv_asm_program_gen.sv"
+  `include "riscv_debug_rom_gen.sv"
   `include "riscv_instr_cov_item.sv"
   `include "riscv_instr_cover_group.sv"
   `include "user_extension.svh"

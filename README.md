@@ -437,9 +437,13 @@ upstream changes to a minimum.
   different directory, you can use "-ext <user_extension_path>" to override the
   user extension path.
 - Create a new target directory and customize the setting and testlist
-- Run the generator with "--custom_target <target_dir> --isa <isa> --mabi <mabi>"
+- Run the generator with `--custom_target <target_dir> --isa <isa> --mabi <mabi>`
 - Use command line type override to use your extended classes.
-  --sim_opts="+uvm_set_type_override=<upstream_class>,<extended_class>"
+  `--sim_opts="+uvm_set_type_override=<upstream_class>,<extended_class>"`
+- If extending `riscv_asm_program_gen` class is desired, must use this command
+  line override:
+  `--sim_opts="+uvm_set_inst_override=riscv_asm_program_gen,<extended
+  class>,'uvm_test_top.asm_gen'"`
 
 You can refer to [riscv-dv extension for ibex](https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68) for a working example.
 
