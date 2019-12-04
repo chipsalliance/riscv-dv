@@ -92,12 +92,11 @@
       - "qrun -f <cwd>/qrun_option.f
         +incdir+<setting>
         +incdir+<user_extension>
-        -f <cwd>/files.f
-        -vlog.l <out>/compile.log <cmp_opts>
-        -vopt.l <out>/optimize.log
+        -f <cwd>/files.f <cmp_opts>
+        -l <out>/qrun_compile_optimize.log
         -outdir <out>/qrun.out"
   sim:
     cmd: >
-      qrun -64 -simulate -snapshot design_opt -c <cov_opts> <sim_opts> -sv_seed <seed>
+      qrun -64 -simulate -snapshot design_opt -c <cov_opts> <sim_opts> -sv_seed <seed> -outdir <out>/qrun.out
     cov_opts: >
-      -do "coverage save -onexit <out>/cov.ucdb;"
+      -coverage -ucdb <out>/cov.ucdb
