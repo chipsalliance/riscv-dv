@@ -113,9 +113,7 @@ class riscv_instr_cov_test extends uvm_test;
   function void fatal (string str);
     `uvm_info(`gfn, str, UVM_NONE);
     if ($test$plusargs("stop_on_first_error")) begin
-        `uvm_info(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)",
-            UVM_NONE);
-        $fatal();
+      `uvm_fatal(`gfn, "Errors: *. Warnings: * (written by riscv_instr_cov.sv)")
     end
   endfunction
 
@@ -142,10 +140,8 @@ class riscv_instr_cov_test extends uvm_test;
       instr_cg.opcode_cg.sample(val[6:2]);
     end
     unexpected_illegal_instr_cnt++;
-    fatal($sformatf(
-        "FATAL: sample(%0s) is ILLEGAL instruction (for the included ISAs)",
-            trace["instr"]));
-    return 1'b0;
+    `uvm_fatal(`gfn, $sformatf("sample(%0s) is ILLEGAL instruction (for the included ISAs)",
+                               trace["instr"]))
   endfunction
 
   virtual function void assign_trace_info_to_instr(riscv_instr_cov_item instr);

@@ -91,7 +91,7 @@ def get_seed(seed):
     return random.getrandbits(32)
 
 
-def run_cmd(cmd, timeout_s = 999, exit_on_error = 1):
+def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
   """Run a command and return output
 
   Args:
@@ -118,16 +118,16 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1):
     output = ""
     ps.kill()
   rc = ps.returncode
-  if rc and rc > 0:
+  if rc and check_return_code and rc > 0:
     logging.info(output)
-    logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
+    logging.error("ERROR return code: %d/%d, cmd:%s" % (check_return_code, rc, cmd))
     if exit_on_error:
       sys.exit(1)
   logging.debug(output)
   return output
 
 
-def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0):
+def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0, check_return_code = True):
   """Run a list of commands in parallel
 
   Args:
@@ -154,7 +154,7 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0):
       logging.error("Timeout[%ds]: %s" % (timeout_s, cmd))
       children[i].kill()
     rc = children[i].returncode
-    if rc and rc > 0:
+    if rc and check_return_code and rc > 0:
       logging.info(output)
       logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
       if exit_on_error:

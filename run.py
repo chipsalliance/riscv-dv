@@ -174,7 +174,7 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
 
 def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-                batch_size, output_dir, verbose):
+                batch_size, output_dir, verbose, check_return_code):
   """Run  the instruction generator
 
   Args:
@@ -192,6 +192,7 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
     log_suffix            : Simulation log file name suffix
     batch_size            : Number of tests to generate per run
     output_dir            : Output directory of the ELF files
+    check_return_code     : Check return code of the command
   """
   cmd_list = []
   sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
@@ -244,12 +245,12 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
           else:
             logging.info("Running %s, batch %0d/%0d, test_cnt:%0d" %
                          (test['test'], i+1, batch_cnt, test_cnt))
-            output = run_cmd(cmd, timeout_s)
+            output = run_cmd(cmd, timeout_s, check_return_code = check_return_code)
   if sim_seed:
     with open(('%s/seed.yaml' % os.path.abspath(output_dir)) , 'w') as outfile:
       yaml.dump(sim_seed, outfile, default_flow_style=False)
   if lsf_cmd:
-    run_parallel_cmd(cmd_list, timeout_s)
+    run_parallel_cmd(cmd_list, timeout_s, check_return_code = check_return_code)
 
 
 
@@ -282,6 +283,11 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     batch_size            : Number of tests to generate per run
     seed_yaml             : Seed specification from a prior regression
   """
+  check_return_code = True
+  if simulator == "ius":
+    # Incisive return non-zero return code even test passes
+    check_return_code = False
+    logging.debug("Disable return_code checking for %s" % simulator)
   # Mutually exclusive options between compile_only and sim_only
   if compile_only and sim_only:
     logging.error("argument -co is not allowed with argument -so")
@@ -298,7 +304,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
   if not compile_only:
     do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-                batch_size, output_dir, verbose)
+                batch_size, output_dir, verbose, check_return_code)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts):

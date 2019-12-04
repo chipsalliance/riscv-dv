@@ -850,34 +850,35 @@ class riscv_instr_cover_group;
         default_cov = 'b0;
     end
     if ($test$plusargs("cov_isa=")) begin
-        string cov_isa_str;
-        riscv_instr_group_t isa;
-        bit got_one = 'b0;
-        void'($value$plusargs("cov_isa=%0s", cov_isa_str));
-        cov_isa_str = cov_isa_str.toupper();
-        $display("coverage option: +cov_isa=%0s", cov_isa_str);
-        isa = isa.first;
-        do begin
-            if (isa.name == cov_isa_str) begin
-                cov_isa = isa;
-                got_one = 'b1;
-                break;
-            end
-            isa =  isa.next;
-        end while (isa != isa.first);
-        if (got_one == 'b1) begin
-            //$display ($sformatf("GOT  cov_isa=%0s [%d]", cov_isa.name, cov_isa));
-        end else begin
-            cfatal ($sformatf("riscv_instr_gen_config cfg cant find enum for specifed cov_isa=%0s", cov_isa_str));
+      string cov_isa_str;
+      riscv_instr_group_t isa;
+      bit got_one = 'b0;
+      void'($value$plusargs("cov_isa=%0s", cov_isa_str));
+      cov_isa_str = cov_isa_str.toupper();
+      $display("coverage option: +cov_isa=%0s", cov_isa_str);
+      isa = isa.first;
+      do begin
+        if (isa.name == cov_isa_str) begin
+          cov_isa = isa;
+          got_one = 'b1;
+          break;
         end
+        isa =  isa.next;
+      end while (isa != isa.first);
+      if (got_one == 'b1) begin
+        //$display ($sformatf("GOT  cov_isa=%0s [%d]", cov_isa.name, cov_isa));
+      end else begin
+        fatal($sformatf("riscv_instr_gen_config cfg cant find enum for specifed cov_isa=%0s",
+                        cov_isa_str));
+      end
     end
     // TODO if we want to selectively enable/disable coverage based on categories...
     // e.g. +cov_category=OPV_CONFIG
     if ($test$plusargs("cov_category=")) begin
-        string cov_category_str;
-        void'($value$plusargs("cov_category=%0s", cov_category_str));
-        $display("coverage option: +cov_category=%0s", cov_category_str);
-        // used to further subset coverage (used by vectors)
+      string cov_category_str;
+      void'($value$plusargs("cov_category=%0s", cov_category_str));
+      $display("coverage option: +cov_category=%0s", cov_category_str);
+      // used to further subset coverage (used by vectors)
     end
 
     // show coverage defines
@@ -1315,10 +1316,9 @@ class riscv_instr_cover_group;
     `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cpu_reset.sv")
   endfunction
 
-  function void cfatal (string str);
-    $display("FATAL Error: %0s", str);
+  function void fatal(string str);
     if ($test$plusargs("stop_on_first_error")) begin
-        $fatal();
+      `uvm_fatal("riscv_instr_cover_group", $sformatf("FATAL Error: %0s", str))
     end
   endfunction
 
