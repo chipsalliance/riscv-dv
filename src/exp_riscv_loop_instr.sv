@@ -143,7 +143,8 @@ class riscv_loop_instr extends riscv_rand_instr_stream;
 
       // Branch target instruction, can be anything
       loop_branch_target_instr[i] = riscv_instr::get_rand_instr(
-          .exclude_category({LOAD, STORE, BRANCH, JUMP}));
+          .include_category({ARITHMETIC, LOGICAL, COMPARE}),
+          .exclude_instr({C_ADDI16SP}));
       `DV_CHECK_RANDOMIZE_WITH_FATAL(loop_branch_target_instr[i],
                                      !(rd inside {reserved_rd, cfg.reserved_regs});,
                                      "Cannot randomize branch target instruction")

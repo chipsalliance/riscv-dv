@@ -29,12 +29,12 @@
 # gcc_opts        : gcc compile options
 # --------------------------------------------------------------------------------
 
-- import: <riscv_dv_root>/target/rv64imc/testlist.yaml
+- import: <riscv_dv_root>/target/rv64gc/testlist.yaml
 
 - test: riscv_instr_test
   description: >
     New experimental instruction class test
-  iterations: 1
+  iterations: 0
   gen_test: riscv_instr_test
   gen_opts: >
     +instr_cnt=10000
