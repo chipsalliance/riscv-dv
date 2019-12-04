@@ -23,7 +23,6 @@ import re
 import sys
 import logging
 
-from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
@@ -316,10 +315,7 @@ def main():
   args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
-  if args.o is None:
-    output_dir = "cov_out_" + str(date.today())
-  else:
-    output_dir = args.o
+  output_dir = create_output(args.o)
 
   if args.noclean is False:
     os.system("rm -rf %s" % output_dir)
