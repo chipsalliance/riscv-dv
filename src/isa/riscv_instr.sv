@@ -27,6 +27,10 @@ class riscv_instr extends uvm_object;
   static riscv_instr_name_t  instr_category[riscv_instr_category_t][$];
   static riscv_instr_name_t  basic_instr[$];
 
+  // Privileged CSR filter
+  static privileged_reg_t    exclude_reg[];
+  static privileged_reg_t    include_reg[];
+
   // Instruction attributes
   riscv_instr_group_t        group;
   riscv_instr_format_t       format;
@@ -61,7 +65,20 @@ class riscv_instr extends uvm_object;
   int                        idx = -1;
 
   constraint imm_c {
-    (instr_name inside {SLLI, SRLI, SRAI, SLLIW, SRLIW, SRAIW}) -> (imm[11:5] == 0);
+    if (instr_name inside {SLLI, SRLI, SRAI, SLLIW, SRLIW, SRAIW}) {
+      imm[11:5] == 0;
+    }
+  }
+
+  constraint csr_c {
+    if (category == CSR) {
+      if (include_reg.size() > 0) {
+        csr inside {include_reg};
+      }
+      if (exclude_reg.size() > 0) {
+        !(csr inside {exclude_reg});
+      }
+    }
   }
 
   `uvm_object_utils(riscv_instr)
@@ -103,7 +120,27 @@ class riscv_instr extends uvm_object;
       end
     end
     build_basic_instruction_list(cfg);
+    create_csr_filter(cfg);
   endfunction : create_instr_list
+
+  static function void create_csr_filter(riscv_instr_gen_config cfg);
+    include_reg.delete();
+    exclude_reg.delete();
+    if (cfg.enable_illegal_csr_instruction) begin
+      exclude_reg = implemented_csr;
+    end else if (cfg.enable_access_invalid_csr_level) begin
+      include_reg = cfg.invalid_priv_mode_csrs;
+    end else begin
+      // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
+      if (cfg.init_privileged_mode == MACHINE_MODE) begin
+        include_reg = {MSCRATCH};
+      end else if (cfg.init_privileged_mode == SUPERVISOR_MODE) begin
+        include_reg = {SSCRATCH};
+      end else begin
+        include_reg = {USCRATCH};
+      end
+    end
+  endfunction : create_csr_filter
 
   static function riscv_instr create_instr(riscv_instr_name_t instr_name);
     uvm_object obj;
@@ -127,7 +164,7 @@ class riscv_instr extends uvm_object;
                    instr_category[LOGICAL], instr_category[COMPARE]};
     if (!cfg.no_ebreak) begin
       basic_instr = {basic_instr, EBREAK};
-      foreach(riscv_instr_pkg::supported_isa[i]) begin
+      foreach (riscv_instr_pkg::supported_isa[i]) begin
         if (RV32C inside {riscv_instr_pkg::supported_isa[i]}) begin
           basic_instr = {basic_instr, C_EBREAK};
           break;
@@ -211,6 +248,9 @@ class riscv_instr extends uvm_object;
       end
     */
     endcase
+    if (category != CSR) begin
+      csr.rand_mode(0);
+    end
   endfunction
 
   virtual function void set_imm_len();

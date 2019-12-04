@@ -116,8 +116,6 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
   function new(string name = "");
     super.new(name);
     la = riscv_pseudo_instr::type_id::create("la");
-    addi = riscv_instr::type_id::create("addi");
-    branch = riscv_instr::type_id::create("branch");
   endfunction
 
   function void pre_randomize();
@@ -133,9 +131,9 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
   endfunction
 
   function void post_randomize();
-    riscv_instr      instr[];
+    riscv_instr instr[];
     `DV_CHECK_RANDOMIZE_WITH_FATAL(jump, rd == cfg.ra; rs1 == gpr;)
-    `DV_CHECK_RANDOMIZE_WITH_FATAL(addi, rs1 == gpr; rd  == gpr;)
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(addi, rs1 == gpr; rd == gpr;)
     `DV_CHECK_RANDOMIZE_FATAL(branch)
     la.pseudo_instr_name = LA;
     la.imm_str = target_program_label;
@@ -216,7 +214,6 @@ class riscv_jal_instr extends riscv_rand_instr_stream;
     jump_start.imm_str = $sformatf("%0df", order[0]);
     jump_start.label = label;
     // Last instruction
-    jump_end = riscv_instr::get_rand_instr();
     randomize_instr(jump_end);
     jump_end.label = $sformatf("%0d", num_of_jump_instr);
     foreach (jump[i]) begin

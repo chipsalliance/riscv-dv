@@ -107,7 +107,6 @@ class riscv_compressed_instr extends riscv_instr;
       super.extend_imm();
       imm = imm << imm_align;
     end
-    comment = $sformatf("imm:0x%0x, imm_mask:0x%0x, align:%0d", imm, imm_mask, imm_align);
   endfunction : extend_imm
 
   // Convert the instruction to assembly code
@@ -143,7 +142,7 @@ class riscv_compressed_instr extends riscv_instr;
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rs2.name(), get_imm());
         CR_FORMAT:
           if (instr_name inside {C_JR, C_JALR}) begin
-            asm_str = $sformatf("%0s%0s", asm_str, rd.name());
+            asm_str = $sformatf("%0s%0s", asm_str, rs1.name());
           end else begin
             asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), rs2.name());
           end
