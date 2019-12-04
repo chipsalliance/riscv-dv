@@ -218,6 +218,12 @@
 
 `define CG_END endgroup
 
+`define CG_SELECTOR_BEGIN(CG_ISA) \
+    if ((CG_ISA inside {supported_isa}) && (default_cov || (cov_isa == CG_ISA))) begin \
+
+`define CG_SELECTOR_END \
+    end \
+
 class riscv_instr_cover_group;
 
   riscv_instr_gen_config  cfg;
@@ -839,15 +845,15 @@ class riscv_instr_cover_group;
 
     // TODO should be moved out of coverage for reporting
     if (has_vector_engine) begin
-        $display("vector_options: VLEN=%0d", VLEN);
-        $display("vector_options: ELEN=%0d", ELEN);
-        $display("vector_options: SLEN=%0d", SLEN);
+      $display("vector_options: VLEN=%0d", VLEN);
+      $display("vector_options: ELEN=%0d", ELEN);
+      $display("vector_options: SLEN=%0d", SLEN);
     end
 
     // process coverage options
     if ($test$plusargs("no_default_cov"))  begin
-        $display("coverage option: +no_default_cov");
-        default_cov = 'b0;
+      $display("coverage option: +no_default_cov");
+      default_cov = 'b0;
     end
     if ($test$plusargs("cov_isa=")) begin
       string cov_isa_str;
@@ -884,20 +890,14 @@ class riscv_instr_cover_group;
     // show coverage defines
     // they will be set on command line and used before here...
     `ifdef COVERAGE_WITH_NO_HAZARDS
-        $display("coverage option: +define+COVERAGE_WITH_NO_HAZARDS");
+      $display("coverage option: +define+COVERAGE_WITH_NO_HAZARDS");
     `endif
     `ifdef COVERAGE_WITH_NO_IGNORES
-        $display("coverage option: +define+COVERAGE_WITH_NO_IGNORES");
+      $display("coverage option: +define+COVERAGE_WITH_NO_IGNORES");
     `endif
     if ($test$plusargs("stop_on_first_error")) begin
-        $display("coverage option: +stop_on_first_error");
+      $display("coverage option: +stop_on_first_error");
     end
-
-    `define CG_SELECTOR_BEGIN(CG_ISA) \
-        if ((CG_ISA inside {supported_isa}) && (default_cov || (cov_isa == CG_ISA))) begin \
-
-    `define CG_SELECTOR_END \
-        end \
 
    `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_instantiation.sv")
 

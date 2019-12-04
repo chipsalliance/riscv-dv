@@ -61,8 +61,8 @@ REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
         "t3","t4","t5","t6"]
 FREGS = ["ft0","ft1","ft2","ft3","ft4","ft5","ft6","ft7","fs0","fs1","fa0",
-        "fa1","fa2","fa3","fa4","fa5","fa6","fa7","fs2","fs3","fs4","fs5",
-        "fs6","fs7","fs8","fs9","fs10","fs11","ft8","ft9","ft10","ft11"]
+         "fa1","fa2","fa3","fa4","fa5","fa6","fa7","fs2","fs3","fs4","fs5",
+         "fs6","fs7","fs8","fs9","fs10","fs11","ft8","ft9","ft10","ft11"]
 
 def process_jal(trace, operands, gpr):
     """ correctly process jal """
@@ -165,10 +165,11 @@ def check_conversion(entry):
         sys.exit(-1)
 
 operands_list = ["rd","rs1","rs2","vd","vs1","vs2","vs3","fd","fs1","fs2"]
+
 def update_operands_values(trace, gpr):
     """ ensure operands have been updated """
     for op in operands_list:
-        exec("if trace.%0s in gpr: trace.%0s_val = gpr[trace.%0s]" % (op, op, op))
+      exec("if trace.%0s in gpr: trace.%0s_val = gpr[trace.%0s]" % (op, op, op))
 
 def show_line_instr(line, i):
     """ show line """
@@ -252,23 +253,22 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
     for line in f:
       # Extract instruction infromation
       m = re.search(r"riscvOVPsim.*, 0x(?P<addr>.*?)(?P<section>\(.*\): ?)" \
-            "(?P<mode>[A-Za-z]*?)\s+(?P<bin>[a-f0-9]*?)\s+(?P<instr_str>.*?)$",
-                line)
+                    "(?P<mode>[A-Za-z]*?)\s+(?P<bin>[a-f0-9]*?)\s+(?P<instr_str>.*?)$", line)
       if m:
         # its instruction disassembly line
         if prev_trace: # write out the previous one when find next one
-            check_conversion(prev_trace)
-            update_operands_values(prev_trace, gpr)
-            instr_cnt += 1
-            trace_csv.write_trace_entry(prev_trace)
-            if verbose2:
-                logging.debug("prev_trace:: "+str(prev_trace.__dict__))
-                logging.debug("csr       :: "+str(csr))
-                logging.debug("gpr       :: "+str(gpr))
-            if logit:
-                # fatal ("stop for now")
-                pass
-            prev_trace = 0
+          check_conversion(prev_trace)
+          update_operands_values(prev_trace, gpr)
+          instr_cnt += 1
+          trace_csv.write_trace_entry(prev_trace)
+          if verbose2:
+            logging.debug("prev_trace:: "+str(prev_trace.__dict__))
+            logging.debug("csr       :: "+str(csr))
+            logging.debug("gpr       :: "+str(gpr))
+          if logit:
+            # fatal ("stop for now")
+            pass
+          prev_trace = 0
         prev_trace = RiscvInstructionTraceEntry()
         prev_trace.instr_str = m.group("instr_str")
         prev_trace.instr = prev_trace.instr_str.split(" ")[0]
@@ -278,115 +278,111 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         prev_trace.privileged_mode = convert_mode(m.group("mode"), line)
         prev_trace.updated_csr = []
         prev_trace.updated_gpr = []
-
         #if prev_trace.instr in ["vsetvli"]:
         #if prev_trace.instr in ["vlh.v"]:
         #if prev_trace.instr in ["vmul.vx"]:
         if prev_trace.instr in ["vsetvl"]:
-            logit = 1
-            verbose2 = True
+          logit = 1
+          verbose2 = True
 
         show_line_instr(line, prev_trace)
 
         if full_trace:
-            # TODO - when got full ins decode remove this
-            if  "fsw" in line or \
-                "fnmsub.d" in line or \
-                "fsd" in line:
-                # "fsriw" in line or \
-                # "flw" in line or \
-                    logging.debug ("Ignoring ins...(%s) " % (line))
-                    continue
-            process_if_compressed(prev_trace)
-            o = re.search (r"(?P<instr>[a-z]*?)\s(?P<operand>.*)",
-                prev_trace.instr_str)
-            if o:
-                operand_str = o.group("operand").replace(" ", "")
-                operands = operand_str.split(",")
-                if (prev_trace.instr in ['jalr', 'c.jalr']):
-                  process_jalr(prev_trace, operands, gpr)
-                elif (prev_trace.instr in ['jal','c.jal']):
-                  process_jal(prev_trace, operands, gpr)
-                else:
-                  if is_an_extension_instruction(prev_trace.instr):
-                    assign_operand_vector(prev_trace, operands, gpr,
-                        stop_on_first_error)
-                  elif 'f' in prev_trace.instr[0] or "c.f" in prev_trace.instr[0:3]:
-                    pass # ignore floating point. TODO include them
-                  else:
-                    if prev_trace.instr in [
-                        'beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
-                            process_branch_offset (2, operands, prev_trace)
-                    elif prev_trace.instr in [
-                        'c.beqz', 'c.bnez', 'beqz', 'bnez', 'bgez',
-                             'bltz', 'blez', 'bgtz']:
-                        process_branch_offset (1, operands, prev_trace)
-                    if prev_trace.instr in ['j', 'c.j']:
-                        operands[0] = "0x" + operands[0] # ovpsim has no '0x' so need to add it.
-                    assign_operand(prev_trace, operands, gpr,
-                        stop_on_first_error)
+          # TODO - when got full ins decode remove this
+          if "fsw" in line or \
+            "fnmsub.d" in line or \
+            "fsd" in line:
+            # "fsriw" in line or \
+            # "flw" in line or \
+            logging.debug ("Ignoring ins...(%s) " % (line))
+            continue
+          process_if_compressed(prev_trace)
+          o = re.search (r"(?P<instr>[a-z]*?)\s(?P<operand>.*)",
+                         prev_trace.instr_str)
+          if o:
+            operand_str = o.group("operand").replace(" ", "")
+            operands = operand_str.split(",")
+            if (prev_trace.instr in ['jalr', 'c.jalr']):
+              process_jalr(prev_trace, operands, gpr)
+            elif (prev_trace.instr in ['jal','c.jal']):
+              process_jal(prev_trace, operands, gpr)
             else:
-                # logging.debug("no operand for [%s] in [%s]" % (trace_instr,
-                #   trace_instr_str))
-                pass
+              if is_an_extension_instruction(prev_trace.instr):
+                assign_operand_vector(prev_trace, operands, gpr, stop_on_first_error)
+              elif 'f' in prev_trace.instr[0] or "c.f" in prev_trace.instr[0:3]:
+                pass # ignore floating point. TODO include them
+              else:
+                if prev_trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
+                  process_branch_offset (2, operands, prev_trace)
+                elif prev_trace.instr in [
+                  'c.beqz', 'c.bnez', 'beqz', 'bnez', 'bgez', 'bltz', 'blez', 'bgtz']:
+                  process_branch_offset (1, operands, prev_trace)
+                if prev_trace.instr in ['j', 'c.j']:
+                  operands[0] = "0x" + operands[0] # ovpsim has no '0x' so need to add it.
+                assign_operand(prev_trace, operands, gpr, stop_on_first_error)
+          else:
+            # logging.debug("no operand for [%s] in [%s]" % (trace_instr,
+            #   trace_instr_str))
+            pass
       else:
         # its a csr, gpr new value or report
-        if 0: logging.debug ("reg change... [%s]" % (line.strip()))
+        if verbose2:
+          logging.debug ("reg change... [%s]" % (line.strip()))
         # Extract register change value information
         c = re.search(r" (?P<r>[a-z]*[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
                        " -> (?P<val>[a-f0-9]+?)$", line)
         if c and is_csr (c.group("r")):
-            csr[c.group("r")] = c.group("val")
-            if verbose2: logging.debug("c:csr %0s = %0s" %
-                (c.group("r"), c.group("val")))
-            csr[c.group("r")] = c.group("val")
-            # prev_trace.updated_csr.append(c.group("r"))
-            prev_trace.updated_csr.append([c.group("r"), c.group("val")])
-            continue
+          csr[c.group("r")] = c.group("val")
+          if verbose2:
+            logging.debug("c:csr %0s = %0s" % (c.group("r"), c.group("val")))
+          csr[c.group("r")] = c.group("val")
+          # prev_trace.updated_csr.append(c.group("r"))
+          prev_trace.updated_csr.append([c.group("r"), c.group("val")])
+          continue
         n = re.search(r" (?P<r>[a-z]{1,3}[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
                        " -> (?P<val>[a-f0-9]+?)$", line)
         if n: # gpr
-          if verbose2: logging.debug(("n:gpr %0s = %0s" %
-                (n.group("r"), n.group("val"))))
+          if verbose2:
+            logging.debug(("n:gpr %0s = %0s" % (n.group("r"), n.group("val"))))
           if n.group("r") != "frm":
             prev_trace.updated_gpr.append([n.group("r"), n.group("val")])
             if is_an_extension_instruction(prev_trace.instr):
-                gpr[n.group("r")] = n.group("val")
+              gpr[n.group("r")] = n.group("val")
             else:
-                # backwards compatible
-                prev_trace.rd_val       = n.group("val")
-                gpr[prev_trace.rd]      = prev_trace.rd_val
+              # backwards compatible
+              prev_trace.rd = n.group("r")
+              prev_trace.rd_val  = n.group("val")
+              gpr[prev_trace.rd] = prev_trace.rd_val
             if 0:
-              print (
-                "write entry [[%d]]: rd[%s] val[%s] instr(%s) bin(%s) addr(%s)"
+              print("write entry [[%d]]: rd[%s] val[%s] instr(%s) bin(%s) addr(%s)"
                     % (instr_cnt, rv_instr_trace.rd, rv_instr_trace.rd_val,
-                        trace_instr_str, prev_trace.binary, prev_trace.addr))
+                       trace_instr_str, prev_trace.binary, prev_trace.addr))
               print (rv_instr_trace.__dict__)
               sys.exit(-1)
         else:
-            line = line.strip()
-            if verbose2: logging.debug("ignoring line: [%s] %s " %
-                (str(instr_cnt), line))
-            line = re.sub(' +', ' ', line)
-            split = line.split(" ")
-            if len(split) == 1: continue
-            item = split[1]
-            if "----" in item: continue
-            if "REPORT" in line or item in [ # TODO sort csrs
-                    "mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch",
-                        "mcause","mtval","vl","vtype","sstatus"]:
-                logging.debug("Ignoring: [%d]  [[%s]]" % (instr_cnt, line))
-                pass
-            elif "Warning (RISCV_" in line:
-                logging.debug("Skipping: [%d] (%s) [[%s]]" % 
-                    (instr_cnt, prev_trace.instr_str, line))
-                prev_trace.instr = "nop"
-                prev_trace.instr_str = "nop"
-            else:
-                logging.debug("<unknown> (%s) in line: [%s] %s " %
-                        (item, str(instr_cnt), line))
-                if stop_on_first_error:
-                    fatal ("")
+          line = line.strip()
+          if verbose2: logging.debug("ignoring line: [%s] %s " %
+              (str(instr_cnt), line))
+          line = re.sub(' +', ' ', line)
+          split = line.split(" ")
+          if len(split) == 1: continue
+          item = split[1]
+          if "----" in item: continue
+          if "REPORT" in line or item in [ # TODO sort csrs
+            "mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch",
+            "mcause","mtval","vl","vtype","sstatus"]:
+            logging.debug("Ignoring: [%d]  [[%s]]" % (instr_cnt, line))
+            pass
+          elif "Warning (RISCV_" in line:
+            logging.debug("Skipping: [%d] (%s) [[%s]]" %
+                          (instr_cnt, prev_trace.instr_str, line))
+            prev_trace.instr = "nop"
+            prev_trace.instr_str = "nop"
+          else:
+            logging.debug("<unknown> (%s) in line: [%s] %s " %
+                          (item, str(instr_cnt), line))
+            if stop_on_first_error:
+                fatal ("")
   logging.info("Processed instruction count : %d " % instr_cnt)
   if instr_cnt == 0:
     logging.error ("No Instructions in logfile: %s" % ovpsim_log)
