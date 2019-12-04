@@ -23,7 +23,6 @@ import re
 import sys
 import logging
 
-from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
@@ -619,10 +618,7 @@ def main():
     return
 
   # Create output directory
-  if args.o is None:
-    output_dir = "out_" + str(date.today())
-  else:
-    output_dir = args.o
+  output_dir = create_output(args.o)
 
   subprocess.run(["mkdir", "-p", output_dir])
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])

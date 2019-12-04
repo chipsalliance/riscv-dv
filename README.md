@@ -512,7 +512,7 @@ implmentation.
 
 ```bash
 # Randomly generate 100000 instructions, split to 20000 instructions per batch
-python3 cov.py -d -i 100000 -bz 20000
+python3 cov.py -d -i 100000 -bz 20000 --isa rv32imc
 ```
 
 

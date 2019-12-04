@@ -23,7 +23,6 @@ import re
 import sys
 import logging
 
-from datetime import date
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
@@ -114,15 +113,12 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
                         opts_vec, opts_cov))
     if target:
       build_cmd += (" --target %s" % target)
-    if custom_target:
-      build_cmd += (" --custom_target %s" % custom_target)
-    if stop_on_first_error:
-      build_cmd += (" --stop_on_first_error")
-    if target:
       base_sim_cmd += (" --target %s" % target)
     if custom_target:
+      build_cmd += (" --custom_target %s" % custom_target)
       base_sim_cmd += (" --custom_target %s" % custom_target)
     if stop_on_first_error:
+      build_cmd += (" --stop_on_first_error")
       base_sim_cmd += (" --stop_on_first_error")
     logging.info("Building the coverage collection framework")
     output = run_cmd(build_cmd)
@@ -181,20 +177,19 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
   build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                "--co -o %s --cov -tl %s %s" %
                (cwd, simulator, simulator_yaml, out, testlist, opts))
-  if target:
-    build_cmd += (" --target %s" % target)
-  if custom_target:
-    build_cmd += (" --custom_target %s" % custom_target)
-  run_cmd(build_cmd)
   base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                  "--so -o %s --cov -tl %s --isa %s%s "
+                  "--so -o %s --cov -tl %s --isa %s %s "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
                   (cwd, simulator, simulator_yaml, out, testlist, isa, opts))
   if target:
+    build_cmd += (" --target %s" % target)
     base_sim_cmd += (" --target %s" % target)
   if custom_target:
+    build_cmd += (" --custom_target %s" % custom_target)
     base_sim_cmd += (" --custom_target %s" % custom_target)
+  logging.info("Building the coverage collection framework")
+  run_cmd(build_cmd)
   batch_cnt = 1
   if batch_size > 0:
     batch_cnt = int((instr_cnt+batch_size-1)/batch_size)
@@ -203,10 +198,9 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
   for i in range(batch_cnt):
     batch_instr_cnt = instr_cnt
     if batch_size > 0:
+      batch_instr_cnt = batch_size
       if i == batch_cnt - 1:
         batch_instr_cnt = instr_cnt - batch_size * (batch_cnt - 1)
-      else:
-        batch_instr_cnt = batch_size
     sim_cmd = base_sim_cmd.replace("<instr_cnt>", str(batch_instr_cnt))
     sim_cmd += ("  --log_suffix _%d" % i)
     if lsf_cmd == "":
@@ -296,9 +290,6 @@ def main():
   if args.verbose:
     args.opts += "-v"
 
-  if not args.testlist:
-    args.testlist = cwd + "/yaml/cov_testlist.yaml"
-
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
 
@@ -324,10 +315,7 @@ def main():
   args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
-  if args.o is None:
-    output_dir = "cov_out_" + str(date.today())
-  else:
-    output_dir = args.o
+  output_dir = create_output(args.o)
 
   if args.noclean is False:
     os.system("rm -rf %s" % output_dir)

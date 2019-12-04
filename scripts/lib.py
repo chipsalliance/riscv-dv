@@ -25,6 +25,8 @@ import time
 import yaml
 import logging
 
+from datetime import date
+
 def setup_logging(verbose):
   """Setup the root logger.
 
@@ -190,3 +192,18 @@ def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_r
           logging.info("Found matched tests: %s, iterations:%0d" %
                       (entry['test'], entry['iterations']))
           matched_list.append(entry)
+
+def create_output(output):
+  """ Create output directory
+
+  Args:
+    output        : Name of specified output directory
+
+  Returns:
+    Output directory
+  """
+  # Create output directory
+  if output is None:
+    return "out_" + str(date.today())
+  else:
+    return output
