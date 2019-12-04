@@ -179,7 +179,7 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
                "--co -o %s --cov -tl %s %s" %
                (cwd, simulator, simulator_yaml, out, testlist, opts))
   base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                  "--so -o %s --cov -tl %s --isa %s%s "
+                  "--so -o %s --cov -tl %s --isa %s %s "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
                   (cwd, simulator, simulator_yaml, out, testlist, isa, opts))
