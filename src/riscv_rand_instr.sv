@@ -106,11 +106,17 @@ class riscv_rand_instr extends riscv_instr_base;
         } else {
           // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
           if (cfg.init_privileged_mode == MACHINE_MODE) {
-            csr == MSCRATCH;
+            if (MSCRATCH inside {implemented_csr}) {
+              csr == MSCRATCH;
+            }
           } else if (cfg.init_privileged_mode == SUPERVISOR_MODE) {
-            csr == SSCRATCH;
+            if (SSCRATCH inside {implemented_csr}) {
+              csr == SSCRATCH;
+            }
           } else {
-            csr == USCRATCH;
+            if (USCRATCH inside {implemented_csr}) {
+              csr == USCRATCH;
+            }
           }
         }
       }

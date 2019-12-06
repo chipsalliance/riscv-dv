@@ -148,7 +148,15 @@ class riscv_loop_instr extends riscv_rand_instr_stream;
       loop_branch_target_instr[i].cfg = cfg;
       loop_branch_target_instr[i].reserved_rd = reserved_rd;
       `DV_CHECK_RANDOMIZE_WITH_FATAL(loop_branch_target_instr[i],
-                                     !(category inside {LOAD, STORE, BRANCH, JUMP});,
+                                     !(category inside {LOAD, STORE, BRANCH, JUMP});
+                                     // TODO: allow CSR instructions in all modes
+                                     if (cfg.init_privileged_mode == MACHINE_MODE) {
+                                       if (category == CSR) {
+                                         csr == MSCRATCH;
+                                       }
+                                     } else {
+                                       !(category == CSR);
+                                     },
                                      "Cannot randomize branch target instruction")
       loop_branch_target_instr[i].label = $sformatf("%0s_%0d_t", label, i);
 
