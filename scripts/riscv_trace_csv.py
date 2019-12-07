@@ -20,6 +20,7 @@ import csv
 import re
 import logging
 import sys
+from lib import *
 
 class RiscvInstructionTraceEntry(object):
   """RISC-V instruction trace entry"""
@@ -510,4 +511,4 @@ def assign_operand(trace, operands, gpr, stop_on_first_error = 0):
     logging.debug("Unsupported instr : %s (%s)" %
                   (trace.instr, trace.instr_str))
     if stop_on_first_error:
-        sys.exit(-1)
+        sys.exit(RET_FATAL)

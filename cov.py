@@ -94,7 +94,7 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
                 dont_truncate_after_first_ecall)
         else:
           logging.error("Full trace for %s is not supported yet" % iss)
-          sys.exit(1)
+          sys.exit(RET_FAIL)
   if steps == "all" or re.match("cov", steps):
     opts_vec = ""
     opts_cov = ""
