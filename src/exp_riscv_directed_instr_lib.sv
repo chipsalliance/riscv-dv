@@ -132,7 +132,13 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
 
   function void post_randomize();
     riscv_instr instr[];
-    `DV_CHECK_RANDOMIZE_WITH_FATAL(jump, rd == cfg.ra; rs1 == gpr;)
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(jump,
+      if (has_rd) {
+        rd == cfg.ra;
+      }
+      if (has_rs1) {
+        rs1 == gpr;
+      })
     `DV_CHECK_RANDOMIZE_WITH_FATAL(addi, rs1 == gpr; rd == gpr;)
     `DV_CHECK_RANDOMIZE_FATAL(branch)
     la.pseudo_instr_name = LA;

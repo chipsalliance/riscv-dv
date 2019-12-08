@@ -26,6 +26,7 @@ class riscv_instr extends uvm_object;
   static riscv_instr_name_t  instr_group[riscv_instr_group_t][$];
   static riscv_instr_name_t  instr_category[riscv_instr_category_t][$];
   static riscv_instr_name_t  basic_instr[$];
+  static riscv_instr         instr_template[$];
 
   // Privileged CSR filter
   static privileged_reg_t    exclude_reg[];
@@ -56,13 +57,16 @@ class riscv_instr extends uvm_object;
   bit                        is_compressed;
   bit                        is_illegal_instr;
   bit                        is_hint_instr;
-  bit                        has_imm;
   bit                        is_floating_point;
   string                     imm_str;
   string                     comment;
   string                     label;
   bit                        is_local_numeric_label;
   int                        idx = -1;
+  bit                        has_rs1 = 1'b1;
+  bit                        has_rs2 = 1'b1;
+  bit                        has_rd = 1'b1;
+  bit                        has_imm = 1'b1;
 
   constraint imm_c {
     if (instr_name inside {SLLI, SRLI, SRAI, SLLIW, SRLIW, SRAIW}) {
@@ -99,6 +103,7 @@ class riscv_instr extends uvm_object;
     foreach (instr_registry[instr_name]) begin
       riscv_instr instr_inst;
       instr_inst = create_instr(instr_name);
+      instr_template[instr_name] = instr_inst;
       // C_JAL is RV32C only instruction
       if ((XLEN != 32) && (instr_name == C_JAL)) continue;
       if ((SP inside {cfg.reserved_regs}) &&
@@ -196,9 +201,6 @@ class riscv_instr extends uvm_object;
      riscv_instr_name_t allowed_instr[];
      riscv_instr_name_t disallowed_instr[];
      riscv_instr_category_t allowed_categories[];
-     if (instr_h == null) begin
-       instr_h = riscv_instr::type_id::create("instr_h");
-     end
      foreach (include_category[i]) begin
        allowed_instr = {allowed_instr, instr_category[include_category[i]]};
      end
@@ -228,26 +230,47 @@ class riscv_instr extends uvm_object;
      }) begin
        `uvm_fatal("riscv_instr", "Cannot generate random instruction")
      end
-     return create_instr(name);
+     // Shallow copy for all relevant fields, avoid using create() to improve performance
+     instr_h = new instr_template[name];
+     return instr_h;
   endfunction : get_rand_instr
+
+  static function riscv_instr get_load_store_instr(riscv_instr_name_t load_store_instr[] = {});
+     riscv_instr instr_h;
+     int unsigned idx;
+     riscv_instr_name_t name;
+     if (load_store_instr.size() == 0) begin
+       load_store_instr = {instr_group[LOAD], instr_group[STORE]};
+     end
+     idx = $urandom_range(0, load_store_instr.size()-1);
+     name = load_store_instr[idx];
+     // Shallow copy for all relevant fields, avoid using create() to improve performance
+     instr_h = new instr_template[name];
+     return instr_h;
+  endfunction : get_load_store_instr
 
   // Disable the rand mode for unused operands to randomization performance
   virtual function void set_rand_mode();
     case (format) inside
-      R_FORMAT, CR_FORMAT, CL_FORMAT : imm.rand_mode(0);
-    /*
-      I_FORMAT, CI_FORMAT : rs2.rand_mode(0);
-      S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT : rd.rand_mode(0);
+      R_FORMAT, CR_FORMAT, CL_FORMAT : has_imm = 1'b0;
+      I_FORMAT, CI_FORMAT : has_rs2 = 1'b0;
+      S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT : has_rd = 1'b0;
       U_FORMAT, J_FORMAT, CJ_FORMAT, CIW_FORMAT: begin
-        rs1.rand_mode(0);
-        rs2.rand_mode(0);
+        has_rs1 = 1'b0;
+        has_rs2 = 1'b0;
       end
       CB_FORMAT: begin
-        rd.rand_mode(0);
-        rs2.rand_mode(0);
+        has_rd = 1'b0;
+        has_rs2 = 1'b0;
       end
-    */
     endcase
+  endfunction
+
+  function void pre_randomize();
+    rs1.rand_mode(has_rs1);
+    rs2.rand_mode(has_rs2);
+    rd.rand_mode(has_rd);
+    imm.rand_mode(has_imm);
     if (category != CSR) begin
       csr.rand_mode(0);
     end
@@ -577,6 +600,10 @@ class riscv_instr extends uvm_object;
     this.imm_str        = rhs_.imm_str;
     this.imm_mask       = rhs_.imm_mask;
     this.is_compressed  = rhs_.is_compressed;
+    this.has_rs2        = rhs_.has_rs2;
+    this.has_rs1        = rhs_.has_rs1;
+    this.has_rd         = rhs_.has_rd;
+    this.has_imm        = rhs_.has_imm;
   endfunction : do_copy
 
   virtual function void update_imm_str();
