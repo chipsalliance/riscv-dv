@@ -20,7 +20,7 @@
 // instruction, mix two instruction streams etc.
 class riscv_instr_stream extends uvm_object;
 
-  `INSTR      instr_list[$];
+  `INSTR                instr_list[$];
   int unsigned          instr_cnt;
   string                label = "";
   // User can specify a small group of available registers to generate various hazard condition
@@ -241,18 +241,28 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                                         .exclude_instr(exclude_instr));
     `DV_CHECK_RANDOMIZE_WITH_FATAL(instr,
       if (avail_regs.size() > 0) {
-        rs1 inside {avail_regs};
-        rs2 inside {avail_regs};
-        rd  inside {avail_regs};
+        if (has_rs1) {
+          rs1 inside {avail_regs};
+        }
+        if (has_rs2) {
+          rs2 inside {avail_regs};
+        }
+        if (has_rd) {
+          rd  inside {avail_regs};
+        }
       }
       if (reserved_rd.size() > 0) {
-        !(rd inside {reserved_rd});
+        if (has_rd) {
+          !(rd inside {reserved_rd});
+        }
         if (format == CB_FORMAT) {
           !(rs1 inside {reserved_rd});
         }
       }
       if (cfg.reserved_regs.size() > 0) {
-        !(rd inside {cfg.reserved_regs});
+        if (has_rd) {
+          !(rd inside {cfg.reserved_regs});
+        }
         if (format == CB_FORMAT) {
           !(rs1 inside {cfg.reserved_regs});
         }

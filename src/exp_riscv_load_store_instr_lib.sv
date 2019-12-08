@@ -64,7 +64,6 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     addr = new[num_load_store];
     for (int i=0; i<num_load_store; i++) begin
       if (!std::randomize(offset_, addr_) with {
-        // Locality
         if (locality == NARROW) {
           soft offset_ inside {[-16:16]};
         } else if (locality == HIGH) {
@@ -113,7 +112,9 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       enable_compressed_load_store = 1;
     end
     foreach(addr[i]) begin
+      `ifndef EXPERIMENTAL
       instr = riscv_instr::type_id::create("instr");
+      `endif
       // Assign the allowed load/store instructions based on address alignment
       // This is done separately rather than a constraint to improve the randomization performance
       allowed_instr = {LB, LBU, SB};
@@ -165,7 +166,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
            end
         end
       end
-      randomize_instr(instr, .disable_dist(1'b1));
+      instr = riscv_instr::get_load_store_instr(allowed_instr);
       instr.rs1 = rs1_reg;
       instr.imm_str = $sformatf("%0d", $signed(offset[i]));
       instr.process_load_store = 0;
