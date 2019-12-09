@@ -122,6 +122,9 @@ Here's a few more examples of the run command:
 # Run a single test 10 times
 python3 run.py --test riscv_arithmetic_basic_test --iterations 10
 
+# Run multiple tests
+python3 run.py --test riscv_arithmetic_basic_test,riscv_rand_instr_test
+
 # Run a test with verbose logging
 python3 run.py --test riscv_arithmetic_basic_test --verbose
 
