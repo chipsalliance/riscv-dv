@@ -103,7 +103,7 @@ python3 run.py --test riscv_arithmetic_basic_test --simulator questa
 python3 run.py --test riscv_arithmetic_basic_test --simulator dsim
 python3 run.py --test riscv_arithmetic_basic_test --simulator qrun
 ```
-The complete test list can be found in [yaml/testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/testlist.yaml). To run a full
+The complete test list can be found in [yaml/base_testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml). To run a full
 regression, simply use below command
 
 ```bash
