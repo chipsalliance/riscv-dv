@@ -197,6 +197,7 @@ class riscv_instr extends uvm_object;
                                              riscv_instr_category_t exclude_category[] = {},
                                              riscv_instr_group_t include_group[] = {},
                                              riscv_instr_group_t exclude_group[] = {});
+     int unsigned idx;
      riscv_instr_name_t name;
      riscv_instr_name_t allowed_instr[];
      riscv_instr_name_t disallowed_instr[];
@@ -213,22 +214,33 @@ class riscv_instr extends uvm_object;
      foreach (exclude_group[i]) begin
        disallowed_instr = {disallowed_instr, instr_group[exclude_group[i]]};
      end
-     if (!std::randomize(name) with {
-        name inside {instr_names};
-        if (include_instr.size() > 0) {
-          name inside {include_instr};
-        }
-        if (exclude_instr.size() > 0) {
-          !(name inside {exclude_instr});
-        }
-        if (allowed_instr.size() > 0) {
-          name inside {allowed_instr};
-        }
-        if (disallowed_instr.size() > 0) {
-          !(name inside {disallowed_instr});
-        }
-     }) begin
-       `uvm_fatal("riscv_instr", "Cannot generate random instruction")
+     disallowed_instr = {disallowed_instr, exclude_instr};
+     if (disallowed_instr.size() == 0) begin
+       if (include_instr.size() > 0) begin
+         idx = $urandom_range(0, include_instr.size()-1);
+         name = include_instr[idx];
+       end else if (allowed_instr.size() > 0) begin
+         idx = $urandom_range(0, allowed_instr.size()-1);
+         name = allowed_instr[idx];
+       end else begin
+         idx = $urandom_range(0, instr_names.size()-1);
+         name = instr_names[idx];
+       end
+     end else begin
+       if (!std::randomize(name) with {
+          name inside {instr_names};
+          if (include_instr.size() > 0) {
+            name inside {include_instr};
+          }
+          if (allowed_instr.size() > 0) {
+            name inside {allowed_instr};
+          }
+          if (disallowed_instr.size() > 0) {
+            !(name inside {disallowed_instr});
+          }
+       }) begin
+         `uvm_fatal("riscv_instr", "Cannot generate random instruction")
+       end
      end
      // Shallow copy for all relevant fields, avoid using create() to improve performance
      instr_h = new instr_template[name];
