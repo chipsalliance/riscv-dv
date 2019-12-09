@@ -1181,7 +1181,7 @@ class riscv_instr_cover_group;
       C_SRAI     : c_srai_cg.sample(instr);
       C_SLLI     : c_slli_cg.sample(instr);
       C_J        : c_j_cg.sample(instr);
-      C_JAL      : c_jal_cg.sample(instr);
+      C_JAL      : if (XLEN == 32) c_jal_cg.sample(instr);
       C_JR       : c_jr_cg.sample(instr);
       C_JALR     : c_jalr_cg.sample(instr);
       C_LD       : c_ld_cg.sample(instr);
