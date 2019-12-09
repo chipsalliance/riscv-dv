@@ -32,13 +32,14 @@ from scripts.instr_trace_compare import *
 
 LOGGER = logging.getLogger()
 
-def get_generator_cmd(simulator, simulator_yaml, cov):
+def get_generator_cmd(simulator, simulator_yaml, cov, exp):
   """ Setup the compile and simulation command for the generator
 
   Args:
     simulator      : RTL simulator used to run instruction generator
     simulator_yaml : RTL simulator configuration file in YAML format
     cov            : Enable functional coverage
+    exp            : Use experimental version
 
   Returns:
     compile_cmd    : RTL simulator command to compile the instruction generator
@@ -57,6 +58,8 @@ def get_generator_cmd(simulator, simulator_yaml, cov):
           compile_cmd[i] = re.sub('<cov_opts>', compile_spec['cov_opts'].rstrip(), compile_cmd[i])
         else:
           compile_cmd[i] = re.sub('<cov_opts>', '', compile_cmd[i])
+        if exp:
+          compile_cmd[i] += " +define+EXPERIMENTAL "
       sim_cmd = entry['sim']['cmd']
       if ('cov_opts' in entry['sim']) and cov:
         sim_cmd = re.sub('<cov_opts>', entry['sim']['cov_opts'].rstrip(), sim_cmd)
@@ -256,7 +259,7 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
 def gen(test_list, csr_file, end_signature_addr, isa, simulator,
         simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
         cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
-        log_suffix, batch_size, seed_yaml, verbose=False):
+        log_suffix, batch_size, seed_yaml, verbose, exp):
   """Run the instruction generator
 
   Args:
@@ -281,6 +284,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
     log_suffix            : Simulation log file name suffix
     batch_size            : Number of tests to generate per run
     seed_yaml             : Seed specification from a prior regression
+    exp                   : Enable experimental features
   """
   check_return_code = True
   if simulator == "ius":
@@ -295,7 +299,7 @@ def gen(test_list, csr_file, end_signature_addr, isa, simulator,
   # Setup the compile and simulation command for the generator
   compile_cmd = []
   sim_cmd = ""
-  compile_cmd, sim_cmd = get_generator_cmd(simulator, simulator_yaml, cov);
+  compile_cmd, sim_cmd = get_generator_cmd(simulator, simulator_yaml, cov, exp);
   # Compile the instruction generator
   if not sim_only:
     do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir, cmp_opts, output_dir)
@@ -544,6 +548,8 @@ def setup_parser():
                       help="Directed assembly test")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
+  parser.add_argument("--exp", action="store_true",
+                      help="Run generator with experimental features")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
                       help="Number of tests to generate per run. You can split a big"
                            " job to small batches with this option")
@@ -553,6 +559,7 @@ def setup_parser():
   parser.set_defaults(so=False)
   parser.set_defaults(verbose=False)
   parser.set_defaults(cov=False)
+  parser.set_defaults(exp=False)
   parser.set_defaults(stop_on_first_error=False)
   return parser
 
@@ -638,7 +645,7 @@ def main():
         args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
         args.sim_opts, args.gen_timeout, args.core_setting_dir,
         args.user_extension_dir, args.cov, args.log_suffix, args.batch_size,
-        args.seed_yaml, args.verbose)
+        args.seed_yaml, args.verbose, args.exp)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary

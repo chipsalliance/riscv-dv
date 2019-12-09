@@ -21,7 +21,6 @@ class riscv_compressed_instr extends riscv_instr;
     }
   }
 
-  // Non-zero immediate value
   constraint imm_val_c {
     if(imm_type inside {NZIMM, NZUIMM}) {
       imm[5:0] != 0;
@@ -29,7 +28,7 @@ class riscv_compressed_instr extends riscv_instr;
         // TODO(taliu) Check why bit 6 cannot be zero
         imm[31:5] == 0;
       }
-      if (instr_name inside {C_SRAI, C_SRLI, SLLI}) {
+      if (instr_name inside {C_SRAI, C_SRLI, C_SLLI}) {
         imm[31:5] == 0;
       }
     }
