@@ -10,3 +10,4 @@ ucli.key
 qrun.out/
 qrun.log
 *.ucdb
+*.vstf
