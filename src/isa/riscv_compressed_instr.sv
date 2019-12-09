@@ -64,6 +64,7 @@ class riscv_compressed_instr extends riscv_instr;
     rs1 = S0;
     rs2 = S0;
     rd  = S0;
+    is_compressed = 1'b1;
   endfunction : new
 
   virtual function void set_imm_len();

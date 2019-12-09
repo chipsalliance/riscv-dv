@@ -88,11 +88,25 @@ class riscv_lr_sc_instr_stream extends riscv_amo_base_instr_stream;
     lr_instr = riscv_instr::get_rand_instr(.include_instr({LR_W, LR_D}));
     sc_instr = riscv_instr::get_rand_instr(.include_instr({SC_W, SC_D}));
     `DV_CHECK_RANDOMIZE_WITH_FATAL(lr_instr,
-                                   rs1 == rs1_reg;
-                                   rd != rs1_reg;)
+      rs1 == rs1_reg;
+      if (reserved_rd.size() > 0) {
+        !(rd inside {reserved_rd});
+      }
+      if (cfg.reserved_regs.size() > 0) {
+        !(rd inside {cfg.reserved_regs});
+      }
+      rd != rs1_reg;
+    )
     `DV_CHECK_RANDOMIZE_WITH_FATAL(sc_instr,
-                                   rs1 == rs1_reg;
-                                   rd != rs1_reg;)
+      rs1 == rs1_reg;
+      if (reserved_rd.size() > 0) {
+        !(rd inside {reserved_rd});
+      }
+      if (cfg.reserved_regs.size() > 0) {
+        !(rd inside {cfg.reserved_regs});
+      }
+      rd != rs1_reg;
+    )
     instr_list.push_front(lr_instr);
     instr_list.push_front(sc_instr);
   endfunction
@@ -116,7 +130,16 @@ class riscv_amo_instr_stream extends riscv_amo_base_instr_stream;
     amo_instr = new[num_amo];
     foreach (amo_instr[i]) begin
       amo_instr[i] = riscv_instr::get_rand_instr(.include_category({AMO}));
-      `DV_CHECK_RANDOMIZE_WITH_FATAL(amo_instr[i], rs1 == rs1_reg; rd != rs1_reg;)
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(amo_instr[i],
+        if (reserved_rd.size() > 0) {
+          !(rd inside {reserved_rd});
+        }
+        if (cfg.reserved_regs.size() > 0) {
+          !(rd inside {cfg.reserved_regs});
+        }
+        rs1 == rs1_reg;
+        rd != rs1_reg;
+      )
       instr_list.push_front(amo_instr[i]);
     end
   endfunction

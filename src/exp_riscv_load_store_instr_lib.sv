@@ -167,6 +167,9 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
         end
       end
       instr = riscv_instr::get_load_store_instr(allowed_instr);
+      instr.has_rs1 = 0;
+      instr.has_imm = 0;
+      randomize_instr(instr);
       instr.rs1 = rs1_reg;
       instr.imm_str = $sformatf("%0d", $signed(offset[i]));
       instr.process_load_store = 0;
