@@ -194,17 +194,17 @@ def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_r
                       (entry['test'], entry['iterations']))
           matched_list.append(entry)
 
-def create_output(output):
+def create_output(output, prefix = "out_"):
   """ Create output directory
 
   Args:
-    output        : Name of specified output directory
+    output : Name of specified output directory
 
   Returns:
     Output directory
   """
   # Create output directory
   if output is None:
-    return "out_" + str(date.today())
+    return prefix + str(date.today())
   else:
     return output

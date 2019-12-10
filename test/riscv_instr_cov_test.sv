@@ -85,6 +85,9 @@ class riscv_instr_cov_test extends uvm_test;
             if (!sample()) begin
              `uvm_info(`gfn, $sformatf("Found illegal instr: %0s [%0s]",
                              trace["instr"], line), UVM_HIGH)
+              if (!expect_illegal_instr) begin
+                unexpected_illegal_instr_cnt++;
+              end
             end
           end
           entry_cnt += 1;
@@ -139,9 +142,6 @@ class riscv_instr_cov_test extends uvm_test;
                                  val[6:2], trace["instr"]), UVM_LOW)
       instr_cg.opcode_cg.sample(val[6:2]);
     end
-    unexpected_illegal_instr_cnt++;
-    `uvm_fatal(`gfn, $sformatf("sample(%0s) is ILLEGAL instruction (for the included ISAs)",
-                               trace["instr"]))
   endfunction
 
   virtual function void assign_trace_info_to_instr(riscv_instr_cov_item instr);
