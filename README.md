@@ -23,6 +23,14 @@ A CSR test generation script written in Python is also provided, to generate a
 directed test suite that stresses all CSR instructions on all of the CSRs that
 the core implements.
 
+## External contributions and collaborations
+
+This repository is still under active development. We hope the RISC-V processor
+verification platform development to be a collaborative effort of the RISC-V
+community. Free feel to submit issues, feature requests, pull requests through
+Github. You can also send your private collaboration request to [riscv_dv_dev@google.com](riscv_dv_dev@google.com). 
+Please refer to CONTRIBUTING.md for license related questions.
+
 ## Getting Started
 
 ### Prerequisites
@@ -528,13 +536,6 @@ python3 cov.py -d -i 100000 -bz 20000 --isa rv32imc
 Please file an issue under this repository for any bug report / integration
 issue / feature request. We are looking forward to knowing your experience of
 using this flow and how we can make it better together.
-
-## External contributions
-
-We definitely welcome external contributions. We hope it could be a
-collaborative effort to build a strong open source RISC-V processor
-verification platform. Free feel to submit your pull request for review.
-Please refer to CONTRIBUTING.md for license related questions.
 
 ## Disclaimer
 
