@@ -393,7 +393,6 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
 
 def main():
   """ if used standalone set up for testing """
-  instr_trace = []
   # Parse input arguments
   parser = argparse.ArgumentParser()
   parser.add_argument("--log", type=str, help="Input ovpsim simulation log")
