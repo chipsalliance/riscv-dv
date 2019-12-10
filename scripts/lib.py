@@ -180,12 +180,13 @@ def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_r
   """
   logging.info("Processing regression test list : %s, test: %s" % (testlist, test))
   yaml_data = read_yaml(testlist)
+  mult_test = test.split(',')
   for entry in yaml_data:
     if 'import' in entry:
       sub_list = re.sub('<riscv_dv_root>', riscv_dv_root, entry['import'])
       process_regression_list(sub_list, test, iterations, matched_list, riscv_dv_root)
     else:
-      if (entry['test'] == test) or (test == "all"):
+      if (entry['test'] in mult_test) or (test == "all"):
         if (iterations > 0 and  entry['iterations'] > 0):
           entry['iterations'] = iterations
         if entry['iterations'] > 0:
