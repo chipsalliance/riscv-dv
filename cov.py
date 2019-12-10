@@ -315,11 +315,12 @@ def main():
   args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
-  output_dir = create_output(args.o)
+  output_dir = create_output(args.o, "cov_out_")
 
   if args.noclean is False:
     os.system("rm -rf %s" % output_dir)
 
+  logging.info("Creating output directory: %s" % output_dir)
   subprocess.run(["mkdir", "-p", output_dir])
 
   if args.debug_mode:

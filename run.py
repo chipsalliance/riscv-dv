@@ -458,7 +458,7 @@ def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
         if iss == "spike":
           process_spike_sim_log(log, csv)
         elif iss == "ovpsim":
-          process_ovpsim_sim_log(log, csv, 1, stop_on_first_error)
+          process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
         elif iss == "sail":
           process_sail_sim_log(log, csv)
         elif iss == "whisper":
@@ -626,7 +626,7 @@ def main():
 
   # Create output directory
   output_dir = create_output(args.o)
-
+  logging.info("Creating output directory: %s" % output_dir)
   subprocess.run(["mkdir", "-p", output_dir])
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 

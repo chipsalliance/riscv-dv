@@ -182,17 +182,18 @@ def show_line_instr(line, i):
 def check_num_operands(instr_str, num_operands, n):
     """ ensure consistency """
     if n != num_operands:
-        fatal("%s: num operands wrong, expected (%d) got (%d)" % (instr_str,
+      fatal("%s: num operands wrong, expected (%d) got (%d)" % (instr_str,
             n, num_operands))
 
 def is_csr(r):
     """ see if r is a csr """
-    # TODO add more as needed - could look in the enum privileged_reg_t  or the cores settings: implemented_csr[]
+    # TODO add more as needed - could look in the enum privileged_reg_t  or
+    # the cores settings: implemented_csr[]
     if r in ["mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch","mcause",
-            "mtval","vl","vtype"]:
-        return True
+             "mtval","vl","vtype", "mie"]:
+      return True
     else:
-        return False
+      return False
 
 def process_branch_offset (opn, operands, prev_trace):
     """ convert from ovpsim logs branch offsets as absolute to relative """
@@ -213,10 +214,12 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
 
   stop_on_first_error = stop
 
-  logging.info("Processing ovpsim log [%s %s %s]: %s" %
-    ("full_trace" if full_trace else "", "stop_on_first_error" if stop else "",
-    "dont_truncate_after_first_ecall" if dont_truncate_after_first_ecall else
-        "", ovpsim_log))
+  logging.info("Processing ovpsim log : %s" % ovpsim_log)
+
+  logging.debug("Flags [%s %s %s]" %
+    ("full_trace" if full_trace else "",
+     "stop_on_first_error" if stop else "",
+     "dont_truncate_after_first_ecall" if dont_truncate_after_first_ecall else ""))
 
   # Remove the header part of ovpsim log
   cmd = ("sed -i '/Info 1:/,$!d' %s" % ovpsim_log)
