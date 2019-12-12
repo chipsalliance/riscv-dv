@@ -219,10 +219,10 @@
 `define CG_END endgroup
 
 `define CG_SELECTOR_BEGIN(CG_ISA) \
-    if ((CG_ISA inside {supported_isa}) && (default_cov || (cov_isa == CG_ISA))) begin \
+    if ((CG_ISA inside {supported_isa}) && (!compliance_mode || (cov_isa == CG_ISA))) begin
 
 `define CG_SELECTOR_END \
-    end \
+    end
 
 class riscv_instr_cover_group;
 
@@ -233,9 +233,20 @@ class riscv_instr_cover_group;
   int unsigned            instr_cnt;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
-  bit                     default_cov = 'b1;
 
-`VECTOR_INCLUDE("riscv_instr_cover_group_inc_cpu_declare.sv")
+  // Mode of the coverage model
+
+  // In complicance mode, all the micro-architecture related covergroups are removed. Only the ones
+  // related to RISC-V specification compliance is sampled.
+  bit                     compliance_mode;
+
+  // By default the coverage model run with instruction trace from ISS simulation. When simulating
+  // with ISS, certain covergroups like debug/interrupt could not be hit as these are not simulated
+  // with ISS. You can turn off this mode by adding +iss_mode=0 if you use the instruction trace
+  // from RTL simulation.
+  bit                     iss_mode = 1'b1;
+
+  `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cpu_declare.sv")
 
   ///////////// RV32I instruction functional coverage //////////////
 
@@ -417,7 +428,6 @@ class riscv_instr_cover_group;
     cp_ras : cross cp_rs1_link, cp_rd_link;
   `CG_END
 
-
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
     cp_rs1 : coverpoint instr.rs1;
@@ -446,10 +456,7 @@ class riscv_instr_cover_group;
     }
   endgroup
 
-
-
   // RV32M
-
   `R_INSTR_CG_BEGIN(mul)
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
@@ -807,7 +814,6 @@ class riscv_instr_cover_group;
     }
   endgroup
 
-
   // Privileged CSR covergroup
   covergroup mcause_exception_cg with function sample(exception_cause_t exception);
     cp_exception: coverpoint exception {
@@ -833,35 +839,27 @@ class riscv_instr_cover_group;
     cp_mpp  : coverpoint val[12:11];
   endgroup
 
-`VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_add.sv")
+  `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_add.sv")
 
   function new(riscv_instr_gen_config cfg);
     riscv_instr_group_t cov_isa;
-    default_cov = 'b1;
     this.cfg = cfg;
     cur_instr = riscv_instr_cov_item::type_id::create("cur_instr");
     pre_instr = riscv_instr_cov_item::type_id::create("pre_instr");
     build_instr_list();
 
-    // TODO should be moved out of coverage for reporting
-    if (has_vector_engine) begin
-      $display("vector_options: VLEN=%0d", VLEN);
-      $display("vector_options: ELEN=%0d", ELEN);
-      $display("vector_options: SLEN=%0d", SLEN);
-    end
-
     // process coverage options
-    if ($test$plusargs("no_default_cov"))  begin
-      $display("coverage option: +no_default_cov");
-      default_cov = 'b0;
-    end
+    void'($value$plusargs("compliance_mode=%0d", compliance_mode));
+    void'($value$plusargs("iss_mode=%0d", iss_mode));
+
     if ($test$plusargs("cov_isa=")) begin
       string cov_isa_str;
       riscv_instr_group_t isa;
       bit got_one = 'b0;
       void'($value$plusargs("cov_isa=%0s", cov_isa_str));
       cov_isa_str = cov_isa_str.toupper();
-      $display("coverage option: +cov_isa=%0s", cov_isa_str);
+      `uvm_info("riscv_instr_covergroup",
+                $sformatf("coverage option: +cov_isa=%0s", cov_isa_str), UVM_LOW)
       isa = isa.first;
       do begin
         if (isa.name == cov_isa_str) begin
@@ -871,11 +869,9 @@ class riscv_instr_cover_group;
         end
         isa =  isa.next;
       end while (isa != isa.first);
-      if (got_one == 'b1) begin
-        //$display ($sformatf("GOT  cov_isa=%0s [%d]", cov_isa.name, cov_isa));
-      end else begin
-        fatal($sformatf("riscv_instr_gen_config cfg cant find enum for specifed cov_isa=%0s",
-                        cov_isa_str));
+      if (!got_one) begin
+        `uvm_fatal("riscv_instr_covergroup",
+                   $sformatf("Cannot find enum for specifed cov_isa=%0s", cov_isa_str))
       end
     end
     // TODO if we want to selectively enable/disable coverage based on categories...
@@ -944,17 +940,17 @@ class riscv_instr_cover_group;
 
     // TODO sort when there is a RV32ZICSR isa enum
     if (RV32I inside {supported_isa}) begin
-        if (default_cov) begin
-            csrrw_cg = new();
-            csrrs_cg = new();
-            csrrc_cg = new();
-            csrrwi_cg = new();
-            csrrsi_cg = new();
-            csrrci_cg = new();
-        end
+      if (!compliance_mode) begin
+        csrrw_cg = new();
+        csrrs_cg = new();
+        csrrc_cg = new();
+        csrrwi_cg = new();
+        csrrsi_cg = new();
+        csrrci_cg = new();
+      end
     end
 
-    if (default_cov) begin
+    if (!compliance_mode) begin
         // instr_trans_cg = new();
         branch_hit_history_cg = new();
         rv32i_misc_cg = new();
@@ -962,13 +958,13 @@ class riscv_instr_cover_group;
     end
 
     if (RV32C inside {supported_isa} || RV64C inside {supported_isa}) begin
-        if (default_cov) begin
-            compressed_opcode_cg = new();
-            hint_cg = new();
-            if (!cfg.disable_compressed_instr) begin
-              illegal_compressed_instr_cg = new();
-            end
+      if (!compliance_mode) begin
+        compressed_opcode_cg = new();
+        hint_cg = new();
+        if (!cfg.disable_compressed_instr) begin
+          illegal_compressed_instr_cg = new();
         end
+      end
     end
 
     `CG_SELECTOR_BEGIN(RV32M)
@@ -1048,14 +1044,16 @@ class riscv_instr_cover_group;
       c_addw_cg = new();
     `CG_SELECTOR_END
 
-    if (default_cov) begin
-        privileged_csr_cg = new();
-        mcause_exception_cg = new();
+    if (!compliance_mode) begin
+      privileged_csr_cg = new();
+      mcause_exception_cg = new();
+      if (!iss_mode) begin
         mcause_interrupt_cg = new();
-        if (!cfg.disable_compressed_instr) begin
-          mepc_alignment_cg = new();
-        end
-        mstatus_m_cg = new();
+      end
+      if (!cfg.disable_compressed_instr) begin
+        mepc_alignment_cg = new();
+      end
+      mstatus_m_cg = new();
     end
   endfunction
 
@@ -1065,15 +1063,15 @@ class riscv_instr_cover_group;
       instr.check_hazard_condition(pre_instr);
     end
     if ((instr.binary[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
-        if (default_cov) begin
-            hint_cg.sample(instr);
-            compressed_opcode_cg.sample(instr.binary[15:0]);
-        end
+      if (!compliance_mode) begin
+        hint_cg.sample(instr);
+        compressed_opcode_cg.sample(instr.binary[15:0]);
+      end
     end
     if (instr.binary[1:0] == 2'b11) begin
-        if (default_cov) begin
-            opcode_cg.sample(instr.binary[6:2]);
-        end
+      if (!compliance_mode) begin
+        opcode_cg.sample(instr.binary[6:2]);
+      end
     end
     case (instr.instr_name)
       ADD        : add_cg.sample(instr);
@@ -1194,12 +1192,12 @@ class riscv_instr_cover_group;
       `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_sample.sv")
       default: begin
         if (RV32C inside {supported_isa}) begin
-          if (default_cov) begin
+          if (!compliance_mode) begin
             illegal_compressed_instr_cg.sample(instr.binary);
           end
         end
         if (instr.group == RV32I) begin
-          if (default_cov) begin
+          if (!compliance_mode) begin
             rv32i_misc_cg.sample(instr);
           end
         end
@@ -1209,51 +1207,51 @@ class riscv_instr_cover_group;
       branch_hit_history = (branch_hit_history << 1) | instr.branch_hit;
       branch_instr_cnt += 1;
       if (branch_instr_cnt >= $bits(branch_hit_history)) begin
-          if (default_cov) begin
-            branch_hit_history_cg.sample();
-          end
+        if (!compliance_mode) begin
+          branch_hit_history_cg.sample();
+        end
       end
     end
     if (instr.category == CSR) begin
-          if (default_cov) begin
-            privileged_csr_cg.sample(instr.csr);
-          end
+      if (!compliance_mode) begin
+        privileged_csr_cg.sample(instr.csr);
+      end
       case (instr.csr)
         MCAUSE: begin
           if (instr.rd_value[XLEN-1]) begin
             interrupt_cause_t interrupt;
             if ($cast(interrupt, instr.rd_value[3:0])) begin
-                if (default_cov) begin
-                    mcause_interrupt_cg.sample(interrupt);
-                end
+              if (!compliance_mode && !iss_mode) begin
+                mcause_interrupt_cg.sample(interrupt);
+              end
             end
           end else begin
             exception_cause_t exception;
             if ($cast(exception, instr.rd_value[3:0])) begin
-                if (default_cov) begin
-                    mcause_exception_cg.sample(exception);
-                end
+              if (!compliance_mode) begin
+                mcause_exception_cg.sample(exception);
+              end
             end
           end
         end
         MEPC: begin
           if (RV32C inside {supported_isa}) begin
-            if (default_cov) begin
+            if (!compliance_mode) begin
               mepc_alignment_cg.sample(instr.rd_value);
             end
           end
         end
         MSTATUS: begin
-            if (default_cov) begin
-                mstatus_m_cg.sample(instr.rd_value);
-            end
+          if (!compliance_mode) begin
+            mstatus_m_cg.sample(instr.rd_value);
+          end
         end
       endcase
     end
     if (instr_cnt > 1) begin
-        if (default_cov) begin
-            //instr_trans_cg.sample();
-        end
+      if (!compliance_mode) begin
+        //instr_trans_cg.sample();
+      end
     end
    `VECTOR_INCLUDE("riscv_instr_cover_group_inc_sample.sv")
     pre_instr.copy(instr);
@@ -1289,7 +1287,7 @@ class riscv_instr_cover_group;
           instr = riscv_instr_base::type_id::create("instr");
           if (!instr.randomize() with {instr_name == local::instr_name;}) begin
             `uvm_fatal("riscv_instr_cover_group",
-                     $sformatf("Instruction %0s randomization failure", instr_name.name()))
+                       $sformatf("Instruction %0s randomization failure", instr_name.name()))
           end
         `else
           instr = riscv_instr::create_instr(instr_name);
