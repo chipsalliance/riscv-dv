@@ -32,12 +32,13 @@ import yaml
 import argparse
 import random
 import copy
+from lib import *
 
 try:
   from bitstring import BitArray as bitarray
 except ImportError as e:
   logging.error("Please install bitstring package: sudo apt-get install python3-bitstring")
-  sys.exit(1)
+  sys.exit(RET_FAIL)
 
 """
 Defines the test's success/failure values, one of which will be written to

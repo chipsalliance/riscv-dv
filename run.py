@@ -72,7 +72,7 @@ def get_generator_cmd(simulator, simulator_yaml, cov, exp):
           sim_cmd = re.sub("<"+env_var+">", get_env_var(env_var), sim_cmd)
       return compile_cmd, sim_cmd
   logging.error("Cannot find RTL simulator %0s" % simulator)
-  sys.exit(1)
+  sys.exit(RET_FAIL)
 
 
 def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
@@ -112,7 +112,7 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
   logging.error("Cannot find ISS %0s" % iss)
-  sys.exit(1)
+  sys.exit(RET_FAIL)
 
 
 def get_iss_cmd(base_cmd, elf, log):
@@ -465,7 +465,7 @@ def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
           process_whisper_sim_log(log, csv)
         else:
           logging.error("Unsupported ISS" % iss)
-          sys.exit(1)
+          sys.exit(RET_FAIL)
       compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
   passed_cnt = run_cmd("grep PASSED %s | wc -l" % report).strip()
   failed_cnt = run_cmd("grep FAILED %s | wc -l" % report).strip()

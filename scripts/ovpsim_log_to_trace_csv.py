@@ -27,34 +27,34 @@ from lib import *
 from riscv_trace_csv import *
 
 try:
-    from ovpsim_log_to_trace_csv_vectors import *
+  from ovpsim_log_to_trace_csv_vectors import *
 except:
-    def assign_operand_vector(a,b,c,d):
-        """ stub version when no vector processing included """
-        logging.info("No OVPsim vector instruction processing included")
-        if stop_on_first_error:
-            sys.exit(-1)
-    def is_an_extension_instruction(instr):
-        if 'v' in instr[0]:
-            return True
-        return False
+  def assign_operand_vector(a,b,c,d):
+    """ stub version when no vector processing included """
+    logging.info("No OVPsim vector instruction processing included")
+    if stop_on_first_error:
+      sys.exit(RET_FATAL)
+  def is_an_extension_instruction(instr):
+    if instr and 'v' in instr[0]:
+      return True
+    return False
 
 
 stop_on_first_error = 0
 
 def fatal (s):
-    """ ensure we end if a problem """
-    logging.fatal("ERROR: "+s)
-    sys.exit(-1)
+  """ ensure we end if a problem """
+  logging.fatal("ERROR: "+s)
+  sys.exit(RET_FATAL)
 
 def convert_mode(pri, line):
-    """ OVPsim uses text string, convert to numeric """
-    if "Machine"    in pri:    return str(3)
-    if "Supervisor" in pri:    return str(1)
-    if "User"       in pri:    return str(0)
-    logging.error("convert_mode = UNKNOWN PRIV MODE  [%s]: %s" % (pri, line))
-    if stop_on_first_error:
-        sys.exit(-1)
+  """ OVPsim uses text string, convert to numeric """
+  if "Machine"    in pri:    return str(3)
+  if "Supervisor" in pri:    return str(1)
+  if "User"       in pri:    return str(0)
+  logging.error("convert_mode = UNKNOWN PRIV MODE  [%s]: %s" % (pri, line))
+  if stop_on_first_error:
+      sys.exit(RET_FATAL)
 
 REGS = ["zero","ra","sp","gp","tp","t0","t1","t2","s0","s1",
         "a0","a1","a2","a3","a4","a5","a6","a7",
@@ -65,16 +65,16 @@ FREGS = ["ft0","ft1","ft2","ft3","ft4","ft5","ft6","ft7","fs0","fs1","fa0",
          "fs6","fs7","fs8","fs9","fs10","fs11","ft8","ft9","ft10","ft11"]
 
 def process_jal(trace, operands, gpr):
-    """ correctly process jal """
-    # TODO need to merge with jalr
-    ## jal rd, imm
-    if len(operands) == 2:
-        trace.rd = operands[0]
-        trace.rd_val = gpr[trace.rd]
-        trace.imm = get_imm_hex_val("0x" + operands[1])
-    else:
-        fatal("process_jal(%s) wrong num operands (%d)" %
-            (trace.instr, len(operands)))
+  """ correctly process jal """
+  # TODO need to merge with jalr
+  ## jal rd, imm
+  if len(operands) == 2:
+    trace.rd = operands[0]
+    trace.rd_val = gpr[trace.rd]
+    trace.imm = get_imm_hex_val("0x" + operands[1])
+  else:
+    fatal("process_jal(%s) wrong num operands (%d)" %
+      (trace.instr, len(operands)))
 
 def process_jalr(trace, operands, gpr):
   """ process jalr """
@@ -142,70 +142,69 @@ pseudos={
     }
 
 def check_conversion(entry):
-    """ after conversion check that the entry was converted correctly """
-    instr_str_0 =entry.instr_str.split(" ")[0]
-    instr       =entry.instr.split(" ")[0]
-    if "c." in instr[0:2]:
-        instr = instr[2:]
-    if instr in instr_str_0:
-        return # same
-    #logging.debug("converted pseudo %10s -> %s" % (instr_str_0, instr))
-    if instr_str_0 in pseudos:
-        p_instr = pseudos[instr_str_0]
-        if p_instr in instr:
-            return # is pseudo, converted ok
-        logging.error(
-            "converted        %10s -> %s <<-- not correct pseudo (%s)" %
-                (instr_str_0, instr, p_instr))
-        if stop_on_first_error:
-            sys.exit(-1)
-    logging.error("converted        %10s -> %s  <<-- not correct at all" %
-            (instr_str_0, instr))
+  """ after conversion check that the entry was converted correctly """
+  instr_str_0 =entry.instr_str.split(" ")[0]
+  instr       =entry.instr.split(" ")[0]
+  if "c." in instr[0:2]:
+    instr = instr[2:]
+  if instr in instr_str_0:
+    return # same
+  #logging.debug("converted pseudo %10s -> %s" % (instr_str_0, instr))
+  if instr_str_0 in pseudos:
+    p_instr = pseudos[instr_str_0]
+    if p_instr in instr:
+      return # is pseudo, converted ok
+    logging.error(
+      "converted        %10s -> %s <<-- not correct pseudo (%s)" %
+        (instr_str_0, instr, p_instr))
     if stop_on_first_error:
-        sys.exit(-1)
+      sys.exit(RET_FATAL)
+  logging.error("converted        %10s -> %s  <<-- not correct at all" %
+      (instr_str_0, instr))
+  if stop_on_first_error:
+    sys.exit(RET_FATAL)
 
 operands_list = ["rd","rs1","rs2","vd","vs1","vs2","vs3","fd","fs1","fs2"]
 
 def update_operands_values(trace, gpr):
-    """ ensure operands have been updated """
-    for op in operands_list:
-      exec("if trace.%0s in gpr: trace.%0s_val = gpr[trace.%0s]" % (op, op, op))
+  """ ensure operands have been updated """
+  for op in operands_list:
+    exec("if trace.%0s in gpr: trace.%0s_val = gpr[trace.%0s]" % (op, op, op))
 
 def show_line_instr(line, i):
-    """ show line """
-    if is_an_extension_instruction(i.instr):
-        logging.debug("%s" % (line.strip()))
-        logging.debug(
-            "  -->> instr_str(%s) binary(%s) addr(%s) mode(%s) instr(%s)"
-            % (     i.instr_str, i.binary,  i.addr, i.privileged_mode,i.instr))
+  """ show line """
+  if is_an_extension_instruction(i.instr):
+    logging.debug("%s" % (line.strip()))
+    logging.debug(
+      "  -->> instr_str(%s) binary(%s) addr(%s) mode(%s) instr(%s)"
+      % (     i.instr_str, i.binary,  i.addr, i.privileged_mode,i.instr))
 
 def check_num_operands(instr_str, num_operands, n):
-    """ ensure consistency """
-    if n != num_operands:
-      fatal("%s: num operands wrong, expected (%d) got (%d)" % (instr_str,
-            n, num_operands))
+  """ ensure consistency """
+  if n != num_operands:
+    fatal("%s: num operands wrong, expected (%d) got (%d)" % (instr_str,
+      n, num_operands))
 
 def is_csr(r):
-    """ see if r is a csr """
-    # TODO add more as needed - could look in the enum privileged_reg_t  or
-    # the cores settings: implemented_csr[]
-    if r in ["mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch","mcause",
-             "mtval","vl","vtype", "mie"]:
-      return True
-    else:
-      return False
+  """ see if r is a csr """
+  # TODO add more as needed - could look in the enum privileged_reg_t  or the cores settings: implemented_csr[]
+  if r in ["mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch","mcause",
+      "mtval","vl","vtype"]:
+    return True
+  else:
+    return False
 
 def process_branch_offset (opn, operands, prev_trace):
-    """ convert from ovpsim logs branch offsets as absolute to relative """
-    addr = operands[opn]
-    pc = prev_trace.addr
-    offset_dec = int(addr, 16) - int(pc, 16)
-    offset = hex(offset_dec)
-    operands[opn] = offset
+  """ convert from ovpsim logs branch offsets as absolute to relative """
+  addr = operands[opn]
+  pc = prev_trace.addr
+  offset_dec = int(addr, 16) - int(pc, 16)
+  offset = hex(offset_dec)
+  operands[opn] = offset
 
 def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
-    dont_truncate_after_first_ecall = 0,
-    verbose2 = False):
+  dont_truncate_after_first_ecall = 0,
+  verbose2 = False):
   """Process OVPsim simulation log.
 
   Extract instruction and affected register information from ovpsim simulation
@@ -361,7 +360,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                     % (instr_cnt, rv_instr_trace.rd, rv_instr_trace.rd_val,
                        trace_instr_str, prev_trace.binary, prev_trace.addr))
               print (rv_instr_trace.__dict__)
-              sys.exit(-1)
+              sys.exit(RET_FATAL)
         else:
           line = line.strip()
           if verbose2: logging.debug("ignoring line: [%s] %s " %
@@ -389,7 +388,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
   logging.info("Processed instruction count : %d " % instr_cnt)
   if instr_cnt == 0:
     logging.error ("No Instructions in logfile: %s" % ovpsim_log)
-    sys.exit(-1)
+    sys.exit(RET_FATAL)
   logging.info("CSV saved to : %s" % csv)
 
 def main():

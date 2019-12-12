@@ -27,6 +27,10 @@ import logging
 
 from datetime import date
 
+RET_SUCCESS = 0
+RET_FAIL    = 1
+RET_FATAL   = -1
+
 def setup_logging(verbose):
   """Setup the root logger.
 
@@ -57,7 +61,7 @@ def read_yaml(yaml_file):
       yaml_data = yaml.safe_load(f)
     except yaml.YAMLError as exc:
       logging.error(exc)
-      sys.exit(1)
+      sys.exit(RET_FAIL)
   return yaml_data
 
 
@@ -74,7 +78,7 @@ def get_env_var(var):
     val = os.environ[var]
   except KeyError:
     logging.warning("Please set the environment variable %0s" % var)
-    sys.exit(1)
+    sys.exit(RET_FAIL)
   return val
 
 
@@ -112,7 +116,7 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
                           stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as exc:
     logging.error(ps.communicate()[0])
-    sys.exit(1)
+    sys.exit(RET_FAIL)
   try:
     output = ps.communicate(timeout = timeout_s)[0]
   except subprocess.TimeoutExpired:
@@ -124,7 +128,7 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
     logging.info(output)
     logging.error("ERROR return code: %d/%d, cmd:%s" % (check_return_code, rc, cmd))
     if exit_on_error:
-      sys.exit(1)
+      sys.exit(RET_FAIL)
   logging.debug(output)
   return output
 
@@ -160,7 +164,7 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0, check_return_
       logging.info(output)
       logging.error("ERROR return code: %d, cmd:%s" % (rc, cmd))
       if exit_on_error:
-        sys.exit(1)
+        sys.exit(RET_FAIL)
     # Restore stty setting otherwise the terminal may go crazy
     os.system("stty sane")
     logging.debug(output)
