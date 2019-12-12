@@ -39,11 +39,17 @@ class riscv_instr_cov_test extends uvm_test;
     cfg = riscv_instr_gen_config::type_id::create("cfg");
     // disable_compressed_instr is not relevant to coverage test
     cfg.disable_compressed_instr = 0;
-    cfg.build_instruction_template(.skip_instr_exclusion(1));
+    `ifdef DEPRECATED
+      cfg.build_instruction_template(.skip_instr_exclusion(1));
+    `else
+      riscv_instr::create_instr_list(cfg);
+    `endif
     instr = riscv_instr_cov_item::type_id::create("instr");
     instr.rand_mode(0);
+    `ifdef DEPRECATED
     instr.no_hint_illegal_instr_c.constraint_mode(0);
     instr.imm_val_c.constraint_mode(0);
+    `endif
     instr_cg = new(cfg);
     `uvm_info(`gfn, $sformatf("%0d CSV trace files to be processed", trace_csv.size()), UVM_LOW)
     foreach (trace_csv[i]) begin
@@ -124,22 +130,28 @@ class riscv_instr_cov_test extends uvm_test;
     riscv_instr_name_t instr_name;
     bit [XLEN-1:0] val;
     if (instr_enum::from_name(process_instr_name(trace["instr"]), instr_name)) begin
+    `ifdef DEPRECATED
       if (cfg.instr_template.exists(instr_name)) begin
         instr.copy_base_instr(cfg.instr_template[instr_name]);
+    `else
+      if (riscv_instr::instr_template.exists(instr_name)) begin
+        instr.copy(riscv_instr::instr_template[instr_name]);
+    `endif
         assign_trace_info_to_instr(instr);
         instr.pre_sample();
         instr_cg.sample(instr);
         return 1'b1;
       end
     end
+    `uvm_info(`gfn, $sformatf("Cannot find opcode: %0s",
+                              process_instr_name(trace["instr"])), UVM_LOW)
     get_val(trace["binary"], val);
     if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
       instr_cg.compressed_opcode_cg.sample(val[15:0]);
       instr_cg.illegal_compressed_instr_cg.sample(val);
     end
     if (val[1:0] == 2'b11) begin
-      `uvm_info("DBG", $sformatf("Sample illegal opcode: %0x [%0s]",
-                                 val[6:2], trace["instr"]), UVM_LOW)
+      `uvm_info("DBG", $sformatf("Sample opcode: %0x [%0s]", val[6:2], trace["instr"]), UVM_LOW)
       instr_cg.opcode_cg.sample(val[6:2]);
     end
   endfunction

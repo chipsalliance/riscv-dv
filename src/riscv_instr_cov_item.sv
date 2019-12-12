@@ -1,4 +1,4 @@
-class riscv_instr_cov_item extends riscv_instr_base;
+class riscv_instr_cov_item extends `INSTR;
 
   typedef enum bit[1:0] {
     POSITIVE, NEGATIVE

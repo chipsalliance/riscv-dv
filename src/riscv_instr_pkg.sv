@@ -874,19 +874,14 @@ package riscv_instr_pkg;
     SYNCH, SYSTEM, COUNTER, CSR, CHANGELEVEL, TRAP, INTERRUPT, AMO
   };
 
-  `ifdef EXPERIMENTAL
+  `ifdef DEPRECATED
+    `define INSTR riscv_instr_base
+    `include "deprecated/riscv_instr_base.sv"
+    `include "deprecated/riscv_instr_gen_config.sv"
+  `else
     `define INSTR riscv_instr
     typedef class riscv_instr;
-  `else
-    `define INSTR riscv_instr_base
-  `endif
-
-
-  `include "riscv_instr_base.sv"
-  `include "riscv_instr_gen_config.sv"
-
-  // New experimenal instruction class
-  `ifdef EXPERIMENTAL
+    `include "riscv_instr_gen_config.sv"
     `include "isa/riscv_instr.sv"
     `include "isa/riscv_amo_instr.sv"
     `include "isa/riscv_floating_point_instr.sv"
@@ -909,6 +904,7 @@ package riscv_instr_pkg;
     `include "isa/rv128c_instr.sv"
   `endif
 
+  `include "riscv_pseudo_instr.sv"
   `include "riscv_illegal_instr.sv"
   `include "riscv_reg.sv"
   `include "riscv_privil_reg.sv"
@@ -919,19 +915,22 @@ package riscv_instr_pkg;
   `include "riscv_privileged_common_seq.sv"
   `include "riscv_callstack_gen.sv"
   `include "riscv_data_page_gen.sv"
-  `include "riscv_rand_instr.sv"
-  `include "riscv_instr_stream.sv"
-`ifdef EXPERIMENTAL
-  `include "exp_riscv_loop_instr.sv"
-  `include "exp_riscv_directed_instr_lib.sv"
-  `include "exp_riscv_load_store_instr_lib.sv"
-  `include "exp_riscv_amo_instr_lib.sv"
+
+`ifdef DEPRECATED
+  `include "deprecated/riscv_rand_instr.sv"
+  `include "deprecated/riscv_instr_stream.sv"
+  `include "deprecated/riscv_loop_instr.sv"
+  `include "deprecated/riscv_directed_instr_lib.sv"
+  `include "deprecated/riscv_load_store_instr_lib.sv"
+  `include "deprecated/riscv_amo_instr_lib.sv"
 `else
+  `include "riscv_instr_stream.sv"
   `include "riscv_loop_instr.sv"
   `include "riscv_directed_instr_lib.sv"
   `include "riscv_load_store_instr_lib.sv"
   `include "riscv_amo_instr_lib.sv"
 `endif
+
   `include "riscv_instr_sequence.sv"
   `include "riscv_asm_program_gen.sv"
   `include "riscv_debug_rom_gen.sv"

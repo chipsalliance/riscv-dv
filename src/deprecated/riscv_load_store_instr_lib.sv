@@ -30,7 +30,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
   rand int           base;
   int                offset[];
   int                addr[];
-  riscv_instr        load_store_instr[$];
+  riscv_instr_base   load_store_instr[$];
   rand int unsigned  data_page_id;
   rand riscv_reg_t   rs1_reg;
   rand locality_e    locality;
@@ -64,6 +64,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     addr = new[num_load_store];
     for (int i=0; i<num_load_store; i++) begin
       if (!std::randomize(offset_, addr_) with {
+        // Locality
         if (locality == NARROW) {
           soft offset_ inside {[-16:16]};
         } else if (locality == HIGH) {
@@ -98,7 +99,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
   // Generate each load/store instruction
   virtual function void gen_load_store_instr();
     bit enable_compressed_load_store;
-    riscv_instr instr;
+    riscv_instr_base instr;
     if(avail_regs.size() > 0) begin
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(avail_regs,
                                          unique{avail_regs};
@@ -112,9 +113,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       enable_compressed_load_store = 1;
     end
     foreach(addr[i]) begin
-      `ifndef EXPERIMENTAL
-      instr = riscv_instr::type_id::create("instr");
-      `endif
+      instr = riscv_instr_base::type_id::create("instr");
       // Assign the allowed load/store instructions based on address alignment
       // This is done separately rather than a constraint to improve the randomization performance
       allowed_instr = {LB, LBU, SB};
@@ -166,12 +165,9 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
            end
         end
       end
-      instr = riscv_instr::get_load_store_instr(allowed_instr);
-      instr.has_rs1 = 0;
-      instr.has_imm = 0;
-      randomize_instr(instr);
+      randomize_instr(instr, .skip_rs1(1'b1), .skip_imm(1'b1), .disable_dist(1'b1));
       instr.rs1 = rs1_reg;
-      instr.imm_str = $sformatf("%0d", $signed(offset[i]));
+      instr.set_imm(offset[i]);
       instr.process_load_store = 0;
       instr_list.push_back(instr);
       load_store_instr.push_back(instr);
@@ -400,10 +396,10 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
   endfunction `uvm_object_new
 
   virtual function void add_rs1_init_la_instr(riscv_reg_t gpr, int id, int base = 0);
-    riscv_instr instr[$];
+    riscv_instr_base instr[$];
     riscv_pseudo_instr li_instr;
-    riscv_instr store_instr;
-    riscv_instr add_instr;
+    riscv_instr_base store_instr;
+    riscv_instr_base add_instr;
     int min_offset[$];
     int max_offset[$];
     min_offset = offset.min();
@@ -417,8 +413,9 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
     )
     li_instr.imm_str = $sformatf("0x%0x", addr_offset);
     // Add offset to the base address
-    add_instr = riscv_instr::get_rand_instr(.include_instr({ADD}));
+    add_instr = riscv_instr_base::type_id::create("add_instr");
     `DV_CHECK_RANDOMIZE_WITH_FATAL(add_instr,
+       instr_name == ADD;
        rs1 == gpr;
        rs2 == li_instr.rd;
        rd  == gpr;
@@ -426,7 +423,7 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
     instr.push_back(li_instr);
     instr.push_back(add_instr);
     // Create SW instruction template
-    store_instr = riscv_instr::get_rand_instr(.include_instr({SB}));
+    store_instr = riscv_instr_base::type_id::create("store_instr");
     `DV_CHECK_RANDOMIZE_WITH_FATAL(store_instr,
        instr_name == SB;
        rs1 == gpr;
@@ -434,9 +431,9 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
     // Initialize the location which used by load instruction later
     foreach (load_store_instr[i]) begin
       if (load_store_instr[i].category == LOAD) begin
-        riscv_instr store;
-        store = riscv_instr::type_id::create("store");
-        store.copy(store_instr);
+        riscv_instr_base store;
+        store = riscv_instr_base::type_id::create("store");
+        store.copy_base_instr(store_instr);
         store.rs2 = riscv_reg_t'(i % 32);
         store.imm_str = load_store_instr[i].imm_str;
         case (load_store_instr[i].instr_name) inside

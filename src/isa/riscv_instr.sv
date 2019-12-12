@@ -26,7 +26,7 @@ class riscv_instr extends uvm_object;
   static riscv_instr_name_t  instr_group[riscv_instr_group_t][$];
   static riscv_instr_name_t  instr_category[riscv_instr_category_t][$];
   static riscv_instr_name_t  basic_instr[$];
-  static riscv_instr         instr_template[$];
+  static riscv_instr         instr_template[riscv_instr_name_t];
 
   // Privileged CSR filter
   static privileged_reg_t    exclude_reg[];
@@ -252,7 +252,7 @@ class riscv_instr extends uvm_object;
      int unsigned idx;
      riscv_instr_name_t name;
      if (load_store_instr.size() == 0) begin
-       load_store_instr = {instr_group[LOAD], instr_group[STORE]};
+       load_store_instr = {instr_category[LOAD], instr_category[STORE]};
      end
      idx = $urandom_range(0, load_store_instr.size()-1);
      name = load_store_instr[idx];
@@ -264,18 +264,20 @@ class riscv_instr extends uvm_object;
   // Disable the rand mode for unused operands to randomization performance
   virtual function void set_rand_mode();
     case (format) inside
-      R_FORMAT, CR_FORMAT, CL_FORMAT : has_imm = 1'b0;
-      I_FORMAT, CI_FORMAT : has_rs2 = 1'b0;
-      S_FORMAT, B_FORMAT, CSS_FORMAT, CS_FORMAT : has_rd = 1'b0;
-      U_FORMAT, J_FORMAT, CJ_FORMAT, CIW_FORMAT: begin
+      R_FORMAT : has_imm = 1'b0;
+      I_FORMAT : has_rs2 = 1'b0;
+      S_FORMAT, B_FORMAT : has_rd = 1'b0;
+      U_FORMAT, J_FORMAT : begin
         has_rs1 = 1'b0;
         has_rs2 = 1'b0;
       end
-      CB_FORMAT: begin
-        has_rd = 1'b0;
-        has_rs2 = 1'b0;
-      end
     endcase
+    if (category == CSR) begin
+      has_rs2 = 1'b0;
+      if (format == I_FORMAT) begin
+        has_rs1 = 1'b0;
+      end
+    end
   endfunction
 
   function void pre_randomize();
