@@ -107,8 +107,8 @@ class riscv_lr_sc_instr_stream extends riscv_amo_base_instr_stream;
       }
       rd != rs1_reg;
     )
-    instr_list.push_front(lr_instr);
-    instr_list.push_front(sc_instr);
+    instr_list.push_back(lr_instr);
+    instr_list.push_back(sc_instr);
   endfunction
 
 endclass : riscv_lr_sc_instr_stream
