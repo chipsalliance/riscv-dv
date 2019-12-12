@@ -1256,7 +1256,7 @@ class riscv_instr_cover_group;
         end
     end
    `VECTOR_INCLUDE("riscv_instr_cover_group_inc_sample.sv")
-    pre_instr.copy_base_instr(instr);
+    pre_instr.copy(instr);
     pre_instr.mem_addr = instr.mem_addr;
   endfunction
 
@@ -1283,15 +1283,20 @@ class riscv_instr_cover_group;
     riscv_instr_name_t instr_name;
     instr_name = instr_name.first;
     do begin
-      riscv_instr_base instr;
+      `INSTR instr;
       if (!(instr_name inside {unsupported_instr}) && (instr_name != INVALID_INSTR)) begin
-        instr = riscv_instr_base::type_id::create("instr");
-        if (!instr.randomize() with {instr_name == local::instr_name;}) begin
-          `uvm_fatal("riscv_instr_cover_group",
+        `ifdef DEPRECATED
+          instr = riscv_instr_base::type_id::create("instr");
+          if (!instr.randomize() with {instr_name == local::instr_name;}) begin
+            `uvm_fatal("riscv_instr_cover_group",
                      $sformatf("Instruction %0s randomization failure", instr_name.name()))
-        end
+          end
+        `else
+          instr = riscv_instr::create_instr(instr_name);
+        `endif
         if ((instr.group inside {supported_isa}) &&
-            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C, RV32V, RV64V, RV64B, RV32B})) begin
+            (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C,
+                                 RV32V, RV64V, RV64B, RV32B})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||

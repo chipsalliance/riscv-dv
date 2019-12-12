@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// TODO: Remove this when the flow is ready to support ML knobs
+`define DEPRECATED
+
 //-----------------------------------------------------------------------------
 // Processor feature configuration
 //-----------------------------------------------------------------------------

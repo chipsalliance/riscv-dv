@@ -4,18 +4,22 @@ class riscv_compressed_instr extends riscv_instr;
 
   constraint rvc_csr_c {
     //  Registers specified by the three-bit rs1’, rs2’, and rd’
-    if(format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT, CA_FORMAT}) {
-      rs1 inside {[S0:A5]};
-      rs2 inside {[S0:A5]};
-      rd  inside {[S0:A5]};
+    if (format inside {CIW_FORMAT, CL_FORMAT, CS_FORMAT, CB_FORMAT, CA_FORMAT}) {
+      if (has_rs1) {
+        rs1 inside {[S0:A5]};
+      }
+      if (has_rs2) {
+        rs2 inside {[S0:A5]};
+      }
+      if (has_rd) {
+        rd inside {[S0:A5]};
+      }
     }
     // C_ADDI16SP is only valid when rd == SP
-    if(instr_name == C_ADDI16SP) {
+    if (instr_name == C_ADDI16SP) {
       rd  == SP;
-      rs1 == SP;
     }
-
-    if(instr_name inside {C_JR, C_JALR}) {
+    if (instr_name inside {C_JR, C_JALR}) {
       rs2 == ZERO;
       rs1 != ZERO;
     }
@@ -108,6 +112,50 @@ class riscv_compressed_instr extends riscv_instr;
       imm = imm << imm_align;
     end
   endfunction : extend_imm
+
+  virtual function void set_rand_mode();
+    case (format) inside
+      CR_FORMAT : begin
+        if (category == JUMP) begin
+          has_rd = 1'b0;
+        end else begin
+          has_rs1 = 1'b0;
+        end
+        has_imm = 1'b0;
+      end
+      CI_FORMAT : begin
+        has_rs2 = 1'b0;
+        has_rs1 = 1'b0;
+      end
+      CSS_FORMAT : begin
+        has_rs1 = 1'b0;
+        has_rd  = 1'b0;
+      end
+      CL_FORMAT: begin
+        has_rs2 = 1'b0;
+      end
+      CS_FORMAT : begin
+        has_rd = 1'b0;
+      end
+      CA_FORMAT: begin
+        has_rs1 = 1'b0;
+        has_imm = 1'b0;
+      end
+      CIW_FORMAT: begin
+        has_rs1 = 1'b0;
+        has_rs2 = 1'b0;
+      end
+      CJ_FORMAT: begin
+        has_rs1 = 1'b0;
+        has_rs2 = 1'b0;
+        has_rd  = 1'b0;
+      end
+      CB_FORMAT: begin
+        if (instr_name != C_ANDI) has_rd = 1'b0;
+        has_rs2 = 1'b0;
+      end
+    endcase
+  endfunction
 
   // Convert the instruction to assembly code
   virtual function string convert2asm(string prefix = "");
