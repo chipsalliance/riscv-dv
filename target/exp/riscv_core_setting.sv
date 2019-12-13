@@ -51,6 +51,9 @@ bit support_umode_trap = 0;
 // Support sfence.vma instruction
 bit support_sfence = 1;
 
+// Support unaligned load/store
+bit support_unaligned_load_store = 1'b1;
+
 // ----------------------------------------------------------------------------
 // Previleged CSR implementation
 // ----------------------------------------------------------------------------

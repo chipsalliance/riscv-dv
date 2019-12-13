@@ -223,6 +223,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     end
     instr = riscv_instr::get_rand_instr(.include_instr(allowed_instr),
                                         .exclude_instr(exclude_instr));
+    randomize_gpr(instr);
+  endfunction
+
+  function void randomize_gpr(ref riscv_instr instr);
     `DV_CHECK_RANDOMIZE_WITH_FATAL(instr,
       if (avail_regs.size() > 0) {
         if (has_rs1) {
@@ -254,5 +258,6 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
       // TODO: Add constraint for CSR, floating point register
     )
   endfunction
+
 
 endclass
