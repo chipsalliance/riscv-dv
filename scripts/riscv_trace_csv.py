@@ -222,14 +222,12 @@ def sint_to_hex(val):
 
 def get_imm_hex_val(imm):
   """Get the hex representation of the imm value"""
-  if imm[0] == '-':
-    is_negative = 1
+  if imm[0] == '-':         # Negative value
     imm = imm[1:]
-  else:
-    is_negative = 0
-  imm_val = int(imm, 0)
-  if is_negative:
+    imm_val = int(imm, 0)
     imm_val = -imm_val
+  else:
+    imm_val = int(imm, 0)
   hexstr = sint_to_hex(imm_val)
   return hexstr[2:]
 
@@ -359,26 +357,23 @@ def assign_operand(trace, operands, gpr, stop_on_first_error = 0):
     trace.rd_val = gpr[trace.rd]
     trace.imm = get_imm_hex_val(operands[1])
   elif trace.instr in ['jal']:
+    trace.imm = get_imm_hex_val(operands[1])
     if len(operands) == 1:
       trace.imm = get_imm_hex_val(operands[0])
-    else:
-      trace.imm = get_imm_hex_val(operands[1])
   elif trace.instr in ['jalr']:
+    trace.rs1 = operands[1]
+    trace.rs1_val = gpr[trace.rs1]
+    trace.imm = get_imm_hex_val(operands[2])
     if len(operands) == 1:
       trace.rs1 = operands[0]
       trace.rs1_val = gpr[trace.rs1]
       trace.imm = get_imm_hex_val('0')
-    else:
-      trace.rs1 = operands[1]
-      trace.rs1_val = gpr[trace.rs1]
-      trace.imm = get_imm_hex_val(operands[2])
   elif trace.instr in ['c.j']:
     trace.imm = get_imm_hex_val(operands[0])
   elif trace.instr in ['c.jal']:
+    trace.imm = get_imm_hex_val(operands[1])
     if len(operands) == 1:
       trace.imm = get_imm_hex_val(operands[0])
-    else:
-      trace.imm = get_imm_hex_val(operands[1])
   # Pseudo instruction convertion below
   elif trace.instr in ['mv']:
     trace.instr = 'addi'
