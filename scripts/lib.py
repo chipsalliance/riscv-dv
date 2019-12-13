@@ -93,8 +93,7 @@ def get_seed(seed):
   """
   if seed >= 0:
     return seed
-  else:
-    return random.getrandbits(32)
+  return random.getrandbits(32)
 
 
 def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
@@ -114,7 +113,7 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
                           universal_newlines=True,
                           stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT)
-  except subprocess.CalledProcessError as exc:
+  except subprocess.CalledProcessError:
     logging.error(ps.communicate()[0])
     sys.exit(RET_FAIL)
   try:
@@ -210,5 +209,4 @@ def create_output(output, prefix = "out_"):
   # Create output directory
   if output is None:
     return prefix + str(date.today())
-  else:
-    return output
+  return output

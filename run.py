@@ -89,7 +89,6 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
   """
   logging.info("Processing ISS setup file : %s" % iss_yaml)
   yaml_data = read_yaml(iss_yaml)
-  cwd = os.path.dirname(os.path.realpath(__file__))
   # Search for matched ISS
   for entry in yaml_data:
     if entry['iss'] == iss:
@@ -155,7 +154,7 @@ def do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir, cmp_opts,
       cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
 
       logging.debug("Compile command: %s" % cmd)
-      output = run_cmd(cmd)
+      run_cmd(cmd)
 
 def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
                  end_signature_addr, timeout_s, output_dir):
@@ -172,7 +171,7 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
   if lsf_cmd:
     cmd_list.append(cmd)
   else:
-    output = run_cmd(cmd, timeout_s)
+    run_cmd(cmd, timeout_s)
 
 def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
@@ -247,7 +246,7 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
           else:
             logging.info("Running %s, batch %0d/%0d, test_cnt:%0d" %
                          (test['test'], i+1, batch_cnt, test_cnt))
-            output = run_cmd(cmd, timeout_s, check_return_code = check_return_code)
+            run_cmd(cmd, timeout_s, check_return_code = check_return_code)
   if sim_seed:
     with open(('%s/seed.yaml' % os.path.abspath(output_dir)) , 'w') as outfile:
       yaml.dump(sim_seed, outfile, default_flow_style=False)
@@ -429,14 +428,13 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout
           logging.debug(cmd)
 
 
-def iss_cmp(test_list, iss, output_dir, isa, stop_on_first_error):
+def iss_cmp(test_list, iss, output_dir, stop_on_first_error):
   """Compare ISS simulation reult
 
   Args:
     test_list      : List of assembly programs to be compiled
     iss            : List of instruction set simulators
     output_dir     : Output directory of the ELF files
-    isa            : ISA
     stop_on_first_error : will end run on first error detected
   """
   iss_list = iss.split(",")
@@ -659,7 +657,7 @@ def main():
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.isa, args.stop_on_first_error)
+      iss_cmp(matched_list, args.iss, output_dir, args.stop_on_first_error)
 
 if __name__ == "__main__":
   main()

@@ -121,7 +121,7 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
       build_cmd += (" --stop_on_first_error")
       base_sim_cmd += (" --stop_on_first_error")
     logging.info("Building the coverage collection framework")
-    output = run_cmd(build_cmd)
+    run_cmd(build_cmd)
     file_idx = 0
     trace_idx = 0
     trace_csv_opts = ""
