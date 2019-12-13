@@ -233,6 +233,7 @@ class riscv_instr_cover_group;
   int unsigned            instr_cnt;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
+  exception_cause_t       ignored_exceptions[];
 
   // Mode of the coverage model
 
@@ -817,7 +818,8 @@ class riscv_instr_cover_group;
   // Privileged CSR covergroup
   covergroup mcause_exception_cg with function sample(exception_cause_t exception);
     cp_exception: coverpoint exception {
-       bins exception[] = cp_exception with (item inside {implemented_exception});
+       bins exception[] = cp_exception with ((item inside {implemented_exception}) &&
+                                            !(item inside {ignored_exceptions}));
     }
   endgroup
 
@@ -1043,6 +1045,14 @@ class riscv_instr_cover_group;
       c_subw_cg = new();
       c_addw_cg = new();
     `CG_SELECTOR_END
+
+    // Ignore the exception which cannot be covered when running with ISS
+    if (iss_mode) begin
+      ignored_exceptions = {INSTRUCTION_ACCESS_FAULT, LOAD_ACCESS_FAULT};
+      if (support_unaligned_load_store) begin
+        ignored_exceptions = {ignored_exceptions, LOAD_ADDRESS_MISALIGNED};
+      end
+    end
 
     if (!compliance_mode) begin
       privileged_csr_cg = new();

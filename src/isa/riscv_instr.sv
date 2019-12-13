@@ -106,8 +106,7 @@ class riscv_instr extends uvm_object;
       instr_template[instr_name] = instr_inst;
       // C_JAL is RV32C only instruction
       if ((XLEN != 32) && (instr_name == C_JAL)) continue;
-      if ((SP inside {cfg.reserved_regs}) &&
-          (instr_name inside {C_SWSP, C_SDSP, C_ADDI16SP})) begin
+      if ((SP inside {cfg.reserved_regs}) && (instr_name inside {C_ADDI16SP})) begin
         continue;
       end
       if (!cfg.enable_sfence && instr_name == SFENCE_VMA) continue;
@@ -567,13 +566,9 @@ class riscv_instr extends uvm_object;
 
   virtual function string get_instr_name();
     get_instr_name = instr_name.name();
-    if(get_instr_name.substr(0, 1) == "C_") begin
-      get_instr_name = {"c.", get_instr_name.substr(2, get_instr_name.len() - 1)};
-    end else if (group inside {RV32F, RV64F, RV32D, RV64D}) begin
-      foreach(get_instr_name[i]) begin
-        if (get_instr_name[i] == "_") begin
-          get_instr_name[i] = ".";
-        end
+    foreach(get_instr_name[i]) begin
+      if (get_instr_name[i] == "_") begin
+        get_instr_name[i] = ".";
       end
     end
     return get_instr_name;

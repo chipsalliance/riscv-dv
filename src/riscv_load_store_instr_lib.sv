@@ -35,8 +35,17 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
   rand riscv_reg_t   rs1_reg;
   rand locality_e    locality;
   rand int           max_load_store_offset;
+  rand bit           use_sp_as_rs1;
 
   `uvm_object_utils(riscv_load_store_base_instr_stream)
+
+  constraint sp_c {
+    solve use_sp_as_rs1 before rs1_reg;
+    use_sp_as_rs1 dist {1 := 1, 0 := 2};
+    if (use_sp_as_rs1) {
+      rs1_reg == SP;
+    }
+  }
 
   constraint rs1_c {
     !(rs1_reg inside {cfg.reserved_regs, reserved_rd, ZERO});
@@ -83,6 +92,14 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     end
   endfunction
 
+  function void pre_randomize();
+    super.pre_randomize();
+    if (SP inside {cfg.reserved_regs, reserved_rd}) begin
+      use_sp_as_rs1 = 0;
+      use_sp_as_rs1.rand_mode(0);
+    end
+  endfunction
+
   function void post_randomize();
     randomize_offset();
     // rs1 cannot be modified by other instructions
@@ -108,7 +125,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
                                          },
                                          "Cannot randomize avail_regs")
     end
-    if ((rs1_reg inside {[S0 : A5]}) && !cfg.disable_compressed_instr) begin
+    if ((rs1_reg inside {[S0 : A5], SP}) && !cfg.disable_compressed_instr) begin
       enable_compressed_load_store = 1;
     end
     foreach(addr[i]) begin
@@ -127,9 +144,14 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
           if((offset[i] inside {[0:127]}) && (offset[i] % 4 == 0) &&
              (RV32C inside {riscv_instr_pkg::supported_isa}) &&
              enable_compressed_load_store) begin
-            allowed_instr = {C_LW, C_SW, allowed_instr};
-            if (cfg.enable_floating_point && (RV32FC inside {supported_isa})) begin
-              allowed_instr = {C_FLW, C_FSW, allowed_instr};
+            if (rs1_reg == SP) begin
+              `uvm_info(`gfn, "Add LWSP/SWSP to allowed instr", UVM_LOW)
+              allowed_instr = {C_LWSP, C_SWSP};
+            end else begin
+              allowed_instr = {C_LW, C_SW, allowed_instr};
+              if (cfg.enable_floating_point && (RV32FC inside {supported_isa})) begin
+                allowed_instr = {C_FLW, C_FSW, allowed_instr};
+              end
             end
           end
         end
@@ -141,32 +163,45 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
           if((offset[i] inside {[0:255]}) && (offset[i] % 8 == 0) &&
              (RV64C inside {riscv_instr_pkg::supported_isa} &&
              enable_compressed_load_store)) begin
-            allowed_instr = {C_LD, C_SD, allowed_instr};
-            if (cfg.enable_floating_point && (RV32DC inside {supported_isa})) begin
-              allowed_instr = {C_FLD, C_FSD, allowed_instr};
+            if (rs1_reg == SP) begin
+              allowed_instr = {C_LDSP, C_SDSP};
+            end else begin
+              allowed_instr = {C_LD, C_SD, allowed_instr};
+              if (cfg.enable_floating_point && (RV32DC inside {supported_isa})) begin
+                allowed_instr = {C_FLD, C_FSD, allowed_instr};
+              end
             end
           end
         end
-      end else begin
+      end else begin // unaligned load/store
         allowed_instr = {LW, SW, LH, LHU, SH, allowed_instr};
+        // Compressed load/store still needs to be aligned
         if ((offset[i] inside {[0:127]}) && (offset[i] % 4 == 0) &&
             (RV32C inside {riscv_instr_pkg::supported_isa}) &&
             enable_compressed_load_store) begin
-          allowed_instr = {C_LW, C_SW, allowed_instr};
+            if (rs1_reg == SP) begin
+              allowed_instr = {C_LWSP, C_SWSP};
+            end else begin
+              allowed_instr = {C_LW, C_SW, allowed_instr};
+            end
         end
         if (XLEN >= 64) begin
           allowed_instr = {LWU, LD, SD, allowed_instr};
           if ((offset[i] inside {[0:255]}) && (offset[i] % 8 == 0) &&
               (RV64C inside {riscv_instr_pkg::supported_isa}) &&
               enable_compressed_load_store) begin
-              allowed_instr = {C_LD, C_SD, allowed_instr};
+              if (rs1_reg == SP) begin
+                allowed_instr = {C_LWSP, C_SWSP};
+              end else begin
+                allowed_instr = {C_LD, C_SD, allowed_instr};
+              end
            end
         end
       end
       instr = riscv_instr::get_load_store_instr(allowed_instr);
       instr.has_rs1 = 0;
       instr.has_imm = 0;
-      randomize_instr(instr);
+      randomize_gpr(instr);
       instr.rs1 = rs1_reg;
       instr.imm_str = $sformatf("%0d", $signed(offset[i]));
       instr.process_load_store = 0;
@@ -319,6 +354,7 @@ class riscv_multi_page_load_store_instr_stream extends riscv_mem_access_stream;
       load_store_instr_stream[i].min_instr_cnt = 5;
       load_store_instr_stream[i].max_instr_cnt = 10;
       load_store_instr_stream[i].cfg = cfg;
+      load_store_instr_stream[i].sp_c.constraint_mode(0);
       // Make sure each load/store sequence doesn't override the rs1 of other sequences.
       foreach(rs1_reg[j]) begin
         if(i != j) begin
