@@ -35,7 +35,7 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
                 opts, timeout, simulator, simulator_yaml, custom_target, \
                 isa, target, stop_on_first_error,
                 dont_truncate_after_first_ecall,
-                vector_options, coverage_options):
+                vector_options, coverage_options, compliance_mode):
   """Collect functional coverage from the instruction trace
   Args:
     log_dir             : Trace log directory
@@ -56,6 +56,7 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
     stop_on_first_error : will end run on first error detected
     vector_options      : Enable Vectors and set vector config options
     coverage_options    : Set coverage config options
+    compliance_mode     : Run coverage model for compliance test
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
   log_list = []
@@ -102,6 +103,8 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
       opts_vec = ("%0s" % vector_options)
     if coverage_options:
       opts_cov = ("%0s" % coverage_options)
+    if compliance_mode:
+      opts_cov += " +define+COMPLIANCE_MODE"
     build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
                  " --co -o %s --cov -tl %s %s --cmp_opts \"%s %s\" " %
                  (cwd, simulator, simulator_yaml, out, testlist, opts,
@@ -231,6 +234,8 @@ def setup_parser():
                       help="Number of CSV to process per run")
   parser.add_argument("-d", "--debug_mode", dest="debug_mode", action="store_true",
                       help="Debug mode, randomize and sample the coverage directly")
+  parser.add_argument("--compliance_mode", action="store_true",
+                      help="Run the coverage model in compliance test mode")
   parser.add_argument("-i", "--instr_cnt", dest="instr_cnt", type=int, default=0,
                       help="Random instruction count for debug mode")
   parser.add_argument("-to", "--timeout", dest="timeout", type=int, default=1000,
@@ -274,6 +279,7 @@ def setup_parser():
                       help="Controlling coverage coverpoints")
   parser.set_defaults(verbose=False)
   parser.set_defaults(debug_mode=False)
+  parser.set_defaults(compliance_mode=False)
   parser.set_defaults(stop_on_first_error=False)
   parser.set_defaults(dont_truncate_after_first_ecall=False)
   parser.set_defaults(vector_options="")
@@ -335,7 +341,8 @@ def main():
                 args.isa, args.target, args.stop_on_first_error,
                 args.dont_truncate_after_first_ecall,
                 args.vector_options,
-                args.coverage_options)
+                args.coverage_options,
+                args.compliance_mode)
     logging.info("Coverage results are saved to %s" % output_dir)
 
 if __name__ == "__main__":
