@@ -377,7 +377,7 @@ class RiscvInstructionTraceCsv(object):
       new_trace.addr = row['addr']
       new_trace.binary = row['binary']
       new_trace.instr_str = row['str']
-      append(new_trace)
+      trace.append(new_trace)
 
 
   def write_trace_entry(self, entry):
