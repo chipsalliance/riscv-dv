@@ -321,7 +321,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
                   process_branch_offset (1, operands, prev_trace)
                 if prev_trace.instr in ['j', 'c.j']:
                   operands[0] = "0x" + operands[0] # ovpsim has no '0x' so need to add it.
-                assign_operand(prev_trace, operands, gpr, stop_on_first_error)
+                prev_trace.assign_operand(operands, gpr, stop_on_first_error)
           else:
             # logging.debug("no operand for [%s] in [%s]" % (trace_instr,
             #   trace_instr_str))
