@@ -147,12 +147,12 @@ class riscv_instr_cov_test extends uvm_test;
                               process_instr_name(trace["instr"])), UVM_LOW)
     get_val(trace["binary"], val);
     if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
-      instr_cg.compressed_opcode_cg.sample(val[15:0]);
-      instr_cg.illegal_compressed_instr_cg.sample(val);
+      `SAMPLE(instr_cg.compressed_opcode_cg, val[15:0])
+      `SAMPLE(instr_cg.illegal_compressed_instr_cg, val)
     end
     if (val[1:0] == 2'b11) begin
       `uvm_info("DBG", $sformatf("Sample opcode: %0x [%0s]", val[6:2], trace["instr"]), UVM_LOW)
-      instr_cg.opcode_cg.sample(val[6:2]);
+      `SAMPLE(instr_cg.opcode_cg, val[6:2])
     end
   endfunction
 
