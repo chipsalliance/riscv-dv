@@ -101,7 +101,7 @@ def process_spike_sim_log(spike_log, csv, full_trace = 0):
               rv_instr_trace.instr = s.group("instr")
               operand_str = s.group("operand").replace(" ", "")
               operands = operand_str.split(",")
-              assign_operand(rv_instr_trace, operands, gpr)
+              rv_instr_trace.assign_operand(operands, gpr)
             else:
               rv_instr_trace.instr = spike_instr
         else:

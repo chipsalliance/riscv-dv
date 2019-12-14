@@ -22,6 +22,8 @@ import logging
 import sys
 from lib import *
 
+ADDR_RE  = re.compile(r"(?P<imm>[\-0-9]+?)\((?P<rs1>.*)\)")
+
 class RiscvInstructionTraceEntry(object):
   """RISC-V instruction trace entry"""
   def __init__(self):
@@ -66,6 +68,281 @@ class RiscvInstructionTraceEntry(object):
     """Return a short string of the trace entry"""
     return ("%s -> %s(0x%s) addr:0x%s" %
            (self.instr_str, self.rd, self.rd_val, self.addr))
+
+  def assign_operand(self, operands, gpr, stop_on_first_error = 0):
+    """Assign the operand value of the instruction trace"""
+    if self.instr in ['lb', 'lh', 'lw', 'lbu', 'lhu', 'ld', 'lq', 'lwu', 'ldu',
+                      'c.lw', 'c.ld', 'c.lq', 'c.lwsp', 'c.ldsp', 'c.lqsp']:
+      # TODO: Support regular load/store format
+      m = ADDR_RE.search(operands[1])
+      # Load instruction
+      self.rd     = operands[0]
+      self.rd_val = gpr[self.rd]
+      if m:
+        self.imm     = get_imm_hex_val(m.group('imm'))
+        self.rs1     = m.group('rs1')
+        self.rs1_val = gpr[self.rs1]
+      else:
+        logging.info("Unexpected load address %0s", operands[1])
+    elif self.instr in ['sb', 'sh', 'sw', 'sd', 'sq', 'c.sw', 'c.sd', 'c.sq',
+                        'c.swsp', 'c.sdsp', 'c.sqsp']:
+      # Store instruction
+      m = ADDR_RE.search(operands[1])
+      # Load instruction
+      self.rs2     = operands[0]
+      self.rs2_val = gpr[self.rs2]
+      if m:
+        self.imm     = get_imm_hex_val(m.group('imm'))
+        self.rs1     = m.group('rs1')
+        self.rs1_val = gpr[self.rs1]
+      else:
+        logging.info("Unexpected store address %0s", operands[1])
+    elif self.instr in [
+          'mul', 'mulh', 'mulhsu', 'mulhu', 'div', 'divu', 'rem', 'remu',
+          'mulw', 'muld', 'divw', 'divuw', 'divd', 'remw', 'remd', 'remuw',
+          'remud', 'sll', 'srl', 'sra', 'add', 'sub', 'xor', 'or', 'and',
+          'slt', 'sltu', 'sllw', 'slld', 'srlw', 'srld', 'sraw', 'srad',
+          'addw', 'addd', 'subw', 'subd']:
+      # R type instruction
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = operands[2]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in [
+          'c.add', 'c.addw', 'c.mv', 'c.sub', 'c.and', 'c.or', 'c.xor', 'c.subw']:
+      # CR type
+      self.rd = operands[0]
+      self.rd_val = self.gpr[self.rd]
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in ['c.jr']:
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = 'zero'
+      self.rs2_val = '0'
+      self.rd = 'zero'
+      self.rd_val = '0'
+    elif self.instr in ['c.jr', 'c.jalr']:
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = 'zero'
+      self.rs2_val = '0'
+    elif self.instr in [
+          'slli', 'srli', 'srai', 'addi', 'xori', 'ori', 'andi', 'slti',
+          'sltiu', 'slliw', 'sllid', 'srliw', 'srlid', 'sraiw', 'sraid',
+          'addiw', 'addid']:
+      # I type instruction
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val(operands[2])
+    elif self.instr in ['c.addi16sp', 'c.addi4spn']:
+      self.rs1 = 'sp'
+      self.rs1_val = gpr[self.rs1]
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.imm = get_imm_hex_val(operands[-1])
+    elif self.instr in ['c.addi', 'c.addiw', 'c.li', 'c.lui',
+                        'c.slli', 'c.srai', 'c.srli', 'c.andi']:
+      # CI/CIW type
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val(operands[-1])
+    elif self.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
+      # SB type instruction
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+      self.imm = get_imm_hex_val(operands[2])
+    elif self.instr in ['c.beqz', 'c.bnez']:
+      # CB type instruction
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['csrrw', 'csrrs', 'csrrc']:
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.csr = operands[1]
+      self.rs1 = operands[2]
+      self.rs1_val = gpr[self.rs1]
+    elif self.instr in ['csrrwi', 'csrrsi', 'csrrci']:
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.csr = operands[1]
+      self.imm = get_imm_hex_val(operands[2])
+    elif self.instr in [
+          'scall', 'sbreak', 'fence', 'fence.i', 'ecall', 'ebreak', 'wfi',
+          'sfence.vma', 'c.ebreak', 'nop', 'c.nop']:
+      self.rd  = 'zero'
+      self.rs1 = 'zero'
+      self.rs2 = 'zero'
+      self.rd_val  = '0'
+      self.rs1_val = '0'
+      self.rs2_val = '0'
+      self.imm = get_imm_hex_val('0')
+    elif self.instr in ['lui', 'auipc']:
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['jal']:
+      self.imm = get_imm_hex_val(operands[1])
+      if len(operands) == 1:
+        self.imm = get_imm_hex_val(operands[0])
+    elif self.instr in ['jalr']:
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val(operands[2])
+      if len(operands) == 1:
+        self.rs1 = operands[0]
+        self.rs1_val = gpr[self.rs1]
+        self.imm = get_imm_hex_val('0')
+    elif self.instr in ['c.j']:
+      self.imm = get_imm_hex_val(operands[0])
+    elif self.instr in ['c.jal']:
+      self.imm = get_imm_hex_val(operands[1])
+      if len(operands) == 1:
+        self.imm = get_imm_hex_val(operands[0])
+    # Pseudo instruction convertion below
+    elif self.instr in ['mv']:
+      self.instr = 'addi'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val('0')
+    elif self.instr in ['not']:
+      self.instr = 'xori'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val('-1')
+    elif self.instr in ['neg']:
+      self.instr = 'sub'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in ['negw']:
+      self.instr = 'subw'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in ['sext.w']:
+      self.instr = 'addiw'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val('0')
+    elif self.instr in ['seqz']:
+      self.instr = 'sltiu'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.imm = get_imm_hex_val('1')
+    elif self.instr in ['snez']:
+      self.instr = 'sltu'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in ['sltz']:
+      self.instr = 'slt'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = 'zero'
+      self.rs2_val = '0'
+    elif self.instr in ['sgtz']:
+      self.instr = 'slt'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[1]
+      self.rs2_val = gpr[self.rs2]
+    elif self.instr in ['beqz', 'bnez', 'bgez', 'bltz']:
+      self.instr = self.instr[0:3]
+      self.rs1 = operands[0]
+      self.rs1_val = gpr[self.rs1]
+      self.rs2 = 'zero'
+      self.rs2_val = '0'
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['blez']:
+      self.instr = 'bge'
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[0]
+      self.rs2_val = gpr[self.rs2]
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['bgtz']:
+      self.instr = 'blt'
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+      self.rs2 = operands[0]
+      self.rs2_val = gpr[self.rs2]
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['csrr']:
+      self.instr = 'csrrw'
+      self.rd = operands[0]
+      self.rd_val = gpr[self.rd]
+      self.csr = operands[1]
+      self.rs1 = 'zero'
+      self.rs1_val = '0'
+    elif self.instr in ['csrw', 'csrs', 'csrc']:
+      self.instr = 'csrr' + self.instr[-1]
+      self.csr = operands[0]
+      self.rs1 = operands[1]
+      self.rs1_val = gpr[self.rs1]
+      self.rd = 'zero'
+      self.rd_val = '0'
+    elif self.instr in ['csrwi', 'csrsi', 'csrci']:
+      self.instr = 'csrr' + self.instr[-2:]
+      self.rd = 'zero'
+      self.rd_val = '0'
+      self.csr = operands[0]
+      self.imm = get_imm_hex_val(operands[1])
+    elif self.instr in ['j']:
+      self.instr = 'jal'
+      self.rd = 'zero'
+      self.rd_val = '0'
+      self.imm = get_imm_hex_val(operands[0])
+    elif self.instr in ['jr']:
+      self.instr = 'jal'
+      self.rd = 'zero'
+      self.rd_val = '0'
+      self.rs1 = operands[0]
+      if self.rs1 in gpr:
+        self.rs1_val = gpr[self.rs1]
+    elif self.instr in ['li']:
+      self.instr = 'li'
+    elif self.instr[0:2] in ['lr', 'am', 'sc']:
+      # TODO: Support A-extension
+      pass
+    else:
+      # TODO: Support other instructions
+      logging.debug("Unsupported instr : %s (%s)" %
+                    (self.instr, self.instr_str))
+      if stop_on_first_error:
+          sys.exit(RET_FATAL)
 
 class RiscvInstructionTraceCsv(object):
   """RISC-V instruction trace CSV class
@@ -142,280 +419,3 @@ class RiscvInstructionTraceCsv(object):
                               'fs2'           : entry.fs2,
                               'fs2_val'       : entry.fs2_val,
                 })
-
-ADDR_RE  = re.compile(r"(?P<imm>[\-0-9]+?)\((?P<rs1>.*)\)")
-
-def assign_operand(trace, operands, gpr, stop_on_first_error = 0):
-  """Assign the operand value of the instruction trace"""
-  if trace.instr in ['lb', 'lh', 'lw', 'lbu', 'lhu', 'ld', 'lq', 'lwu', 'ldu',
-                     'c.lw', 'c.ld', 'c.lq', 'c.lwsp', 'c.ldsp', 'c.lqsp']:
-    # TODO: Support regular load/store format
-    m = ADDR_RE.search(operands[1])
-    # Load instruction
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    if m:
-      trace.imm = get_imm_hex_val(m.group('imm'))
-      trace.rs1 = m.group('rs1')
-      trace.rs1_val = gpr[trace.rs1]
-    else:
-      logging.info("Unexpected load address %0s", operands[1])
-  elif trace.instr in ['sb', 'sh', 'sw', 'sd', 'sq', 'c.sw', 'c.sd', 'c.sq',
-                       'c.swsp', 'c.sdsp', 'c.sqsp']:
-    # Store instruction
-    m = ADDR_RE.search(operands[1])
-    # Load instruction
-    trace.rs2 = operands[0]
-    trace.rs2_val = gpr[trace.rs2]
-    if m:
-      trace.imm = get_imm_hex_val(m.group('imm'))
-      trace.rs1 = m.group('rs1')
-      trace.rs1_val = gpr[trace.rs1]
-    else:
-      logging.info("Unexpected store address %0s", operands[1])
-  elif trace.instr in [
-        'mul', 'mulh', 'mulhsu', 'mulhu', 'div', 'divu', 'rem', 'remu',
-        'mulw', 'muld', 'divw', 'divuw', 'divd', 'remw', 'remd', 'remuw',
-        'remud', 'sll', 'srl', 'sra', 'add', 'sub', 'xor', 'or', 'and',
-        'slt', 'sltu', 'sllw', 'slld', 'srlw', 'srld', 'sraw', 'srad',
-        'addw', 'addd', 'subw', 'subd']:
-    # R type instruction
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = operands[2]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in [
-        'c.add', 'c.addw', 'c.mv', 'c.sub', 'c.and', 'c.or', 'c.xor', 'c.subw']:
-    # CR type
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['c.jr']:
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = 'zero'
-    trace.rs2_val = '0'
-    trace.rd = 'zero'
-    trace.rd_val = '0'
-  elif trace.instr in ['c.jr', 'c.jalr']:
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = 'zero'
-    trace.rs2_val = '0'
-  elif trace.instr in [
-        'slli', 'srli', 'srai', 'addi', 'xori', 'ori', 'andi', 'slti',
-        'sltiu', 'slliw', 'sllid', 'srliw', 'srlid', 'sraiw', 'sraid',
-         'addiw', 'addid']:
-    # I type instruction
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val(operands[2])
-  elif trace.instr in ['c.addi16sp', 'c.addi4spn']:
-    trace.rs1 = 'sp'
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.imm = get_imm_hex_val(operands[-1])
-  elif trace.instr in ['c.addi', 'c.addiw', 'c.li', 'c.lui',
-                       'c.slli', 'c.srai', 'c.srli', 'c.andi']:
-    # CI/CIW type
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val(operands[-1])
-  elif trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu']:
-    # SB type instruction
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-    trace.imm = get_imm_hex_val(operands[2])
-  elif trace.instr in ['c.beqz', 'c.bnez']:
-    # CB type instruction
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['csrrw', 'csrrs', 'csrrc']:
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.csr = operands[1]
-    trace.rs1 = operands[2]
-    trace.rs1_val = gpr[trace.rs1]
-  elif trace.instr in ['csrrwi', 'csrrsi', 'csrrci']:
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.csr = operands[1]
-    trace.imm = get_imm_hex_val(operands[2])
-  elif trace.instr in [
-        'scall', 'sbreak', 'fence', 'fence.i', 'ecall', 'ebreak', 'wfi',
-        'sfence.vma', 'c.ebreak', 'nop', 'c.nop']:
-    trace.rd  = 'zero'
-    trace.rs1 = 'zero'
-    trace.rs2 = 'zero'
-    trace.rd_val  = '0'
-    trace.rs1_val = '0'
-    trace.rs2_val = '0'
-    trace.imm = get_imm_hex_val('0')
-  elif trace.instr in ['lui', 'auipc']:
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['jal']:
-    trace.imm = get_imm_hex_val(operands[1])
-    if len(operands) == 1:
-      trace.imm = get_imm_hex_val(operands[0])
-  elif trace.instr in ['jalr']:
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val(operands[2])
-    if len(operands) == 1:
-      trace.rs1 = operands[0]
-      trace.rs1_val = gpr[trace.rs1]
-      trace.imm = get_imm_hex_val('0')
-  elif trace.instr in ['c.j']:
-    trace.imm = get_imm_hex_val(operands[0])
-  elif trace.instr in ['c.jal']:
-    trace.imm = get_imm_hex_val(operands[1])
-    if len(operands) == 1:
-      trace.imm = get_imm_hex_val(operands[0])
-  # Pseudo instruction convertion below
-  elif trace.instr in ['mv']:
-    trace.instr = 'addi'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val('0')
-  elif trace.instr in ['not']:
-    trace.instr = 'xori'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val('-1')
-  elif trace.instr in ['neg']:
-    trace.instr = 'sub'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['negw']:
-    trace.instr = 'subw'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['sext.w']:
-    trace.instr = 'addiw'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val('0')
-  elif trace.instr in ['seqz']:
-    trace.instr = 'sltiu'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.imm = get_imm_hex_val('1')
-  elif trace.instr in ['snez']:
-    trace.instr = 'sltu'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['sltz']:
-    trace.instr = 'slt'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = 'zero'
-    trace.rs2_val = '0'
-  elif trace.instr in ['sgtz']:
-    trace.instr = 'slt'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[1]
-    trace.rs2_val = gpr[trace.rs2]
-  elif trace.instr in ['beqz', 'bnez', 'bgez', 'bltz']:
-    trace.instr = trace.instr[0:3]
-    trace.rs1 = operands[0]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rs2 = 'zero'
-    trace.rs2_val = '0'
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['blez']:
-    trace.instr = 'bge'
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[0]
-    trace.rs2_val = gpr[trace.rs2]
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['bgtz']:
-    trace.instr = 'blt'
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-    trace.rs2 = operands[0]
-    trace.rs2_val = gpr[trace.rs2]
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['csrr']:
-    trace.instr = 'csrrw'
-    trace.rd = operands[0]
-    trace.rd_val = gpr[trace.rd]
-    trace.csr = operands[1]
-    trace.rs1 = 'zero'
-    trace.rs1_val = '0'
-  elif trace.instr in ['csrw', 'csrs', 'csrc']:
-    trace.instr = 'csrr' + trace.instr[-1]
-    trace.csr = operands[0]
-    trace.rs1 = operands[1]
-    trace.rs1_val = gpr[trace.rs1]
-    trace.rd = 'zero'
-    trace.rd_val = '0'
-  elif trace.instr in ['csrwi', 'csrsi', 'csrci']:
-    trace.instr = 'csrr' + trace.instr[-2:]
-    trace.rd = 'zero'
-    trace.rd_val = '0'
-    trace.csr = operands[0]
-    trace.imm = get_imm_hex_val(operands[1])
-  elif trace.instr in ['j']:
-    trace.instr = 'jal'
-    trace.rd = 'zero'
-    trace.rd_val = '0'
-    trace.imm = get_imm_hex_val(operands[0])
-  elif trace.instr in ['jr']:
-    trace.instr = 'jal'
-    trace.rd = 'zero'
-    trace.rd_val = '0'
-    trace.rs1 = operands[0]
-    if trace.rs1 in gpr:
-      trace.rs1_val = gpr[trace.rs1]
-  elif trace.instr in ['li']:
-    trace.instr = 'li'
-  elif trace.instr[0:2] in ['lr', 'am', 'sc']:
-    # TODO: Support A-extension
-    pass
-  else:
-    # TODO: Support other instructions
-    logging.debug("Unsupported instr : %s (%s)" %
-                  (trace.instr, trace.instr_str))
-    if stop_on_first_error:
-        sys.exit(RET_FATAL)
