@@ -188,13 +188,13 @@ def compare_trace_csv(csv1, csv2, name1, name2, log,
             fd.write("%s : %s\n" % (name1, gpr_trace_1[gpr][-1].get_trace_string()))
             fd.write("%s : %s\n" % (name2, gpr_trace_2[gpr][-1].get_trace_string()))
     if mismatch_cnt == 0:
-      compare_result = "PASSED"
+      compare_result = "[PASSED]: %d matched\n" % ( matched_cnt)
     else:
-      compare_result = "FAILED"
-    fd.write("Compare result[%s]: %d matched, %d mismatch\n\n" %
-             (compare_result, matched_cnt, mismatch_cnt))
+      compare_result = "[FAILED]: %d matched, %d mismatch\n" % ( matched_cnt, mismatch_cnt)
+    fd.write(compare_result + "\n")
     if log:
       fd.close()
+    return compare_result
 
 
 def parse_gpr_update_from_trace(trace_csv, gpr_trace):

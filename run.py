@@ -358,43 +358,50 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       logging.debug(output)
 
 
-def run_assembly(asm_test, iss_yaml, isa, mabi, iss):
+def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_dir):
   """Run a directed assembly test with spike
 
   Args:
-    asm_tset   : Assembly test file
-    iss_yaml   : ISS configuration file in YAML format
-    isa        : ISA variant passed to the ISS
-    mabi       : MABI variant passed to GCC
-    iss        : Instruction set simulators
+    asm_tset    : Assembly test file
+    iss_yaml    : ISS configuration file in YAML format
+    isa         : ISA variant passed to the ISS
+    mabi        : MABI variant passed to GCC
+    iss_opts    : Instruction set simulators
+    setting_dir : Generator setting directory
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
-  asm = asm_test
-  elf = asm_test + ".o"
-  binary = asm_test + ".bin"
-  log = asm_test + ".log"
-  logging.info("Compiling assembly test : %s" % asm)
+  asm = re.sub(r"^.*\/", "", asm_test)
+  report = ("%s/iss_regr.log" % output_dir).rstrip()
+  elf = ("%s/%s.o" % (output_dir, asm))
+  binary = ("%s/%s.bin" % (output_dir, asm))
+  iss_list = iss_opts.split(",")
+  logging.info("Compiling assembly test : %s" % asm_test)
   # gcc comilation
   cmd = ("%s -static -mcmodel=medany \
          -fvisibility=hidden -nostdlib \
          -nostartfiles %s \
          -I%s/user_extension \
          -T%s/scripts/link.ld -o %s " % \
-         (get_env_var("RISCV_GCC"), asm, cwd, cwd, elf))
+         (get_env_var("RISCV_GCC"), asm_test, cwd, cwd, elf))
   cmd += (" -march=%s" % isa)
   cmd += (" -mabi=%s" % mabi)
-  logging.info("Compiling %s" % asm)
   output = subprocess.check_output(cmd.split())
   # Convert the ELF to plain binary, used in RTL sim
   logging.info("Converting to %s" % binary)
   cmd = ("%s -O binary %s %s" % (get_env_var("RISCV_OBJCOPY"), elf, binary))
   output = subprocess.check_output(cmd.split())
   logging.debug(output)
-  base_cmd = parse_iss_yaml(iss, iss_yaml, isa)
-  logging.info("[%0s] Running ISS simulation: %s" % (iss, elf))
-  cmd = get_iss_cmd(base_cmd, elf, log)
-  run_cmd(cmd, 20)
-  logging.info("[%0s] Running ISS simulation: %s ...done" % (iss, elf))
+  log_list = []
+  for iss in iss_list:
+    log = ("%s/%s_%s.log" % (output_dir, iss, asm))
+    log_list.append(log)
+    base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir)
+    logging.info("[%0s] Running ISS simulation: %s" % (iss, elf))
+    cmd = get_iss_cmd(base_cmd, elf, log)
+    run_cmd(cmd, 10)
+    logging.info("[%0s] Running ISS simulation: %s ...done" % (iss, elf))
+  if len(iss_list) == 2:
+    compare_iss_log(iss_list, log_list, report)
 
 
 def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout_s):
@@ -447,24 +454,39 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error):
       elf = ("%s/asm_tests/%s_%d.o" % (output_dir, test['test'], i))
       logging.info("Comparing ISS sim result %s/%s : %s" %
                   (iss_list[0], iss_list[1], elf))
-      csv_list = []
+      log_list = []
       run_cmd(("echo 'Test binary: %s' >> %s" % (elf, report)))
       for iss in iss_list:
-        log = ("%s/%s_sim/%s.%d.log" % (output_dir, iss, test['test'], i))
-        csv = ("%s/%s_sim/%s.%d.csv" % (output_dir, iss, test['test'], i))
-        csv_list.append(csv)
-        if iss == "spike":
-          process_spike_sim_log(log, csv)
-        elif iss == "ovpsim":
-          process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
-        elif iss == "sail":
-          process_sail_sim_log(log, csv)
-        elif iss == "whisper":
-          process_whisper_sim_log(log, csv)
-        else:
-          logging.error("Unsupported ISS" % iss)
-          sys.exit(RET_FAIL)
-      compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
+        log_list.append("%s/%s_sim/%s.%d.log" % (output_dir, iss, test['test'], i))
+      compare_iss_log(iss_list, log_list, report, stop_on_first_error)
+  save_regr_report(report)
+
+def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0):
+  if (len(iss_list) != 2 or len(log_list) != 2) :
+    logging.error("Only support comparing two ISS logs")
+  else:
+    csv_list = []
+    for i in range(2):
+      log = log_list[i]
+      csv = log.replace(".log", ".csv");
+      iss = iss_list[i]
+      csv_list.append(csv)
+      if iss == "spike":
+        process_spike_sim_log(log, csv)
+      elif iss == "ovpsim":
+        process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
+      elif iss == "sail":
+        process_sail_sim_log(log, csv)
+      elif iss == "whisper":
+        process_whisper_sim_log(log, csv)
+      else:
+        logging.error("Unsupported ISS" % iss)
+        sys.exit(RET_FAIL)
+    result = compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
+    logging.info(result)
+
+
+def save_regr_report(report):
   passed_cnt = run_cmd("grep PASSED %s | wc -l" % report).strip()
   failed_cnt = run_cmd("grep FAILED %s | wc -l" % report).strip()
   summary = ("%s PASSED, %s FAILED" % (passed_cnt, failed_cnt))
@@ -544,6 +566,8 @@ def setup_parser():
                       help="Path for the user extension directory")
   parser.add_argument("--asm_test", type=str, default="",
                       help="Directed assembly test")
+  parser.add_argument("--asm_test_dir", type=str, default="",
+                      help="Directed assembly test directory")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("--exp", action="store_true",
@@ -618,15 +642,32 @@ def main():
     if not args.testlist:
       args.testlist = args.custom_target + "/testlist.yaml"
 
-  if args.asm_test != "":
-    run_assembly(args.asm_test, args.iss_yaml, args.isa, args.mabi, args.iss)
-    return
-
   # Create output directory
   output_dir = create_output(args.o)
   logging.info("Creating output directory: %s" % output_dir)
   subprocess.run(["mkdir", "-p", output_dir])
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
+
+  if args.asm_test != "":
+    run_assembly(args.asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
+                 output_dir, args.core_setting_dir)
+    return
+
+  if args.asm_test_dir != "":
+    result = run_cmd("find %s -name \"*.S\"" % args.asm_test_dir)
+    if result:
+      asm_list = result.splitlines()
+      logging.info("Found %0d assembly tests under %s" %
+                   (len(asm_list), args.asm_test_dir))
+      for asm_test in asm_list:
+        run_assembly(asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
+                     output_dir, args.core_setting_dir)
+      if "," in args.iss:
+        report = ("%s/iss_regr.log" % output_dir).rstrip()
+        save_regr_report(report)
+    else:
+      logging.error("No assembly test(*.S) found under %s" % args.asm_test_dir)
+    return
 
   # Process regression test list
   matched_list = []
