@@ -433,7 +433,10 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout
           log = ("%s/%s.%d.log" % (log_dir, test['test'], i))
           cmd = get_iss_cmd(base_cmd, elf, log)
           logging.info("Running %s sim: %s" % (iss, elf))
-          run_cmd(cmd, timeout_s)
+          if iss == "ovpsim":
+            run_cmd(cmd, timeout_s, check_return_code=False)
+          else:
+            run_cmd(cmd, timeout_s)
           logging.debug(cmd)
 
 
