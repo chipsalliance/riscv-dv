@@ -346,7 +346,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
         if n: # gpr
           if verbose2:
             logging.debug(("n:gpr %0s = %0s" % (n.group("r"), n.group("val"))))
-          if n.group("r") != "frm":
+          if not (n.group("r") in ["frm", "mie"]):
             prev_trace.updated_gpr.append([n.group("r"), n.group("val")])
             if is_an_extension_instruction(prev_trace.instr):
               gpr[n.group("r")] = n.group("val")
@@ -372,7 +372,7 @@ def process_ovpsim_sim_log(ovpsim_log, csv, full_trace = 1, stop = 0,
           if "----" in item: continue
           if "REPORT" in line or item in [ # TODO sort csrs
             "mtvec","pmpaddr0","pmpcfg0","mstatus","mepc","mscratch",
-            "mcause","mtval","vl","vtype","sstatus"]:
+            "mcause","mtval","vl","vtype","sstatus", "mie"]:
             logging.debug("Ignoring: [%d]  [[%s]]" % (instr_cnt, line))
             pass
           elif "Warning (RISCV_" in line:
