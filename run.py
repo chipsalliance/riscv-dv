@@ -362,20 +362,23 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   """Run a directed assembly test with spike
 
   Args:
-    asm_tset    : Assembly test file
+    asm_test    : Assembly test file
     iss_yaml    : ISS configuration file in YAML format
     isa         : ISA variant passed to the ISS
     mabi        : MABI variant passed to GCC
     iss_opts    : Instruction set simulators
+    output_dir  : Output directory of compiled test files
     setting_dir : Generator setting directory
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
   asm = re.sub(r"^.*\/", "", asm_test)
   asm = re.sub(r"\.S$", "", asm)
   report = ("%s/iss_regr.log" % output_dir).rstrip()
-  elf = ("%s/%s.o" % (output_dir, asm))
-  binary = ("%s/%s.bin" % (output_dir, asm))
+  prefix = ("%s/directed_asm_tests/%s"  % (output_dir, asm))
+  elf = prefix + ".o"
+  binary = prefix + ".bin"
   iss_list = iss_opts.split(",")
+  run_cmd("mkdir -p %s/directed_asm_tests" % output_dir)
   logging.info("Compiling assembly test : %s" % asm_test)
   # gcc comilation
   cmd = ("%s -static -mcmodel=medany \
