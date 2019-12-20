@@ -371,6 +371,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   """
   cwd = os.path.dirname(os.path.realpath(__file__))
   asm = re.sub(r"^.*\/", "", asm_test)
+  asm = re.sub(r"\.S$", "", asm)
   report = ("%s/iss_regr.log" % output_dir).rstrip()
   elf = ("%s/%s.o" % (output_dir, asm))
   binary = ("%s/%s.bin" % (output_dir, asm))
@@ -393,7 +394,8 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   logging.debug(output)
   log_list = []
   for iss in iss_list:
-    log = ("%s/%s_%s.log" % (output_dir, iss, asm))
+    run_cmd("mkdir -p %s/%s_sim" % (output_dir, iss))
+    log = ("%s/%s_sim/%s.log" % (output_dir, iss, asm))
     log_list.append(log)
     base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir)
     logging.info("[%0s] Running ISS simulation: %s" % (iss, elf))
