@@ -187,6 +187,21 @@ python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
 python3 run.py --test=riscv_rand_instr_test --iss=ovpsim,whisper
 python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 ```
+### Run directed assmbly tests
+
+Sometimes it might be useful to run some hand-coded assembly tests to hit some
+corner cases:
+
+```bash
+# Run a single assembly test
+python3 run.py --asm_test my_asm_test_path/asm_test.S
+
+# Run regression with all assembly tests(*.S) under a given directory
+python3 run.py --asm_test_dir my_asm_test_path/asm_test.S
+```
+
+You could also use this approach to integrate the assmebly tests
+from other sources to riscv-dv flow.
 
 ## Configuration
 
