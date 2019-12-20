@@ -187,7 +187,7 @@ python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
 python3 run.py --test=riscv_rand_instr_test --iss=ovpsim,whisper
 python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
 ```
-### Run directed assmbly tests
+### Run directed assembly tests
 
 Sometimes it might be useful to run some hand-coded assembly tests to hit some
 corner cases:
