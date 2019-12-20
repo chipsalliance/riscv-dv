@@ -197,7 +197,7 @@ corner cases:
 python3 run.py --asm_test my_asm_test_path/asm_test.S
 
 # Run regression with all assembly tests(*.S) under a given directory
-python3 run.py --asm_test_dir my_asm_test_path/asm_test.S
+python3 run.py --asm_test_dir my_asm_test_path
 ```
 
 You could also use this approach to integrate the assmebly tests
