@@ -450,7 +450,7 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
     )
     li_instr.imm_str = $sformatf("0x%0x", addr_offset);
     // Add offset to the base address
-    add_instr = riscv_instr::get_rand_instr(.include_instr({ADD}));
+    add_instr = riscv_instr::get_instr(ADD);
     `DV_CHECK_RANDOMIZE_WITH_FATAL(add_instr,
        rs1 == gpr;
        rs2 == li_instr.rd;
@@ -459,7 +459,7 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
     instr.push_back(li_instr);
     instr.push_back(add_instr);
     // Create SW instruction template
-    store_instr = riscv_instr::get_rand_instr(.include_instr({SB}));
+    store_instr = riscv_instr::get_instr(SB);
     `DV_CHECK_RANDOMIZE_WITH_FATAL(store_instr,
        instr_name == SB;
        rs1 == gpr;
