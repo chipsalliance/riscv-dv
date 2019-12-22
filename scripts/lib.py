@@ -197,16 +197,22 @@ def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_r
                       (entry['test'], entry['iterations']))
           matched_list.append(entry)
 
-def create_output(output, prefix = "out_"):
+def create_output(output, noclean, prefix = "out_"):
   """ Create output directory
 
   Args:
     output : Name of specified output directory
+    noclean: Do not clean the output of the previous runs
 
   Returns:
     Output directory
   """
   # Create output directory
   if output is None:
-    return prefix + str(date.today())
+    output = prefix + str(date.today())
+  if noclean is False:
+    os.system("rm -rf %s" % output)
+
+  logging.info("Creating output directory: %s" % output)
+  subprocess.run(["mkdir", "-p", output])
   return output

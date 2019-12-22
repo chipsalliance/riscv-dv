@@ -106,10 +106,10 @@ def collect_cov(log_dir, out, core, iss, testlist, batch_size, lsf_cmd, steps, \
     if compliance_mode:
       opts_cov += " +define+COMPLIANCE_MODE"
     build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                 " --co -o %s --cov -tl %s %s --cmp_opts \"%s %s\" " %
+                 " --co -o %s --cov -tl %s %s --cmp_opts \"%s %s\" --noclean" %
                  (cwd, simulator, simulator_yaml, out, testlist, opts,
                     opts_vec, opts_cov))
-    base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
+    base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s --noclean "
                     "--so -o %s --cov -tl %s %s "
                     "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
                     (cwd, simulator, simulator_yaml, out, testlist, opts,
@@ -178,10 +178,10 @@ def run_cov_debug_test(out, instr_cnt, testlist, batch_size, opts, lsf_cmd,\
   sim_cmd_list = []
   logging.info("Building the coverage collection framework")
   build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-               "--co -o %s --cov -tl %s %s" %
+               "--co -o %s --cov -tl %s %s --noclean" %
                (cwd, simulator, simulator_yaml, out, testlist, opts))
   base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                  "--so -o %s --cov -tl %s --isa %s %s "
+                  "--so -o %s --cov -tl %s --isa %s %s --noclean "
                   "-tn riscv_instr_cov_debug_test --steps gen "
                   "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
                   (cwd, simulator, simulator_yaml, out, testlist, isa, opts))
@@ -271,7 +271,7 @@ def setup_parser():
                       action="store_true", help="Stop on detecting first error")
   parser.add_argument("--dont_truncate_after_first_ecall", dest="dont_truncate_after_first_ecall",
                       action="store_true", help="Do not truncate log and csv file on first ecall")
-  parser.add_argument("--noclean", action="store_true",
+  parser.add_argument("--noclean", action="store_true", default=False,
                       help="Do not clean the output of the previous runs")
   parser.add_argument("--vector_options", type=str, default="",
                       help="Enable Vectors and set options")
@@ -321,13 +321,7 @@ def main():
   args.testlist = cwd + "/yaml/cov_testlist.yaml" ## needed if need to force
 
   # Create output directory
-  output_dir = create_output(args.o, "cov_out_")
-
-  if args.noclean is False:
-    os.system("rm -rf %s" % output_dir)
-
-  logging.info("Creating output directory: %s" % output_dir)
-  subprocess.run(["mkdir", "-p", output_dir])
+  output_dir = create_output(args.o, args.noclean, "cov_out_")
 
   if args.debug_mode:
     run_cov_debug_test(output_dir, args.instr_cnt, args.testlist,
