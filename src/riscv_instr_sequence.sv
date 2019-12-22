@@ -301,6 +301,9 @@ class riscv_instr_sequence extends uvm_sequence;
                                        exception != kHintInstr;)
         str = {indent, $sformatf(".4byte 0x%s # %0s",
                        illegal_instr.get_bin_str(), illegal_instr.exception.name())};
+        if (illegal_instr.exception == riscv_illegal_instr::kReservedCompressedInstr) begin
+          str = {str, " ", illegal_instr.reserved_c.name()};
+        end
         idx = $urandom_range(0, instr_string_list.size());
         instr_string_list.insert(idx, str);
       end
