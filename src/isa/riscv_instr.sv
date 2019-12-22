@@ -262,7 +262,7 @@ class riscv_instr extends uvm_object;
 
   static function riscv_instr get_instr(riscv_instr_name_t name);
      riscv_instr instr_h;
-     if (instr_template.exists(name)) begin
+     if (!instr_template.exists(name)) begin
        `uvm_fatal("riscv_instr", $sformatf("Cannot get instr %0s", name.name()))
      end
      // Shallow copy for all relevant fields, avoid using create() to improve performance
