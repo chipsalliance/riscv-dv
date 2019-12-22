@@ -129,7 +129,7 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     end else begin
       jump = riscv_instr::get_rand_instr(.include_instr({JAL, JALR, C_JALR}));
     end
-    addi = riscv_instr::get_rand_instr(.include_instr({ADDI}));
+    addi = riscv_instr::get_instr(ADDI);
     branch = riscv_instr::get_rand_instr(.include_instr({BEQ, BNE, BLT, BGE, BLTU, BGEU}));
   endfunction
 
@@ -153,15 +153,16 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     gen_instr(1'b1);
     if (jump.instr_name == JALR) begin
       // JALR is expected to set lsb to 0
-      addi.imm_str = $sformatf("%0d", $signed(imm) + $urandom_range(0 ,1));
+      int offset = $urandom_range(0, 1);
+      addi.imm_str = $sformatf("%0d", imm + offset);
     end else begin
-      addi.imm_str = $sformatf("%0d", $signed(imm));
+      addi.imm_str = $sformatf("%0d", imm);
     end
     if (cfg.enable_misaligned_instr) begin
       // Jump to a misaligned address
-      jump.imm_str = $sformatf("%0d", -$signed(imm) + 2);
+      jump.imm_str = $sformatf("%0d", -imm + 2);
     end else begin
-      jump.imm_str = $sformatf("%0d", -$signed(imm));
+      jump.imm_str = $sformatf("%0d", -imm);
     end
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
