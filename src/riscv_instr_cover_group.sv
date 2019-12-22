@@ -854,8 +854,9 @@ class riscv_instr_cover_group;
   // Privileged CSR covergroup
   covergroup mcause_exception_cg with function sample(exception_cause_t exception);
     cp_exception: coverpoint exception {
-       bins exception[] = cp_exception with ((item inside {implemented_exception}) &&
-                                            !(item inside {ignored_exceptions}));
+       bins exception[] = cp_exception with ((item inside {implemented_exception}));
+       // TODO: Fix this
+       // ignore_bins ignore = cp_exception with ((item inside {ignored_exceptions}));
     }
   endgroup
 
