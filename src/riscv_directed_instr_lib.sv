@@ -109,6 +109,9 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     !(gpr inside {cfg.reserved_regs, ZERO});
     imm inside {[-1023:1023]};
     mixed_instr_cnt inside {[5:10]};
+    if (jump.instr_name == C_JR) {
+      imm == 0;
+    }
   }
 
   `uvm_object_utils(riscv_jump_instr)
@@ -148,19 +151,29 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     reserved_rd = {gpr};
     initialize_instr_list(mixed_instr_cnt);
     gen_instr(1'b1);
-    addi.imm_str = $sformatf("%0d", imm);
-    jump.imm_str = $sformatf("%0d", -imm);
+    if (jump.instr_name == JALR) begin
+      // JALR is expected to set lsb to 0
+      addi.imm_str = $sformatf("%0d", $signed(imm) + $urandom_range(0 ,1));
+    end else begin
+      addi.imm_str = $sformatf("%0d", $signed(imm));
+    end
+    if (cfg.enable_misaligned_instr) begin
+      // Jump to a misaligned address
+      jump.imm_str = $sformatf("%0d", -$signed(imm) + 2);
+    end else begin
+      jump.imm_str = $sformatf("%0d", -$signed(imm));
+    end
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
     // The purse of adding the branch instruction here is to cover branch -> jump scenario.
     if(enable_branch) instr = {branch};
     // Restore stack before unconditional jump
-    if(jump.rd == ZERO) begin
+    if((jump.rd == ZERO) || (jump.instr_name == C_JR)) begin
       instr= {stack_exit_instr, instr};
     end
     if(jump.instr_name == JAL) begin
       jump.imm_str = target_program_label;
-    end else if (jump.instr_name == C_JALR) begin
+    end else if (jump.instr_name inside {C_JALR, C_JR}) begin
       instr = {la, instr};
     end else begin
       instr = {la, addi, instr};

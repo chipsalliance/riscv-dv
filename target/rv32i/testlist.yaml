@@ -30,3 +30,14 @@
 # --------------------------------------------------------------------------------
 
 - import: <riscv_dv_root>/yaml/base_testlist.yaml
+
+- test: riscv_misaligned_instr_test
+  description: >
+    Test misaligned instruction exception by JALR to an address with addr[0] = 1
+  iterations: 2
+  gen_test: riscv_instr_base_test
+  gen_opts: >
+    +instr_cnt=4000
+    +num_of_sub_program=8
+    +enable_misaligned_instr=1
+  rtl_test: core_base_test

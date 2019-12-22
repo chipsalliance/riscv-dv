@@ -163,6 +163,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_illegal_csr_instruction;
   // Enable accessing CSRs at an invalid privilege level
   bit                    enable_access_invalid_csr_level;
+  // Enable misaligned instruction (caused by JALR instruction)
+  bit                    enable_misaligned_instr;
   // Enable some dummy writes to main system CSRs (xSTATUS/xIE) at beginning of test
   // to check repeated writes
   bit                    enable_dummy_csr_write;
@@ -411,6 +413,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(bare_program_mode, UVM_DEFAULT)
     `uvm_field_int(enable_illegal_csr_instruction, UVM_DEFAULT)
     `uvm_field_int(enable_access_invalid_csr_level, UVM_DEFAULT)
+    `uvm_field_int(enable_misaligned_instr, UVM_DEFAULT)
     `uvm_field_int(enable_dummy_csr_write, UVM_DEFAULT)
     `uvm_field_int(randomize_csr, UVM_DEFAULT)
     `uvm_field_int(allow_sfence_exception, UVM_DEFAULT)
@@ -453,6 +456,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_csr_instr=", no_csr_instr);
     get_bool_arg_value("+enable_illegal_csr_instruction=", enable_illegal_csr_instruction);
     get_bool_arg_value("+enable_access_invalid_csr_level=", enable_access_invalid_csr_level);
+    get_bool_arg_value("+enable_misaligned_instr=", enable_misaligned_instr);
     get_bool_arg_value("+enable_dummy_csr_write=", enable_dummy_csr_write);
     get_bool_arg_value("+allow_sfence_exception=", allow_sfence_exception);
     get_bool_arg_value("+no_data_page=", no_data_page);

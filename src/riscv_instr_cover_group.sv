@@ -421,6 +421,7 @@ class riscv_instr_cover_group;
       bins t1 = {T1};
       bins non_link = default;
     }
+    cp_misalign : coverpoint instr.rd_value[0];
     cp_ras : cross cp_rs1_link, cp_rd_link;
   `CG_END
 
@@ -696,13 +697,14 @@ class riscv_instr_cover_group;
     cp_rs1      : coverpoint instr.rs1 {
       `DV(ignore_bins zero = {ZERO};)
     }
+    cp_rs1_align : coverpoint instr.rs1_value[1:0];
   `CG_END
 
   `INSTR_CG_BEGIN(c_jalr)
     cp_rs1      : coverpoint instr.rs1 {
       `DV(ignore_bins zero = {ZERO};)
     }
-    cp_rd_align : coverpoint instr.rd_value[1];
+    cp_rd_align : coverpoint instr.rd_value[1:0];
   `CG_END
 
   // RV64C
