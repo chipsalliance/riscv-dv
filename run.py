@@ -585,6 +585,8 @@ def setup_parser():
                            " job to small batches with this option")
   parser.add_argument("--stop_on_first_error", dest="stop_on_first_error", action="store_true",
                       help="Stop on detecting first error")
+  parser.add_argument("--noclean", action="store_true", default=False,
+                      help="Do not clean the output of the previous runs")
   parser.set_defaults(co=False)
   parser.set_defaults(so=False)
   parser.set_defaults(verbose=False)
@@ -651,9 +653,7 @@ def main():
       args.testlist = args.custom_target + "/testlist.yaml"
 
   # Create output directory
-  output_dir = create_output(args.o)
-  logging.info("Creating output directory: %s" % output_dir)
-  subprocess.run(["mkdir", "-p", output_dir])
+  output_dir = create_output(args.o, args.noclean)
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
   if args.asm_test != "":
