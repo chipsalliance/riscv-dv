@@ -513,13 +513,13 @@ def setup_parser():
                       help="Simulator used to run the generator, default VCS", dest="simulator")
   parser.add_argument("--iss", type=str, default="spike",
                       help="RISC-V instruction set simulator: spike,ovpsim,sail")
-  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
                       help="Verbose logging")
-  parser.add_argument("--co", dest="co", action="store_true",
+  parser.add_argument("--co", dest="co", action="store_true", default=False,
                       help="Compile the generator only")
-  parser.add_argument("--cov", dest="cov", action="store_true",
+  parser.add_argument("--cov", dest="cov", action="store_true", default=False,
                       help="Enable functional coverage")
-  parser.add_argument("--so", dest="so", action="store_true",
+  parser.add_argument("--so", dest="so", action="store_true", default=False,
                       help="Simulate the generator only")
   parser.add_argument("--cmp_opts", type=str, default="",
                       help="Compile options for the generator")
@@ -563,21 +563,16 @@ def setup_parser():
                       help="Directed assembly test directory")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
-  parser.add_argument("--exp", action="store_true",
+  parser.add_argument("--exp", action="store_true", default=False,
                       help="Run generator with experimental features")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
                       help="Number of tests to generate per run. You can split a big"
                            " job to small batches with this option")
-  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error", action="store_true",
+  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
+                      action="store_true", default=False,
                       help="Stop on detecting first error")
   parser.add_argument("--noclean", action="store_true", default=False,
                       help="Do not clean the output of the previous runs")
-  parser.set_defaults(co=False)
-  parser.set_defaults(so=False)
-  parser.set_defaults(verbose=False)
-  parser.set_defaults(cov=False)
-  parser.set_defaults(exp=False)
-  parser.set_defaults(stop_on_first_error=False)
   return parser
 
 def load_config(args, cwd):
