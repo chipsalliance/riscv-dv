@@ -198,15 +198,16 @@ def setup_parser():
   parser = argparse.ArgumentParser()
   parser.add_argument("-o", "--output", type=str,
                       help="Output directory name", dest="o")
-  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
                       help="Verbose logging")
   parser.add_argument("--dir", type=str,
                       help="Directory of trace log files")
   parser.add_argument("-bz", "--batch_size", dest="batch_size", type=int, default=0,
                       help="Number of CSV to process per run")
-  parser.add_argument("-d", "--debug_mode", dest="debug_mode", action="store_true",
+  parser.add_argument("-d", "--debug_mode", dest="debug_mode",
+                      action="store_true", default=False,
                       help="Debug mode, randomize and sample the coverage directly")
-  parser.add_argument("--compliance_mode", action="store_true",
+  parser.add_argument("--compliance_mode", action="store_true", default=False,
                       help="Run the coverage model in compliance test mode")
   parser.add_argument("-i", "--instr_cnt", dest="instr_cnt", type=int, default=0,
                       help="Random instruction count for debug mode")
@@ -240,22 +241,17 @@ def setup_parser():
   parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
                       help="Path for the riscv_core_setting.sv")
   parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
-                      action="store_true", help="Stop on detecting first error")
+                      action="store_true", default=False,
+                      help="Stop on detecting first error")
   parser.add_argument("--dont_truncate_after_first_ecall", dest="dont_truncate_after_first_ecall",
-                      action="store_true", help="Do not truncate log and csv file on first ecall")
+                      action="store_true", default=False,
+                      help="Do not truncate log and csv file on first ecall")
   parser.add_argument("--noclean", action="store_true", default=False,
                       help="Do not clean the output of the previous runs")
   parser.add_argument("--vector_options", type=str, default="",
                       help="Enable Vectors and set options")
   parser.add_argument("--coverage_options", type=str, default="",
                       help="Controlling coverage coverpoints")
-  parser.set_defaults(verbose=False)
-  parser.set_defaults(debug_mode=False)
-  parser.set_defaults(compliance_mode=False)
-  parser.set_defaults(stop_on_first_error=False)
-  parser.set_defaults(dont_truncate_after_first_ecall=False)
-  parser.set_defaults(vector_options="")
-  parser.set_defaults(coverage_options="")
   return parser
 
 def load_config(args, cwd):
