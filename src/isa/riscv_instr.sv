@@ -198,9 +198,9 @@ class riscv_instr extends uvm_object;
                                              riscv_instr_group_t exclude_group[$] = {});
      int unsigned idx;
      riscv_instr_name_t name;
-     riscv_instr_name_t allowed_instr[];
-     riscv_instr_name_t disallowed_instr[];
-     riscv_instr_category_t allowed_categories[];
+     riscv_instr_name_t allowed_instr[$];
+     riscv_instr_name_t disallowed_instr[$];
+     riscv_instr_category_t allowed_categories[$];
      foreach (include_category[i]) begin
        allowed_instr = {allowed_instr, instr_category[include_category[i]]};
      end
