@@ -34,8 +34,9 @@ LOGGER = logging.getLogger()
 
 def collect_cov(out, cfg, cwd):
   """Collect functional coverage from the instruction trace
+
   Args:
-    out                 : Output directory
+    out              : Output directory
     cfg              : Loaded configuration dictionary.
     cwd              : Filesystem path to RISCV-DV repo
   """
