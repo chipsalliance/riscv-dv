@@ -346,35 +346,42 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       logging.debug(output)
 
 
-def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_dir):
-  """Run a directed assembly test with spike
+def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+                 setting_dir):
+  """Run a directed assembly test with ISS
 
   Args:
     asm_test    : Assembly test file
     iss_yaml    : ISS configuration file in YAML format
     isa         : ISA variant passed to the ISS
     mabi        : MABI variant passed to GCC
+    gcc_opts    : User-defined options for GCC compilation
     iss_opts    : Instruction set simulators
     output_dir  : Output directory of compiled test files
     setting_dir : Generator setting directory
   """
+  if not asm_test.endswith(".S"):
+    logging.error("%s is not an assembly .S file" % asm_test)
+    return
   cwd = os.path.dirname(os.path.realpath(__file__))
+  asm_test = os.path.expanduser(asm_test)
+  report = ("%s/iss_regr.log" % output_dir).rstrip()
   asm = re.sub(r"^.*\/", "", asm_test)
   asm = re.sub(r"\.S$", "", asm)
-  report = ("%s/iss_regr.log" % output_dir).rstrip()
   prefix = ("%s/directed_asm_tests/%s"  % (output_dir, asm))
   elf = prefix + ".o"
   binary = prefix + ".bin"
   iss_list = iss_opts.split(",")
   run_cmd("mkdir -p %s/directed_asm_tests" % output_dir)
   logging.info("Compiling assembly test : %s" % asm_test)
-  # gcc comilation
+
+  # gcc compilation
   cmd = ("%s -static -mcmodel=medany \
          -fvisibility=hidden -nostdlib \
          -nostartfiles %s \
          -I%s/user_extension \
-         -T%s/scripts/link.ld -o %s " % \
-         (get_env_var("RISCV_GCC"), asm_test, cwd, cwd, elf))
+         -T%s/scripts/link.ld %s -o %s " % \
+         (get_env_var("RISCV_GCC"), asm_test, cwd, cwd, gcc_opts, elf))
   cmd += (" -march=%s" % isa)
   cmd += (" -mabi=%s" % mabi)
   output = subprocess.check_output(cmd.split())
@@ -384,6 +391,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   output = subprocess.check_output(cmd.split())
   logging.debug(output)
   log_list = []
+  # ISS simulation
   for iss in iss_list:
     run_cmd("mkdir -p %s/%s_sim" % (output_dir, iss))
     log = ("%s/%s_sim/%s.log" % (output_dir, iss, asm))
@@ -396,7 +404,8 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   if len(iss_list) == 2:
     compare_iss_log(iss_list, log_list, report)
 
-def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, iss, output_dir, setting_dir):
+def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+                          output_dir, setting_dir):
   """Run a directed assembly test from a directory with spike
 
   Args:
@@ -404,6 +413,7 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, iss, output_dir, se
     iss_yaml        : ISS configuration file in YAML format
     isa             : ISA variant passed to the ISS
     mabi            : MABI variant passed to GCC
+    gcc_opts        : User-defined options for GCC compilation
     iss             : Instruction set simulators
     output_dir      : Output directory of compiled test files
     setting_dir     : Generator setting directory
@@ -414,7 +424,8 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, iss, output_dir, se
     logging.info("Found %0d assembly tests under %s" %
                  (len(asm_list), asm_test_dir))
     for asm_file in asm_list:
-      run_assembly(asm_file, iss_yaml, isa, mabi, iss, output_dir, setting_dir)
+      run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss, output_dir,
+                   setting_dir)
       if "," in iss:
         report = ("%s/iss_regr.log" % output_dir).rstrip()
         save_regr_report(report)
@@ -673,29 +684,63 @@ def main():
     # Create output directory
     output_dir = create_output(args.o, args.noclean)
 
-    # Run directed assembly tests
+    # Run any handcoded/directed assembly tests specified by args.asm_tests
     if args.asm_tests != "":
       asm_test = args.asm_tests.split(',')
       for path_asm_test in asm_test:
-        if os.path.isdir(path_asm_test):    # Path asm test is a directory
-          run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
-                                args.iss, output_dir, args.core_setting_dir)
-        else:                               # Path asm test is a assembly file
-          run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
-                       output_dir, args.core_setting_dir)
+        full_path = os.path.expanduser(path_asm_test)
+        # path_asm_test is a directory
+        if os.path.isdir(full_path):
+          run_assembly_from_dir(full_path, args.iss_yaml, args.isa, args.mabi,
+                                args.gcc_opts, args.iss, output_dir, args.core_setting_dir)
+        # path_asm_test is an assembly file
+        elif os.path.isfile(full_path):
+          run_assembly(full_path, args.iss_yaml, args.isa, args.mabi, args.gcc_opts,
+                       args.iss, output_dir, args.core_setting_dir)
+        else:
+          logging.error('%s does not exist' % full_path)
       return
 
     subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
     # Process regression test list
     matched_list = []
+    # Any tests in the YAML test list that specify a directed assembly test
+    directed_list = []
 
     if not args.co:
       process_regression_list(args.testlist, args.test, args.iterations, matched_list, cwd)
-      if len(matched_list) == 0:
-        sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
+      for t in list(matched_list):
+        if 'asm_tests' in t:
+          if 'gen_test' in t:
+            logging.error('asm_test must not be defined in the testlist '
+                          'together with the gen_test field')
+            sys.exit(RET_FATAL)
+          directed_list.append(t)
+          matched_list.remove(t)
+
+    if len(matched_list) == 0 and len(directed_list) == 0:
+      sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
     # Run instruction generator
     if args.steps == "all" or re.match(".*gen.*", args.steps):
+      # Run any handcoded/directed assembly tests specified in YAML format
+      if len(directed_list) != 0:
+        for test_entry in directed_list:
+          gcc_opts = args.gcc_opts
+          gcc_opts += test_entry.get('gcc_opts', '')
+          path_asm_test = os.path.expanduser(test_entry.get('asm_tests'))
+          if path_asm_test:
+            # path_asm_test is a directory
+            if os.path.isdir(path_asm_test):
+              run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
+                                    args.gcc_opts, args.iss, output_dir, args.core_setting_dir)
+            # path_asm_test is an assembly file
+            elif os.path.isfile(path_asm_test):
+              run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.gcc_opts,
+                           args.iss, output_dir, args.core_setting_dir)
+            else:
+              logging.error('%s does not exist' % path_asm_test)
+      # Run remaining tests using the instruction generator
       gen(matched_list, cfg, output_dir, cwd)
 
     if not args.co:
@@ -716,5 +761,6 @@ def main():
   except KeyboardInterrupt:
     logging.info("\nExited Ctrl-C from user request.")
     sys.exit(130)
+
 if __name__ == "__main__":
   main()

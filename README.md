@@ -323,6 +323,7 @@ conditions for the load/store testing.
 # iterations      : Number of iterations of this test
 # no_iss          : Enable/disable ISS simulation (Optional)
 # gen_test        : Test name used by the instruction generator
+# asm_tests       : Path to directed, hand-coded assembly test file or directory
 # rtl_test        : RTL simulation test name
 # cmp_opts        : Compile options passed to the instruction generator
 # sim_opts        : Simulation options passed to the instruction generator
@@ -343,12 +344,46 @@ conditions for the load/store testing.
   gen_test: riscv_instr_base_test
   rtl_test: core_base_test
 
+- test: riscv_csr_test
+  description: >
+    Stress CSR accesses on all implemented CSRs
+  iterations: 2
+  no_iss: 1
+  rtl_test: core_base_test
+  no_post_compare: 1
+
+- test: riscv_directed_asm_test
+  description: >
+    Hand-coded assembly test to test corner case
+  iterations: 1
+  asm_tests: <asm_test_dir_path or asm_test_file path>
+  rtl_test: core_base_test
+
 ```
 
-Note: To automatically generate CSR tests without having to explicitly run the
-script, include `riscv_csr_test` in the testlist as shown in the example YAML
-file above.
+Note: To automatically generate CSR stress tests without having to explicitly run the
+script, include a test entry `riscv_csr_test` in the testlist as shown in the
+example YAML file above.
 
+
+The generation flow now supports inclusion of handcoded assembly tests into the
+overall regression. To do this, simply create a YAML entry in the appropriate
+testlist as shown above in `riscv_directed_asm_test`, using the `asm_tests`
+field to point to the location of the assembly test file or directory.
+The run flow will then locate these file(s) and include them into the overall
+regression run. These directed test targets can also be run individually from
+the python script, as shown below:
+
+```bash
+
+# Run directed assembly test 10 times
+python3 run.py --test riscv_directed_asm_test --iterations 10
+
+```
+
+Note: when using the `asm_tests` field to specify some directed/handcoded
+assembly tests to the flow, make sure that the `gen_test` field is not defined,
+as this will cause the flow to throw an error.
 
 
 ### Runtime options of the generator
