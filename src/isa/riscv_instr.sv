@@ -190,12 +190,12 @@ class riscv_instr extends uvm_object;
   endfunction : build_basic_instruction_list
 
   static function riscv_instr get_rand_instr(riscv_instr instr_h = null,
-                                             riscv_instr_name_t include_instr[] = {},
-                                             riscv_instr_name_t exclude_instr[] = {},
-                                             riscv_instr_category_t include_category[] = {},
-                                             riscv_instr_category_t exclude_category[] = {},
-                                             riscv_instr_group_t include_group[] = {},
-                                             riscv_instr_group_t exclude_group[] = {});
+                                             riscv_instr_name_t include_instr[$] = {},
+                                             riscv_instr_name_t exclude_instr[$] = {},
+                                             riscv_instr_category_t include_category[$] = {},
+                                             riscv_instr_category_t exclude_category[$] = {},
+                                             riscv_instr_group_t include_group[$] = {},
+                                             riscv_instr_group_t exclude_group[$] = {});
      int unsigned idx;
      riscv_instr_name_t name;
      riscv_instr_name_t allowed_instr[];
