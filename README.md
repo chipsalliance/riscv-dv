@@ -193,11 +193,14 @@ Sometimes it might be useful to run some hand-coded assembly tests to hit some
 corner cases:
 
 ```bash
-# Run a single assembly test
-python3 run.py --asm_test my_asm_test_path/asm_test.S
+# Run a single/multiple assembly test
+python3 run.py --asm_tests asm_test_path1/asm_test1.S,asm_test_path2/asm_test2.S
 
 # Run regression with all assembly tests(*.S) under a given directory
-python3 run.py --asm_test_dir my_asm_test_path
+python3 run.py --asm_tests asm_test_path1,asm_test_path2
+
+# Run mix between the assembly test and assembly tests under a directory
+python3 run.py --asm_tests asm_test_path1/asm_test1.S,asm_test_path2
 ```
 
 You could also use this approach to integrate the assembly tests

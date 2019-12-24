@@ -393,6 +393,30 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, iss_opts, output_dir, setting_di
   if len(iss_list) == 2:
     compare_iss_log(iss_list, log_list, report)
 
+def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, iss, output_dir, setting_dir):
+  """Run a directed assembly test from a directory with spike
+
+  Args:
+    asm_test_dir    : Assembly test file directory
+    iss_yaml        : ISS configuration file in YAML format
+    isa             : ISA variant passed to the ISS
+    mabi            : MABI variant passed to GCC
+    iss             : Instruction set simulators
+    output_dir      : Output directory of compiled test files
+    setting_dir     : Generator setting directory
+  """
+  result = run_cmd("find %s -name \"*.S\"" % asm_test_dir)
+  if result:
+    asm_list = result.splitlines()
+    logging.info("Found %0d assembly tests under %s" %
+                 (len(asm_list), asm_test_dir))
+    for asm_file in asm_list:
+      run_assembly(asm_file, iss_yaml, isa, mabi, iss, output_dir, setting_dir)
+      if "," in iss:
+        report = ("%s/iss_regr.log" % output_dir).rstrip()
+        save_regr_report(report)
+  else:
+    logging.error("No assembly test(*.S) found under %s" % asm_test_dir)
 
 def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout_s):
   """Run ISS simulation with the generated test program
@@ -557,10 +581,8 @@ def setup_parser():
                       help="Path for the riscv_core_setting.sv")
   parser.add_argument("-ext", "--user_extension_dir", type=str, default="",
                       help="Path for the user extension directory")
-  parser.add_argument("--asm_test", type=str, default="",
-                      help="Directed assembly test")
-  parser.add_argument("--asm_test_dir", type=str, default="",
-                      help="Directed assembly test directory")
+  parser.add_argument("--asm_tests", type=str, default="",
+                      help="Directed assembly tests")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("--exp", action="store_true", default=False,
@@ -634,7 +656,6 @@ def load_config(args, cwd):
   cfg = vars(args)
   return cfg
 
-
 def main():
   """This is the main entry point."""
   parser = setup_parser()
@@ -646,29 +667,20 @@ def main():
   cfg = load_config(args, cwd)
   # Create output directory
   output_dir = create_output(args.o, args.noclean)
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
-  if args.asm_test != "":
-    run_assembly(args.asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
-                 output_dir, args.core_setting_dir)
-    return
-
-  if args.asm_test_dir != "":
-    result = run_cmd("find %s -name \"*.S\"" % args.asm_test_dir)
-    if result:
-      asm_list = result.splitlines()
-      logging.info("Found %0d assembly tests under %s" %
-                   (len(asm_list), args.asm_test_dir))
-      for asm_test in asm_list:
-        run_assembly(asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
+  # Run directed assembly tests
+  if args.asm_tests != "":
+    asm_test = args.asm_tests.split(',')
+    for path_asm_test in asm_test:
+      if os.path.isdir(path_asm_test):    # Path asm test is a directory
+        run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
+                              args.iss, output_dir, args.core_setting_dir)
+      else:                               # Path asm test is a assembly file
+        run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
                      output_dir, args.core_setting_dir)
-      if "," in args.iss:
-        report = ("%s/iss_regr.log" % output_dir).rstrip()
-        save_regr_report(report)
-    else:
-      logging.error("No assembly test(*.S) found under %s" % args.asm_test_dir)
     return
 
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
   # Process regression test list
   matched_list = []
 
