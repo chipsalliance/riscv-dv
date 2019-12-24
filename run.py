@@ -667,8 +667,8 @@ def main():
   cfg = load_config(args, cwd)
   # Create output directory
   output_dir = create_output(args.o, args.noclean)
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
 
+  # Run directed assembly tests
   if args.asm_tests != "":
     asm_test = args.asm_tests.split(',')
     for path_asm_test in asm_test:
@@ -680,6 +680,7 @@ def main():
                      output_dir, args.core_setting_dir)
     return
 
+  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
   # Process regression test list
   matched_list = []
 
