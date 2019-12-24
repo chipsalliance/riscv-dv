@@ -28,7 +28,7 @@ the core implements.
 This repository is still under active development. We hope the RISC-V processor
 verification platform development to be a collaborative effort of the RISC-V
 community. Free feel to submit issues, feature requests, pull requests through
-Github. You can also send your private collaboration request to [riscv_dv_dev@google.com](riscv_dv_dev@google.com). 
+Github. You can also send your private collaboration request to [riscv_dv_dev@google.com](riscv_dv_dev@google.com).
 Please refer to CONTRIBUTING.md for license related questions.
 
 ## Getting Started
@@ -200,7 +200,7 @@ python3 run.py --asm_test my_asm_test_path/asm_test.S
 python3 run.py --asm_test_dir my_asm_test_path
 ```
 
-You could also use this approach to integrate the assmebly tests
+You could also use this approach to integrate the assembly tests
 from other sources to riscv-dv flow.
 
 ## Configuration

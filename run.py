@@ -29,6 +29,7 @@ from scripts.ovpsim_log_to_trace_csv import *
 from scripts.whisper_log_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
+from types import SimpleNamespace
 
 LOGGER = logging.getLogger()
 
@@ -255,58 +256,42 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
 
 
 
-def gen(test_list, csr_file, end_signature_addr, isa, simulator,
-        simulator_yaml, output_dir, sim_only, compile_only, lsf_cmd, seed,
-        cwd, cmp_opts, sim_opts, timeout_s, core_setting_dir, ext_dir, cov,
-        log_suffix, batch_size, seed_yaml, verbose, exp):
+def gen(test_list, cfg, output_dir, cwd):
   """Run the instruction generator
 
   Args:
     test_list             : List of assembly programs to be compiled
-    csr_file              : YAML file containing description of all CSRs
-    end_signature_addr    : Address that tests will write pass/fail signature to
-    isa                   : Processor supported ISA subset
-    simulator             : RTL simulator used to run instruction generator
-    simulator_yaml        : RTL simulator configuration file in YAML format
+    cfg                   : Loaded configuration dictionary.
     output_dir            : Output directory of the ELF files
-    sim_only              : Simulation only
-    compile_only          : Compile the generator only
-    lsf_cmd               : LSF command used to run the instruction generator
     cwd                   : Filesystem path to RISCV-DV repo
-    seed                  : Seed to the instruction generator
-    cmp_opts              : Compile options for the generator
-    sim_opts              : Simulation options for the generator
-    timeout_s             : Timeout limit in seconds
-    core_setting_dir      : Path for riscv_core_setting.sv
-    ext_dir               : User extension directory
-    cov                   : Enable functional coverage
-    log_suffix            : Simulation log file name suffix
-    batch_size            : Number of tests to generate per run
-    seed_yaml             : Seed specification from a prior regression
-    exp                   : Enable experimental features
   """
+  # Convert key dictionary to argv variable
+  argv= SimpleNamespace(**cfg)
+
   check_return_code = True
-  if simulator == "ius":
+  if argv.simulator == "ius":
     # Incisive return non-zero return code even test passes
     check_return_code = False
-    logging.debug("Disable return_code checking for %s" % simulator)
+    logging.debug("Disable return_code checking for %s" % argv.simulator)
   # Mutually exclusive options between compile_only and sim_only
-  if compile_only and sim_only:
+  if argv.co and argv.so:
     logging.error("argument -co is not allowed with argument -so")
-  if ((compile_only == 0) and (len(test_list) == 0)):
+    return
+  if ((argv.co == 0) and (len(test_list) == 0)):
     return
   # Setup the compile and simulation command for the generator
   compile_cmd = []
   sim_cmd = ""
-  compile_cmd, sim_cmd = get_generator_cmd(simulator, simulator_yaml, cov, exp);
+  compile_cmd, sim_cmd = get_generator_cmd(argv.simulator, argv.simulator_yaml, argv.cov, argv.exp);
   # Compile the instruction generator
-  if not sim_only:
-    do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir, cmp_opts, output_dir)
+  if not argv.so:
+    do_compile(compile_cmd, test_list, argv.core_setting_dir, cwd, argv.user_extension_dir,
+               argv.cmp_opts, output_dir)
   # Run the instruction generator
-  if not compile_only:
-    do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
-                isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-                batch_size, output_dir, verbose, check_return_code)
+  if not argv.co:
+    do_simulate(sim_cmd, test_list, cwd, argv.sim_opts, argv.seed_yaml, argv.seed, argv.csr_yaml,
+                argv.isa, argv.end_signature_addr, argv.lsf_cmd, argv.gen_timeout, argv.log_suffix,
+                argv.batch_size, output_dir, argv.verbose, check_return_code)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts):
@@ -528,13 +513,13 @@ def setup_parser():
                       help="Simulator used to run the generator, default VCS", dest="simulator")
   parser.add_argument("--iss", type=str, default="spike",
                       help="RISC-V instruction set simulator: spike,ovpsim,sail")
-  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true",
+  parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False,
                       help="Verbose logging")
-  parser.add_argument("--co", dest="co", action="store_true",
+  parser.add_argument("--co", dest="co", action="store_true", default=False,
                       help="Compile the generator only")
-  parser.add_argument("--cov", dest="cov", action="store_true",
+  parser.add_argument("--cov", dest="cov", action="store_true", default=False,
                       help="Enable functional coverage")
-  parser.add_argument("--so", dest="so", action="store_true",
+  parser.add_argument("--so", dest="so", action="store_true", default=False,
                       help="Simulate the generator only")
   parser.add_argument("--cmp_opts", type=str, default="",
                       help="Compile options for the generator")
@@ -578,32 +563,26 @@ def setup_parser():
                       help="Directed assembly test directory")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
-  parser.add_argument("--exp", action="store_true",
+  parser.add_argument("--exp", action="store_true", default=False,
                       help="Run generator with experimental features")
   parser.add_argument("-bz", "--batch_size", type=int, default=0,
                       help="Number of tests to generate per run. You can split a big"
                            " job to small batches with this option")
-  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error", action="store_true",
+  parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
+                      action="store_true", default=False,
                       help="Stop on detecting first error")
   parser.add_argument("--noclean", action="store_true", default=False,
                       help="Do not clean the output of the previous runs")
-  parser.set_defaults(co=False)
-  parser.set_defaults(so=False)
-  parser.set_defaults(verbose=False)
-  parser.set_defaults(cov=False)
-  parser.set_defaults(exp=False)
-  parser.set_defaults(stop_on_first_error=False)
   return parser
 
-
-def main():
-  """This is the main entry point."""
-  parser = setup_parser()
-  args = parser.parse_args()
-  cwd = os.path.dirname(os.path.realpath(__file__))
-  os.environ["RISCV_DV_ROOT"] = cwd
-  setup_logging(args.verbose)
-
+def load_config(args, cwd):
+  """
+  Load configuration from the command line and the configuration file.
+  Args:
+      args:   Parsed command-line configuration
+  Returns:
+      Loaded configuration dictionary.
+  """
   if not args.csr_yaml:
     args.csr_yaml = cwd + "/yaml/csr_template.yaml"
 
@@ -651,7 +630,20 @@ def main():
         sys.exit("mabi and isa must be specified for custom target %0s" % args.custom_target)
     if not args.testlist:
       args.testlist = args.custom_target + "/testlist.yaml"
+  # Create loaded configuration dictionary.
+  cfg = vars(args)
+  return cfg
 
+
+def main():
+  """This is the main entry point."""
+  parser = setup_parser()
+  args = parser.parse_args()
+  cwd = os.path.dirname(os.path.realpath(__file__))
+  os.environ["RISCV_DV_ROOT"] = cwd
+  setup_logging(args.verbose)
+  # Load configuration from the command line and the configuration file.
+  cfg = load_config(args, cwd)
   # Create output directory
   output_dir = create_output(args.o, args.noclean)
   subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
@@ -687,12 +679,7 @@ def main():
 
   # Run instruction generator
   if args.steps == "all" or re.match(".*gen.*", args.steps):
-    gen(matched_list, args.csr_yaml, args.end_signature_addr, args.isa,
-        args.simulator, args.simulator_yaml, output_dir, args.so,
-        args.co, args.lsf_cmd, args.seed, cwd, args.cmp_opts,
-        args.sim_opts, args.gen_timeout, args.core_setting_dir,
-        args.user_extension_dir, args.cov, args.log_suffix, args.batch_size,
-        args.seed_yaml, args.verbose, args.exp)
+    gen(matched_list, cfg, output_dir, cwd)
 
   if not args.co:
     # Compile the assembly program to ELF, convert to plain binary
