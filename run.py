@@ -29,6 +29,12 @@ from scripts.ovpsim_log_to_trace_csv import *
 from scripts.whisper_log_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
+
+from scripts.exp.exp_riscv_trace_csv import *
+from scripts.exp.exp_instr_trace_compare import *
+from scripts.exp.exp_spike_log_to_trace_csv import *
+from scripts.exp.exp_ovpsim_log_to_trace_csv import *
+
 from types import SimpleNamespace
 
 LOGGER = logging.getLogger()
@@ -255,7 +261,6 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
     run_parallel_cmd(cmd_list, timeout_s, check_return_code = check_return_code)
 
 
-
 def gen(test_list, cfg, output_dir, cwd):
   """Run the instruction generator
 
@@ -452,7 +457,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout
           logging.debug(cmd)
 
 
-def iss_cmp(test_list, iss, output_dir, stop_on_first_error):
+def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp):
   """Compare ISS simulation reult
 
   Args:
@@ -460,6 +465,7 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error):
     iss            : List of instruction set simulators
     output_dir     : Output directory of the ELF files
     stop_on_first_error : will end run on first error detected
+    exp            : Use experimental version
   """
   iss_list = iss.split(",")
   if len(iss_list) != 2:
@@ -475,10 +481,10 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error):
       run_cmd(("echo 'Test binary: %s' >> %s" % (elf, report)))
       for iss in iss_list:
         log_list.append("%s/%s_sim/%s.%d.log" % (output_dir, iss, test['test'], i))
-      compare_iss_log(iss_list, log_list, report, stop_on_first_error)
+      compare_iss_log(iss_list, log_list, report, stop_on_first_error, exp)
   save_regr_report(report)
 
-def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0):
+def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0, exp=False):
   if (len(iss_list) != 2 or len(log_list) != 2) :
     logging.error("Only support comparing two ISS logs")
   else:
@@ -489,9 +495,15 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0):
       iss = iss_list[i]
       csv_list.append(csv)
       if iss == "spike":
-        process_spike_sim_log(log, csv)
+        if exp:
+          exp_process_spike_sim_log(log, csv)
+        else:
+          process_spike_sim_log(log, csv)
       elif iss == "ovpsim":
-        process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
+        if exp:
+          exp_process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
+        else:
+          process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
       elif iss == "sail":
         process_sail_sim_log(log, csv)
       elif iss == "whisper":
@@ -499,7 +511,10 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0):
       else:
         logging.error("Unsupported ISS" % iss)
         sys.exit(RET_FAIL)
-    result = compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
+    if exp:
+      result = exp_compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
+    else:
+      result = compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
     logging.info(result)
 
 
@@ -705,7 +720,7 @@ def main():
 
     # Compare ISS simulation result
     if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.stop_on_first_error)
+      iss_cmp(matched_list, args.iss, output_dir, args.stop_on_first_error, args.exp)
 
 if __name__ == "__main__":
   main()
