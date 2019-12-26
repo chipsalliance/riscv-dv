@@ -30,6 +30,7 @@ INSTR_RE = re.compile(r"riscvOVPsim.*, 0x(?P<addr>.*?)(?P<section>\(.*\): ?)" \
                        "(?P<mode>[A-Za-z]*?)\s+(?P<bin>[a-f0-9]*?)\s+(?P<instr_str>.*?)$")
 RD_RE = re.compile(r" (?P<r>[a-z]*[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
                     " -> (?P<val>[a-f0-9]+?)$")
+BASE_RE = re.compile(r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]*?)\((?P<rs1>[a-z0-9]+?)\)")
 
 def exp_convert_mode(pri, line, stop_on_first_error=False):
   """ OVPsim uses text string, convert to numeric """
@@ -44,16 +45,17 @@ def exp_is_csr(r):
   """ see if r is a csr """
   if len(r) > 4:
     return True
-  elif r[0] in ["m", "v"]:
+  elif r[0] in ["m", "u", "d"]:
     return True
-  elif r in ["frm", "dpc"]:
+  elif r in ["frm", "fcsr", "vl", "satp"]:
     return True
   else:
     return False
 
 def exp_process_ovpsim_sim_log(ovpsim_log, csv,
                                stop_on_first_error = 0,
-                               dont_truncate_after_first_ecall = 0):
+                               dont_truncate_after_first_ecall = 0,
+                               full_trace = True):
   """Process OVPsim simulation log.
 
   Extract instruction and affected register information from ovpsim simulation
@@ -87,10 +89,14 @@ def exp_process_ovpsim_sim_log(ovpsim_log, csv,
           prev_trace = 0
         prev_trace = ExpRiscvInstructionTraceEntry()
         prev_trace.instr_str = m.group("instr_str")
-        prev_trace.instr = prev_trace.instr_str.split(" ")[0]
-        prev_trace.binary = m.group("bin")
         prev_trace.pc = m.group("addr")
         prev_trace.mode = exp_convert_mode(m.group("mode"), line)
+        prev_trace.binary = m.group("bin")
+        if full_trace:
+          prev_trace.instr = prev_trace.instr_str.split(" ")[0]
+          prev_trace.operand = prev_trace.instr_str[len(prev_trace.instr):]
+          prev_trace.operand = prev_trace.operand.replace(" ", "")
+          process_trace(prev_trace)
         continue
       # Extract register change value information
       c = RD_RE.search(line)
@@ -104,6 +110,61 @@ def exp_process_ovpsim_sim_log(ovpsim_log, csv,
     logging.error ("No Instructions in logfile: %s" % ovpsim_log)
     sys.exit(RET_FATAL)
   logging.info("CSV saved to : %s" % csv)
+
+
+def process_trace(trace):
+  """ Process instruction operands """
+  process_imm(trace)
+  process_compressed_instr(trace)
+  if trace.instr == "jalr":
+    process_jalr(trace)
+  trace.instr, trace.operand = convert_pseudo_instr(trace.instr, trace.operand)
+  trace.operand = trace.operand.replace(")", "")
+  trace.operand = trace.operand.replace("(", ",")
+
+
+def process_imm(trace):
+  """ Process imm to follow RISC-V standard convention """
+  if trace.instr in ['j', 'c.j', 'jal']:
+    # Add 0x prefix for jump immediate
+    idx = trace.operand.rfind(",")
+    if idx == -1:
+      trace.operand = "0x" + trace.operand
+    else:
+      imm = trace.operand[idx+1:]
+      trace.operand = trace.operand[0:idx+1] + "0x" + imm
+  elif trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu', 'c.beqz',
+                       'c.bnez', 'beqz', 'bnez', 'bgez', 'bltz', 'blez', 'bgtz']:
+    # convert from ovpsim logs branch offsets as absolute to relative
+    idx = trace.operand.rfind(",")
+    imm = trace.operand[idx+1:]
+    imm = str(hex(int(imm, 16) - int(trace.pc, 16)))
+    trace.operand = trace.operand[0:idx+1] + imm
+
+
+def process_jalr(trace):
+  """ process jalr """
+  ## jalr x3
+  ## jalr 9(x3)
+  ## jalr x2,x3
+  ## jalr x2,4(x3)
+  idx = trace.operand.rfind(",")
+  if idx == -1:
+    # Add default destination register : ra
+    trace.operand = "ra," + trace.operand
+  m = BASE_RE.search(trace.operand)
+  if m:
+    # Convert pseudo JALR format to normal format
+    trace.operand = "%s,%s,%s" % (m.group("rd"), m.group("rs1"), m.group("imm"))
+  else:
+    # Add default imm 0
+    trace.operand = trace.operand + ",0"
+
+
+def process_compressed_instr(trace):
+  """ convert naming for compressed instructions """
+  if len(trace.binary) == 4: # compressed are always 4 hex digits
+    trace.instr = "c." + trace.instr
 
 
 def main():

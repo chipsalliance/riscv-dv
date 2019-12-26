@@ -21,10 +21,7 @@ package riscv_instr_test_pkg;
 
   `include "riscv_instr_base_test.sv"
   `include "riscv_instr_test_lib.sv"
-  `include "riscv_instr_cov_debug_test.sv"
   `include "riscv_instr_cov_test.sv"
-  `ifdef EXPERIMENTAL
-    `include "riscv_instr_test.sv"
-  `endif
+  `include "exp_riscv_instr_cov_test.sv"
 
 endpackage

@@ -291,3 +291,91 @@ def gpr_to_abi(gpr):
 def sint_to_hex(val):
   """Signed integer to hex conversion"""
   return str(hex((val + (1 << 32)) % (1 << 32)))
+
+BASE_RE = re.compile(r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]*?)\((?P<rs1>[a-z0-9]+?)\)")
+
+def convert_pseudo_instr(instr_name, operands):
+  """Convert pseudo instruction to regular instruction"""
+  if instr_name == "nop":
+    instr_name = "addi"
+    operands = "zero,zero,0"
+  elif instr_name == "mv":
+    instr_name = "addi"
+    operands = operands + ",0"
+  elif instr_name == "not":
+    instr_name = "xori"
+    operands = operands + ",-1"
+  elif instr_name == "neg":
+    instr_name = "sub"
+    o = operands.split(",")
+    operands = o[0] + ",zero," + o[1]
+  elif instr_name == "negw":
+    instr_name = "subw"
+    o = operands.split(",")
+    operands = o[0] + ",zero," + o[1]
+  elif instr_name == "sext.w":
+    instr_name = "addiw"
+    operands = operands + ",0"
+  elif instr_name == "seqz":
+    instr_name = "sltiu"
+    operands = operands + ",1"
+  elif instr_name == "snez":
+    instr_name = "sltu"
+    o = operands.split(",")
+    operands = o[0] + ",zero," + o[1]
+  elif instr_name == "sltz":
+    instr_name = "slt"
+    operands = operands + ",zero"
+  elif instr_name == "sgtz":
+    instr_name = "slt"
+    o = operands.split(",")
+    operands = o[0] + ",zero," + o[1]
+  elif instr_name in ["beqz", "bnez", "bgez", "bltz"]:
+    instr_name = instr_name[0:3]
+    o = operands.split(",")
+    operands = o[0] + ",zero," + o[1]
+  elif instr_name == "blez":
+    instr_name = "bge";
+    operands = "zero," + operands
+  elif instr_name == "bgtz":
+    instr_name = "blt";
+    operands = "zero," + operands
+  elif instr_name == "bgt":
+    instr_name = "blt";
+    o = operands.split(",")
+    operands = o[1] + "," + o[0] + "," + o[2]
+  elif instr_name == "ble":
+    instr_name = "bge";
+    o = operands.split(",")
+    operands = o[1] + "," + o[0] + "," + o[2]
+  elif instr_name == "bgtu":
+    instr_name = "bltu";
+    o = operands.split(",")
+    operands = o[1] + "," + o[0] + "," + o[2]
+  elif instr_name == "bleu":
+    instr_name = "bgeu";
+    o = operands.split(",")
+    operands = o[1] + "," + o[0] + "," + o[2]
+  elif instr_name == "csrr":
+    instr_name = "csrrw"
+    operands = operands + ",zero"
+  elif instr_name in ["csrw", "csrs", "csrc"]:
+    instr_name = "csrr" + instr_name[3:]
+    operands = "zero," + operands
+  elif instr_name in ["csrwi", "csrsi", "csrci"]:
+    instr_name = "csrr" + instr_name[3:]
+    operands = "zero," + operands
+  elif instr_name == "jr":
+    instr_name = "jalr"
+    operands = "zero,%s,0" % operands
+  elif instr_name == "j":
+    instr_name = "jal"
+    operands = "zero,%s" % operands
+  elif instr_name == "jal":
+    if not ("," in operands):
+      operands = "ra,%s" % operands
+  elif instr_name == "jalr":
+    m = BASE_RE.search(operands)
+    if m:
+      operands = "%s,%s,%s" % (m.group("rd"), m.group("rs1"), m.group("imm"))
+  return instr_name, operands

@@ -410,7 +410,7 @@ def main():
   parser.add_argument("--dont_truncate_after_first_ecall",
                                          dest="dont_truncate_after_first_ecall",
                                          action="store_true",
-                    help="Dont truncate on first ecall")
+                                         help="Dont truncate on first ecall")
   parser.set_defaults(full_trace=False)
   parser.set_defaults(verbose=False)
   parser.set_defaults(verbose2=False)
