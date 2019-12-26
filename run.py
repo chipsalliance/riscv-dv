@@ -656,9 +656,6 @@ def load_config(args, cwd):
     elif args.target == "ml":
       args.mabi = "lp64"
       args.isa  = "rv64imc"
-    elif args.target == "exp":
-      args.mabi = "lp64"
-      args.isa  = "rv64gc"
     else:
       sys.exit("Unsupported pre-defined target: %0s" % args.target)
   else:

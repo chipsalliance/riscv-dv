@@ -62,9 +62,17 @@ def exp_process_spike_sim_log(spike_log, csv, full_trace = 0):
         spike_instr = m.group("instr").replace("pc + ", "")
         spike_instr = spike_instr.replace("pc - ", "-")
         rv_instr_trace = ExpRiscvInstructionTraceEntry()
-        rv_instr_trace.instr_str = spike_instr
         rv_instr_trace.pc = m.group("addr")
+        rv_instr_trace.instr_str = spike_instr
         rv_instr_trace.binary = m.group("bin")
+        if full_trace:
+          rv_instr_trace.instr = spike_instr.split(" ")[0]
+          rv_instr_trace.operand = spike_instr[len(rv_instr_trace.instr):]
+          rv_instr_trace.operand = rv_instr_trace.operand.replace(" ", "")
+          rv_instr_trace.instr, rv_instr_trace.operand = \
+            convert_pseudo_instr(rv_instr_trace.instr, rv_instr_trace.operand)
+          rv_instr_trace.operand = rv_instr_trace.operand.replace("(", ",")
+          rv_instr_trace.operand = rv_instr_trace.operand.replace(")", "")
         if spike_instr == "wfi":
           trace_csv.write_trace_entry(rv_instr_trace)
           continue
@@ -87,8 +95,6 @@ def exp_process_spike_sim_log(spike_log, csv, full_trace = 0):
             # architectural state update.
             if not full_trace:
               continue
-        else:
-          rv_instr_trace.instr = spike_instr
         trace_csv.write_trace_entry(rv_instr_trace)
   logging.info("Processed instruction count : %d" % instr_cnt)
   logging.info("CSV saved to : %s" % csv)

@@ -26,6 +26,8 @@ import logging
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
+from scripts.exp.exp_spike_log_to_trace_csv import *
+from scripts.exp.exp_ovpsim_log_to_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from types import SimpleNamespace
 
@@ -72,16 +74,27 @@ def collect_cov(out, cfg, cwd):
       else:
         logging.info("Process %0s log[%0d/%0d] : %s" % (argv.iss, i+1, len(log_list), log))
         if argv.iss == "spike":
-          process_spike_sim_log(log, csv, 1)
+          if argv.exp:
+            exp_process_spike_sim_log(log, csv, 1)
+          else:
+            process_spike_sim_log(log, csv, 1)
         elif argv.iss == "ovpsim":
-          process_ovpsim_sim_log(log, csv, 1, argv.stop_on_first_error,
-                argv.dont_truncate_after_first_ecall)
+          if argv.exp:
+            exp_process_ovpsim_sim_log(log, csv, argv.stop_on_first_error,
+                                       argv.dont_truncate_after_first_ecall, 1)
+          else:
+            process_ovpsim_sim_log(log, csv, 1, argv.stop_on_first_error,
+                                   argv.dont_truncate_after_first_ecall)
         else:
           logging.error("Full trace for %s is not supported yet" % argv.iss)
           sys.exit(RET_FAIL)
   if argv.steps == "all" or re.match("cov", argv.steps):
     opts_vec = ""
     opts_cov = ""
+    if argv.exp:
+      test_name = "exp_riscv_instr_cov_test"
+    else:
+      test_name = "riscv_instr_cov_test"
     if argv.vector_options:
       opts_vec = ("%0s" % argv.vector_options)
     if argv.coverage_options:
@@ -94,9 +107,9 @@ def collect_cov(out, cfg, cwd):
                     opts_vec, opts_cov))
     base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s --noclean "
                     "--so -o %s --cov -tl %s %s "
-                    "-tn riscv_instr_cov_test --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
-                    (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist, argv.opts,
-                        opts_vec, opts_cov))
+                    "-tn %s --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
+                    (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist,
+                     argv.opts, test_name, opts_vec, opts_cov))
     if argv.target:
       build_cmd += (" --target %s" % argv.target)
       base_sim_cmd += (" --target %s" % argv.target)
@@ -139,57 +152,6 @@ def collect_cov(out, cfg, cwd):
     logging.info("Collecting functional coverage from %0d trace CSV...done" % len(csv_list))
 
 
-def run_cov_debug_test(out, cfg, cwd):
-  """Collect functional coverage from the instruction trace
-
-  Args:
-    out              : Output directory
-    cfg              : Loaded configuration dictionary.
-    cwd              : Filesystem path to RISCV-DV repo
-  """
-  # Convert key dictionary to argv variable
-  argv= SimpleNamespace(**cfg)
-  sim_cmd_list = []
-  logging.info("Building the coverage collection framework")
-  build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-               "--co -o %s --cov -tl %s %s --noclean" %
-               (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist, argv.opts))
-  base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                  "--so -o %s --cov -tl %s --isa %s %s --noclean "
-                  "-tn riscv_instr_cov_debug_test --steps gen "
-                  "--sim_opts \"+num_of_iterations=<instr_cnt>\"" %
-                  (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist, argv.isa, argv.opts))
-  if argv.target:
-    build_cmd += (" --target %s" % argv.target)
-    base_sim_cmd += (" --target %s" % argv.target)
-  if argv.custom_target:
-    build_cmd += (" --custom_target %s" % argv.custom_target)
-    base_sim_cmd += (" --custom_target %s" % argv.custom_target)
-  run_cmd(build_cmd)
-  batch_cnt = 1
-  if argv.batch_size > 0:
-    batch_cnt = int((argv.instr_cnt + argv.batch_size - 1) / argv.batch_size)
-    logging.info("Batch size: %0d, Batch cnt:%0d" % (argv.batch_size, batch_cnt))
-  logging.info("Randomizing %0d instructions in %0d batches", argv.instr_cnt, batch_cnt)
-  for i in range(batch_cnt):
-    batch_instr_cnt = argv.instr_cnt
-    if argv.batch_size > 0:
-      batch_instr_cnt = argv.batch_size
-      if i == batch_cnt - 1:
-        batch_instr_cnt = argv.instr_cnt - argv.batch_size * (batch_cnt - 1)
-    sim_cmd = base_sim_cmd.replace("<instr_cnt>", str(batch_instr_cnt))
-    sim_cmd += ("  --log_suffix _%d" % i)
-    if argv.lsf_cmd == "":
-      logging.info("Running batch %0d/%0d" % (i+1, batch_cnt))
-      run_cmd(sim_cmd)
-    else:
-      sim_cmd += (" --lsf_cmd \"%s\"" % argv.lsf_cmd)
-      sim_cmd_list.append(sim_cmd)
-  if argv.lsf_cmd != "":
-    run_parallel_cmd(sim_cmd_list, argv.timeout)
-  logging.info("Collecting functional coverage from %0d random instructions...done" % argv.instr_cnt)
-
-
 def setup_parser():
   """Create a command line parser.
 
@@ -205,9 +167,6 @@ def setup_parser():
                       help="Directory of trace log files")
   parser.add_argument("-bz", "--batch_size", dest="batch_size", type=int, default=0,
                       help="Number of CSV to process per run")
-  parser.add_argument("-d", "--debug_mode", dest="debug_mode",
-                      action="store_true", default=False,
-                      help="Debug mode, randomize and sample the coverage directly")
   parser.add_argument("--compliance_mode", action="store_true", default=False,
                       help="Run the coverage model in compliance test mode")
   parser.add_argument("-i", "--instr_cnt", dest="instr_cnt", type=int, default=0,
@@ -253,6 +212,8 @@ def setup_parser():
                       help="Enable Vectors and set options")
   parser.add_argument("--coverage_options", type=str, default="",
                       help="Controlling coverage coverpoints")
+  parser.add_argument("--exp", action="store_true", default=False,
+                      help="Run generator with experimental features")
   return parser
 
 def load_config(args, cwd):
@@ -269,10 +230,6 @@ def load_config(args, cwd):
 
   if not args.simulator_yaml:
     args.simulator_yaml = cwd + "/yaml/simulator.yaml"
-
-  # Debug mode only works for RV64GC target
-  if args.debug_mode:
-    args.target = "rv64gc"
 
   # Disable ISS coverage if a core is passed in
   if args.core:
@@ -304,12 +261,9 @@ def main():
   cfg = load_config(args, cwd)
   # Create output directory
   output_dir = create_output(args.o, args.noclean, "cov_out_")
-
-  if args.debug_mode:
-    run_cov_debug_test(output_dir, cfg, cwd)
-  else:
-    collect_cov(output_dir, cfg ,cwd)
-    logging.info("Coverage results are saved to %s" % output_dir)
+  # Collect coverage for the trace CSV
+  collect_cov(output_dir, cfg ,cwd)
+  logging.info("Coverage results are saved to %s" % output_dir)
 
 if __name__ == "__main__":
   main()

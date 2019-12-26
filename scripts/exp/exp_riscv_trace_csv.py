@@ -28,7 +28,7 @@ class ExpRiscvInstructionTraceEntry(object):
     self.gpr = []
     self.csr = []
     self.instr = ""
-    self.mem_addr = ""
+    self.operand = ""
     self.pc = ""
     self.binary = ""
     self.instr_str = ""
@@ -51,7 +51,7 @@ class ExpRiscvInstructionTraceCsv(object):
   def start_new_trace(self):
     """Create a CSV file handle for a new trace"""
     fields = [
-        "pc", "instr", "gpr", "csr", "binary", "mode", "instr_str", "mem_addr"]
+        "pc", "instr", "gpr", "csr", "binary", "mode", "instr_str", "operand", "pad"]
     self.csv_writer = csv.DictWriter(self.csv_fd, fieldnames=fields)
     self.csv_writer.writeheader()
 
@@ -64,7 +64,7 @@ class ExpRiscvInstructionTraceCsv(object):
       new_trace.gpr = row['gpr'].split(';')
       new_trace.csr = row['csr'].split(';')
       new_trace.pc = row['pc']
-      new_trace.mem_addr = row['mem_addr']
+      new_trace.operand = row['operand']
       new_trace.binary = row['binary']
       new_trace.instr_str = row['instr_str']
       new_trace.instr = row['instr']
@@ -75,14 +75,14 @@ class ExpRiscvInstructionTraceCsv(object):
 
   def write_trace_entry(self, entry):
     """Write a new trace entry to CSV"""
-    self.csv_writer.writerow({'instr_str'     : entry.instr_str,
-                              'gpr'           : ";".join(entry.gpr),
-                              'csr'           : ";".join(entry.csr),
-                              'mem_addr'      : entry.mem_addr,
-                              'pc'            : entry.pc,
-                              'binary'        : entry.binary,
-                              'instr'         : entry.instr,
-                              'mode'          : entry.mode})
+    self.csv_writer.writerow({'instr_str' : entry.instr_str,
+                              'gpr'       : ";".join(entry.gpr),
+                              'csr'       : ";".join(entry.csr),
+                              'operand'   : entry.operand,
+                              'pc'        : entry.pc,
+                              'binary'    : entry.binary,
+                              'instr'     : entry.instr,
+                              'mode'      : entry.mode})
 
 def get_imm_hex_val(imm):
   """Get the hex representation of the imm value"""
