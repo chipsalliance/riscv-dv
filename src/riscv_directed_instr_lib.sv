@@ -109,7 +109,7 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     !(gpr inside {cfg.reserved_regs, ZERO});
     imm inside {[-1023:1023]};
     mixed_instr_cnt inside {[5:10]};
-    if (jump.instr_name == C_JR) {
+    if (jump.instr_name inside {C_JR, C_JALR}) {
       imm == 0;
     }
   }
@@ -151,7 +151,7 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     reserved_rd = {gpr};
     initialize_instr_list(mixed_instr_cnt);
     gen_instr(1'b1);
-    if (jump.instr_name == JALR) begin
+    if (jump.instr_name inside {JALR, C_JALR}) begin
       // JALR is expected to set lsb to 0
       int offset = $urandom_range(0, 1);
       addi.imm_str = $sformatf("%0d", imm + offset);
@@ -174,8 +174,6 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     end
     if(jump.instr_name == JAL) begin
       jump.imm_str = target_program_label;
-    end else if (jump.instr_name inside {C_JALR, C_JR}) begin
-      instr = {la, instr};
     end else begin
       instr = {la, addi, instr};
     end
