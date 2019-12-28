@@ -69,8 +69,15 @@ class riscv_instr extends uvm_object;
   bit                        has_imm = 1'b1;
 
   constraint imm_c {
-    if (instr_name inside {SLLI, SRLI, SRAI, SLLIW, SRLIW, SRAIW}) {
+    if (instr_name inside {SLLIW, SRLIW, SRAIW}) {
       imm[11:5] == 0;
+    }
+    if (instr_name inside {SLLI, SRLI, SRAI}) {
+      if (XLEN == 32) {
+        imm[11:5] == 0;
+      } else {
+        imm[11:6] == 0;
+      }
     }
   }
 
@@ -111,8 +118,6 @@ class riscv_instr extends uvm_object;
       end
       if (!cfg.enable_sfence && instr_name == SFENCE_VMA) continue;
       if (cfg.no_fence && (instr_name inside {FENCE, FENCE_I, SFENCE_VMA})) continue;
-      // TODO: gcc compile issue, support c.addi4spn later
-      if (instr_name == C_ADDI4SPN) continue;
       if ((instr_inst.group inside {supported_isa}) &&
           !(cfg.disable_compressed_instr &&
             (instr_inst.group inside {RV32C, RV64C, RV32DC, RV32FC, RV128C})) &&

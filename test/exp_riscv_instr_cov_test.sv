@@ -182,7 +182,7 @@ class exp_riscv_instr_cov_test extends uvm_test;
         get_val(operands[1], instr.imm);
       end
       I_FORMAT: begin
-        `DV_CHECK_FATAL(operands.size() == 3)
+        `DV_CHECK_FATAL(operands.size() == 3, trace["instr_str"])
         if(instr.category == LOAD) begin
           // load rd, imm(rs1)
           instr.rs1 = get_gpr(operands[2]);

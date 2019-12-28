@@ -71,8 +71,7 @@ def exp_process_spike_sim_log(spike_log, csv, full_trace = 0):
           rv_instr_trace.operand = rv_instr_trace.operand.replace(" ", "")
           rv_instr_trace.instr, rv_instr_trace.operand = \
             convert_pseudo_instr(rv_instr_trace.instr, rv_instr_trace.operand)
-          rv_instr_trace.operand = rv_instr_trace.operand.replace("(", ",")
-          rv_instr_trace.operand = rv_instr_trace.operand.replace(")", "")
+          process_instr(rv_instr_trace)
         if spike_instr == "wfi":
           trace_csv.write_trace_entry(rv_instr_trace)
           continue
@@ -98,6 +97,20 @@ def exp_process_spike_sim_log(spike_log, csv, full_trace = 0):
         trace_csv.write_trace_entry(rv_instr_trace)
   logging.info("Processed instruction count : %d" % instr_cnt)
   logging.info("CSV saved to : %s" % csv)
+
+
+def process_instr(trace):
+  if trace.instr == "jal":
+    # Spike jal format jal rd, -0xf -> jal rd, -15
+    idx = trace.operand.rfind(",")
+    imm = trace.operand[idx+1:]
+    if imm[0] == "-":
+      imm = "-" + str(int(imm[1:], 16))
+    else:
+      imm = str(int(imm, 16))
+    trace.operand = trace.operand[0:idx+1] + imm
+  trace.operand = trace.operand.replace("(", ",")
+  trace.operand = trace.operand.replace(")", "")
 
 
 def main():
