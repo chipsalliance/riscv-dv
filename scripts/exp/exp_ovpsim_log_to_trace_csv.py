@@ -140,7 +140,6 @@ def process_imm(trace):
       trace.operand = trace.operand[0:idx+1] + imm
 
 
-
 def process_jalr(trace):
   """ process jalr """
   ## jalr x3

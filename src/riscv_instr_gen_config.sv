@@ -341,7 +341,7 @@ class riscv_instr_gen_config extends uvm_object;
   }
 
   constraint ra_c {
-    ra dist {RA := 5, T1 := 2, [SP:T0] :/ 1, [T2:T6] :/ 2};
+    ra dist {RA := 3, T1 := 2, [SP:T0] :/ 1, [T2:T6] :/ 4};
     ra != sp;
     ra != tp;
     ra != ZERO;
@@ -349,7 +349,6 @@ class riscv_instr_gen_config extends uvm_object;
 
   constraint sp_tp_c {
     sp != tp;
-    sp dist {SP := 6, RA := 1, [GP:T6] :/ 3};
     !(sp inside {GP, RA, ZERO});
     !(tp inside {GP, RA, ZERO});
   }

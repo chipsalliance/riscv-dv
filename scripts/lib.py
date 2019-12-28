@@ -376,6 +376,11 @@ def convert_pseudo_instr(instr_name, operands):
       operands = "ra,%s" % operands
   elif instr_name == "jalr":
     m = BASE_RE.search(operands)
+    # jalr rd, imm(rs1)
     if m:
       operands = "%s,%s,%s" % (m.group("rd"), m.group("rs1"), m.group("imm"))
+    # jalr rs1
+    idx = operands.rfind(",")
+    if idx == -1:
+      operands = "ra," + operands + ",0"
   return instr_name, operands

@@ -101,7 +101,6 @@
 `define J_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign    : coverpoint instr.imm_sign; \
-    cp_imm_align   : coverpoint instr.imm[1:0]; \
     cp_rd          : coverpoint instr.rd; \
     cp_rd_align    : coverpoint instr.rd_value[1];
 
@@ -235,6 +234,7 @@ class riscv_instr_cover_group;
   int unsigned            branch_instr_cnt;
   bit [4:0]               branch_hit_history; // The last 5 branch result
   exception_cause_t       ignored_exceptions[];
+  exception_cause_t       exception_list[$];
 
   // Mode of the coverage model
 
@@ -426,6 +426,7 @@ class riscv_instr_cover_group;
 
   // JUMP instruction
   `J_INSTR_CG_BEGIN(jal)
+    cp_imm_align : coverpoint instr.imm[1];
   `CG_END
 
   `J_INSTR_CG_BEGIN(jalr)
@@ -439,6 +440,7 @@ class riscv_instr_cover_group;
       bins t1 = {T1};
       bins non_link = default;
     }
+    cp_imm_align : coverpoint instr.imm[1:0];
     cp_rs1_align : coverpoint instr.rs1_value[1:0];
     cp_align : cross cp_imm_align, cp_rs1_align;
     cp_ras : cross cp_rs1_link, cp_rd_link;
@@ -495,7 +497,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `R_INSTR_CG_BEGIN(divu)
-    cp_div_result: coverpoint instr.div_result;
+    cp_div_result: coverpoint instr.div_result {
+      ignore_bins no_overflow = {riscv_instr_cov_item::DIV_OVERFLOW};
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
@@ -505,7 +509,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `R_INSTR_CG_BEGIN(remu)
-    cp_div_result: coverpoint instr.div_result;
+    cp_div_result: coverpoint instr.div_result {
+      ignore_bins no_overflow = {riscv_instr_cov_item::DIV_OVERFLOW};
+    }
     cp_sign_cross: cross cp_rs1_sign, cp_rs2_sign;
   `CG_END
 
@@ -527,7 +533,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `R_INSTR_CG_BEGIN(divuw)
-    cp_div_result: coverpoint instr.div_result;
+    cp_div_result: coverpoint instr.div_result {
+      ignore_bins no_overflow = {riscv_instr_cov_item::DIV_OVERFLOW};
+    }
     cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
       bins zero     = {0};
       bins non_zero = default;
@@ -545,7 +553,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `R_INSTR_CG_BEGIN(remuw)
-    cp_div_result: coverpoint instr.div_result;
+    cp_div_result: coverpoint instr.div_result {
+      ignore_bins no_overflow = {riscv_instr_cov_item::DIV_OVERFLOW};
+    }
     cp_div_zero  : coverpoint instr.rs2_value iff (instr.rs2_value[31:0] == 0) {
       bins zero     = {0};
       bins non_zero = default;
@@ -759,7 +769,7 @@ class riscv_instr_cover_group;
   `CS_SP_INSTR_CG_BEGIN(c_sdsp)
   `CG_END
 
-  `CI_INSTR_CG_BEGIN(c_addiw)
+  `CI_INSTR_NON_ZERO_CG_BEGIN(c_addiw)
   `CG_END
 
   `CA_INSTR_CG_BEGIN(c_subw)
@@ -862,9 +872,8 @@ class riscv_instr_cover_group;
   // Privileged CSR covergroup
   covergroup mcause_exception_cg with function sample(exception_cause_t exception);
     cp_exception: coverpoint exception {
-       bins exception[] = cp_exception with ((item inside {implemented_exception}));
-       // TODO: Fix this
-       // ignore_bins ignore = cp_exception with ((item inside {ignored_exceptions}));
+        bins exception[] = cp_exception with ((item inside {implemented_exception}));
+       // bins exception[] = cp_exception with ((item inside {exception_list}));
     }
   endgroup
 
@@ -1071,23 +1080,29 @@ class riscv_instr_cover_group;
 
     // Ignore the exception which cannot be covered when running with ISS
     if (iss_mode) begin
+      int i;
       ignored_exceptions = {INSTRUCTION_ACCESS_FAULT, LOAD_ACCESS_FAULT};
       if (support_unaligned_load_store) begin
         ignored_exceptions = {ignored_exceptions, LOAD_ADDRESS_MISALIGNED};
       end
     end
 
+    foreach (riscv_instr_pkg::implemented_exception[i]) begin
+      if (!(riscv_instr_pkg::implemented_exception[i] inside {ignored_exceptions})) begin
+        exception_list.push_back(riscv_instr_pkg::implemented_exception[i]);
+      end
+    end
+
     if (!compliance_mode) begin
-      privileged_csr_cg = new();
-      mcause_exception_cg = new();
       if (!iss_mode) begin
+        // Expect to cover below coverpoint in RTL sim mode only
+        privileged_csr_cg = new();
+        mcause_exception_cg = new();
         mcause_interrupt_cg = new();
+        mstatus_m_cg = new();
       end
       if (!cfg.disable_compressed_instr) begin
         mepc_alignment_cg = new();
-      end
-      if (!iss_mode) begin
-        mstatus_m_cg = new();
       end
     end
   endfunction
@@ -1116,21 +1131,15 @@ class riscv_instr_cover_group;
       SRA        : `SAMPLE(sra_cg, instr)
       SLLI       : begin
                      `SAMPLE(slli_cg, instr)
-                     if (RV64I inside {supported_isa}) begin
-                       `SAMPLE(slli64_cg, instr)
-                     end
+                     `SAMPLE(slli64_cg, instr)
                    end
       SRLI       : begin
                      `SAMPLE(srli_cg, instr)
-                     if (RV64I inside {supported_isa}) begin
-                       `SAMPLE(srli64_cg, instr)
-                     end
+                     `SAMPLE(srli64_cg, instr)
                    end
       SRAI       : begin
                      `SAMPLE(srai_cg, instr)
-                     if (RV64I inside {supported_isa}) begin
-                       `SAMPLE(srai64_cg, instr)
-                     end
+                     `SAMPLE(srai64_cg, instr)
                    end
       AND        : `SAMPLE(and_cg, instr)
       OR         : `SAMPLE(or_cg, instr)

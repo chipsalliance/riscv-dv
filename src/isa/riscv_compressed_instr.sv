@@ -36,6 +36,9 @@ class riscv_compressed_instr extends riscv_instr;
         imm[31:5] == 0;
       }
     }
+    if (instr_name == C_ADDI4SPN) {
+      imm[1:0] == 0;
+    }
   }
 
   // C_JAL is RV32C only instruction
@@ -168,6 +171,8 @@ class riscv_compressed_instr extends riscv_instr;
             asm_str = "c.nop";
           else if (instr_name == C_ADDI16SP)
             asm_str = $sformatf("%0ssp, %0s", asm_str, get_imm());
+          else if (instr_name == C_ADDI4SPN)
+            asm_str = $sformatf("%0s%0s, sp, %0s", asm_str, rd.name(), get_imm());
           else if (instr_name inside {C_LDSP, C_LWSP, C_LQSP})
             asm_str = $sformatf("%0s%0s, %0s(sp)", asm_str, rd.name(), get_imm());
           else
