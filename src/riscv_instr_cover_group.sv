@@ -101,6 +101,7 @@
 `define J_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_imm_sign    : coverpoint instr.imm_sign; \
+    cp_imm_align   : coverpoint instr.imm[1:0]; \
     cp_rd          : coverpoint instr.rd; \
     cp_rd_align    : coverpoint instr.rd_value[1];
 
@@ -119,6 +120,16 @@
 `define CI_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rd       : coverpoint instr.rd; \
+    cp_imm_sign : coverpoint instr.imm_sign; \
+    `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
+      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
+    })
+
+`define CI_INSTR_NON_ZERO_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_rd       : coverpoint instr.rd { \
+      ignore_bins non_zero = {ZERO}; \
+    } \
     cp_imm_sign : coverpoint instr.imm_sign; \
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
@@ -428,7 +439,8 @@ class riscv_instr_cover_group;
       bins t1 = {T1};
       bins non_link = default;
     }
-    cp_misalign : coverpoint instr.rd_value[0];
+    cp_rs1_align : coverpoint instr.rs1_value[1:0];
+    cp_align : cross cp_imm_align, cp_rs1_align;
     cp_ras : cross cp_rs1_link, cp_rd_link;
   `CG_END
 
@@ -632,14 +644,7 @@ class riscv_instr_cover_group;
   `CIW_INSTR_CG_BEGIN(c_addi4spn)
   `CG_END
 
-  `INSTR_CG_BEGIN(c_addi)
-    cp_rd       : coverpoint instr.rd {
-      ignore_bins non_zero_rd = {ZERO};
-    }
-    cp_imm_sign : coverpoint instr.imm_sign;
-    `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard {
-      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD};
-    })
+  `CI_INSTR_NON_ZERO_CG_BEGIN(c_addi)
   `CG_END
 
   `INSTR_CG_BEGIN(c_addi16sp)
@@ -649,7 +654,7 @@ class riscv_instr_cover_group;
     })
   `CG_END
 
-  `CI_INSTR_CG_BEGIN(c_li)
+  `CI_INSTR_NON_ZERO_CG_BEGIN(c_li)
   `CG_END
 
   `INSTR_CG_BEGIN(c_lui)
@@ -711,7 +716,9 @@ class riscv_instr_cover_group;
   `CG_END
 
   `INSTR_CG_BEGIN(c_slli)
-    cp_rd          : coverpoint instr.rd;
+    cp_rd          : coverpoint instr.rd {
+      ignore_bins non_zero = {ZERO};
+    }
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard {
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
     })
@@ -734,7 +741,8 @@ class riscv_instr_cover_group;
     cp_rs1      : coverpoint instr.rs1 {
       `DV(ignore_bins zero = {ZERO};)
     }
-    cp_rd_align : coverpoint instr.rd_value[1:0];
+    cp_rs1_align : coverpoint instr.rs1_value[1:0];
+    cp_rd_align : coverpoint instr.rs1_value[1];
   `CG_END
 
   // RV64C

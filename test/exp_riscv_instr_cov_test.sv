@@ -132,7 +132,15 @@ class exp_riscv_instr_cov_test extends uvm_test;
 
   function bit sample();
     riscv_instr_name_t instr_name;
-    bit [XLEN-1:0] val;
+    bit [XLEN-1:0] binary;
+    get_val(trace["binary"], binary, .hex(1));
+    if ((binary[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
+      `SAMPLE(instr_cg.compressed_opcode_cg, binary[15:0])
+      `SAMPLE(instr_cg.illegal_compressed_instr_cg, binary)
+    end
+    if (binary[1:0] == 2'b11) begin
+      `SAMPLE(instr_cg.opcode_cg, binary[6:2])
+    end
     if (instr_enum::from_name(process_instr_name(trace["instr"]), instr_name)) begin
     `ifdef DEPRECATED
       if (cfg.instr_template.exists(instr_name)) begin
@@ -151,15 +159,6 @@ class exp_riscv_instr_cov_test extends uvm_test;
     end
     `uvm_info(`gfn, $sformatf("Cannot find opcode: %0s",
                               process_instr_name(trace["instr"])), UVM_LOW)
-    get_val(trace["binary"], val);
-    if ((val[1:0] != 2'b11) && (RV32C inside {supported_isa})) begin
-      `SAMPLE(instr_cg.compressed_opcode_cg, val[15:0])
-      `SAMPLE(instr_cg.illegal_compressed_instr_cg, val)
-    end
-    if (val[1:0] == 2'b11) begin
-      `uvm_info("DBG", $sformatf("Sample opcode: %0x [%0s]", val[6:2], trace["instr"]), UVM_LOW)
-      `SAMPLE(instr_cg.opcode_cg, val[6:2])
-    end
   endfunction
 
   virtual function void assign_trace_info_to_instr(riscv_instr_cov_item instr);
@@ -191,8 +190,12 @@ class exp_riscv_instr_cov_test extends uvm_test;
           get_val(operands[1], instr.imm);
         end else if(instr.category == CSR) begin
           // csrrwi rd, csr, imm
-          get_val(operands[1], instr.csr);
           get_val(operands[2], instr.imm);
+          if (preg_enum::from_name(operands[1].toupper(), preg)) begin
+            instr.csr = preg;
+          end else begin
+            get_val(operands[1], instr.csr);
+          end
         end else begin
           // addi rd, rs1, imm
           instr.rs1 = get_gpr(operands[1]);
@@ -222,7 +225,11 @@ class exp_riscv_instr_cov_test extends uvm_test;
         `DV_CHECK_FATAL(operands.size() == 3)
         if(instr.category == CSR) begin
           // csrrw rd, csr, rs1
-          get_val(operands[1], instr.csr);
+          if (preg_enum::from_name(operands[1].toupper(), preg)) begin
+            instr.csr = preg;
+          end else begin
+            get_val(operands[1], instr.csr);
+          end
           instr.rs1 = get_gpr(operands[2]);
           instr.rs1_value = get_gpr_state(operands[2]);
         end else begin
@@ -235,10 +242,17 @@ class exp_riscv_instr_cov_test extends uvm_test;
       end
       CI_FORMAT, CIW_FORMAT: begin
         if (instr.instr_name == C_ADDI16SP) begin
-          //TODO
+          get_val(operands[1], instr.imm);
+          instr.rs1 = SP;
+          instr.rs1_value = get_gpr_state("sp");
+        end else if (instr.instr_name == C_ADDI4SPN) begin
+          instr.rs1 = SP;
+          instr.rs1_value = get_gpr_state("sp");
         end else if (instr.instr_name inside {C_LDSP, C_LWSP, C_LQSP}) begin
           // c.ldsp rd, imm
           get_val(operands[1], instr.imm);
+          instr.rs1 = SP;
+          instr.rs1_value = get_gpr_state("sp");
         end else begin
           // c.lui rd, imm
           get_val(operands[1], instr.imm);
@@ -275,6 +289,8 @@ class exp_riscv_instr_cov_test extends uvm_test;
         // c.swsp rs2, imm
         instr.rs2 = get_gpr(operands[0]);
         instr.rs2_value = get_gpr_state(operands[0]);
+        instr.rs1 = SP;
+        instr.rs1_value = get_gpr_state("sp");
         get_val(operands[1], instr.imm);
       end
       CR_FORMAT: begin
@@ -300,6 +316,8 @@ class exp_riscv_instr_cov_test extends uvm_test;
         `uvm_fatal(`gfn, $sformatf("Illegal gpr update format: %0s", gpr_update[i]))
       end
       get_val(pair[1], gpr_state[pair[0]], .hex(1));
+      instr.rd = get_gpr(pair[0]);
+      instr.rd_value = get_gpr_state(pair[0]);
     end
   endfunction : assign_trace_info_to_instr
 

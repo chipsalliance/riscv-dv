@@ -114,8 +114,8 @@ def exp_process_ovpsim_sim_log(ovpsim_log, csv,
 
 def process_trace(trace):
   """ Process instruction operands """
-  process_imm(trace)
   process_compressed_instr(trace)
+  process_imm(trace)
   if trace.instr == "jalr":
     process_jalr(trace)
   trace.instr, trace.operand = convert_pseudo_instr(trace.instr, trace.operand)
@@ -125,21 +125,20 @@ def process_trace(trace):
 
 def process_imm(trace):
   """ Process imm to follow RISC-V standard convention """
-  if trace.instr in ['j', 'c.j', 'jal']:
-    # Add 0x prefix for jump immediate
+  if trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu', 'c.beqz',
+                     'c.bnez', 'beqz', 'bnez', 'bgez', 'bltz', 'blez', 'bgtz'
+                     'c.j', "j", "c.jal", "jal"]:
+    # convert from ovpsim logs branch/jump offsets as absolute to relative
     idx = trace.operand.rfind(",")
     if idx == -1:
-      trace.operand = "0x" + trace.operand
+      imm = trace.operand
+      imm = str(sint_to_hex(int(imm, 16) - int(trace.pc, 16)))
+      trace.operand = imm
     else:
       imm = trace.operand[idx+1:]
-      trace.operand = trace.operand[0:idx+1] + "0x" + imm
-  elif trace.instr in ['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu', 'c.beqz',
-                       'c.bnez', 'beqz', 'bnez', 'bgez', 'bltz', 'blez', 'bgtz']:
-    # convert from ovpsim logs branch offsets as absolute to relative
-    idx = trace.operand.rfind(",")
-    imm = trace.operand[idx+1:]
-    imm = str(hex(int(imm, 16) - int(trace.pc, 16)))
-    trace.operand = trace.operand[0:idx+1] + imm
+      imm = str(sint_to_hex(int(imm, 16) - int(trace.pc, 16)))
+      trace.operand = trace.operand[0:idx+1] + imm
+
 
 
 def process_jalr(trace):
@@ -163,8 +162,25 @@ def process_jalr(trace):
 
 def process_compressed_instr(trace):
   """ convert naming for compressed instructions """
+  trace_binary = int(trace.binary, 16)
+  o = trace.operand.split(",")
   if len(trace.binary) == 4: # compressed are always 4 hex digits
     trace.instr = "c." + trace.instr
+    if ("sp,sp," in trace.operand) and (trace.instr == "c.addi"):
+      trace.instr = "c.addi16sp"
+      idx = trace.operand.rfind(",")
+      trace.operand = "sp," + trace.operand[idx+1:]
+    elif (",sp," in trace.operand) and (trace.instr == "c.addi"):
+      trace.instr = "c.addi4spn"
+    elif ("(sp)" in trace.operand) and (trace_binary % 4 != 0):
+      trace.instr = trace.instr + "sp"
+    if not ("(" in trace.operand):
+      # OVPSIM use non-compressed instruction format in the trace,
+      # need to remove duplicated rs1/rd
+      if len(o) > 2:
+        trace.operand =  ",".join(o[1:])
+    if trace.instr == "c.jal":
+      trace.operand = o[1]
 
 
 def main():
