@@ -26,8 +26,6 @@ import logging
 from scripts.lib import *
 from scripts.spike_log_to_trace_csv import *
 from scripts.ovpsim_log_to_trace_csv import *
-from scripts.exp.exp_spike_log_to_trace_csv import *
-from scripts.exp.exp_ovpsim_log_to_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from types import SimpleNamespace
 
@@ -74,27 +72,17 @@ def collect_cov(out, cfg, cwd):
       else:
         logging.info("Process %0s log[%0d/%0d] : %s" % (argv.iss, i+1, len(log_list), log))
         if argv.iss == "spike":
-          if argv.exp:
-            exp_process_spike_sim_log(log, csv, 1)
-          else:
-            process_spike_sim_log(log, csv, 1)
+          process_spike_sim_log(log, csv, 1)
         elif argv.iss == "ovpsim":
-          if argv.exp:
-            exp_process_ovpsim_sim_log(log, csv, argv.stop_on_first_error,
-                                       argv.dont_truncate_after_first_ecall, 1)
-          else:
-            process_ovpsim_sim_log(log, csv, 1, argv.stop_on_first_error,
-                                   argv.dont_truncate_after_first_ecall)
+          process_ovpsim_sim_log(log, csv, argv.stop_on_first_error,
+                                 argv.dont_truncate_after_first_ecall, 1)
         else:
           logging.error("Full trace for %s is not supported yet" % argv.iss)
           sys.exit(RET_FAIL)
   if argv.steps == "all" or re.match("cov", argv.steps):
     opts_vec = ""
     opts_cov = ""
-    if argv.exp:
-      test_name = "exp_riscv_instr_cov_test"
-    else:
-      test_name = "riscv_instr_cov_test"
+    test_name = "riscv_instr_cov_test"
     if argv.vector_options:
       opts_vec = ("%0s" % argv.vector_options)
     if argv.coverage_options:
