@@ -30,11 +30,6 @@ from scripts.whisper_log_trace_csv import *
 from scripts.sail_log_to_trace_csv import *
 from scripts.instr_trace_compare import *
 
-from scripts.exp.exp_riscv_trace_csv import *
-from scripts.exp.exp_instr_trace_compare import *
-from scripts.exp.exp_spike_log_to_trace_csv import *
-from scripts.exp.exp_ovpsim_log_to_trace_csv import *
-
 from types import SimpleNamespace
 
 LOGGER = logging.getLogger()
@@ -102,18 +97,18 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir):
       logging.info("Found matching ISS: %s" % entry['iss'])
       cmd = entry['cmd'].rstrip()
       cmd = re.sub("\<path_var\>", get_env_var(entry['path_var']), cmd)
+      m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-z]+?)$", isa)
+      if m:
+        cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
+      else:
+        logging.error("Illegal ISA %0s" % isa)
       if iss == "ovpsim":
         cmd = re.sub("\<cfg_path\>", setting_dir, cmd)
       elif iss == "whisper":
-        m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-z]+?)$", isa)
         if m:
           # TODO: Support u/s mode
-          cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
           variant = re.sub('g', 'imafd',  m.group('variant'))
           cmd = re.sub("\<variant\>", variant, cmd)
-        else:
-          logging.error("Illegal ISA %0s" % isa)
-        cmd = re.sub("\<xlen\>", setting_dir, cmd)
       else:
         cmd = re.sub("\<variant\>", isa, cmd)
       return cmd
@@ -495,15 +490,9 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0, exp=False
       iss = iss_list[i]
       csv_list.append(csv)
       if iss == "spike":
-        if exp:
-          exp_process_spike_sim_log(log, csv)
-        else:
-          process_spike_sim_log(log, csv)
+        process_spike_sim_log(log, csv)
       elif iss == "ovpsim":
-        if exp:
-          exp_process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
-        else:
-          process_ovpsim_sim_log(log, csv, 0, stop_on_first_error)
+        process_ovpsim_sim_log(log, csv, stop_on_first_error)
       elif iss == "sail":
         process_sail_sim_log(log, csv)
       elif iss == "whisper":
@@ -511,10 +500,7 @@ def compare_iss_log(iss_list, log_list, report, stop_on_first_error=0, exp=False
       else:
         logging.error("Unsupported ISS" % iss)
         sys.exit(RET_FAIL)
-    if exp:
-      result = exp_compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
-    else:
-      result = compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
+    result = compare_trace_csv(csv_list[0], csv_list[1], iss_list[0], iss_list[1], report)
     logging.info(result)
 
 

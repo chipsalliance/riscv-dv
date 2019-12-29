@@ -78,11 +78,11 @@ one of below to run ISS simulation.
     whisper binary
 - [sail-riscv](https://github.com/rems-project/sail-riscv) setup
   - Follow the [steps](https://github.com/rems-project/sail-riscv/blob/master/README.md) to install sail-riscv
-  - Set environment variable SAIL_RISCV to the sail-riscv binary
+  - Set environment variable SAIL_RISCV to the path of sail-riscv binary
 
 ```bash
 export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
-export SAIL_RISCV="xx/xxx/riscv_ocaml_sim_RV64"
+export SAIL_RISCV="xx/xxx/ocaml_emulator"
 export OVPSIM_PATH=/xx/xxx/riscv-ovpsim/bin/Linux64
 export WHISPER_ISS="xx/xxx/swerv-ISS/build-Linux/whisper"
 ```
