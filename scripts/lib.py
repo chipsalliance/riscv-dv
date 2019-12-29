@@ -294,7 +294,7 @@ def sint_to_hex(val):
 
 BASE_RE = re.compile(r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]*?)\((?P<rs1>[a-z0-9]+?)\)")
 
-def convert_pseudo_instr(instr_name, operands):
+def convert_pseudo_instr(instr_name, operands, binary):
   """Convert pseudo instruction to regular instruction"""
   if instr_name == "nop":
     instr_name = "addi"
@@ -383,4 +383,11 @@ def convert_pseudo_instr(instr_name, operands):
     idx = operands.rfind(",")
     if idx == -1:
       operands = "ra," + operands + ",0"
+  elif instr_name == "ret":
+    if binary[-1] == "2":
+      instr_name = "c.jr"
+      operands = "ra"
+    else:
+      instr_name = "jalr"
+      operands = "zero,ra,0"
   return instr_name, operands

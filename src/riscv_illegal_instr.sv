@@ -188,6 +188,10 @@ class riscv_illegal_instr extends uvm_object;
     solve reserved_c before instr_bin;
     solve reserved_c before c_msb;
     solve reserved_c before c_op;
+    if (XLEN == 32) {
+      //c.addiw is RV64/RV128 only instruction, the encoding is used for C.JAL for RV32C
+      reserved_c != kReservedAddiw;
+    }
     if (exception == kReservedCompressedInstr) {
       (reserved_c == kIllegalCompressed) -> (instr_bin[15:0] == 0);
       (reserved_c == kReservedAddispn)   -> ((instr_bin[15:5] == '0) && (c_op == 2'b00));
