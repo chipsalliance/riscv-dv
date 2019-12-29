@@ -313,6 +313,9 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       elf = prefix + ".o"
       binary = prefix + ".bin"
       test_isa = isa
+      if not os.path.isfile(asm):
+        logging.error("Cannot find assembly test: %s\n", asm)
+        sys.exit(RET_FAIL)
       # gcc comilation
       cmd = ("%s -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
