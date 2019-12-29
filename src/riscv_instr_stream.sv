@@ -262,5 +262,4 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     )
   endfunction
 
-
 endclass

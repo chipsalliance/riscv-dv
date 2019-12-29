@@ -49,6 +49,8 @@
     +stream_freq_4=4
     +stream_name_5=riscv_jal_instr
     +stream_freq_5=4
+    +stream_freq_6=riscv_int_numeric_corner_stream,4
+    +stream_freq_6=4
     +dist_control_mode=1
     +dist_shift=10
     +dist_arithmetic=10

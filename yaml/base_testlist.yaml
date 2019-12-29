@@ -35,6 +35,7 @@
   gen_opts: >
     +instr_cnt=10000
     +num_of_sub_program=0
+    +directed_instr_0=riscv_int_numeric_corner_stream,4
     +no_fence=1
     +no_data_page=1
     +no_branch_jump=1

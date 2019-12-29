@@ -470,7 +470,13 @@ class riscv_instr_cover_group;
 
   covergroup rv32i_misc_cg with function sample(riscv_instr_cov_item instr);
     cp_misc : coverpoint instr.instr_name {
-      bins instr[] = {FENCE, FENCE_I, EBREAK, ECALL, MRET, WFI};
+      bins instr[] = {FENCE, FENCE_I, EBREAK, ECALL, MRET};
+    }
+  endgroup
+
+  covergroup wfi_cg with function sample(riscv_instr_cov_item instr);
+    cp_misc : coverpoint instr.instr_name {
+      bins wfi = {WFI};
     }
   endgroup
 
@@ -726,7 +732,7 @@ class riscv_instr_cover_group;
   `CG_END
 
   `INSTR_CG_BEGIN(c_slli)
-    cp_rd          : coverpoint instr.rd {
+    cp_rd : coverpoint instr.rd {
       ignore_bins non_zero = {ZERO};
     }
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard {
@@ -741,14 +747,14 @@ class riscv_instr_cover_group;
   `CG_END
 
   `INSTR_CG_BEGIN(c_jr)
-    cp_rs1      : coverpoint instr.rs1 {
+    cp_rs1 : coverpoint instr.rs1 {
       `DV(ignore_bins zero = {ZERO};)
     }
     cp_rs1_align : coverpoint instr.rs1_value[1:0];
   `CG_END
 
   `INSTR_CG_BEGIN(c_jalr)
-    cp_rs1      : coverpoint instr.rs1 {
+    cp_rs1 : coverpoint instr.rs1 {
       `DV(ignore_bins zero = {ZERO};)
     }
     cp_rs1_align : coverpoint instr.rs1_value[1:0];
@@ -817,8 +823,8 @@ class riscv_instr_cover_group;
                                   16'b0110_xx1x_x000_0001,
                                   16'b0110_x1xx_x000_0001,
                                   16'b0110_1xxx_x000_0001};
-      wildcard bins c_reserv_0 = {16'b1001_11xx_x10x_xx10};
-      wildcard bins c_reserv_1 = {16'b1001_11xx_x11x_xx10};
+      wildcard bins c_reserv_0 = {16'b1001_11xx_x10x_xx01};
+      wildcard bins c_reserv_1 = {16'b1001_11xx_x11x_xx01};
       wildcard bins c_jr       = {16'b1000_0000_0000_0010};
       wildcard bins c_lwsp     = {16'b010x_0000_0xxx_xx10};
       wildcard bins c_lqsp     = {16'b001x_0000_0xxx_xx10};
@@ -985,10 +991,15 @@ class riscv_instr_cover_group;
     end
 
     if (!compliance_mode) begin
-        // instr_trans_cg = new();
-        branch_hit_history_cg = new();
-        rv32i_misc_cg = new();
-        opcode_cg = new();
+      // instr_trans_cg = new();
+      branch_hit_history_cg = new();
+      rv32i_misc_cg = new();
+      opcode_cg = new();
+      // TODO: Enable WFI covergroup. It's currently disabled because OVPSIM will stop program
+      // execution upon decoding WFI instruction
+      if (!iss_mode) begin
+        wfi_cg = new();
+      end
     end
 
     if (RV32C inside {supported_isa} || RV64C inside {supported_isa}) begin
@@ -1173,6 +1184,7 @@ class riscv_instr_cover_group;
       CSRRWI     : `SAMPLE(csrrwi_cg, instr)
       CSRRSI     : `SAMPLE(csrrsi_cg, instr)
       CSRRCI     : `SAMPLE(csrrci_cg, instr)
+      WFI        : `SAMPLE(wfi_cg, instr)
       MUL        : `SAMPLE(mul_cg, instr)
       MULH       : `SAMPLE(mulh_cg, instr)
       MULHSU     : `SAMPLE(mulhsu_cg, instr)

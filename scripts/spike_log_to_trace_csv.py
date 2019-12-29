@@ -69,8 +69,8 @@ def process_spike_sim_log(spike_log, csv, full_trace = 0):
           rv_instr_trace.instr = spike_instr.split(" ")[0]
           rv_instr_trace.operand = spike_instr[len(rv_instr_trace.instr):]
           rv_instr_trace.operand = rv_instr_trace.operand.replace(" ", "")
-          rv_instr_trace.instr, rv_instr_trace.operand = \
-            convert_pseudo_instr(rv_instr_trace.instr, rv_instr_trace.operand)
+          rv_instr_trace.instr, rv_instr_trace.operand = convert_pseudo_instr(
+              rv_instr_trace.instr, rv_instr_trace.operand, rv_instr_trace.binary)
           process_instr(rv_instr_trace)
         if spike_instr == "wfi":
           trace_csv.write_trace_entry(rv_instr_trace)

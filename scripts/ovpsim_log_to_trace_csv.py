@@ -118,7 +118,8 @@ def process_trace(trace):
   process_imm(trace)
   if trace.instr == "jalr":
     process_jalr(trace)
-  trace.instr, trace.operand = convert_pseudo_instr(trace.instr, trace.operand)
+  trace.instr, trace.operand = convert_pseudo_instr(
+      trace.instr, trace.operand, trace.binary)
   trace.operand = trace.operand.replace(")", "")
   trace.operand = trace.operand.replace("(", ",")
 
