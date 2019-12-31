@@ -210,7 +210,7 @@ class riscv_instr extends uvm_object;
        allowed_instr = {allowed_instr, instr_category[include_category[i]]};
      end
      foreach (exclude_category[i]) begin
-       if (instr_category[exclude_category[i]].size() > 0) begin
+       if (instr_category.exists(exclude_category[i])) begin
          disallowed_instr = {disallowed_instr, instr_category[exclude_category[i]]};
        end
      end
@@ -218,7 +218,7 @@ class riscv_instr extends uvm_object;
        allowed_instr = {allowed_instr, instr_group[include_group[i]]};
      end
      foreach (exclude_group[i]) begin
-       if (instr_group[exclude_group[i]].size() > 0) begin
+       if (instr_group.exists(exclude_group[i])) begin
          disallowed_instr = {disallowed_instr, instr_group[exclude_group[i]]};
        end
      end
