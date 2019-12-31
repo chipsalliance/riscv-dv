@@ -471,7 +471,8 @@ class riscv_asm_program_gen extends uvm_object;
                 $sformatf("vsetvli x%0d, x%0d, e%0d",
                           cfg.gpr[0], cfg.gpr[1], 8 * (2 ** cfg.vector_cfg.vtype.vsew))};
     for(int i = 0; i < 32; i++) begin
-      // TODO: Initialize vector registers
+      // Use integer register to initialize vector register
+      str = {str, $sformatf("vmv.v.x v%0d, x%0d", i, i)};
     end
     instr_stream = {instr_stream, str};
   endfunction
