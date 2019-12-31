@@ -60,6 +60,7 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit               mstatus_sum;
   rand bit               mstatus_tvm;
   rand bit [1:0]         mstatus_fs;
+  rand bit [1:0]         mstatus_vs;
   rand mtvec_mode_t      mtvec_mode;
 
   // Floating point rounding mode
@@ -385,6 +386,14 @@ class riscv_instr_gen_config extends uvm_object;
       mstatus_fs == 2'b01;
     } else {
       mstatus_fs == 2'b00;
+    }
+  }
+
+  constraint mstatus_vs_c {
+    if (enable_vector_extension) {
+      mstatus_vs == 2'b01;
+    } else {
+      mstatus_vs == 2'b00;
     }
   }
 

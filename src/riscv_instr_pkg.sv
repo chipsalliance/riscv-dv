@@ -733,7 +733,7 @@ package riscv_instr_pkg;
 
   `include "riscv_core_setting.sv"
 
-  typedef struct {
+  typedef struct packed {
     bit ill;
     bit [XLEN-2:7] reserved;
     bit [1:0] vediv;

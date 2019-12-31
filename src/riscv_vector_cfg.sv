@@ -6,6 +6,23 @@ class riscv_vector_cfg extends uvm_object;
   rand vxrm_t            vxrm;
   rand bit               vxsat;
 
+  constraint legal_c {
+    solve vtype before vl;
+    solve vl before vstart;
+    vstart <= vl;
+    vtype.vsew <= $clog2(VLEN/8);
+    vl <= (1 << ($clog2(VLEN/8) - vtype.vsew));
+  }
+
+  // Basic constraint for initial bringup
+  constraint bringup_c {
+    vstart == 0;
+    vl == (1 << ($clog2(VLEN/8) - vtype.vsew));
+    vtype.vlmul == 0;
+    vtype.vediv == 0;
+    vtype.vsew == 0;
+  }
+
   `uvm_object_utils_begin(riscv_vector_cfg)
     `uvm_field_int(vtype.ill, UVM_DEFAULT)
     `uvm_field_int(vtype.vediv, UVM_DEFAULT)
