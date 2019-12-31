@@ -45,6 +45,9 @@ def collect_cov(out, cfg, cwd):
   log_list = []
   csv_list = []
   logging.info("Processing trace log under %s" % argv.dir)
+  if not os.path.isdir(argv.dir) or not os.listdir(argv.dir):
+    logging.error("Cannot find %s directory, or it is empty", argv.dir)
+    sys.exit(RET_FAIL)
   if argv.core:
     """
     If functional coverage is being collected from an RTL core implementation,
