@@ -1,6 +1,10 @@
 class riscv_vector_instr extends riscv_instr;
 
-  // TODO : Add vector instruction operands here
+  rand riscv_vreg_t vs1;
+  rand riscv_vreg_t vs2;
+  rand riscv_vreg_t vs3;
+  rand riscv_vreg_t vd;
+  rand bit vm;
 
   `uvm_object_utils(riscv_vector_instr)
 

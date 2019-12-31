@@ -87,6 +87,9 @@ class riscv_instr_gen_config extends uvm_object;
   // Virtual address translation is on for this test
   rand bit               virtual_addr_translation_on;
 
+  // Vector extension setting
+  rand riscv_vector_cfg  vector_cfg;
+
   //-----------------------------------------------------------------------------
   //  User space memory region and stack setting
   //-----------------------------------------------------------------------------
@@ -212,6 +215,8 @@ class riscv_instr_gen_config extends uvm_object;
   riscv_reg_t            reserved_regs[];
   // Floating point support
   bit                    enable_floating_point;
+  // Vector extension support
+  bit                    enable_vector_extension;
 
   //-----------------------------------------------------------------------------
   // Command line options for instruction distribution control
@@ -433,6 +438,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(max_branch_step, UVM_DEFAULT)
     `uvm_field_int(max_directed_instr_stream_seq, UVM_DEFAULT)
     `uvm_field_int(enable_floating_point, UVM_DEFAULT)
+    `uvm_field_int(enable_vector_extension, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
@@ -481,6 +487,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_debug_single_step=", enable_debug_single_step);
     get_bool_arg_value("+set_mstatus_tw=", set_mstatus_tw);
     get_bool_arg_value("+enable_floating_point=", enable_floating_point);
+    get_bool_arg_value("+enable_vector_extension=", enable_vector_extension);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
       `uvm_info(get_full_name(), $sformatf(
                 "Got boot mode option - %0s", boot_mode_opts), UVM_LOW)
@@ -516,6 +523,7 @@ class riscv_instr_gen_config extends uvm_object;
     if (!(RV32C inside {supported_isa})) begin
       disable_compressed_instr = 1;
     end
+    vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
     setup_instr_distribution();
     get_invalid_priv_lvl_csr();
   endfunction
