@@ -336,12 +336,15 @@ package riscv_instr_pkg;
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
   } riscv_reg_t;
 
-  `VECTOR_INCLUDE("riscv_instr_pkg_inc_enum.sv")
-
   typedef enum bit [4:0] {
     F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
     F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27, F28, F29, F30, F31
   } riscv_fpr_t;
+
+  typedef enum bit [4:0] {
+    V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15,
+    V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31
+  } riscv_vreg_t;
 
   typedef enum bit [5:0] {
     J_FORMAT = 0,
@@ -611,8 +614,13 @@ package riscv_instr_pkg;
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
     DSCRATCH0       = 'h7B2,  // Debug scratch register
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_privileged_reg_t.sv")
-    DSCRATCH1       = 'h7B3  // Debug scratch register (last one)
+    DSCRATCH1       = 'h7B3,  // Debug scratch register (last one)
+    VSTART          = 'h008,  // Vector start position
+    VXSTAT          = 'h009,  // Fixed point saturate flag
+    VXRM            = 'h00A,  // Fixed point rounding mode
+    VL              = 'hC20,  // Vector length
+    VTYPE           = 'hC21,  // Vector data type register
+    VLENB           = 'hC22   // VLEN/8 (vector register length in bytes)
   } privileged_reg_t;
 
   typedef enum bit [5:0] {
@@ -725,18 +733,20 @@ package riscv_instr_pkg;
 
   `include "riscv_core_setting.sv"
 
-  // TODO hardware target definition so should move to riscv_core_setting.sv
-  `ifdef ENABLE_VECTORS
-    parameter bit has_vector_engine = 'b1;
-    parameter int VLEN = `VLEN;
-    parameter int ELEN = `ELEN;
-    parameter int SLEN = `SLEN;
-  `else
-    parameter bit has_vector_engine = 'b0;
-    parameter int VLEN = 512;
-    parameter int ELEN = 64;
-    parameter int SLEN = 64;
-  `endif
+  typedef struct {
+    bit ill;
+    bit [XLEN-2:7] reserved;
+    bit [1:0] vediv;
+    bit [2:0] vsew;
+    bit [1:0] vlmul;
+  } vtype_t;
+
+  typedef enum bit [1:0] {
+    RoundToNearestUp,
+    RoundToNearestEven,
+    RoundDown,
+    RoundToOdd
+  } vxrm_t;
 
   `VECTOR_INCLUDE("riscv_instr_pkg_inc_variables.sv")
 
@@ -874,6 +884,7 @@ package riscv_instr_pkg;
     SYNCH, SYSTEM, COUNTER, CSR, CHANGELEVEL, TRAP, INTERRUPT, AMO
   };
 
+   `include "riscv_vector_cfg.sv"
   `ifdef DEPRECATED
     `define INSTR riscv_instr_base
     `include "deprecated/riscv_instr_base.sv"
