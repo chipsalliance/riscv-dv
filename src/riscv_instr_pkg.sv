@@ -315,6 +315,65 @@ package riscv_instr_pkg;
     AMOMAX_D,
     AMOMINU_D,
     AMOMAXU_D,
+    // Vector instructions
+    VSETVL,
+    VSETVLI,
+    VADD,
+    VSUB,
+    VRSUB,
+    VWADDU,
+    VWSUBU,
+    VWADD,
+    VWSUB,
+    VADC,
+    VMADC,
+    VSBC,
+    VMSBC,
+    VAND,
+    VOR,
+    VXOR,
+    VSLL,
+    VSRL,
+    VSRA,
+    VNSRL,
+    VNSRA,
+    VMSEQ,
+    VMSNE,
+    VMSLTU,
+    VMSLT,
+    VMSLEU,
+    VMSLE,
+    VMSGTU,
+    VMSGT,
+    VMINU,
+    VMIN,
+    VMAXU,
+    VMAX,
+    VMUL,
+    VMULH,
+    VMULHU,
+    VMULHSU,
+    VDIVU,
+    VDIV,
+    VREMU,
+    VREM,
+    VWMUL,
+    VWMULU,
+    VWMULSU,
+    VMACC,
+    VNMSAC,
+    VMADD,
+    VNMSUB,
+    VWMACCU,
+    VWMACC,
+    VWMACCSU,
+    VWMACCUS,
+    VQMACCU,
+    VQMACC,
+    VQMACCSU,
+    VQMACCUS,
+    VMERGE,
+    VMV,
     // Supervisor instruction
     DRET,
     MRET,
@@ -322,7 +381,6 @@ package riscv_instr_pkg;
     SRET,
     WFI,
     SFENCE_VMA,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_name_t.sv")
     // You can add other instructions here
     INVALID_INSTR
   } riscv_instr_name_t;
@@ -354,6 +412,7 @@ package riscv_instr_pkg;
     R_FORMAT,
     S_FORMAT,
     R4_FORMAT,
+    // Compressed instruction format
     CI_FORMAT,
     CB_FORMAT,
     CJ_FORMAT,
@@ -362,9 +421,27 @@ package riscv_instr_pkg;
     CL_FORMAT,
     CS_FORMAT,
     CSS_FORMAT,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_format_t.sv")
-    CIW_FORMAT // (last one)
+    CIW_FORMAT,
+    // Vector instruction format
+    VSET_FORMAT,
+    VA_FORMAT,
+    VL_FORMAT,
+    VS_FORMAT
   } riscv_instr_format_t;
+
+
+  // Vector arithmetic instruction variant
+  typedef enum bit [3:0] {
+    VV,
+    VI,
+    VX,
+    WV,
+    WI,
+    WX,
+    VVM,
+    VIM,
+    VXM
+  } va_variant_t;
 
   typedef enum bit [5:0] {
     LOAD = 0,
@@ -913,6 +990,7 @@ package riscv_instr_pkg;
     `include "isa/rv64i_instr.sv"
     `include "isa/rv64m_instr.sv"
     `include "isa/rv128c_instr.sv"
+    `include "isa/rv32v_instr.sv"
   `endif
 
   `include "riscv_pseudo_instr.sv"
