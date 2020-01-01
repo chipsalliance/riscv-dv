@@ -368,10 +368,12 @@ package riscv_instr_pkg;
     VWMACC,
     VWMACCSU,
     VWMACCUS,
+    /*
     VQMACCU,
     VQMACC,
     VQMACCSU,
     VQMACCUS,
+    */
     VMERGE,
     VMV,
     VSADDU,
