@@ -26,13 +26,14 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               has_vs2 = 1'b1;
   bit               has_vs3 = 1'b1;
   bit               has_vm = 1'b0;
+  bit               has_va_variant;
   bit               is_widen_instr;
   bit               is_narrowing_instr;
-
-  va_variant_t allowed_va_variants[$];
+  bit               is_convert_instr;
+  va_variant_t      allowed_va_variants[$];
 
   constraint va_variant_c {
-    if (format == VA_FORMAT) {
+    if (has_va_variant) {
       va_variant inside {allowed_va_variants};
     }
   }
@@ -77,8 +78,16 @@ class riscv_vector_instr extends riscv_floating_point_instr;
             VX: asm_str = $sformatf("vmv.v.x %s,%s",vd.name(), rs1.name());
             VI: asm_str = $sformatf("vmv.v.i %s,%s",vd.name(), imm_str);
           endcase
+        end else if (instr_name == VFMV) begin
+          asm_str = $sformatf("vfmv.v.f %s,%s",vd.name(), fs1.name());
+        end else if (is_convert_instr || (instr_name inside {VFCLASS_V, VFSQRT_V})) begin
+          asm_str = $sformatf("%0s %0s,%0s", get_instr_name(), vd.name(), vs2.name());
         end else begin
-          asm_str = $sformatf("%0s.%0s ", get_instr_name(), va_variant.name());
+          if (has_va_variant) begin
+            asm_str = $sformatf("%0s.%0s ", get_instr_name(), va_variant.name());
+          end else begin
+            asm_str = $sformatf("%0s ", get_instr_name());
+          end
           asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
           case (va_variant) inside
             WV, VV, VVM: begin
@@ -86,6 +95,14 @@ class riscv_vector_instr extends riscv_floating_point_instr;
             end
             WI, VI, VIM: begin
               asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), imm_str)};
+            end
+            VF, VFM: begin
+              if (instr_name inside {VFMADD, VFNMADD, VFMACC, VFNMACC, VFNMSUB, VFWNMSAC,
+                                     VFWMACC, VFMSUB, VFMSAC, VFNMSAC, VFWNMACC, VFWMSAC}) begin
+                asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), fs1.name(), vs2.name())};
+              end else begin
+                asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), fs1.name())};
+              end
             end
             WX, VX, VXM: begin
               if (instr_name inside {VMADD, VNMSUB, VMACC, VNMSAC, VWMACCSU, VWMACCU,
@@ -96,8 +113,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
               end
             end
           endcase
-          if (instr_name inside {VMADC, VADC, VSBC, VMSBC, VMERGE}) begin
-            if (va_variant inside {VVM, VIM, VXM}) begin
+          if (instr_name inside {VMADC, VADC, VSBC, VMSBC, VMERGE, VFMERGE}) begin
+            if (va_variant inside {VVM, VIM, VXM, VFM}) begin
               asm_str = {asm_str, ",v0"};
             end
           end else begin
@@ -136,6 +153,13 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (name.substr(0, 1) == "VN") begin
       is_narrowing_instr = 1'b1;
     end
+    if (uvm_is_match("*CVT*", name)) begin
+      is_convert_instr = 1'b1;
+      has_vs1 = 1'b0;
+    end
+    if (allowed_va_variants.size() > 0) begin
+      has_va_variant = 1;
+    end
     case (format) inside
       VA_FORMAT : begin
         if (va_variant inside {WI, VI, VIM}) begin
@@ -143,6 +167,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           has_vs1 = 1'b0;
         end else if (va_variant inside {WX, VX, VXM}) begin
           has_rs1 = 1'b1;
+          has_vs1 = 1'b0;
+        end else if (va_variant inside {VF, VFM}) begin
+          has_fs1 = 1'b1;
           has_vs1 = 1'b0;
         end
       end
