@@ -169,7 +169,7 @@ class riscv_instr_cov_test extends uvm_test;
     privileged_reg_t preg;
     get_val(trace["pc"], instr.pc, .hex(1));
     get_val(trace["binary"], instr.binary, .hex(1));
-    instr.trace = trace["str"];
+    instr.trace = trace["instr_str"];
     if (instr.instr_name inside {NOP, WFI, FENCE, FENCE_I, EBREAK, C_EBREAK, SFENCE_VMA,
                                  ECALL, C_NOP, MRET, SRET, URET}) begin
       return;
