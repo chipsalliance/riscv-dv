@@ -36,7 +36,7 @@ class riscv_vector_cfg extends uvm_object;
     vl == (1 << ($clog2(VLEN/8) - vtype.vsew));
     vtype.vlmul == 0;
     vtype.vediv == 0;
-    vtype.vsew == 0;
+    vtype.vsew == 2;
   }
 
   `uvm_object_utils_begin(riscv_vector_cfg)
