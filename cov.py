@@ -31,6 +31,85 @@ from types import SimpleNamespace
 
 LOGGER = logging.getLogger()
 
+def build_cov(out, cfg, cwd, opts_vec, opts_cov):
+  """Building the coverage collection framework
+
+  Args:
+    out                 : Output directory
+    cfg                 : Loaded configuration dictionary.
+    cwd                 : Filesystem path to RISCV-DV repo
+    opts_vec            : Vector options
+    opts_cov            : Coverage options
+  """
+  # Convert key dictionary to argv variable
+  argv= SimpleNamespace(**cfg)
+  logging.info("Building the coverage collection framework")
+  build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
+                " --co -o %s --cov -tl %s %s --cmp_opts \"%s %s\" --noclean" %
+                (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist, argv.opts,
+                 opts_vec, opts_cov))
+  if argv.target:
+    build_cmd += (" --target %s" % argv.target)
+  if argv.custom_target:
+    build_cmd += (" --custom_target %s" % argv.custom_target)
+  if argv.stop_on_first_error:
+    build_cmd += (" --stop_on_first_error")
+  run_cmd(build_cmd)
+
+def sim_cov(out, cfg, cwd, opts_vec, opts_cov, csv_list):
+  """Simulation the coverage collection
+
+  Args:
+    out                 : Output directory
+    cfg                 : Loaded configuration dictionary.
+    cwd                 : Filesystem path to RISCV-DV repo
+    opts_vec            : Vector options
+    opts_cov            : Coverage options
+    csv_list            : The list of trace csv
+  """
+  # Convert key dictionary to argv variable
+  argv= SimpleNamespace(**cfg)
+  logging.info("Collecting functional coverage from %0d trace CSV" % len(csv_list))
+  test_name = "riscv_instr_cov_test"
+  base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s --noclean "
+                  "--so -o %s --cov -tl %s %s "
+                  "-tn %s --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
+                  (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist,
+                   argv.opts, test_name, opts_vec, opts_cov))
+  if argv.target:
+    base_sim_cmd += (" --target %s" % argv.target)
+  if argv.custom_target:
+    base_sim_cmd += (" --custom_target %s" % argv.custom_target)
+  if argv.stop_on_first_error:
+    base_sim_cmd += (" --stop_on_first_error")
+  file_idx = 0
+  trace_idx = 0
+  trace_csv_opts = ""
+  batch_cnt = 1
+  sim_cmd_list = []
+  if argv.batch_size > 0:
+    batch_cnt = (len(csv_list) + argv.batch_size - 1)/ argv.batch_size;
+    logging.info("Batch size: %0d, Batch cnt:%0d" % (argv.batch_size, batch_cnt))
+  for i in range(len(csv_list)):
+    file_idx = 0
+    trace_idx = i
+    if argv.batch_size > 0:
+      file_idx = i / argv.batch_size;
+      trace_idx = i % argv.batch_size;
+    trace_csv_opts += (" +trace_csv_%0d=%s" % (trace_idx, csv_list[i]))
+    if ((i == len(csv_list)-1) or ((argv.batch_size > 0) and (trace_idx == argv.batch_size-1))):
+      sim_cmd = base_sim_cmd.replace("<trace_csv_opts>", trace_csv_opts)
+      sim_cmd += ("  --log_suffix _%d" % file_idx)
+      if argv.lsf_cmd == "":
+        logging.info("Processing batch %0d/%0d" % (file_idx+1, batch_cnt))
+        run_cmd(sim_cmd)
+      else:
+        sim_cmd += (" --lsf_cmd \"%s\"" % argv.lsf_cmd)
+        sim_cmd_list.append(sim_cmd)
+      trace_csv_opts = ""
+  if argv.lsf_cmd != "":
+    run_parallel_cmd(sim_cmd_list, argv.timeout)
+  logging.info("Collecting functional coverage from %0d trace CSV...done" % len(csv_list))
 
 def collect_cov(out, cfg, cwd):
   """Collect functional coverage from the instruction trace
@@ -85,63 +164,16 @@ def collect_cov(out, cfg, cwd):
   if argv.steps == "all" or re.match("cov", argv.steps):
     opts_vec = ""
     opts_cov = ""
-    test_name = "riscv_instr_cov_test"
     if argv.vector_options:
       opts_vec = ("%0s" % argv.vector_options)
     if argv.coverage_options:
       opts_cov = ("%0s" % argv.coverage_options)
     if argv.compliance_mode:
       opts_cov += " +define+COMPLIANCE_MODE"
-    build_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s "
-                 " --co -o %s --cov -tl %s %s --cmp_opts \"%s %s\" --noclean" %
-                 (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist, argv.opts,
-                    opts_vec, opts_cov))
-    base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s --noclean "
-                    "--so -o %s --cov -tl %s %s "
-                    "-tn %s --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
-                    (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist,
-                     argv.opts, test_name, opts_vec, opts_cov))
-    if argv.target:
-      build_cmd += (" --target %s" % argv.target)
-      base_sim_cmd += (" --target %s" % argv.target)
-    if argv.custom_target:
-      build_cmd += (" --custom_target %s" % argv.custom_target)
-      base_sim_cmd += (" --custom_target %s" % argv.custom_target)
-    if argv.stop_on_first_error:
-      build_cmd += (" --stop_on_first_error")
-      base_sim_cmd += (" --stop_on_first_error")
-    logging.info("Building the coverage collection framework")
-    run_cmd(build_cmd)
-    file_idx = 0
-    trace_idx = 0
-    trace_csv_opts = ""
-    batch_cnt = 1
-    sim_cmd_list = []
-    logging.info("Collecting functional coverage from %0d trace CSV" % len(csv_list))
-    if argv.batch_size > 0:
-      batch_cnt = (len(csv_list) + argv.batch_size - 1)/ argv.batch_size;
-      logging.info("Batch size: %0d, Batch cnt:%0d" % (argv.batch_size, batch_cnt))
-    for i in range(len(csv_list)):
-      file_idx = 0
-      trace_idx = i
-      if argv.batch_size > 0:
-        file_idx = i / argv.batch_size;
-        trace_idx = i % argv.batch_size;
-      trace_csv_opts += (" +trace_csv_%0d=%s" % (trace_idx, csv_list[i]))
-      if ((i == len(csv_list)-1) or ((argv.batch_size > 0) and (trace_idx == argv.batch_size-1))):
-        sim_cmd = base_sim_cmd.replace("<trace_csv_opts>", trace_csv_opts)
-        sim_cmd += ("  --log_suffix _%d" % file_idx)
-        if argv.lsf_cmd == "":
-          logging.info("Processing batch %0d/%0d" % (file_idx+1, batch_cnt))
-          run_cmd(sim_cmd)
-        else:
-          sim_cmd += (" --lsf_cmd \"%s\"" % argv.lsf_cmd)
-          sim_cmd_list.append(sim_cmd)
-        trace_csv_opts = ""
-    if argv.lsf_cmd != "":
-      run_parallel_cmd(sim_cmd_list, argv.timeout)
-    logging.info("Collecting functional coverage from %0d trace CSV...done" % len(csv_list))
-
+    # Building the coverage collection framework
+    build_cov(out, cfg, cwd, opts_vec, opts_cov)
+    # Simulation the coverage collection
+    sim_cov(out, cfg, cwd, opts_vec, opts_cov, csv_list)
 
 def setup_parser():
   """Create a command line parser.
