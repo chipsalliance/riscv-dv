@@ -437,6 +437,53 @@ package riscv_instr_pkg;
     VFNCVT_F_X_W,
     VFNCVT_F_F_W,
     VFNCVT_ROD_F_F_W,
+    // Vector reduction instruction
+    VREDSUM_VS,
+    VREDMAXU_VS,
+    VREDMAX_VS,
+    VREDMINU_VS,
+    VREDMIN_VS,
+    VREDAND_VS,
+    VREDOR_VS,
+    VREDXOR_VS,
+    VWREDSUMU_VS,
+    VWREDSUM_VS,
+    VFREDOSUM_VS,
+    VFREDSUM_VS,
+    VFREDMAX_VS,
+    VFWREDOSUM_VS,
+    VFWREDSUM_VS,
+    // Vector mask instruction
+    VMAND_MM,
+    VMNAND_MM,
+    VMANDNOT_MM,
+    VMXOR_MM,
+    VMOR_MM,
+    VMNOR_MM,
+    VMORNOT_MM,
+    VMXNOR_MM,
+    VPOPC_M,
+    VFIRST_M,
+    VMSBF_M,
+    VMSIF_M,
+    VMSOF_M,
+    VIOTA_M,
+    VID_V,
+    // Vector permutation instruction
+    VMV_X_S,
+    VMV_S_X,
+    VFMV_F_S,
+    VFMV_S_F,
+    VSLIDEUP,
+    VSLIDEDOWN,
+    VSLIDE1UP,
+    VSLIDE1DOWN,
+    VRGATHER,
+    VCOMPRESS,
+    VMV1R_V,
+    VMV2R_V,
+    VMV4R_V,
+    VMV8R_V,
     // Supervisor instruction
     DRET,
     MRET,
@@ -488,6 +535,7 @@ package riscv_instr_pkg;
     // Vector instruction format
     VSET_FORMAT,
     VA_FORMAT,
+    VS2_FORMAT, // op vd,vs2
     VL_FORMAT,
     VS_FORMAT
   } riscv_instr_format_t;
@@ -505,7 +553,9 @@ package riscv_instr_pkg;
     VVM,
     VIM,
     VXM,
-    VFM
+    VFM,
+    VS,
+    VM
   } va_variant_t;
 
   typedef enum bit [5:0] {
