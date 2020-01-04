@@ -276,17 +276,22 @@ def load_config(args, cwd):
 
 def main():
   """This is the main entry point."""
-  parser = setup_parser()
-  args = parser.parse_args()
-  cwd = os.path.dirname(os.path.realpath(__file__))
-  setup_logging(args.verbose)
-  # Load configuration from the command line and the configuration file.
-  cfg = load_config(args, cwd)
-  # Create output directory
-  output_dir = create_output(args.o, args.noclean, "cov_out_")
-  # Collect coverage for the trace CSV
-  collect_cov(output_dir, cfg ,cwd)
-  logging.info("Coverage results are saved to %s" % output_dir)
+  try:
+    parser = setup_parser()
+    args = parser.parse_args()
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    setup_logging(args.verbose)
+    # Load configuration from the command line and the configuration file.
+    cfg = load_config(args, cwd)
+    # Create output directory
+    output_dir = create_output(args.o, args.noclean, "cov_out_")
+    # Collect coverage for the trace CSV
+    collect_cov(output_dir, cfg ,cwd)
+    logging.info("Coverage results are saved to %s" % output_dir)
+    sys.exit(RET_SUCCESS)
+  except KeyboardInterrupt:
+    logging.info("\nExited Ctrl-C from user request.")
+    sys.exit(130)
 
 if __name__ == "__main__":
   main()

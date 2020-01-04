@@ -662,54 +662,59 @@ def load_config(args, cwd):
 
 def main():
   """This is the main entry point."""
-  parser = setup_parser()
-  args = parser.parse_args()
-  cwd = os.path.dirname(os.path.realpath(__file__))
-  os.environ["RISCV_DV_ROOT"] = cwd
-  setup_logging(args.verbose)
-  # Load configuration from the command line and the configuration file.
-  cfg = load_config(args, cwd)
-  # Create output directory
-  output_dir = create_output(args.o, args.noclean)
+  try:
+    parser = setup_parser()
+    args = parser.parse_args()
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    os.environ["RISCV_DV_ROOT"] = cwd
+    setup_logging(args.verbose)
+    # Load configuration from the command line and the configuration file.
+    cfg = load_config(args, cwd)
+    # Create output directory
+    output_dir = create_output(args.o, args.noclean)
 
-  # Run directed assembly tests
-  if args.asm_tests != "":
-    asm_test = args.asm_tests.split(',')
-    for path_asm_test in asm_test:
-      if os.path.isdir(path_asm_test):    # Path asm test is a directory
-        run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
-                              args.iss, output_dir, args.core_setting_dir)
-      else:                               # Path asm test is a assembly file
-        run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
-                     output_dir, args.core_setting_dir)
-    return
+    # Run directed assembly tests
+    if args.asm_tests != "":
+      asm_test = args.asm_tests.split(',')
+      for path_asm_test in asm_test:
+        if os.path.isdir(path_asm_test):    # Path asm test is a directory
+          run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
+                                args.iss, output_dir, args.core_setting_dir)
+        else:                               # Path asm test is a assembly file
+          run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.iss,
+                       output_dir, args.core_setting_dir)
+      return
 
-  subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
-  # Process regression test list
-  matched_list = []
+    subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
+    # Process regression test list
+    matched_list = []
 
-  if not args.co:
-    process_regression_list(args.testlist, args.test, args.iterations, matched_list, cwd)
-    if len(matched_list) == 0:
-      sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
+    if not args.co:
+      process_regression_list(args.testlist, args.test, args.iterations, matched_list, cwd)
+      if len(matched_list) == 0:
+        sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
-  # Run instruction generator
-  if args.steps == "all" or re.match(".*gen.*", args.steps):
-    gen(matched_list, cfg, output_dir, cwd)
+    # Run instruction generator
+    if args.steps == "all" or re.match(".*gen.*", args.steps):
+      gen(matched_list, cfg, output_dir, cwd)
 
-  if not args.co:
-    # Compile the assembly program to ELF, convert to plain binary
-    if args.steps == "all" or re.match(".*gcc_compile.*", args.steps):
-      gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.gcc_opts)
+    if not args.co:
+      # Compile the assembly program to ELF, convert to plain binary
+      if args.steps == "all" or re.match(".*gcc_compile.*", args.steps):
+        gcc_compile(matched_list, output_dir, args.isa, args.mabi, args.gcc_opts)
 
-    # Run ISS simulation
-    if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
-      iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
-              args.isa, args.core_setting_dir, args.iss_timeout)
+      # Run ISS simulation
+      if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
+        iss_sim(matched_list, output_dir, args.iss, args.iss_yaml,
+                args.isa, args.core_setting_dir, args.iss_timeout)
 
-    # Compare ISS simulation result
-    if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
-      iss_cmp(matched_list, args.iss, output_dir, args.stop_on_first_error, args.exp)
+      # Compare ISS simulation result
+      if args.steps == "all" or re.match(".*iss_cmp.*", args.steps):
+        iss_cmp(matched_list, args.iss, output_dir, args.stop_on_first_error, args.exp)
 
+    sys.exit(RET_SUCCESS)
+  except KeyboardInterrupt:
+    logging.info("\nExited Ctrl-C from user request.")
+    sys.exit(130)
 if __name__ == "__main__":
   main()
