@@ -40,10 +40,12 @@ which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
 
-Install dependencies needed for running:
+Install RISCV-DV:
 
 ```bash
-pip3 install -r requirements.txt
+git clone https://github.com/google/riscv-dv.git
+cd riscv-dv
+pip3 install -e .
 ```
 
 ### Setup RISCV-GCC compiler toolchain
@@ -94,59 +96,59 @@ A simple script "run.py" is provided for you to run a single test or a regressio
 You can use --help to get the complete command reference:
 
 ```bash
-python3 run.py --help
+run --help
 ```
 
 Here is the command to run a single test:
 
 ```bash
-python3 run.py --test=riscv_arithmetic_basic_test
+run --test=riscv_arithmetic_basic_test
 ```
 You can specify the simulator by "-simulator" option
 
 ```bash
-python3 run.py --test riscv_arithmetic_basic_test --simulator ius
-python3 run.py --test riscv_arithmetic_basic_test --simulator vcs
-python3 run.py --test riscv_arithmetic_basic_test --simulator questa
-python3 run.py --test riscv_arithmetic_basic_test --simulator dsim
-python3 run.py --test riscv_arithmetic_basic_test --simulator qrun
+run --test riscv_arithmetic_basic_test --simulator ius
+run --test riscv_arithmetic_basic_test --simulator vcs
+run --test riscv_arithmetic_basic_test --simulator questa
+run --test riscv_arithmetic_basic_test --simulator dsim
+run --test riscv_arithmetic_basic_test --simulator qrun
 ```
 The complete test list can be found in [yaml/base_testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml). To run a full
 regression, simply use below command
 
 ```bash
-python3 run.py
+run
 ```
 
 You can also run multiple generator jobs in parallel through LSF
 
 ```bash
-python3 run.py --lsf_cmd="bsub -Is"
+run --lsf_cmd="bsub -Is"
 ```
 
 Here's a few more examples of the run command:
 
 ```bash
 # Run a single test 10 times
-python3 run.py --test riscv_arithmetic_basic_test --iterations 10
+run --test riscv_arithmetic_basic_test --iterations 10
 
 # Run multiple tests
-python3 run.py --test riscv_arithmetic_basic_test,riscv_rand_instr_test
+run --test riscv_arithmetic_basic_test,riscv_rand_instr_test
 
 # Run a test with verbose logging
-python3 run.py --test riscv_arithmetic_basic_test --verbose
+run --test riscv_arithmetic_basic_test --verbose
 
 # Run a test with a specified seed
-python3 run.py --test riscv_arithmetic_basic_test --seed 123
+run --test riscv_arithmetic_basic_test --seed 123
 
 # Skip the generation, run ISS simulation with previously generated program
-python3 run.py --test riscv_arithmetic_basic_test --steps iss_sim
+run --test riscv_arithmetic_basic_test --steps iss_sim
 
 # Run the generator only, do not compile and simluation with ISS
-python3 run.py --test riscv_arithmetic_basic_test --steps gen
+run --test riscv_arithmetic_basic_test --steps gen
 
 # Compile the generator only, do not simulate
-python3 run.py --test riscv_arithmetic_basic_test --co
+run --test riscv_arithmetic_basic_test --co
 
 ....
 ```
@@ -157,16 +159,16 @@ You can use -iss to run with different ISS.
 
 ```bash
 # Run ISS with spike
-python3 run.py --test riscv_arithmetic_basic_test --iss spike
+run --test riscv_arithmetic_basic_test --iss spike
 
 # Run ISS with riscv-ovpsim
-python3 run.py --test riscv_rand_instr_test --iss ovpsim
+run --test riscv_rand_instr_test --iss ovpsim
 
 # Run ISS with whisper (swerv-ISS)
-python3 run.py --test riscv_rand_instr_test --iss whisper
+run --test riscv_rand_instr_test --iss whisper
 
 # Run ISS with sail-riscv
-python3 run.py --test riscv_rand_instr_test --iss sail
+run --test riscv_rand_instr_test --iss sail
 ```
 
 To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
@@ -174,7 +176,7 @@ line like this:
 
 ```bash
 # Run a full regression with RV32IMC
-python3 run.py --isa rv32imc --mabi ilp32
+run --isa rv32imc --mabi ilp32
 ```
 
 We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
@@ -183,9 +185,9 @@ speed up your development of new test without the need to simulate against a
 real RISC-V processor.
 
 ```bash
-python3 run.py --test=riscv_rand_instr_test --iss=spike,ovpsim
-python3 run.py --test=riscv_rand_instr_test --iss=ovpsim,whisper
-python3 run.py --test=riscv_rand_instr_test --iss=spike,sail
+run --test=riscv_rand_instr_test --iss=spike,ovpsim
+run --test=riscv_rand_instr_test --iss=ovpsim,whisper
+run --test=riscv_rand_instr_test --iss=spike,sail
 ```
 ### Run directed assembly tests
 
@@ -194,13 +196,13 @@ corner cases:
 
 ```bash
 # Run a single/multiple assembly test
-python3 run.py --asm_tests asm_test_path1/asm_test1.S,asm_test_path2/asm_test2.S
+run --asm_tests asm_test_path1/asm_test1.S,asm_test_path2/asm_test2.S
 
 # Run regression with all assembly tests(*.S) under a given directory
-python3 run.py --asm_tests asm_test_path1,asm_test_path2
+run --asm_tests asm_test_path1,asm_test_path2
 
 # Run mix between the assembly test and assembly tests under a directory
-python3 run.py --asm_tests asm_test_path1/asm_test1.S,asm_test_path2
+run --asm_tests asm_test_path1/asm_test1.S,asm_test_path2
 ```
 
 You could also use this approach to integrate the assembly tests
@@ -215,11 +217,11 @@ mode only). A few pre-defined configurations can be found under "target" directo
 you can run with these targets if it matches your processor specification.
 
 ```bash
-python3 run.py                   # Default target rv32imc
-python3 run.py --target rv32i    # rv32i, machine mode only
-python3 run.py --target rv32imc  # rv32imc, machine mode only
-python3 run.py --target rv64imc  # rv64imc, machine mode only
-python3 run.py --target rv64gc   # rv64gc, SV39, M/S/U mode
+run                   # Default target rv32imc
+run --target rv32i    # rv32i, machine mode only
+run --target rv32imc  # rv32imc, machine mode only
+run --target rv64imc  # rv64imc, machine mode only
+run --target rv64gc   # rv64gc, SV39, M/S/U mode
 ```
 
 If you want to have a custom setting for your processor, you can make a copy of
@@ -251,7 +253,7 @@ You can then run the generator with "--custom_target <target_dir>"
 
 ```bash
 # You need to manually specify isa and mabi for your custom target
-python3 run.py --custom_target <target_dir> --isa <isa> --mabi <mabi>
+run --custom_target <target_dir> --isa <isa> --mabi <mabi>
 ...
 ```
 
@@ -448,7 +450,7 @@ You can add a new entry in [iss.yaml](https://github.com/google/riscv-dv/blob/ma
 Simulate with the new ISS
 
 ```bash
-python3 run.py --test riscv_arithmetic_basic_test --iss new_iss_name
+run --test riscv_arithmetic_basic_test --iss new_iss_name
 ```
 
 ## End-to-end RTL and ISS co-simulation flow
@@ -521,13 +523,13 @@ Before start, please check the you have modified [riscv_core_setting.sv](https:/
 
 ```bash
 # Process spike simulation log and collect functional coverage
-python3 cov.py --dir out/spike_sim
+cov --dir out/spike_sim
 
 # Get the command reference
-python3 cov.py --help
+cov --help
 
 # Run the coverage flow with predefined targets
-python3 cov.py --dir out/spike_sim --target rv32imc
+cov --dir out/spike_sim --target rv32imc
 ```
 
 The coverage sampling from the CSV could be time consuming if you have a large
@@ -536,7 +538,7 @@ in parallel.
 
 ```
 # Split the run to process 5 CSV at a time, and run with LSF
-python3 cov.py --dir out/spike_sim --lsf_cmd "bsub ....." -bz 5
+cov --dir out/spike_sim --lsf_cmd "bsub ....." -bz 5
 ```
 ## Supporting model
 
