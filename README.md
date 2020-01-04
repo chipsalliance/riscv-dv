@@ -40,12 +40,35 @@ which supports SystemVerilog and UVM 1.2. This generator has been verified with
 Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
 make sure the EDA tool environment is properly setup before running the generator.
 
-Install RISCV-DV:
+### Install RISCV-DV
 
+Getting the source
 ```bash
 git clone https://github.com/google/riscv-dv.git
-cd riscv-dv
-pip3 install -e .
+```
+
+There are two ways that you can run scripts from riscv-dv. You can directly run
+by `python3`. Example:
+
+```bash
+pip3 install -r requirements.txt    # install dependencies (only once)
+python3 run.py --help
+```
+Or you can run by installing the scripts of riscv-dv. For developer guide, developers
+can test changes to scripts of riscv-dv by using "development mode" from python's
+setuptools package. First, cd to the directory where riscv-dv is cloned and run:
+
+```bash
+pip3 install --user -e .
+```
+
+This installs riscv-dv in a mode where any changes within the repo are immediately
+available simply by running `run`/`cov`. There is no need to repeatedly run `pip install .`
+after each change. Example for running:
+
+```bash
+run --help
+cov --help
 ```
 
 ### Setup RISCV-GCC compiler toolchain
