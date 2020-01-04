@@ -109,6 +109,7 @@ class riscv_instr extends uvm_object;
     instr_category.delete();
     foreach (instr_registry[instr_name]) begin
       riscv_instr instr_inst;
+      if (instr_name inside {unsupported_instr}) continue;
       instr_inst = create_instr(instr_name);
       instr_template[instr_name] = instr_inst;
       // C_JAL is RV32C only instruction
