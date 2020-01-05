@@ -47,18 +47,20 @@ Getting the source
 git clone https://github.com/google/riscv-dv.git
 ```
 
-There are two ways that you can run scripts from riscv-dv. You can directly run
-by `python3`. Example:
+There are two ways that you can run scripts from riscv-dv.
+
+For developers which may work on multiple clones in parallel, using directly run
+by `python3` script is highly recommended. Example:
 
 ```bash
 pip3 install -r requirements.txt    # install dependencies (only once)
 python3 run.py --help
 ```
-Or you can run by installing the scripts of riscv-dv. For developer guide, developers
-can test changes to scripts of riscv-dv by using "development mode" from python's
-setuptools package. First, cd to the directory where riscv-dv is cloned and run:
+For normal users, using the python package is recommended. First, cd to the directory
+where riscv-dv is cloned and run:
 
 ```bash
+export PATH=$HOME/.local/bin/:$PATH  # add ~/.local/bin to the $PATH (only once)
 pip3 install --user -e .
 ```
 
