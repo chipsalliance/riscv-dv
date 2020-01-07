@@ -116,6 +116,9 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
   except subprocess.CalledProcessError:
     logging.error(ps.communicate()[0])
     sys.exit(RET_FAIL)
+  except KeyboardInterrupt:
+    logging.info("\nExited Ctrl-C from user request.")
+    sys.exit(130)
   try:
     output = ps.communicate(timeout = timeout_s)[0]
   except subprocess.TimeoutExpired:
@@ -155,6 +158,9 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0, check_return_
     logging.debug("Waiting for command: %s" % cmd_list[i])
     try:
       output = children[i].communicate(timeout = timeout_s)[0]
+    except KeyboardInterrupt:
+      logging.info("\nExited Ctrl-C from user request.")
+      sys.exit(130)
     except subprocess.TimeoutExpired:
       logging.error("Timeout[%ds]: %s" % (timeout_s, cmd))
       children[i].kill()
