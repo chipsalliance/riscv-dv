@@ -699,6 +699,7 @@ def main():
                        args.iss, output_dir, args.core_setting_dir)
         else:
           logging.error('%s does not exist' % full_path)
+          sys.exit(RET_FAIL)
       return
 
     subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
@@ -740,6 +741,7 @@ def main():
                            args.iss, output_dir, args.core_setting_dir)
             else:
               logging.error('%s does not exist' % path_asm_test)
+              sys.exit(RET_FAIL)
       # Run remaining tests using the instruction generator
       gen(matched_list, cfg, output_dir, cwd)
 
