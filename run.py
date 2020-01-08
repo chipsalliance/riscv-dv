@@ -384,6 +384,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
          (get_env_var("RISCV_GCC"), asm_test, cwd, cwd, gcc_opts, elf))
   cmd += (" -march=%s" % isa)
   cmd += (" -mabi=%s" % mabi)
+  logging.debug("GCC compile command: %s", cmd)
   output = subprocess.check_output(cmd.split())
   # Convert the ELF to plain binary, used in RTL sim
   logging.info("Converting to %s" % binary)
@@ -699,6 +700,7 @@ def main():
                        args.iss, output_dir, args.core_setting_dir)
         else:
           logging.error('%s does not exist' % full_path)
+          sys.exit(RET_FAIL)
       return
 
     subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
@@ -733,13 +735,14 @@ def main():
             # path_asm_test is a directory
             if os.path.isdir(path_asm_test):
               run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
-                                    args.gcc_opts, args.iss, output_dir, args.core_setting_dir)
+                                    gcc_opts, args.iss, output_dir, args.core_setting_dir)
             # path_asm_test is an assembly file
             elif os.path.isfile(path_asm_test):
-              run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, args.gcc_opts,
+              run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, gcc_opts,
                            args.iss, output_dir, args.core_setting_dir)
             else:
               logging.error('%s does not exist' % path_asm_test)
+              sys.exit(RET_FAIL)
       # Run remaining tests using the instruction generator
       gen(matched_list, cfg, output_dir, cwd)
 
