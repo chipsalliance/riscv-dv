@@ -603,7 +603,7 @@ def setup_parser():
   parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
                       action="store_true", default=False,
                       help="Stop on detecting first error")
-  parser.add_argument("--noclean", action="store_true", default=False,
+  parser.add_argument("--noclean", action="store_true", default=True,
                       help="Do not clean the output of the previous runs")
   return parser
 
@@ -714,8 +714,8 @@ def main():
           directed_list.append(t)
           matched_list.remove(t)
 
-    if len(matched_list) == 0 and len(directed_list) == 0:
-      sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
+      if len(matched_list) == 0 and len(directed_list) == 0:
+        sys.exit("Cannot find %s in %s" % (args.test, args.testlist))
 
     # Run instruction generator
     if args.steps == "all" or re.match(".*gen.*", args.steps):
