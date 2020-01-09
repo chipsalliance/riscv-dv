@@ -18,7 +18,6 @@ Regression script for RISC-V random instruction generator
 
 import argparse
 import os
-import subprocess
 import re
 import sys
 import logging

@@ -174,6 +174,20 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0, check_return_
     os.system("stty sane")
     logging.debug(output)
 
+def run_cmd_output(cmd):
+  """Run a command and return output
+  Args:
+    cmd          : Command line to execute
+  """
+  logging.debug(" ".join(cmd))
+  try:
+    output = subprocess.check_output(cmd)
+  except subprocess.CalledProcessError as exc:
+    logging.debug(exc.output)
+    raise exc
+    sys.exit(RET_FAIL)
+  if output:
+    logging.debug(output)
 
 def process_regression_list(testlist, test, iterations, matched_list, riscv_dv_root):
   """ Get the matched tests from the regression test list
