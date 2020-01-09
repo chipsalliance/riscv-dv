@@ -18,7 +18,6 @@ Regression script for RISC-V random instruction generator
 
 import argparse
 import os
-import subprocess
 import re
 import sys
 import logging
@@ -336,14 +335,11 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts):
       if not re.search('mabi', cmd):
         cmd += (" -mabi=%s" % mabi)
       logging.info("Compiling %s" % asm)
-      logging.debug(cmd)
-      output = subprocess.check_output(cmd.split())
-      logging.debug(output)
+      run_cmd_output(cmd.split())
       # Convert the ELF to plain binary, used in RTL sim
       logging.info("Converting to %s" % binary)
       cmd = ("%s -O binary %s %s" % (get_env_var("RISCV_OBJCOPY"), elf, binary))
-      output = subprocess.check_output(cmd.split())
-      logging.debug(output)
+      run_cmd_output(cmd.split())
 
 
 def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
@@ -384,13 +380,11 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
          (get_env_var("RISCV_GCC"), asm_test, cwd, cwd, gcc_opts, elf))
   cmd += (" -march=%s" % isa)
   cmd += (" -mabi=%s" % mabi)
-  logging.debug("GCC compile command: %s", cmd)
-  output = subprocess.check_output(cmd.split())
+  run_cmd_output(cmd.split())
   # Convert the ELF to plain binary, used in RTL sim
   logging.info("Converting to %s" % binary)
   cmd = ("%s -O binary %s %s" % (get_env_var("RISCV_OBJCOPY"), elf, binary))
-  output = subprocess.check_output(cmd.split())
-  logging.debug(output)
+  run_cmd_output(cmd.split())
   log_list = []
   # ISS simulation
   for iss in iss_list:
@@ -449,7 +443,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa, setting_dir, timeout
     log_dir = ("%s/%s_sim" % (output_dir, iss))
     base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir)
     logging.info("%s sim log dir: %s" % (iss, log_dir))
-    subprocess.run(["mkdir", "-p", log_dir])
+    run_cmd_output(["mkdir", "-p", log_dir])
     for test in test_list:
       if 'no_iss' in test and test['no_iss'] == 1:
         continue
@@ -703,7 +697,7 @@ def main():
           sys.exit(RET_FAIL)
       return
 
-    subprocess.run(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
+    run_cmd_output(["mkdir", "-p", ("%s/asm_tests" % output_dir)])
     # Process regression test list
     matched_list = []
     # Any tests in the YAML test list that specify a directed assembly test
