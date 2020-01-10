@@ -96,7 +96,7 @@ def get_seed(seed):
   return random.getrandbits(32)
 
 
-def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
+def run_cmd(cmd, debug_cmd = None, timeout_s = 999, exit_on_error = 1, check_return_code = True):
   """Run a command and return output
 
   Args:
@@ -106,6 +106,10 @@ def run_cmd(cmd, timeout_s = 999, exit_on_error = 1, check_return_code = True):
     command output
   """
   logging.debug(cmd)
+  if debug_cmd:
+    debug_cmd.write(cmd)
+    debug_cmd.write("\n\n");
+    return
   try:
     ps = subprocess.Popen("exec " + cmd,
                           shell=True,
@@ -174,12 +178,16 @@ def run_parallel_cmd(cmd_list, timeout_s = 999, exit_on_error = 0, check_return_
     os.system("stty sane")
     logging.debug(output)
 
-def run_cmd_output(cmd):
+def run_cmd_output(cmd, debug_cmd = None):
   """Run a command and return output
   Args:
     cmd          : Command line to execute
   """
   logging.debug(" ".join(cmd))
+  if debug_cmd:
+    debug_cmd.write(" ".join(cmd))
+    debug_cmd.write("\n\n");
+    return
   try:
     output = subprocess.check_output(cmd)
   except subprocess.CalledProcessError as exc:
