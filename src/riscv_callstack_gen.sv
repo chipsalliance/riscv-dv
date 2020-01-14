@@ -31,7 +31,13 @@ class riscv_program extends uvm_object;
   rand program_id_t  sub_program_id[];
 
   constraint legal_c {
+`ifdef _VCP //DAM3819
+	foreach (sub_program_id[i])
+		foreach (sub_program_id[j]) 
+			if (i!=j) {sub_program_id[i] != sub_program_id[j]};
+`else
     unique{sub_program_id};
+`endif
     foreach(sub_program_id[i]) {
       // Cannot call itself, recursive function call is not supported
       sub_program_id[i] != program_id;

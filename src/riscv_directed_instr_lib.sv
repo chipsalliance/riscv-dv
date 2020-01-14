@@ -431,7 +431,13 @@ class riscv_int_numeric_corner_stream extends riscv_directed_instr_stream;
   }
 
   constraint avail_regs_c {
-    unique {avail_regs};
+`ifdef _VCP //DAM3819
+	foreach (avail_regs[i])
+		foreach (avail_regs[j]) 
+			if (i!=j) {avail_regs[i] != avail_regs[j]};
+`else
+    unique{avail_regs};
+`endif
     foreach(avail_regs[i]) {
       !(avail_regs[i] inside {cfg.reserved_regs});
       avail_regs[i] != ZERO;
