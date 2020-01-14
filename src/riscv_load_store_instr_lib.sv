@@ -118,7 +118,13 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     riscv_instr instr;
     if(avail_regs.size() > 0) begin
       `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(avail_regs,
+`ifdef _VCP //DAM3819
+										foreach (avail_regs[i])
+											foreach (avail_regs[j]) 
+												if (i!=j) {avail_regs[i] != avail_regs[j]};
+`else
                                          unique{avail_regs};
+`endif
                                          avail_regs[0] inside {[S0 : A5]};
                                          foreach(avail_regs[i]) {
                                            !(avail_regs[i] inside {cfg.reserved_regs, reserved_rd});
@@ -340,7 +346,13 @@ class riscv_multi_page_load_store_instr_stream extends riscv_mem_access_stream;
     }
     data_page_id.size() == num_of_instr_stream;
     rs1_reg.size() == num_of_instr_stream;
+`ifdef _VCP //DAM3819
+	foreach (rs1_reg[i])
+		foreach (rs1_reg[j]) 
+			if (i!=j) {rs1_reg[i] != rs1_reg[j]};
+`else
     unique {rs1_reg};
+`endif
     foreach(rs1_reg[i]) {
       !(rs1_reg[i] inside {cfg.reserved_regs, ZERO});
     }
@@ -349,7 +361,13 @@ class riscv_multi_page_load_store_instr_stream extends riscv_mem_access_stream;
   constraint page_c {
     solve num_of_instr_stream before data_page_id;
     num_of_instr_stream inside {[1 : max_data_page_id]};
+`ifdef _VCP //DAM3819
+	foreach (data_page_id[i])
+		foreach (data_page_id[j]) 
+			if (i!=j) {data_page_id[i] != data_page_id[j]};
+`else
     unique {data_page_id};
+`endif
   }
 
   // Avoid accessing a large number of pages because we may run out of registers for rs1

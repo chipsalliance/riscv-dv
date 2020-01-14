@@ -48,7 +48,18 @@ class riscv_loop_instr extends riscv_rand_instr_stream;
         loop_limit_reg[i] != cfg.reserved_regs[j];
       }
     }
+`ifdef _VCP //DAM3819
+	foreach (loop_limit_reg[i]) 
+    	foreach (loop_cnt_reg[j]) loop_limit_reg[i] != loop_cnt_reg[j];
+	foreach (loop_cnt_reg[i])
+		foreach (loop_cnt_reg[j]) 
+			if (i!=j) {loop_cnt_reg[i] != loop_cnt_reg[j]};
+	foreach (loop_limit_reg[i])
+		foreach (loop_limit_reg[j]) 
+			if (i!=j) {loop_limit_reg[i] != loop_limit_reg[j]};
+`else	
     unique {loop_cnt_reg, loop_limit_reg};
+`endif
     loop_cnt_reg.size() == num_of_nested_loop;
     loop_limit_reg.size() == num_of_nested_loop;
   }
