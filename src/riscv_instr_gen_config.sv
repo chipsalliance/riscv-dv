@@ -369,7 +369,7 @@ class riscv_instr_gen_config extends uvm_object;
     foreach (gpr[i]) {
       !(gpr[i] inside {sp, tp, scratch_reg, ZERO, RA, GP});
     }
-`ifdef _VCP
+`ifdef _VCP //DAM3819
 	foreach (gpr[i])
 		foreach (gpr[j]) 
 			if (i!=j) {gpr[i] != gpr[j]};

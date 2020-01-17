@@ -65,7 +65,7 @@ parameter int SLEN = 64;
 `ifdef DSIM
 privileged_reg_t implemented_csr[] = {
 `else
-`ifdef _VCP
+`ifdef _VCP //DKO4049
 privileged_reg_t implemented_csr[] = {
 `else
 parameter privileged_reg_t implemented_csr[] = {
@@ -121,7 +121,7 @@ parameter privileged_reg_t implemented_csr[] = {
 `ifdef DSIM
 interrupt_cause_t implemented_interrupt[] = {
 `else
-`ifdef _VCP
+`ifdef _VCP //DKO4049
 interrupt_cause_t implemented_interrupt[] = {
 `else
 parameter interrupt_cause_t implemented_interrupt[] = {
@@ -141,7 +141,7 @@ parameter interrupt_cause_t implemented_interrupt[] = {
 `ifdef DSIM
 exception_cause_t implemented_exception[] = {
 `else
-`ifdef _VCP
+`ifdef _VCP //DKO4049
 exception_cause_t implemented_exception[] = {
 `else
 parameter exception_cause_t implemented_exception[] = {

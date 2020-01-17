@@ -46,7 +46,18 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       rs1_reg == SP;
     }
   }
-
+`ifdef _VCP //Alternative to 'sp_c' constraint for 'use_sp_as_rs1' variable
+			//solve...before commented since it's only a 'use_sp_as_rs1' checker because it's rand_mode is disabled in pre_randomize() function
+			//Alternative constraint is disabled by default in new()
+  constraint _vcp_sp_c {
+    //solve use_sp_as_rs1 before rs1_reg;
+    use_sp_as_rs1 dist {1 := 1, 0 := 2};
+    if (use_sp_as_rs1) {
+      rs1_reg == SP;
+    }
+  }
+`endif
+  
   constraint rs1_c {
     !(rs1_reg inside {cfg.reserved_regs, reserved_rd, ZERO});
   }
@@ -65,6 +76,11 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
 
   function new(string name = "");
     super.new(name);
+`ifdef _VCP //Alternative to 'sp_c' constraint for 'use_sp_as_rs1' variable
+			//solve...before commented since it's only a 'use_sp_as_rs1' checker because it's rand_mode is disabled in pre_randomize() function
+			//Alternative constraint is disabled by default in new()
+	  _vcp_sp_c.constraint_mode(0);
+`endif
   endfunction
 
   virtual function void randomize_offset();
@@ -97,6 +113,12 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
     if (SP inside {cfg.reserved_regs, reserved_rd}) begin
       use_sp_as_rs1 = 0;
       use_sp_as_rs1.rand_mode(0);
+`ifdef _VCP //Alternative to 'sp_c' constraint for 'use_sp_as_rs1' variable
+			//solve...before commented since it's only a 'use_sp_as_rs1' checker because it's rand_mode is disabled in pre_randomize() function
+			//Original constraint replaced here by alternative one
+	  sp_c.constraint_mode(0);
+	  _vcp_sp_c.constraint_mode(1);
+`endif
     end
   endfunction
 
