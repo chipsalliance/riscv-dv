@@ -1,0 +1,912 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>riscv-dv documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html#document-index" class="icon icon-home"> riscv-dv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-overview">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-getting_started">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#install-riscv-dv">Install RISCV-DV</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-riscv-gcc-compiler-toolchain">Setup RISCV-GCC compiler toolchain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-iss-instruction-set-simulator">Setup ISS (instruction set simulator)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#running-the-generator">Running the generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#run-iss-simulation">Run ISS simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#run-directed-assembly-tests">Run directed assembly tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-configuration">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#configure-the-generator-to-match-your-processor-features">Configure the generator to match your processor features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-the-memory-map">Setup the memory map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-regression-test-list">Setup regression test list</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#runtime-options-of-the-generator">Runtime options of the generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-privileged-csr-description-optional">Setup Privileged CSR description (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#privileged-csr-test-generation-optional">Privileged CSR Test Generation (optional)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-end_to_end_simulation">End to End Simulation Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-generator_flow">Generator Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-coverage_model">Coverage Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#functional-coverage-work-in-progress">Functional coverage (work in progress)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-customize_extend_generator">Customize and Extend Generator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#add-custom-instructions">Add custom instructions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-class_reference">Class Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-cmd_line_reference">Command Line Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-appendix">Appendix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#trace-csv-format">Trace CSV format</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html#document-index">riscv-dv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html#document-index">Docs</a> &raquo;</li>
+        
+      <li>riscv-dv  documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-riscv-dv-s-documentation">
+<h1>Welcome to riscv-dv’s documentation!<a class="headerlink" href="#welcome-to-riscv-dv-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<span id="document-overview"></span><div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>RISCV-DV is a SV/UVM based open-source instruction generator for RISC-V
+processor verification. It currently supports the following features:</p>
+<ul class="simple">
+<li>Supported instruction set: RV32IMAFDC, RV64IMAFDC</li>
+<li>Supported privileged mode: machine mode, supervisor mode, user mode</li>
+<li>Page table randomization and exception</li>
+<li>Privileged CSR setup randomization</li>
+<li>Privileged CSR test suite</li>
+<li>Trap/interrupt handling</li>
+<li>Test suite to stress test MMU</li>
+<li>Sub-program generation and random program calls</li>
+<li>Illegal instruction and HINT instruction generation</li>
+<li>Random forward/backward branch instructions</li>
+<li>Supports mixing directed instructions with random instruction stream</li>
+<li>Debug mode support, with fully randomized debug ROM</li>
+<li>Instruction generation coverage model</li>
+<li>Communication of information to any integrated SV testbench</li>
+<li>Co-simulation with multiple ISS : spike, riscv-ovpsim</li>
+</ul>
+<p>A CSR test generation script written in Python is also provided, to generate a
+directed test suite that stresses all CSR instructions on all of the CSRs that
+the core implements.</p>
+</div>
+<span id="document-getting_started"></span><div class="section" id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h3>
+<p>To be able to run the instruction generator, you need to have an RTL simulator
+which supports SystemVerilog and UVM 1.2. This generator has been verified with
+Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
+make sure the EDA tool environment is properly setup before running the generator.</p>
+</div>
+<div class="section" id="install-riscv-dv">
+<h3>Install RISCV-DV<a class="headerlink" href="#install-riscv-dv" title="Permalink to this headline">¶</a></h3>
+<p>Getting the source</p>
+<ol class="arabic simple">
+<li>Install <a class="reference external" href="https://git-scm.com/">git</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/google/riscv-dv.git</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">riscv-dv</span></code></li>
+</ol>
+<p>There are two ways that you can run scripts from riscv-dv.</p>
+<p>For developers which may work on multiple clones in parallel, using directly run
+by <cite>python3</cite> script is highly recommended. Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>     <span class="c1"># install dependencies (only once)</span>
+<span class="n">python3</span> <span class="n">run</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>For normal users, using the python package is recommended. First, cd to the directory
+where riscv-dv is cloned and run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export PATH=$HOME/.local/bin/:$PATH  # add ~/.local/bin to the $PATH (only once)
+pip3 install --user -e .
+</pre></div>
+</div>
+<p>This installs riscv-dv in a mode where any changes within the repo are immediately
+available simply by running <cite>run</cite>/<cite>cov</cite>. There is no need to repeatedly run <cite>pip install .</cite>
+after each change. Example for running:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">help</span>
+<span class="n">cov</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setup-riscv-gcc-compiler-toolchain">
+<h3>Setup RISCV-GCC compiler toolchain<a class="headerlink" href="#setup-riscv-gcc-compiler-toolchain" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Install <a class="reference external" href="https://github.com/riscv/riscv-gcc">riscv-gcc</a> toolchain</li>
+<li>Set environment variable RISCV_GCC to the RISC-V gcc executable
+executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-gcc)</li>
+<li>Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
+executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-objcopy)</li>
+</ol>
+<p>Sample .bashrc setup:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">RISCV_TOOLCHAIN</span><span class="o">=&lt;</span><span class="n">riscv_gcc_install_path</span><span class="o">&gt;</span>
+<span class="n">export</span> <span class="n">RISCV_GCC</span><span class="o">=</span><span class="s2">&quot;$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-gcc&quot;</span>
+<span class="n">export</span> <span class="n">RISCV_OBJCOPY</span><span class="o">=</span><span class="s2">&quot;$RISCV_TOOLCHAIN/bin/riscv32-unknown-elf-objcopy&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setup-iss-instruction-set-simulator">
+<h3>Setup ISS (instruction set simulator)<a class="headerlink" href="#setup-iss-instruction-set-simulator" title="Permalink to this headline">¶</a></h3>
+<p>Currently three ISS are supported, the default ISS is spike. You can install any
+one of below to run ISS simulation.</p>
+<ol class="arabic simple">
+<li><ul class="first">
+<li><a class="reference external" href="https://github.com/riscv/riscv-isa-sim#">spike</a> setup</li>
+<li>Follow the <a class="reference external" href="https://github.com/riscv/riscv-isa-sim#build-steps">spike steps</a> to build spike</li>
+<li>Build spike with “–enable-commitlog”</li>
+<li>Set environment variable SPIKE_PATH to the directory of the spike binary</li>
+</ul>
+</li>
+<li><ul class="first">
+<li><a class="reference external" href="https://github.com/riscv/riscv-ovpsim">riscv-ovpsim</a> setup</li>
+<li>Download the riscv-ovpsim binary</li>
+<li>Set environment variable OVPSIM_PATH to the directory of the ovpsim binary</li>
+</ul>
+</li>
+<li><ul class="first">
+<li><a class="reference external" href="https://github.com/westerndigitalcorporation/swerv-ISS">whisper</a> (swerv-ISS) setup</li>
+<li>Follow the instruction to install the ISS, and set WHISPER_ISS to the whisper binary</li>
+</ul>
+</li>
+<li><ul class="first">
+<li><a class="reference external" href="https://github.com/rems-project/sail-riscv">sail-riscv</a> setup</li>
+<li>Follow the <a class="reference external" href="https://github.com/rems-project/sail-riscv/blob/master/README.md">sail-riscv steps</a> to install sail-riscv</li>
+<li>Set environment variable SAIL_RISCV to the path of sail-riscv binary</li>
+</ul>
+</li>
+</ol>
+<p>Sample .bashrc setup:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export SPIKE_PATH=$RISCV_TOOLCHAIN/bin
+export SAIL_RISCV=&quot;xx/xxx/ocaml_emulator&quot;
+export OVPSIM_PATH=/xx/xxx/riscv-ovpsim/bin/Linux64
+export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-the-generator">
+<h3>Running the generator<a class="headerlink" href="#running-the-generator" title="Permalink to this headline">¶</a></h3>
+<p>A simple script <cite>run.py</cite> is provided for you to run a single test or a regression.</p>
+<p>You can use –help to get the complete command reference:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>Here is the command to run a single test:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_arithmetic_basic_test</span>
+</pre></div>
+</div>
+<p>You can specify the simulator by “-simulator” option:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">ius</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">vcs</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">questa</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">dsim</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">qrun</span>
+</pre></div>
+</div>
+<p>The complete test list can be found in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml">base testlist yaml</a>. To run a full regression, simply use below command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span>
+</pre></div>
+</div>
+<p>You can also run multiple generator jobs in parallel through LSF:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">lsf_cmd</span><span class="o">=</span><span class="s2">&quot;bsub -Is&quot;</span>
+</pre></div>
+</div>
+<p>Here’s a few more examples of the run command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single test 10 times</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iterations</span> <span class="mi">10</span>
+
+<span class="c1"># Run multiple tests</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span><span class="p">,</span><span class="n">riscv_rand_instr_test</span>
+
+<span class="c1"># Run a test with verbose logging</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">verbose</span>
+
+<span class="c1"># Run a test with a specified seed</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">seed</span> <span class="mi">123</span>
+
+<span class="c1"># Skip the generation, run ISS simulation with previously generated program</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">steps</span> <span class="n">iss_sim</span>
+
+<span class="c1"># Run the generator only, do not compile and simluation with ISS</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">steps</span> <span class="n">gen</span>
+
+<span class="c1"># Compile the generator only, do not simulate</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">co</span>
+
+<span class="o">....</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-iss-simulation">
+<h3>Run ISS simulation<a class="headerlink" href="#run-iss-simulation" title="Permalink to this headline">¶</a></h3>
+<p>You can use -iss to run with different ISS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run ISS with spike</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">spike</span>
+
+<span class="c1"># Run ISS with riscv-ovpsim</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">ovpsim</span>
+
+<span class="c1"># Run ISS with whisper (swerv-ISS)</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">whisper</span>
+
+<span class="c1"># Run ISS with sail-riscv</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">sail</span>
+</pre></div>
+</div>
+<p>To run with ISS simulation for RV32IMC, you can specify ISA and ABI from command
+line like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a full regression with RV32IMC</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">isa</span> <span class="n">rv32imc</span> <span class="o">--</span><span class="n">mabi</span> <span class="n">ilp32</span>
+</pre></div>
+</div>
+<p>We have added a flow to run ISS simulation with both spike and riscv-ovpsim,
+the instruction trace from these runs will be cross compared. This could greatly
+speed up your development of new test without the need to simulate against a
+real RISC-V processor:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span><span class="o">=</span><span class="n">spike</span><span class="p">,</span><span class="n">ovpsim</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span><span class="o">=</span><span class="n">ovpsim</span><span class="p">,</span><span class="n">whisper</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_rand_instr_test</span> <span class="o">--</span><span class="n">iss</span><span class="o">=</span><span class="n">spike</span><span class="p">,</span><span class="n">sail</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-directed-assembly-tests">
+<h3>Run directed assembly tests<a class="headerlink" href="#run-directed-assembly-tests" title="Permalink to this headline">¶</a></h3>
+<p>Sometimes it might be useful to run some hand-coded assembly tests to hit some
+corner cases:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single/multiple assembly test</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span><span class="o">/</span><span class="n">asm_test2</span><span class="o">.</span><span class="n">S</span>
+
+<span class="c1"># Run regression with all assembly tests(*.S) under a given directory</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="p">,</span><span class="n">asm_test_path2</span>
+
+<span class="c1"># Run mix between the assembly test and assembly tests under a directory</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span>
+</pre></div>
+</div>
+<p>You could also use this approach to integrate the assembly tests
+from other sources to riscv-dv flow.</p>
+</div>
+</div>
+<span id="document-configuration"></span><div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="configure-the-generator-to-match-your-processor-features">
+<h3>Configure the generator to match your processor features<a class="headerlink" href="#configure-the-generator-to-match-your-processor-features" title="Permalink to this headline">¶</a></h3>
+<p>The default configuration of the instruction generator is <strong>RV32IMC</strong> (machine
+mode only). A few pre-defined configurations can be found under “target” directory,
+you can run with these targets if it matches your processor specificationi:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span>                   <span class="c1"># Default target rv32imc</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32i</span>    <span class="c1"># rv32i, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imc</span>  <span class="c1"># rv32imc, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv64imc</span>  <span class="c1"># rv64imc, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv64gc</span>   <span class="c1"># rv64gc, SV39, M/S/U mode</span>
+</pre></div>
+</div>
+<p>If you want to have a custom setting for your processor, you can make a copy of
+existing target directory as the template, and modify riscv_core_setting.sv to
+match your processor capability.</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Bit width of RISC-V GPR</span>
+<span class="k">parameter</span> <span class="kt">int</span> <span class="no">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
+
+<span class="c1">// Parameter for SATP mode, set to BARE if address translation is not supported</span>
+<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="no">SATP_MODE</span> <span class="o">=</span> <span class="no">SV39</span><span class="p">;</span>
+
+<span class="c1">// Supported Privileged mode</span>
+<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">USER_MODE</span><span class="p">,</span>
+                                                 <span class="no">SUPERVISOR_MODE</span><span class="p">,</span>
+                                                 <span class="no">MACHINE_MODE</span><span class="p">};</span>
+
+<span class="c1">// Unsupported instructions</span>
+<span class="n">riscv_instr_name_t</span> <span class="n">unsupported_instr</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{};</span>
+
+<span class="c1">// ISA supported by the processor</span>
+<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">RV32I</span><span class="p">,</span> <span class="no">RV32M</span><span class="p">,</span> <span class="no">RV64I</span><span class="p">,</span> <span class="no">RV64M</span><span class="p">};</span>
+</pre></div>
+</div>
+<p>You can then run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># You need to manually specify isa and mabi for your custom target</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">custom_target</span> <span class="o">&lt;</span><span class="n">target_dir</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">isa</span> <span class="o">&lt;</span><span class="n">isa</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">mabi</span> <span class="o">&lt;</span><span class="n">mabi</span><span class="o">&gt;</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setup-the-memory-map">
+<h3>Setup the memory map<a class="headerlink" href="#setup-the-memory-map" title="Permalink to this headline">¶</a></h3>
+<p>Here’s a few cases that you might want to allocate the instruction and data
+sections to match the actual memory map</p>
+<ol class="arabic simple">
+<li>The processor has internal memories, and you want to test load/store from
+various internal/externel memory regions</li>
+<li>The processor implments the PMP feature, and you want to configure the memory
+map to match PMP setting.</li>
+<li>Virtual address translation is implmented and you want to test load/store from
+sparse memory locations to verify data TLB replacement logic.</li>
+</ol>
+<p>You can configure the memory map in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv">riscv_instr_gen_config.sv</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mem_region_t mem_region[$] = &#39;{
+    &#39;{name:&quot;region_0&quot;, size_in_bytes: 4096,      xwr: 3&#39;b111},
+    &#39;{name:&quot;region_1&quot;, size_in_bytes: 4096 * 4,  xwr: 3&#39;b111},
+    &#39;{name:&quot;region_2&quot;, size_in_bytes: 4096 * 2,  xwr: 3&#39;b111},
+    &#39;{name:&quot;region_3&quot;, size_in_bytes: 512,       xwr: 3&#39;b111},
+    &#39;{name:&quot;region_4&quot;, size_in_bytes: 4096,      xwr: 3&#39;b111}
+};
+</pre></div>
+</div>
+<p>Each memory region belongs to a separate section in the generated assembly
+program. You can modify the link script to link each section to the target
+memory location. Please avoid setting a large memory range as it could takes a
+long time to randomly initializing the memory. You can break down a large memory
+region to a few representative small regions which covers all the boundary
+conditions for the load/store testing.</p>
+</div>
+<div class="section" id="setup-regression-test-list">
+<h3>Setup regression test list<a class="headerlink" href="#setup-regression-test-list" title="Permalink to this headline">¶</a></h3>
+<p>Test list in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml">YAML format</a></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># test            : Assembly test name</span>
+<span class="c1"># description     : Description of this test</span>
+<span class="c1"># gen_opts        : Instruction generator options</span>
+<span class="c1"># iterations      : Number of iterations of this test</span>
+<span class="c1"># no_iss          : Enable/disable ISS simulation (Optional)</span>
+<span class="c1"># gen_test        : Test name used by the instruction generator</span>
+<span class="c1"># rtl_test        : RTL simulation test name</span>
+<span class="c1"># cmp_opts        : Compile options passed to the instruction generator</span>
+<span class="c1"># sim_opts        : Simulation options passed to the instruction generator</span>
+<span class="c1"># no_post_compare : Enable/disable log comparison (Optional)</span>
+<span class="c1"># compare_opts    : Options for the RTL &amp; ISS trace comparison</span>
+
+<span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_arithmetic_basic_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">Arithmetic instruction test, no load/store/branch instructions</span>
+  <span class="nt">gen_opts</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">+instr_cnt=10000</span>
+    <span class="no">+num_of_sub_program=0</span>
+    <span class="no">+no_fence=1</span>
+    <span class="no">+no_data_page=1&#39;b1</span>
+    <span class="no">+no_branch_jump=1&#39;b1</span>
+    <span class="no">+boot_mode=m</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+  <span class="nt">gen_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_instr_base_test</span>
+  <span class="nt">rtl_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">core_base_test</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To automatically generate CSR tests without having to explicitly run the
+script, include <cite>riscv_csr_test</cite> in the testlist as shown in the example YAML
+file above.</p>
+</div>
+</div>
+<div class="section" id="runtime-options-of-the-generator">
+<h3>Runtime options of the generator<a class="headerlink" href="#runtime-options-of-the-generator" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="57%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Description</th>
+<th class="head">Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>num_of_tests</td>
+<td>Number of assembly tests to be generated</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>num_of_sub_program</td>
+<td>Number of sub-program in one test</td>
+<td>5</td>
+</tr>
+<tr class="row-even"><td>instr_cnt</td>
+<td>Instruction count per test</td>
+<td>200</td>
+</tr>
+<tr class="row-odd"><td>enable_page_table_exception</td>
+<td>Enable page table exception</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>enable_unaligned_load_store</td>
+<td>Enable unaligned memory operations</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_ebreak</td>
+<td>Disable ebreak instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>no_wfi</td>
+<td>Disable WFI instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>no_dret</td>
+<td>Disable dret instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>no_branch_jump</td>
+<td>Disable branch/jump instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_load_store</td>
+<td>Disable load/store instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>no_csr_instr</td>
+<td>Disable CSR instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_fence</td>
+<td>Disable fence instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>illegal_instr_ratio</td>
+<td>Number of illegal instructions every 1000 instr</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>hint_instr_ratio</td>
+<td>Number of HINT instructions every 1000 instr</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>boot_mode</td>
+<td>m:Machine mode, s:Supervisor mode, u:User mode</td>
+<td>m</td>
+</tr>
+<tr class="row-odd"><td>no_directed_instr</td>
+<td>Disable directed instruction stream</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>require_signature_addr</td>
+<td>Set to 1 if test needs to talk to testbench</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>signature_addr</td>
+<td>Write to this addr to send data to testbench</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>enable_interrupt</td>
+<td>Enable MStatus.MIE, used in interrupt test</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>gen_debug_section</td>
+<td>Disables randomized debug_rom section</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>num_debug_sub_program</td>
+<td>Number of debug sub-programs in test</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>enable_ebreak_in_debug_rom</td>
+<td>Generate ebreak instructions inside debug ROM</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>set_dcsr_ebreak</td>
+<td>Randomly enable dcsr.ebreak(m/s/u)</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>randomize_csr</td>
+<td>Fully randomize main CSRs (xSTATUS, xIE)</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="setup-privileged-csr-description-optional">
+<h3>Setup Privileged CSR description (optional)<a class="headerlink" href="#setup-privileged-csr-description-optional" title="Permalink to this headline">¶</a></h3>
+<p>This YAML description file of all CSRs is only required for the privileged CSR
+test. All other standard tests do not use this description.</p>
+<p><a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml">CSR descriptions in YAML format</a></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="nt">csr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">CSR_NAME</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">BRIEF_DESCRIPTION</span>
+  <span class="nt">address</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0x###</span>
+  <span class="nt">privilege_mode</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MODE (D/M/S/H/U)</span>
+  <span class="nt">rv32</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">MSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+          <span class="no">BRIEF_DESCRIPTION</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">TYPE (WPRI/WLRL/WARL/R)</span>
+      <span class="p p-Indicator">-</span> <span class="nt">reset_val</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">RESET_VAL</span>
+      <span class="p p-Indicator">-</span> <span class="nt">msb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MSB_POS</span>
+      <span class="p p-Indicator">-</span> <span class="nt">lsb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">LSB_POS</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="nt">LSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+  <span class="nt">rv64</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">MSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+          <span class="no">BRIEF_DESCRIPTION</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">TYPE (WPRI/WLRL/WARL/R)</span>
+      <span class="p p-Indicator">-</span> <span class="nt">reset_val</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">RESET_VAL</span>
+      <span class="p p-Indicator">-</span> <span class="nt">msb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MSB_POS</span>
+      <span class="p p-Indicator">-</span> <span class="nt">lsb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">LSB_POS</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="nt">LSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<p>To specify what ISA width should be generated in the test, simply include the
+matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.</p>
+</div>
+<div class="section" id="privileged-csr-test-generation-optional">
+<h3>Privileged CSR Test Generation (optional)<a class="headerlink" href="#privileged-csr-test-generation-optional" title="Permalink to this headline">¶</a></h3>
+<p>The CSR generation script is located at <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py">scripts/gen_csr_test.py</a>.
+The CSR test code that this script generates will execute every CSR instruction
+on every processor implemented CSR, writing values to the CSR and then using a
+prediction function to calculate a reference value that will be written into
+another GPR. The reference value will then be compared to the value actually
+stored in the CSR to determine whether to jump to the failure condition or
+continue executing, allowing it to be completely self checking. This script has
+been integrated with run.py. If you want to run it separately, you can get the
+command reference with –help:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="n">scripts</span><span class="o">/</span><span class="n">gen_csr_test</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<div class="section" id="adding-new-instruction-stream-and-test">
+<h4>Adding new instruction stream and test<a class="headerlink" href="#adding-new-instruction-stream-and-test" title="Permalink to this headline">¶</a></h4>
+<p>Please refer to src/src/riscv_load_store_instr_lib.sv for an example on how to
+add a new instruction stream.
+After the new instruction stream is created, you can use a runtime option to mix
+it with random instructions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//+</span><span class="n">directed_instr_n</span><span class="o">=</span><span class="n">instr_sequence_name</span><span class="p">,</span><span class="n">frequency</span><span class="p">(</span><span class="n">number</span> <span class="n">of</span> <span class="n">insertions</span> <span class="n">per</span> <span class="mi">1000</span> <span class="n">instructions</span><span class="p">)</span>
+<span class="o">+</span><span class="n">directed_instr_5</span><span class="o">=</span><span class="n">riscv_multi_page_load_store_instr_stream</span><span class="p">,</span><span class="mi">4</span>
+
+<span class="o">//</span> <span class="n">An</span> <span class="n">alternative</span> <span class="n">command</span> <span class="n">line</span> <span class="n">options</span> <span class="k">for</span> <span class="n">directed</span> <span class="n">instruction</span> <span class="n">stream</span>
+<span class="o">+</span><span class="n">stream_name_0</span><span class="o">=</span><span class="n">riscv_multi_page_load_store_instr_stream</span>
+<span class="o">+</span><span class="n">stream_freq_0</span><span class="o">=</span><span class="mi">4</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="integrate-a-new-iss">
+<h4>Integrate a new ISS<a class="headerlink" href="#integrate-a-new-iss" title="Permalink to this headline">¶</a></h4>
+<p>You can add a new entry in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/iss.yaml">iss.yaml</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">iss</span><span class="p">:</span> <span class="n">new_iss_name</span>
+  <span class="n">path_var</span><span class="p">:</span> <span class="n">ISS_PATH</span>
+  <span class="n">cmd</span><span class="p">:</span> <span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">path_var</span><span class="o">&gt;/</span><span class="n">iss_executable</span> <span class="o">--</span><span class="n">isa</span><span class="o">=&lt;</span><span class="n">variant</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">l</span> <span class="o">&lt;</span><span class="n">elf</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Simulate with the new ISS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">new_iss_name</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<span id="document-end_to_end_simulation"></span><div class="section" id="end-to-end-simulation-flow">
+<h2>End to End Simulation Flow<a class="headerlink" href="#end-to-end-simulation-flow" title="Permalink to this headline">¶</a></h2>
+<p>We have collaborated with LowRISC to apply this flow for <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/doc/verification.rst">IBEX RISC-V core verification</a>.
+You can use it as a reference to setup end-to-end co-simulation flow.
+This repo is still under active development, this is the recommended approach to
+customize the instruction generator while keeping the effort of merging
+upstream changes to a minimum.</p>
+<ol class="arabic simple">
+<li>Do not modify the upstream classes directly. When possible, extend from
+the upstream classses and implement your own functionalities.</li>
+<li>Add your extensions under user_extension directory, and add the files to
+user_extension/user_extension.svh. If you prefer to put your extensions in a
+different directory, you can use “-ext &lt;user_extension_path&gt;” to override the
+user extension path.</li>
+<li>Create a new target directory and customize the setting and testlist</li>
+<li>Run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span> <span class="pre">--isa</span> <span class="pre">&lt;isa&gt;</span> <span class="pre">--mabi</span> <span class="pre">&lt;mabi&gt;</span></code></li>
+<li>Use command line type override to use your extended classes.
+<code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_type_override=&lt;upstream_class&gt;,&lt;extended_class&gt;&quot;</span></code></li>
+<li>If extending <code class="docutils literal notranslate"><span class="pre">riscv_asm_program_gen</span></code> class is desired, must use this command
+line override:
+<code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_inst_override=riscv_asm_program_gen,&lt;extended</span>
+<span class="pre">class&gt;,'uvm_test_top.asm_gen'&quot;</span></code></li>
+</ol>
+<p>You can refer to <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68">riscv-dv extension for ibex</a> for a working example.</p>
+<p>We have plan to open-source the end-to-end environments of other advanced RISC-V
+processors. Stay tuned!</p>
+</div>
+<span id="document-generator_flow"></span><div class="section" id="generator-flow">
+<h2>Generator Flow<a class="headerlink" href="#generator-flow" title="Permalink to this headline">¶</a></h2>
+</div>
+<span id="document-coverage_model"></span><div class="section" id="coverage-model">
+<h2>Coverage Model<a class="headerlink" href="#coverage-model" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="functional-coverage-work-in-progress">
+<h3>Functional coverage (work in progress)<a class="headerlink" href="#functional-coverage-work-in-progress" title="Permalink to this headline">¶</a></h3>
+<p>This flow extracts functional coverage information from the
+instruction trace generated by ISS. It’s independent of the instruction generation
+flow and does not require a tracer implementation in the RTL. You can use this
+flow as long as your program can be run with an ISS supported in this flow. The
+flow parses the instruction trace log and converts it to a CSV trace format. After
+that, a SV test is run to process the CSV trace files and sample functional
+coverage from there.</p>
+<p>The functional covergroup is defined in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_cover_group.sv">riscv_instr_cover_group.sv</a>.
+It includes below major categories:</p>
+<ul class="simple">
+<li>Cover all operands for each instruction</li>
+<li>Hazard conditions</li>
+<li>Corner cases like overflow, underflow, divide by zero</li>
+<li>Aligned/unaligned load/store</li>
+<li>Positive/negative immediate value</li>
+<li>Forward/backward branches, branch hit history</li>
+<li>Hint instruction</li>
+<li>Illegal instruction</li>
+<li>All compressed and non-compressed opcode</li>
+<li>Access to all implemened privileged CSR</li>
+<li>Exception and interrupt</li>
+</ul>
+<p>The functional covergroup is still under active development. Please feel free to
+add anything you are interested or file a bug for any feature request.</p>
+<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/setting/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don’t need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process spike simulation log and collect functional coverage</span>
+<span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span>
+
+<span class="c1"># Get the command reference</span>
+<span class="n">cov</span> <span class="o">--</span><span class="n">help</span>
+
+<span class="c1"># Run the coverage flow with predefined targets</span>
+<span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imc</span>
+</pre></div>
+</div>
+<p>The coverage sampling from the CSV could be time consuming if you have a large
+number of log to process. You can split them to small batches and run with LSF
+in parallel:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Split the run to process 5 CSV at a time, and run with LSF</span>
+<span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span> <span class="o">--</span><span class="n">lsf_cmd</span> <span class="s2">&quot;bsub .....&quot;</span> <span class="o">-</span><span class="n">bz</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</div>
+</div>
+<span id="document-customize_extend_generator"></span><div class="section" id="customize-and-extend-generator">
+<h2>Customize and Extend Generator<a class="headerlink" href="#customize-and-extend-generator" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="add-custom-instructions">
+<h3>Add custom instructions<a class="headerlink" href="#add-custom-instructions" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li>Add the new instruction enum to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr_enum.sv">riscv_custom_instr_enum.sv</a></li>
+</ol>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">CUSTOM_ADD</span><span class="p">,</span>
+<span class="no">CUSTOM_SUB</span><span class="p">,</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li>Add custom instruction definition to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv32x_instr.sv">rv32x_instr.sv</a>/<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv64x_instr.sv">rv64x_instr.sv</a></li>
+</ol>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_ADD</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
+<span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_SUB</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Extend <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr.sv">riscv_custom_instr.sv</a> and implement key functions like get_instr_name, convert2asm</li>
+<li>Add RV32X/RV64X to supported_isa in riscv_core_setting.sv</li>
+</ol>
+</div>
+</div>
+<span id="document-class_reference"></span><div class="section" id="class-reference">
+<h2>Class Reference<a class="headerlink" href="#class-reference" title="Permalink to this headline">¶</a></h2>
+</div>
+<span id="document-cmd_line_reference"></span><div class="section" id="command-line-reference">
+<h2>Command Line Reference<a class="headerlink" href="#command-line-reference" title="Permalink to this headline">¶</a></h2>
+</div>
+<span id="document-appendix"></span><div class="section" id="appendix">
+<h2>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="trace-csv-format">
+<h3>Trace CSV format<a class="headerlink" href="#trace-csv-format" title="Permalink to this headline">¶</a></h3>
+<p>A standard CSV format is defined for the instruction execution trace. It’s used for co-simulation result comparison and functional coverage collection.</p>
+<img alt="_images/trace_csv.png" src="_images/trace_csv.png" />
+<p><strong>The CSV format includes the following fields:</strong></p>
+<ul class="simple">
+<li>pc : Program counter (instruction memory address)</li>
+<li>instr: Instruction name</li>
+<li>gpr: General purpose register updated by the instruction (rd, fd, vd etc.)<ul>
+<li>Format: &lt;GPR name&gt;:&lt;Value&gt;</li>
+<li>GPR can be any integer/floating point/vector register</li>
+<li>If more than one general purpose registers are updated, separate them with semicolon</li>
+</ul>
+</li>
+<li>csr: Privileged CSR updated by the instruction<ul>
+<li>The same format as the GPR field</li>
+</ul>
+</li>
+<li>binary: Instruction binary</li>
+<li>instr_str: Instruction in assmebly format</li>
+<li>operand: Instruction operands</li>
+<li>pad: Unused</li>
+</ul>
+<p><strong>Here’s a sample of the CSV trace file:</strong></p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">pc</span><span class="p">,</span><span class="n">instr</span><span class="p">,</span><span class="n">gpr</span><span class="p">,</span><span class="n">csr</span><span class="p">,</span><span class="n">binary</span><span class="p">,</span><span class="n">mode</span><span class="p">,</span><span class="n">instr_str</span><span class="p">,</span><span class="n">operand</span><span class="p">,</span><span class="n">pad</span>
+<span class="n">ffffffff8000000c</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">addi</span><span class="p">,</span><span class="nl">ra:</span><span class="n">daab700e</span><span class="p">,,</span><span class="mh">000000</span><span class="n">b9</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.addi  ra, 14&quot;</span><span class="p">,</span><span class="s">&quot;ra,14&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000000e</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6000</span><span class="p">,,</span><span class="n">ff8e6137</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     sp, 0xff8e6&quot;</span><span class="p">,</span><span class="s">&quot;sp,0xff8e6&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000012</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6541</span><span class="p">,,</span><span class="mh">54110113</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    sp, sp, 1345&quot;</span><span class="p">,</span><span class="s">&quot;sp,sp,1345&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000016</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">li</span><span class="p">,</span><span class="nl">gp:</span><span class="mh">00000000</span><span class="p">,,</span><span class="mh">00004181</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.li    gp, 0&quot;</span><span class="p">,</span><span class="s">&quot;gp,0&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000018</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">tp:</span><span class="mh">80000000</span><span class="p">,,</span><span class="mh">80000237</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     tp, 0x80000&quot;</span><span class="p">,</span><span class="s">&quot;tp,0x80000&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000001c</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t0:</span><span class="n">f999d000</span><span class="p">,,</span><span class="n">f999d2b7</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t0, 0xf999d&quot;</span><span class="p">,</span><span class="s">&quot;t0,0xf999d&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000020</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">t0:</span><span class="n">f999cbf0</span><span class="p">,,</span><span class="n">bf028293</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    t0, t0, -1040&quot;</span><span class="p">,</span><span class="s">&quot;t0,t0,-1040&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000024</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t1:</span><span class="mh">0416</span><span class="n">b000</span><span class="p">,,</span><span class="mh">0416</span><span class="n">b337</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t1, 0x416b&quot;</span><span class="p">,</span><span class="s">&quot;t1,0x416b&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000028</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">t1:</span><span class="mh">0416</span><span class="n">b6ee</span><span class="p">,,</span><span class="mh">6</span><span class="n">ee30313</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    t1, t1, 1774&quot;</span><span class="p">,</span><span class="s">&quot;t1,t1,1774&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000002c</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t2:</span><span class="n">e6420000</span><span class="p">,,</span><span class="n">e64203b7</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t2, 0xe6420&quot;</span><span class="p">,</span><span class="s">&quot;t2,0xe6420&quot;</span><span class="p">,</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>To integrate a new ISS or processor with the co-simualtion or coverage flow, user must implement a
+python script to convert the custom trace log format to this CSV format. You can find a sample
+script <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/scripts/spike_log_to_trace_csv.py">here</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Google, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
