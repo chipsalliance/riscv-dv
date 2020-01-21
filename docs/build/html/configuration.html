@@ -1,0 +1,531 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Configuration &mdash; riscv-dv  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="End to End Simulation Flow" href="end_to_end_simulation.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> riscv-dv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#configure-the-generator-to-match-your-processor-features">Configure the generator to match your processor features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup-the-memory-map">Setup the memory map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup-regression-test-list">Setup regression test list</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#runtime-options-of-the-generator">Runtime options of the generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup-privileged-csr-description-optional">Setup Privileged CSR description (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#privileged-csr-test-generation-optional">Privileged CSR Test Generation (optional)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#adding-new-instruction-stream-and-test">Adding new instruction stream and test</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integrate-a-new-iss">Integrate a new ISS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="end_to_end_simulation.html">End to End Simulation Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generator_flow.html">Generator Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coverage_model.html">Coverage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customize_extend_generator.html">Customize and Extend Generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class_reference.html">Class Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmd_line_reference.html">Command Line Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendix.html">Appendix</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">riscv-dv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Configuration</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/configuration.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="configure-the-generator-to-match-your-processor-features">
+<h2>Configure the generator to match your processor features<a class="headerlink" href="#configure-the-generator-to-match-your-processor-features" title="Permalink to this headline">¶</a></h2>
+<p>The default configuration of the instruction generator is <strong>RV32IMC</strong> (machine
+mode only). A few pre-defined configurations can be found under “target” directory,
+you can run with these targets if it matches your processor specificationi:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span>                   <span class="c1"># Default target rv32imc</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32i</span>    <span class="c1"># rv32i, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imc</span>  <span class="c1"># rv32imc, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv64imc</span>  <span class="c1"># rv64imc, machine mode only</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv64gc</span>   <span class="c1"># rv64gc, SV39, M/S/U mode</span>
+</pre></div>
+</div>
+<p>If you want to have a custom setting for your processor, you can make a copy of
+existing target directory as the template, and modify riscv_core_setting.sv to
+match your processor capability.</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Bit width of RISC-V GPR</span>
+<span class="k">parameter</span> <span class="kt">int</span> <span class="no">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
+
+<span class="c1">// Parameter for SATP mode, set to BARE if address translation is not supported</span>
+<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="no">SATP_MODE</span> <span class="o">=</span> <span class="no">SV39</span><span class="p">;</span>
+
+<span class="c1">// Supported Privileged mode</span>
+<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">USER_MODE</span><span class="p">,</span>
+                                                 <span class="no">SUPERVISOR_MODE</span><span class="p">,</span>
+                                                 <span class="no">MACHINE_MODE</span><span class="p">};</span>
+
+<span class="c1">// Unsupported instructions</span>
+<span class="n">riscv_instr_name_t</span> <span class="n">unsupported_instr</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{};</span>
+
+<span class="c1">// ISA supported by the processor</span>
+<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">RV32I</span><span class="p">,</span> <span class="no">RV32M</span><span class="p">,</span> <span class="no">RV64I</span><span class="p">,</span> <span class="no">RV64M</span><span class="p">};</span>
+</pre></div>
+</div>
+<p>You can then run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># You need to manually specify isa and mabi for your custom target</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">custom_target</span> <span class="o">&lt;</span><span class="n">target_dir</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">isa</span> <span class="o">&lt;</span><span class="n">isa</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">mabi</span> <span class="o">&lt;</span><span class="n">mabi</span><span class="o">&gt;</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="setup-the-memory-map">
+<h2>Setup the memory map<a class="headerlink" href="#setup-the-memory-map" title="Permalink to this headline">¶</a></h2>
+<p>Here’s a few cases that you might want to allocate the instruction and data
+sections to match the actual memory map</p>
+<ol class="arabic simple">
+<li>The processor has internal memories, and you want to test load/store from
+various internal/externel memory regions</li>
+<li>The processor implments the PMP feature, and you want to configure the memory
+map to match PMP setting.</li>
+<li>Virtual address translation is implmented and you want to test load/store from
+sparse memory locations to verify data TLB replacement logic.</li>
+</ol>
+<p>You can configure the memory map in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv">riscv_instr_gen_config.sv</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mem_region_t mem_region[$] = &#39;{
+    &#39;{name:&quot;region_0&quot;, size_in_bytes: 4096,      xwr: 3&#39;b111},
+    &#39;{name:&quot;region_1&quot;, size_in_bytes: 4096 * 4,  xwr: 3&#39;b111},
+    &#39;{name:&quot;region_2&quot;, size_in_bytes: 4096 * 2,  xwr: 3&#39;b111},
+    &#39;{name:&quot;region_3&quot;, size_in_bytes: 512,       xwr: 3&#39;b111},
+    &#39;{name:&quot;region_4&quot;, size_in_bytes: 4096,      xwr: 3&#39;b111}
+};
+</pre></div>
+</div>
+<p>Each memory region belongs to a separate section in the generated assembly
+program. You can modify the link script to link each section to the target
+memory location. Please avoid setting a large memory range as it could takes a
+long time to randomly initializing the memory. You can break down a large memory
+region to a few representative small regions which covers all the boundary
+conditions for the load/store testing.</p>
+</div>
+<div class="section" id="setup-regression-test-list">
+<h2>Setup regression test list<a class="headerlink" href="#setup-regression-test-list" title="Permalink to this headline">¶</a></h2>
+<p>Test list in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml">YAML format</a></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># test            : Assembly test name</span>
+<span class="c1"># description     : Description of this test</span>
+<span class="c1"># gen_opts        : Instruction generator options</span>
+<span class="c1"># iterations      : Number of iterations of this test</span>
+<span class="c1"># no_iss          : Enable/disable ISS simulation (Optional)</span>
+<span class="c1"># gen_test        : Test name used by the instruction generator</span>
+<span class="c1"># rtl_test        : RTL simulation test name</span>
+<span class="c1"># cmp_opts        : Compile options passed to the instruction generator</span>
+<span class="c1"># sim_opts        : Simulation options passed to the instruction generator</span>
+<span class="c1"># no_post_compare : Enable/disable log comparison (Optional)</span>
+<span class="c1"># compare_opts    : Options for the RTL &amp; ISS trace comparison</span>
+
+<span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_arithmetic_basic_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">Arithmetic instruction test, no load/store/branch instructions</span>
+  <span class="nt">gen_opts</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">+instr_cnt=10000</span>
+    <span class="no">+num_of_sub_program=0</span>
+    <span class="no">+no_fence=1</span>
+    <span class="no">+no_data_page=1&#39;b1</span>
+    <span class="no">+no_branch_jump=1&#39;b1</span>
+    <span class="no">+boot_mode=m</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">2</span>
+  <span class="nt">gen_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_instr_base_test</span>
+  <span class="nt">rtl_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">core_base_test</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">To automatically generate CSR tests without having to explicitly run the
+script, include <cite>riscv_csr_test</cite> in the testlist as shown in the example YAML
+file above.</p>
+</div>
+</div>
+<div class="section" id="runtime-options-of-the-generator">
+<h2>Runtime options of the generator<a class="headerlink" href="#runtime-options-of-the-generator" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="57%" />
+<col width="10%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Option</th>
+<th class="head">Description</th>
+<th class="head">Default</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>num_of_tests</td>
+<td>Number of assembly tests to be generated</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>num_of_sub_program</td>
+<td>Number of sub-program in one test</td>
+<td>5</td>
+</tr>
+<tr class="row-even"><td>instr_cnt</td>
+<td>Instruction count per test</td>
+<td>200</td>
+</tr>
+<tr class="row-odd"><td>enable_page_table_exception</td>
+<td>Enable page table exception</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>enable_unaligned_load_store</td>
+<td>Enable unaligned memory operations</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_ebreak</td>
+<td>Disable ebreak instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>no_wfi</td>
+<td>Disable WFI instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-odd"><td>no_dret</td>
+<td>Disable dret instruction</td>
+<td>1</td>
+</tr>
+<tr class="row-even"><td>no_branch_jump</td>
+<td>Disable branch/jump instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_load_store</td>
+<td>Disable load/store instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>no_csr_instr</td>
+<td>Disable CSR instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>no_fence</td>
+<td>Disable fence instruction</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>illegal_instr_ratio</td>
+<td>Number of illegal instructions every 1000 instr</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>hint_instr_ratio</td>
+<td>Number of HINT instructions every 1000 instr</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>boot_mode</td>
+<td>m:Machine mode, s:Supervisor mode, u:User mode</td>
+<td>m</td>
+</tr>
+<tr class="row-odd"><td>no_directed_instr</td>
+<td>Disable directed instruction stream</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>require_signature_addr</td>
+<td>Set to 1 if test needs to talk to testbench</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>signature_addr</td>
+<td>Write to this addr to send data to testbench</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>enable_interrupt</td>
+<td>Enable MStatus.MIE, used in interrupt test</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>gen_debug_section</td>
+<td>Disables randomized debug_rom section</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>num_debug_sub_program</td>
+<td>Number of debug sub-programs in test</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>enable_ebreak_in_debug_rom</td>
+<td>Generate ebreak instructions inside debug ROM</td>
+<td>0</td>
+</tr>
+<tr class="row-even"><td>set_dcsr_ebreak</td>
+<td>Randomly enable dcsr.ebreak(m/s/u)</td>
+<td>0</td>
+</tr>
+<tr class="row-odd"><td>randomize_csr</td>
+<td>Fully randomize main CSRs (xSTATUS, xIE)</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="setup-privileged-csr-description-optional">
+<h2>Setup Privileged CSR description (optional)<a class="headerlink" href="#setup-privileged-csr-description-optional" title="Permalink to this headline">¶</a></h2>
+<p>This YAML description file of all CSRs is only required for the privileged CSR
+test. All other standard tests do not use this description.</p>
+<p><a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/csr_template.yaml">CSR descriptions in YAML format</a></p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="nt">csr</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">CSR_NAME</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">BRIEF_DESCRIPTION</span>
+  <span class="nt">address</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">0x###</span>
+  <span class="nt">privilege_mode</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MODE (D/M/S/H/U)</span>
+  <span class="nt">rv32</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">MSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+          <span class="no">BRIEF_DESCRIPTION</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">TYPE (WPRI/WLRL/WARL/R)</span>
+      <span class="p p-Indicator">-</span> <span class="nt">reset_val</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">RESET_VAL</span>
+      <span class="p p-Indicator">-</span> <span class="nt">msb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MSB_POS</span>
+      <span class="p p-Indicator">-</span> <span class="nt">lsb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">LSB_POS</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="nt">LSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+  <span class="nt">rv64</span><span class="p">:</span>
+    <span class="p p-Indicator">-</span> <span class="nt">MSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+          <span class="no">BRIEF_DESCRIPTION</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">TYPE (WPRI/WLRL/WARL/R)</span>
+      <span class="p p-Indicator">-</span> <span class="nt">reset_val</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">RESET_VAL</span>
+      <span class="p p-Indicator">-</span> <span class="nt">msb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">MSB_POS</span>
+      <span class="p p-Indicator">-</span> <span class="nt">lsb</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">LSB_POS</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+    <span class="p p-Indicator">-</span> <span class="nt">LSB_FIELD_NAME</span><span class="p">:</span>
+      <span class="p p-Indicator">-</span> <span class="nt">description</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="nt">type</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+      <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<p>To specify what ISA width should be generated in the test, simply include the
+matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.</p>
+</div>
+<div class="section" id="privileged-csr-test-generation-optional">
+<h2>Privileged CSR Test Generation (optional)<a class="headerlink" href="#privileged-csr-test-generation-optional" title="Permalink to this headline">¶</a></h2>
+<p>The CSR generation script is located at <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py">scripts/gen_csr_test.py</a>.
+The CSR test code that this script generates will execute every CSR instruction
+on every processor implemented CSR, writing values to the CSR and then using a
+prediction function to calculate a reference value that will be written into
+another GPR. The reference value will then be compared to the value actually
+stored in the CSR to determine whether to jump to the failure condition or
+continue executing, allowing it to be completely self checking. This script has
+been integrated with run.py. If you want to run it separately, you can get the
+command reference with –help:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="n">scripts</span><span class="o">/</span><span class="n">gen_csr_test</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<div class="section" id="adding-new-instruction-stream-and-test">
+<h3>Adding new instruction stream and test<a class="headerlink" href="#adding-new-instruction-stream-and-test" title="Permalink to this headline">¶</a></h3>
+<p>Please refer to src/src/riscv_load_store_instr_lib.sv for an example on how to
+add a new instruction stream.
+After the new instruction stream is created, you can use a runtime option to mix
+it with random instructions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//+</span><span class="n">directed_instr_n</span><span class="o">=</span><span class="n">instr_sequence_name</span><span class="p">,</span><span class="n">frequency</span><span class="p">(</span><span class="n">number</span> <span class="n">of</span> <span class="n">insertions</span> <span class="n">per</span> <span class="mi">1000</span> <span class="n">instructions</span><span class="p">)</span>
+<span class="o">+</span><span class="n">directed_instr_5</span><span class="o">=</span><span class="n">riscv_multi_page_load_store_instr_stream</span><span class="p">,</span><span class="mi">4</span>
+
+<span class="o">//</span> <span class="n">An</span> <span class="n">alternative</span> <span class="n">command</span> <span class="n">line</span> <span class="n">options</span> <span class="k">for</span> <span class="n">directed</span> <span class="n">instruction</span> <span class="n">stream</span>
+<span class="o">+</span><span class="n">stream_name_0</span><span class="o">=</span><span class="n">riscv_multi_page_load_store_instr_stream</span>
+<span class="o">+</span><span class="n">stream_freq_0</span><span class="o">=</span><span class="mi">4</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="integrate-a-new-iss">
+<h3>Integrate a new ISS<a class="headerlink" href="#integrate-a-new-iss" title="Permalink to this headline">¶</a></h3>
+<p>You can add a new entry in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/iss.yaml">iss.yaml</a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">iss</span><span class="p">:</span> <span class="n">new_iss_name</span>
+  <span class="n">path_var</span><span class="p">:</span> <span class="n">ISS_PATH</span>
+  <span class="n">cmd</span><span class="p">:</span> <span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">path_var</span><span class="o">&gt;/</span><span class="n">iss_executable</span> <span class="o">--</span><span class="n">isa</span><span class="o">=&lt;</span><span class="n">variant</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">l</span> <span class="o">&lt;</span><span class="n">elf</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Simulate with the new ISS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">new_iss_name</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="end_to_end_simulation.html" class="btn btn-neutral float-right" title="End to End Simulation Flow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Google, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

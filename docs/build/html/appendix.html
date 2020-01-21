@@ -1,0 +1,254 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Appendix &mdash; riscv-dv  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Command Line Reference" href="cmd_line_reference.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> riscv-dv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="end_to_end_simulation.html">End to End Simulation Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generator_flow.html">Generator Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coverage_model.html">Coverage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customize_extend_generator.html">Customize and Extend Generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="class_reference.html">Class Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cmd_line_reference.html">Command Line Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Appendix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#trace-csv-format">Trace CSV format</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">riscv-dv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Appendix</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/appendix.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="appendix">
+<h1>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="trace-csv-format">
+<h2>Trace CSV format<a class="headerlink" href="#trace-csv-format" title="Permalink to this headline">¶</a></h2>
+<p>A standard CSV format is defined for the instruction execution trace. It’s used for co-simulation result comparison and functional coverage collection.</p>
+<img alt="_images/trace_csv.png" src="_images/trace_csv.png" />
+<p><strong>The CSV format includes the following fields:</strong></p>
+<ul class="simple">
+<li>pc : Program counter (instruction memory address)</li>
+<li>instr: Instruction name</li>
+<li>gpr: General purpose register updated by the instruction (rd, fd, vd etc.)<ul>
+<li>Format: &lt;GPR name&gt;:&lt;Value&gt;</li>
+<li>GPR can be any integer/floating point/vector register</li>
+<li>If more than one general purpose registers are updated, separate them with semicolon</li>
+</ul>
+</li>
+<li>csr: Privileged CSR updated by the instruction<ul>
+<li>The same format as the GPR field</li>
+</ul>
+</li>
+<li>binary: Instruction binary</li>
+<li>instr_str: Instruction in assmebly format</li>
+<li>operand: Instruction operands</li>
+<li>pad: Unused</li>
+</ul>
+<p><strong>Here’s a sample of the CSV trace file:</strong></p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">pc</span><span class="p">,</span><span class="n">instr</span><span class="p">,</span><span class="n">gpr</span><span class="p">,</span><span class="n">csr</span><span class="p">,</span><span class="n">binary</span><span class="p">,</span><span class="n">mode</span><span class="p">,</span><span class="n">instr_str</span><span class="p">,</span><span class="n">operand</span><span class="p">,</span><span class="n">pad</span>
+<span class="n">ffffffff8000000c</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">addi</span><span class="p">,</span><span class="nl">ra:</span><span class="n">daab700e</span><span class="p">,,</span><span class="mh">000000</span><span class="n">b9</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.addi  ra, 14&quot;</span><span class="p">,</span><span class="s">&quot;ra,14&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000000e</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6000</span><span class="p">,,</span><span class="n">ff8e6137</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     sp, 0xff8e6&quot;</span><span class="p">,</span><span class="s">&quot;sp,0xff8e6&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000012</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6541</span><span class="p">,,</span><span class="mh">54110113</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    sp, sp, 1345&quot;</span><span class="p">,</span><span class="s">&quot;sp,sp,1345&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000016</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">li</span><span class="p">,</span><span class="nl">gp:</span><span class="mh">00000000</span><span class="p">,,</span><span class="mh">00004181</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.li    gp, 0&quot;</span><span class="p">,</span><span class="s">&quot;gp,0&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000018</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">tp:</span><span class="mh">80000000</span><span class="p">,,</span><span class="mh">80000237</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     tp, 0x80000&quot;</span><span class="p">,</span><span class="s">&quot;tp,0x80000&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000001c</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t0:</span><span class="n">f999d000</span><span class="p">,,</span><span class="n">f999d2b7</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t0, 0xf999d&quot;</span><span class="p">,</span><span class="s">&quot;t0,0xf999d&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000020</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">t0:</span><span class="n">f999cbf0</span><span class="p">,,</span><span class="n">bf028293</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    t0, t0, -1040&quot;</span><span class="p">,</span><span class="s">&quot;t0,t0,-1040&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000024</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t1:</span><span class="mh">0416</span><span class="n">b000</span><span class="p">,,</span><span class="mh">0416</span><span class="n">b337</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t1, 0x416b&quot;</span><span class="p">,</span><span class="s">&quot;t1,0x416b&quot;</span><span class="p">,</span>
+<span class="n">ffffffff80000028</span><span class="p">,</span><span class="n">addi</span><span class="p">,</span><span class="nl">t1:</span><span class="mh">0416</span><span class="n">b6ee</span><span class="p">,,</span><span class="mh">6</span><span class="n">ee30313</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;addi    t1, t1, 1774&quot;</span><span class="p">,</span><span class="s">&quot;t1,t1,1774&quot;</span><span class="p">,</span>
+<span class="n">ffffffff8000002c</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">t2:</span><span class="n">e6420000</span><span class="p">,,</span><span class="n">e64203b7</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     t2, 0xe6420&quot;</span><span class="p">,</span><span class="s">&quot;t2,0xe6420&quot;</span><span class="p">,</span>
+<span class="p">...</span>
+</pre></div>
+</div>
+<p>To integrate a new ISS or processor with the co-simualtion or coverage flow, user must implement a
+python script to convert the custom trace log format to this CSV format. You can find a sample
+script <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/scripts/spike_log_to_trace_csv.py">here</a>.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="cmd_line_reference.html" class="btn btn-neutral float-left" title="Command Line Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Google, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
