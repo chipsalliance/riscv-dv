@@ -487,6 +487,8 @@ def iss_cmp(test_list, iss, output_dir, stop_on_first_error, exp, debug_cmd):
     exp            : Use experimental version
     debug_cmd      : Produce the debug cmd log without running
   """
+  if debug_cmd:
+    return
   iss_list = iss.split(",")
   if len(iss_list) != 2:
     return
