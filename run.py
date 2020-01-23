@@ -440,6 +440,93 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
   else:
     logging.error("No assembly test(*.S) found under %s" % asm_test_dir)
 
+def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
+          setting_dir, debug_cmd):
+  """Run a directed c test with ISS
+
+  Args:
+    c_test      : C test file
+    iss_yaml    : ISS configuration file in YAML format
+    isa         : ISA variant passed to the ISS
+    mabi        : MABI variant passed to GCC
+    gcc_opts    : User-defined options for GCC compilation
+    iss_opts    : Instruction set simulators
+    output_dir  : Output directory of compiled test files
+    setting_dir : Generator setting directory
+    debug_cmd   : Produce the debug cmd log without running
+  """
+  if not c_test.endswith(".c"):
+    logging.error("%s is not a .c file" % c_test)
+    return
+  cwd = os.path.dirname(os.path.realpath(__file__))
+  c_test = os.path.expanduser(c_test)
+  report = ("%s/iss_regr.log" % output_dir).rstrip()
+  c = re.sub(r"^.*\/", "", c_test)
+  c = re.sub(r"\.c$", "", c)
+  prefix = ("%s/directed_c_tests/%s"  % (output_dir, c))
+  elf = prefix + ".o"
+  binary = prefix + ".bin"
+  iss_list = iss_opts.split(",")
+  run_cmd("mkdir -p %s/directed_c_tests" % output_dir)
+  logging.info("Compiling c test : %s" % c_test)
+
+  # gcc compilation
+  cmd = ("%s -mcmodel=medany -nostdlib \
+         -nostartfiles %s \
+         -I%s/user_extension \
+         -T%s/scripts/link.ld %s -o %s " % \
+         (get_env_var("RISCV_GCC", debug_cmd = debug_cmd), c_test, cwd,
+                      cwd, gcc_opts, elf))
+  cmd += (" -march=%s" % isa)
+  cmd += (" -mabi=%s" % mabi)
+  run_cmd_output(cmd.split(), debug_cmd = debug_cmd)
+  # Convert the ELF to plain binary, used in RTL sim
+  logging.info("Converting to %s" % binary)
+  cmd = ("%s -O binary %s %s" % (get_env_var("RISCV_OBJCOPY", debug_cmd = debug_cmd), elf, binary))
+  run_cmd_output(cmd.split(), debug_cmd = debug_cmd)
+  log_list = []
+  # ISS simulation
+  for iss in iss_list:
+    run_cmd("mkdir -p %s/%s_sim" % (output_dir, iss))
+    log = ("%s/%s_sim/%s.log" % (output_dir, iss, c))
+    log_list.append(log)
+    base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
+    logging.info("[%0s] Running ISS simulation: %s" % (iss, elf))
+    cmd = get_iss_cmd(base_cmd, elf, log)
+    run_cmd(cmd, 10, debug_cmd = debug_cmd)
+    logging.info("[%0s] Running ISS simulation: %s ...done" % (iss, elf))
+  if len(iss_list) == 2:
+    compare_iss_log(iss_list, log_list, report)
+
+def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
+                   output_dir, setting_dir, debug_cmd):
+  """Run a directed assembly test from a directory with spike
+
+  Args:
+    c_test_dir      : C test file directory
+    iss_yaml        : ISS configuration file in YAML format
+    isa             : ISA variant passed to the ISS
+    mabi            : MABI variant passed to GCC
+    gcc_opts        : User-defined options for GCC compilation
+    iss             : Instruction set simulators
+    output_dir      : Output directory of compiled test files
+    setting_dir     : Generator setting directory
+    debug_cmd       : Produce the debug cmd log without running
+  """
+  result = run_cmd("find %s -name \"*.c\"" % c_test_dir)
+  if result:
+    c_list = result.splitlines()
+    logging.info("Found %0d c tests under %s" %
+                 (len(c_list), c_test_dir))
+    for c_file in c_list:
+      run_c(c_file, iss_yaml, isa, mabi, gcc_opts, iss, output_dir,
+            setting_dir, debug_cmd)
+      if "," in iss:
+        report = ("%s/iss_regr.log" % output_dir).rstrip()
+        save_regr_report(report)
+  else:
+    logging.error("No c test(*.c) found under %s" % c_test_dir)
+
 def iss_sim(test_list, output_dir, iss_list, iss_yaml, isa,
             setting_dir, timeout_s, debug_cmd):
   """Run ISS simulation with the generated test program
@@ -611,6 +698,8 @@ def setup_parser():
                       help="Path for the user extension directory")
   parser.add_argument("--asm_tests", type=str, default="",
                       help="Directed assembly tests")
+  parser.add_argument("--c_tests", type=str, default="",
+                      help="Directed c tests")
   parser.add_argument("--log_suffix", type=str, default="",
                       help="Simulation log name suffix")
   parser.add_argument("--exp", action="store_true", default=False,
@@ -707,7 +796,7 @@ def main():
       for path_asm_test in asm_test:
         full_path = os.path.expanduser(path_asm_test)
         # path_asm_test is a directory
-        if os.path.isdir(full_path) or args.debug:
+        if os.path.isdir(full_path):
           run_assembly_from_dir(full_path, args.iss_yaml, args.isa, args.mabi,
                                 args.gcc_opts, args.iss, output_dir,
                                 args.core_setting_dir, args.debug)
@@ -715,6 +804,25 @@ def main():
         elif os.path.isfile(full_path) or args.debug:
           run_assembly(full_path, args.iss_yaml, args.isa, args.mabi, args.gcc_opts,
                        args.iss, output_dir, args.core_setting_dir, args.debug)
+        else:
+          logging.error('%s does not exist' % full_path)
+          sys.exit(RET_FAIL)
+      return
+
+    # Run any handcoded/directed c tests specified by args.c_tests
+    if args.c_tests != "":
+      c_test = args.c_tests.split(',')
+      for path_c_test in c_test:
+        full_path = os.path.expanduser(path_c_test)
+        # path_c_test is a directory
+        if os.path.isdir(full_path):
+          run_c_from_dir(full_path, args.iss_yaml, args.isa, args.mabi,
+                         args.gcc_opts, args.iss, output_dir,
+                         args.core_setting_dir, args.debug)
+        # path_c_test is a c file
+        elif os.path.isfile(full_path) or args.debug:
+          run_c(full_path, args.iss_yaml, args.isa, args.mabi, args.gcc_opts,
+                args.iss, output_dir, args.core_setting_dir, args.debug)
         else:
           logging.error('%s does not exist' % full_path)
           sys.exit(RET_FAIL)
@@ -750,12 +858,12 @@ def main():
           path_asm_test = os.path.expanduser(test_entry.get('asm_tests'))
           if path_asm_test:
             # path_asm_test is a directory
-            if os.path.isdir(path_asm_test) or args.debug:
+            if os.path.isdir(path_asm_test):
               run_assembly_from_dir(path_asm_test, args.iss_yaml, args.isa, args.mabi,
                                     gcc_opts, args.iss, output_dir,
                                     args.core_setting_dir, args.debug)
             # path_asm_test is an assembly file
-            elif os.path.isfile(path_asm_test) or args.debug:
+            elif os.path.isfile(path_asm_test):
               run_assembly(path_asm_test, args.iss_yaml, args.isa, args.mabi, gcc_opts,
                            args.iss, output_dir, args.core_setting_dir, args.debug)
             else:
