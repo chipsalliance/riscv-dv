@@ -50,6 +50,13 @@ class riscv_ml_test extends riscv_instr_base_test;
     cfg.no_fence = 0;
     cfg.no_ebreak = 0;
     cfg.init_privileged_mode = MACHINE_MODE;
+`ifdef _VCP //"addr_translaction_c" constraint problem
+// Original code disables rand mode of init_privileged_mode variable that is hovewer used 
+// in solve...before in "addr_translaction_c constraint" - this causes error. To solve this 
+// problem oryginal constraint is disabled and replaced by _vcp_addr_translaction_c alternative constraint
+	cfg.addr_translaction_c.constraint_mode(0);
+	cfg._vcp_addr_translaction_c.constraint_mode(1);
+`endif
     cfg.init_privileged_mode.rand_mode(0);
     cfg.enable_unaligned_load_store = 1'b1;
     `DV_CHECK_RANDOMIZE_FATAL(cfg)
