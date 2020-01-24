@@ -76,12 +76,7 @@ class riscv_reg#(type REG_T = privileged_reg_t) extends uvm_object;
 
   virtual function bit[XLEN-1:0] get_val();
     int total_len;
-`ifdef _VCP //DST645 problem
-	total_len = 0;
-	foreach(fld[i]) total_len = total_len + fld[i].bit_width;
-`else
     total_len = fld.sum() with (item.bit_width);
-`endif
     if(total_len != XLEN) begin
       foreach(fld[i])
         $display(fld[i].convert2string());
