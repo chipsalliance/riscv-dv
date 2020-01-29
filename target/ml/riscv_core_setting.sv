@@ -115,7 +115,6 @@ exception_cause_t implemented_exception[] = {
 parameter exception_cause_t implemented_exception[] = {
 `endif
 `endif
-    INSTRUCTION_ADDRESS_MISALIGNED,
     INSTRUCTION_ACCESS_FAULT,
     ILLEGAL_INSTRUCTION,
     BREAKPOINT,

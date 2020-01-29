@@ -137,22 +137,8 @@ run --test riscv_arithmetic_basic_test --simulator vcs
 run --test riscv_arithmetic_basic_test --simulator questa
 run --test riscv_arithmetic_basic_test --simulator dsim
 run --test riscv_arithmetic_basic_test --simulator qrun
-```
-
-// _VCP - start of added Riviera description
-You can use also Aldec Riviera simulator. To do this set the RVR_PATH environment variable like:
-
-```bash
-export RVR_PATH="/riviera_instalation/path"
-```
-
-then you can run test using Aldecs Riviera simulator:
-
-```bash
 run --test riscv_arithmetic_basic_test --simulator riviera 
 ```
-// _VCP - end of added Riviera description
-
 The complete test list can be found in [yaml/base_testlist.yaml](https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml). To run a full
 regression, simply use below command
 
