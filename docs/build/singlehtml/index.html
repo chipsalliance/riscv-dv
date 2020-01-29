@@ -497,11 +497,35 @@ conditions for the load/store testing.</p>
   <span class="nt">rtl_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">core_base_test</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">To automatically generate CSR tests without having to explicitly run the
-script, include <cite>riscv_csr_test</cite> in the testlist as shown in the example YAML
-file above.</p>
+<p>You can also add directed assembly/C test in the testlist</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_single_c_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+     <span class="no">single c test entry</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+  <span class="nt">c_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sample_c.c</span>
+
+<span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_c_regression_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">Run all c tests under the given directory</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+  <span class="nt">c_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">c_test_directory</span>
+  <span class="nt">gcc_opts</span><span class="p">:</span>
+     <span class="c1"># Some custom gcc options</span>
+
+<span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_single_asm_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+     <span class="no">single assembly test entry</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+  <span class="nt">asm_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">sample_asm.S</span>
+
+<span class="p p-Indicator">-</span> <span class="nt">test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">riscv_asm_regression_test</span>
+  <span class="nt">description</span><span class="p">:</span> <span class="p p-Indicator">&gt;</span>
+    <span class="no">Run all assembly tests under the given directory</span>
+  <span class="nt">iterations</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
+  <span class="nt">asm_test</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">assembly_test_directory</span>
+  <span class="nt">gcc_opts</span><span class="p">:</span>
+     <span class="c1"># Some custom gcc options</span>
+</pre></div>
 </div>
 </div>
 <div class="section" id="runtime-options-of-the-generator">
