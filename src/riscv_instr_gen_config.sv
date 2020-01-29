@@ -145,6 +145,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_unaligned_load_store;
   int                    illegal_instr_ratio;
   int                    hint_instr_ratio;
+  // Use SP as stack pointer
+  bit                    fix_sp;
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
@@ -354,6 +356,9 @@ class riscv_instr_gen_config extends uvm_object;
   }
 
   constraint sp_tp_c {
+    if (fix_sp) {
+      sp == SP;
+    }
     sp != tp;
     !(sp inside {GP, RA, ZERO});
     !(tp inside {GP, RA, ZERO});
@@ -415,6 +420,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(no_dret, UVM_DEFAULT)
     `uvm_field_int(no_fence, UVM_DEFAULT)
     `uvm_field_int(no_wfi, UVM_DEFAULT)
+    `uvm_field_int(fix_sp, UVM_DEFAULT)
     `uvm_field_int(enable_unaligned_load_store, UVM_DEFAULT)
     `uvm_field_int(illegal_instr_ratio, UVM_DEFAULT)
     `uvm_field_int(hint_instr_ratio, UVM_DEFAULT)
@@ -468,6 +474,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_branch_jump=", no_branch_jump);
     get_bool_arg_value("+no_load_store=", no_load_store);
     get_bool_arg_value("+no_csr_instr=", no_csr_instr);
+    get_bool_arg_value("+fix_sp=", fix_sp);
     get_bool_arg_value("+enable_illegal_csr_instruction=", enable_illegal_csr_instruction);
     get_bool_arg_value("+enable_access_invalid_csr_level=", enable_access_invalid_csr_level);
     get_bool_arg_value("+enable_misaligned_instr=", enable_misaligned_instr);
