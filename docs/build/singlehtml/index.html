@@ -80,7 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="index.html#setup-iss-instruction-set-simulator">Setup ISS (instruction set simulator)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="index.html#running-the-generator">Running the generator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="index.html#run-iss-simulation">Run ISS simulation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="index.html#run-directed-assembly-tests">Run directed assembly tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#run-directed-assembly-c-tests">Run directed assembly/C tests</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-configuration">Configuration</a><ul>
@@ -258,8 +258,8 @@ executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-objcopy)</li>
 one of below to run ISS simulation.</p>
 <ol class="arabic simple">
 <li><ul class="first">
-<li><a class="reference external" href="https://github.com/riscv/riscv-isa-sim#">spike</a> setup</li>
-<li>Follow the <a class="reference external" href="https://github.com/riscv/riscv-isa-sim#build-steps">spike steps</a> to build spike</li>
+<li><a class="reference external" href="https://github.com/riscv/riscv-isa-sim">spike</a> setup</li>
+<li>Follow the instructions to build spike</li>
 <li>Build spike with “–enable-commitlog”</li>
 <li>Set environment variable SPIKE_PATH to the directory of the spike binary</li>
 </ul>
@@ -375,21 +375,24 @@ real RISC-V processor:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="run-directed-assembly-tests">
-<h3>Run directed assembly tests<a class="headerlink" href="#run-directed-assembly-tests" title="Permalink to this headline">¶</a></h3>
-<p>Sometimes it might be useful to run some hand-coded assembly tests to hit some
+<div class="section" id="run-directed-assembly-c-tests">
+<h3>Run directed assembly/C tests<a class="headerlink" href="#run-directed-assembly-c-tests" title="Permalink to this headline">¶</a></h3>
+<p>Sometimes it might be useful to run some hand-coded assembly/C tests to hit some
 corner cases:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single/multiple assembly test</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single/multiple assembly/C test</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span><span class="o">/</span><span class="n">asm_test2</span><span class="o">.</span><span class="n">S</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span><span class="o">/</span><span class="n">c_test2</span><span class="o">.</span><span class="n">c</span>
 
-<span class="c1"># Run regression with all assembly tests(*.S) under a given directory</span>
+<span class="c1"># Run regression with all assembly tests(*.S)/ C tests(*.c) under a given directory</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="p">,</span><span class="n">asm_test_path2</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="p">,</span><span class="n">c_test_path2</span>
 
-<span class="c1"># Run mix between the assembly test and assembly tests under a directory</span>
+<span class="c1"># Run mix between the assembly/C test and assembly/C tests under a directory</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span>
 </pre></div>
 </div>
-<p>You could also use this approach to integrate the assembly tests
+<p>You could also use this approach to integrate the assembly/C tests
 from other sources to riscv-dv flow.</p>
 </div>
 </div>
@@ -761,7 +764,7 @@ It includes below major categories:</p>
 </ul>
 <p>The functional covergroup is still under active development. Please feel free to
 add anything you are interested or file a bug for any feature request.</p>
-<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/setting/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don’t need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
+<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imc/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don’t need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process spike simulation log and collect functional coverage</span>
 <span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span>
 
