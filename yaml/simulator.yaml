@@ -102,12 +102,12 @@
       -coverage -ucdb <out>/cov.ucdb
 
 - tool: riviera
-  env_var: RVR_PATH
+  env_var: ALDEC_PATH
   compile:
     cmd:
-      - "<RVR_PATH>/bin/vlib <out>/work"
-      - "<RVR_PATH>/bin/vlog -work <out>/work
-        +incdir+<RVR_PATH>/vlib/uvm-1.2/src
+      - "vlib <out>/work"
+      - "vlog -work <out>/work
+        +incdir+<ALDEC_PATH>/vlib/uvm-1.2/src
         +define+UVM_REGEX_NO_DPI
         -l uvm_1_2
         +incdir+<setting>
@@ -116,6 +116,6 @@
         <cmp_opts>"
   sim:
     cmd: >
-      <RVR_PATH>/bin/vsim -c -sv_lib <RVR_PATH>/bin/uvm_1_2_dpi <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
+      vsim -c -sv_lib <ALDEC_PATH>/bin/uvm_1_2_dpi <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
     cov_opts: >
       -acdb_file <out>/cov.acdb
