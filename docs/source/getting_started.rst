@@ -109,6 +109,7 @@ You can specify the simulator by "-simulator" option::
     run --test riscv_arithmetic_basic_test --simulator questa
     run --test riscv_arithmetic_basic_test --simulator dsim
     run --test riscv_arithmetic_basic_test --simulator qrun
+	run --test riscv_arithmetic_basic_test --simulator riviera
 
 The complete test list can be found in `base testlist yaml`_. To run a full regression, simply use below command::
 
