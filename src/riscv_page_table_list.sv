@@ -74,7 +74,12 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
 
   constraint page_table_exception_handling_reg_c {
 `ifdef _VCP //DAM3819
-	(level_reg != fault_vaddr_reg != pte_addr_reg != pte_reg != tmp_reg != mask_reg != mpp_reg);
+	!(level_reg inside {fault_vaddr_reg, pte_addr_reg, pte_reg, tmp_reg, mask_reg, mpp_reg});
+	!(fault_vaddr_reg inside {pte_addr_reg, pte_reg, tmp_reg, mask_reg, mpp_reg});
+	!(pte_addr_reg inside {pte_reg, tmp_reg, mask_reg, mpp_reg});
+	!(pte_reg inside {tmp_reg, mask_reg, mpp_reg});
+	!(tmp_reg inside {mask_reg, mpp_reg});
+	!(mask_reg inside {mpp_reg});
 `else
     unique {level_reg, fault_vaddr_reg, pte_addr_reg,
             pte_reg, tmp_reg, mask_reg, mpp_reg};
