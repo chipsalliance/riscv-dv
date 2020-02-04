@@ -45,7 +45,7 @@
 `endif
 
 // Shorthand for common foo.randomize() + fatal check
-`ifdef _VCP //Z3 enabled - Solution size limit exceeded - Z3 needs to be used
+`ifdef _VCP //DAM5831
 `ifndef DV_CHECK_RANDOMIZE_FATAL
   `define DV_CHECK_RANDOMIZE_FATAL(VAR_, MSG_="Randomization failed!", ID_=`gfn) \
     `DV_CHECK_FATAL(VAR_.randomize(*rc_msm=1*)(), MSG_, ID_)
@@ -64,7 +64,7 @@
 `endif
 
 // Shorthand for common foo.randomize() with { } + fatal check
-`ifdef _VCP //Z3 enabled - Solution size limit exceeded - Z3 needs to be used
+`ifdef _VCP //DAM5831
 `ifndef DV_CHECK_RANDOMIZE_WITH_FATAL
   `define DV_CHECK_RANDOMIZE_WITH_FATAL(VAR_, WITH_C_, MSG_="Randomization failed!", ID_=`gfn) \
     `DV_CHECK_FATAL(VAR_.randomize(*rc_msm=1*)(), MSG_, ID_, with { WITH_C_ })
