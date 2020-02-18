@@ -50,7 +50,7 @@ class riscv_data_page_gen extends uvm_object;
   endfunction
 
   // Generate data pages for all memory regions
-  function void gen_data_page(data_pattern_t pattern, bit is_kernel = 1'b0);
+  function void gen_data_page(int hart_id, data_pattern_t pattern, bit is_kernel = 1'b0);
     string tmp_str;
     bit [7:0] tmp_data[];
     int page_cnt;
@@ -63,7 +63,8 @@ class riscv_data_page_gen extends uvm_object;
     end
     if (is_kernel) begin
       // All kernel data pages in the same section
-      data_page_str.push_back(".pushsection .kernel_data,\"aw\",@progbits;");
+      data_page_str.push_back($sformatf(".pushsection .%0skernel_data,\"aw\",@progbits;",
+                                        hart_prefix(hart_id)));
     end
     foreach (mem_region_setting[i]) begin
       `uvm_info(`gfn, $sformatf("Generate data section: %0s size:0x%0x  xwr:0x%0x]",
@@ -74,7 +75,8 @@ class riscv_data_page_gen extends uvm_object;
         data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
                                           mem_region_setting[i].name));
       end
-      data_page_str.push_back($sformatf("%0s:", mem_region_setting[i].name));
+      data_page_str.push_back($sformatf("%0s%0s:",
+                                        hart_prefix(hart_id), mem_region_setting[i].name));
       page_size = mem_region_setting[i].size_in_bytes;
       for(int i = 0; i < page_size; i+= 32) begin
         if (page_size-i >= 32) begin

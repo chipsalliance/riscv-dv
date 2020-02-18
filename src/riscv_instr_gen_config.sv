@@ -303,6 +303,11 @@ class riscv_instr_gen_config extends uvm_object;
     // This is default disabled at setup phase. It can be enabled in the exception and interrupt
     // handling routine
     mstatus_mprv == 1'b0;
+    if (SATP_MODE == BARE) {
+      mstatus_mxr == 0;
+      mstatus_sum == 0;
+      mstatus_tvm == 0;
+    }
   }
 
   // Exception delegation setting
