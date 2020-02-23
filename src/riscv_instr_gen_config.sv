@@ -155,7 +155,7 @@ class riscv_instr_gen_config extends uvm_object;
   int                    illegal_instr_ratio;
   int                    hint_instr_ratio;
   // Number of harts to be simulated, must be <= NUM_HARTS
-  int                    num_of_harts = 1;
+  int                    num_of_harts = NUM_HARTS;
   // Use SP as stack pointer
   bit                    fix_sp;
   // Directed boot privileged mode, u, m, s
