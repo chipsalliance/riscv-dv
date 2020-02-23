@@ -148,6 +148,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_unaligned_load_store;
   int                    illegal_instr_ratio;
   int                    hint_instr_ratio;
+  // Number of harts to be simulated, must be <= NUM_HARTS
+  int                    num_of_harts = 1;
   // Use SP as stack pointer
   bit                    fix_sp;
   // Directed boot privileged mode, u, m, s
@@ -449,6 +451,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(support_supervisor_mode, UVM_DEFAULT)
     `uvm_field_int(disable_compressed_instr, UVM_DEFAULT)
     `uvm_field_int(signature_addr, UVM_DEFAULT)
+    `uvm_field_int(num_of_harts, UVM_DEFAULT)
     `uvm_field_int(require_signature_addr, UVM_DEFAULT)
     `uvm_field_int(gen_debug_section, UVM_DEFAULT)
     `uvm_field_int(enable_ebreak_in_debug_rom, UVM_DEFAULT)
@@ -493,6 +496,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_delegation=", no_delegation);
     get_int_arg_value("+illegal_instr_ratio=", illegal_instr_ratio);
     get_int_arg_value("+hint_instr_ratio=", hint_instr_ratio);
+    get_int_arg_value("+num_of_harts=", num_of_harts);
     get_bool_arg_value("+enable_unaligned_load_store=", enable_unaligned_load_store);
     get_bool_arg_value("+force_m_delegation=", force_m_delegation);
     get_bool_arg_value("+force_s_delegation=", force_s_delegation);

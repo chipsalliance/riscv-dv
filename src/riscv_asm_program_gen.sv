@@ -65,7 +65,7 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.delete();
     // Generate program header
     gen_program_header();
-    for (int hart = 0; hart < NUM_HARTS; hart++) begin
+    for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       instr_stream.push_back($sformatf("h%0d_start:", hart));
       if (!cfg.bare_program_mode) begin
         setup_misa();
@@ -285,7 +285,7 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back(".option norvc;");
     end
     str = {"csrr x5, mhartid"};
-    for (int hart = 0; hart < NUM_HARTS; hart++) begin
+    for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       str = {str, $sformatf("li x6, %0d", hart),
                   $sformatf("beq x5, x6, h%0d_start", hart)};
     end
