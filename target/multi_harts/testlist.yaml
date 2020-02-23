@@ -65,3 +65,15 @@
     +directed_instr_0=riscv_lr_sc_instr_stream,10
     +directed_instr_1=riscv_amo_instr_stream,10
   rtl_test: core_base_test
+
+
+- test: riscv_single_hart_test
+  description: >
+    single hart random test
+  iterations: 2
+  gen_test: riscv_rand_instr_test
+  gen_opts: >
+    +instr_cnt=6000
+    +num_of_harts=1
+  rtl_test: core_base_test
+
