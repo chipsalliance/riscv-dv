@@ -106,6 +106,12 @@ class riscv_instr_gen_config extends uvm_object;
     '{name:"region_4", size_in_bytes: 4096,      xwr: 3'b111}
   };
 
+  // Dedicated shared memory region for multi-harts atomic operations
+  mem_region_t amo_region[$] = '{
+    '{name:"amo_0",    size_in_bytes: 4096,      xwr: 3'b111},
+    '{name:"amo_1",    size_in_bytes: 4096,      xwr: 3'b111}
+  };
+
   // Stack section word length
   int stack_len = 5000;
 
