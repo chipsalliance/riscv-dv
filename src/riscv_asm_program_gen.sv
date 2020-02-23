@@ -122,8 +122,12 @@ class riscv_asm_program_gen extends uvm_object;
       // Starting point of data section
       gen_data_page_begin(hart);
       if(!cfg.no_data_page) begin
-        // Kernel data section
+        // User data section
         gen_data_page(hart);
+        // AMO memory region
+        if ((hart == 0) && (RV32A inside {supported_isa})) begin
+          gen_data_page(hart, .amo(1));
+        end
       end
       // Stack section
       gen_stack_section(hart);
@@ -308,11 +312,11 @@ class riscv_asm_program_gen extends uvm_object;
     end
   endfunction
 
-  virtual function void gen_data_page(int hart, bit is_kernel = 1'b0);
+  virtual function void gen_data_page(int hart, bit is_kernel = 1'b0, bit amo = 0);
     string data_page;
     data_page_gen = riscv_data_page_gen::type_id::create("data_page_gen");
     data_page_gen.cfg = cfg;
-    data_page_gen.gen_data_page(hart, cfg.data_page_pattern, is_kernel);
+    data_page_gen.gen_data_page(hart, cfg.data_page_pattern, is_kernel, amo);
     instr_stream = {instr_stream, data_page_gen.data_page_str};
   endfunction
 
