@@ -66,27 +66,20 @@ class riscv_data_page_gen extends uvm_object;
     end else begin
       mem_region_setting = cfg.mem_region;
     end
-    if (is_kernel) begin
-      // All kernel data pages in the same section
-      data_page_str.push_back($sformatf(".pushsection .%0skernel_data,\"aw\",@progbits;",
-                                        hart_prefix(hart_id)));
-    end
     foreach (mem_region_setting[i]) begin
       `uvm_info(`gfn, $sformatf("Generate data section: %0s size:0x%0x  xwr:0x%0x]",
                                 mem_region_setting[i].name,
                                 mem_region_setting[i].size_in_bytes,
                                 mem_region_setting[i].xwr), UVM_LOW)
-      if (!is_kernel) begin
-        if (amo) begin
-          data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
-                                            mem_region_setting[i].name));
-          data_page_str.push_back($sformatf("%0s:", mem_region_setting[i].name));
-        end else begin
-          data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
-                                            {hart_prefix(hart_id), mem_region_setting[i].name}));
-          data_page_str.push_back($sformatf("%0s:",
-                                            {hart_prefix(hart_id), mem_region_setting[i].name}));
-        end
+      if (amo) begin
+        data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
+                                          mem_region_setting[i].name));
+        data_page_str.push_back($sformatf("%0s:", mem_region_setting[i].name));
+      end else begin
+        data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
+                                          {hart_prefix(hart_id), mem_region_setting[i].name}));
+        data_page_str.push_back($sformatf("%0s:",
+                                          {hart_prefix(hart_id), mem_region_setting[i].name}));
       end
       page_size = mem_region_setting[i].size_in_bytes;
       for(int i = 0; i < page_size; i+= 32) begin
@@ -98,11 +91,6 @@ class riscv_data_page_gen extends uvm_object;
         tmp_str = format_string($sformatf(".word %0s", format_data(tmp_data)), LABEL_STR_LEN);
         data_page_str.push_back(tmp_str);
       end
-      if (!is_kernel) begin
-        data_page_str.push_back(".popsection;");
-      end
-    end
-    if (is_kernel) begin
       data_page_str.push_back(".popsection;");
     end
   endfunction
