@@ -291,9 +291,12 @@ class riscv_asm_program_gen extends uvm_object;
     str = {"csrr x5, mhartid"};
     for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       str = {str, $sformatf("li x6, %0d", hart),
-                  $sformatf("beq x5, x6, h%0d_start", hart)};
+                  $sformatf("beq x5, x6, %0df", hart)};
     end
     gen_section("_start", str);
+    for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
+      instr_stream.push_back($sformatf("%0d: j h%0d_start", hart, hart));
+    end
   endfunction
 
   virtual function void gen_program_end();
