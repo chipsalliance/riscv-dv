@@ -161,7 +161,7 @@ class riscv_pmp_cfg extends uvm_object;
       // RV64 - pmpaddr is bits [55:2] of the whole 56 bit address, prepended by 10'b0
       // Return {10'b0, shifted_addr[53:0]}
       64: begin
-        return {10'b0, shifted_addr[53:0]};
+        return {10'b0, shifted_addr[XLEN - 11 : 0]};
       end
     endcase
   endfunction
