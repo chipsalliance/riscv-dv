@@ -108,9 +108,7 @@ class riscv_asm_program_gen extends uvm_object;
       `uvm_info(`gfn, "Inserting sub-programs...done", UVM_LOW)
       `uvm_info(`gfn, "Main/sub program generation...done", UVM_LOW)
       // Program end
-      if (hart == 0) begin
-        gen_program_end();
-      end
+      gen_program_end(hart);
       if (!cfg.bare_program_mode) begin
         // Privileged mode switch routine
         gen_privileged_mode_switch_routine(hart);
@@ -119,6 +117,9 @@ class riscv_asm_program_gen extends uvm_object;
           gen_debug_rom(hart);
         end
       end
+      gen_section({hart_prefix(hart), "instr_end"}, {"nop"});
+    end
+    for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       // Starting point of data section
       gen_data_page_begin(hart);
       if(!cfg.no_data_page) begin
@@ -299,10 +300,12 @@ class riscv_asm_program_gen extends uvm_object;
     end
   endfunction
 
-  virtual function void gen_program_end();
-    // Use write_tohost to terminate spike simulation
-    gen_section("write_tohost", {"sw gp, tohost, t5"});
-    gen_section("_exit", {"j write_tohost"});
+  virtual function void gen_program_end(int hart);
+    if (hart == 0) begin
+      // Use write_tohost to terminate spike simulation
+      gen_section("write_tohost", {"sw gp, tohost, t5"});
+      gen_section("_exit", {"j write_tohost"});
+    end
   endfunction
 
   virtual function void gen_data_page_begin(int hart);
