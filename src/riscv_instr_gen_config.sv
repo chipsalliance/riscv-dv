@@ -392,8 +392,11 @@ class riscv_instr_gen_config extends uvm_object;
     unique {gpr};
   }
 
-  constraint addr_translaction_c {
+  constraint addr_translaction_rnd_order_c {
     solve init_privileged_mode before virtual_addr_translation_on;
+  }
+  
+  constraint addr_translaction_c {
     if ((init_privileged_mode != MACHINE_MODE) && (SATP_MODE != BARE)) {
       virtual_addr_translation_on == 1'b1;
     } else {
@@ -532,6 +535,7 @@ class riscv_instr_gen_config extends uvm_object;
                   $sformatf("Illegal boot mode option - %0s", boot_mode_opts))
       endcase
       init_privileged_mode.rand_mode(0);
+      addr_translaction_rnd_order_c.constraint_mode(0);
     end
     `uvm_info(`gfn, $sformatf("riscv_instr_pkg::supported_privileged_mode = %0d",
                    riscv_instr_pkg::supported_privileged_mode.size()), UVM_LOW)
