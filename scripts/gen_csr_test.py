@@ -225,7 +225,7 @@ def gen_csr_test_fail(test_file, end_addr):
   test_file.write(f"\tli x1, {TEST_FAIL}\n")
   test_file.write(f"\tslli x1, x1, 8\n")
   test_file.write(f"\taddi x1, x1, {TEST_RESULT}\n")
-  test_file.write(f"\tli x2, {end_addr}\n")
+  test_file.write(f"\tli x2, 0x{end_addr}\n")
   test_file.write(f"\tsw x1, 0(x2)\n")
   test_file.write(f"\tj csr_fail\n")
 
@@ -244,7 +244,7 @@ def gen_csr_test_pass(test_file, end_addr):
   test_file.write(f"\tli x1, {TEST_PASS}\n")
   test_file.write(f"\tslli x1, x1, 8\n")
   test_file.write(f"\taddi x1, x1, {TEST_RESULT}\n")
-  test_file.write(f"\tli x2, {end_addr}\n")
+  test_file.write(f"\tli x2, 0x{end_addr}\n")
   test_file.write(f"\tsw x1, 0(x2)\n")
   test_file.write(f"\tj csr_pass\n")
 
