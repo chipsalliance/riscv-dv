@@ -328,8 +328,10 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Generate the user stack section
   virtual function void gen_stack_section(int hart);
-    instr_stream.push_back($sformatf(".pushsection .%0suser_stack,\"aw\",@progbits;",
-                           hart_prefix(hart)));
+    if (cfg.use_push_data_section) begin
+      instr_stream.push_back($sformatf(".pushsection .%0suser_stack,\"aw\",@progbits;",
+                             hart_prefix(hart)));
+    end
     instr_stream.push_back(".align 12");
     instr_stream.push_back(get_label("user_stack_start:", hart));
     instr_stream.push_back($sformatf(".rept %0d", cfg.stack_len - 1));
@@ -337,13 +339,17 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".endr");
     instr_stream.push_back(get_label("user_stack_end:", hart));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
-    instr_stream.push_back(".popsection;");
+    if (cfg.use_push_data_section) begin
+      instr_stream.push_back(".popsection;");
+    end
   endfunction
 
   // The kernal stack is used to save user program context before executing exception handling
   virtual function void gen_kernel_stack_section(int hart);
-    instr_stream.push_back($sformatf(".pushsection .%0skernel_stack,\"aw\",@progbits;",
-                           hart_prefix(hart)));
+    if (cfg.use_push_data_section) begin
+      instr_stream.push_back($sformatf(".pushsection .%0skernel_stack,\"aw\",@progbits;",
+                             hart_prefix(hart)));
+    end
     instr_stream.push_back(".align 12");
     instr_stream.push_back(get_label("kernel_stack_start:", hart));
     instr_stream.push_back($sformatf(".rept %0d", cfg.kernel_stack_len - 1));
@@ -351,7 +357,9 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(".endr");
     instr_stream.push_back(get_label("kernel_stack_end:", hart));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
-    instr_stream.push_back(".popsection;");
+    if (cfg.use_push_data_section) begin
+      instr_stream.push_back(".popsection;");
+    end
   endfunction
 
   virtual function void gen_init_section(int hart);
@@ -1021,13 +1029,17 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_page_table_section(int hart);
     string page_table_section[$];
     if(page_table_list != null) begin
-      instr_stream.push_back($sformatf(".pushsection .%0spage_table,\"aw\",@progbits;",
-                                       hart_prefix(hart)));
+      if (cfg.use_push_data_section) begin
+        instr_stream.push_back($sformatf(".pushsection .%0spage_table,\"aw\",@progbits;",
+                                         hart_prefix(hart)));
+      end
       foreach(page_table_list.page_table[i]) begin
         page_table_list.page_table[i].gen_page_table_section(page_table_section);
         instr_stream = {instr_stream, page_table_section};
       end
-      instr_stream.push_back(".popsection;");
+      if (cfg.use_push_data_section) begin
+        instr_stream.push_back(".popsection;");
+      end
     end
   endfunction
 
