@@ -61,11 +61,11 @@ class riscv_asm_program_gen extends uvm_object;
 
   // This is the main function to generate all sections of the program.
   virtual function void gen_program();
-    string sub_program_name[$];
     instr_stream.delete();
     // Generate program header
     gen_program_header();
     for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
+      string sub_program_name[$];
       instr_stream.push_back($sformatf("h%0d_start:", hart));
       if (!cfg.bare_program_mode) begin
         setup_misa();
@@ -215,7 +215,7 @@ class riscv_asm_program_gen extends uvm_object;
       foreach(sub_program[i]) begin
         sub_program[i] = riscv_instr_sequence::type_id::create(
                          get_label($sformatf("%s_%0d", prefix, i + 1), hart));
-        `uvm_info(`gfn, $sformatf("sub program name: %s", prefix), UVM_LOW)
+        `uvm_info(`gfn, $sformatf("sub program name: %s", sub_program[i].get_name()), UVM_LOW)
         sub_program[i].is_debug_program = is_debug;
         if (is_debug) begin
           sub_program[i].instr_cnt = cfg.debug_sub_program_instr_cnt[i];
