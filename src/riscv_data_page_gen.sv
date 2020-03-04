@@ -72,12 +72,16 @@ class riscv_data_page_gen extends uvm_object;
                                 mem_region_setting[i].size_in_bytes,
                                 mem_region_setting[i].xwr), UVM_LOW)
       if (amo) begin
-        data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
-                                          mem_region_setting[i].name));
+        if (cfg.use_push_data_section) begin
+          data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
+                                            mem_region_setting[i].name));
+        end
         data_page_str.push_back($sformatf("%0s:", mem_region_setting[i].name));
       end else begin
-        data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
-                                          {hart_prefix(hart_id), mem_region_setting[i].name}));
+        if (cfg.use_push_data_section) begin
+          data_page_str.push_back($sformatf(".pushsection .%0s,\"aw\",@progbits;",
+                                            {hart_prefix(hart_id), mem_region_setting[i].name}));
+        end
         data_page_str.push_back($sformatf("%0s:",
                                           {hart_prefix(hart_id), mem_region_setting[i].name}));
       end
@@ -91,7 +95,9 @@ class riscv_data_page_gen extends uvm_object;
         tmp_str = format_string($sformatf(".word %0s", format_data(tmp_data)), LABEL_STR_LEN);
         data_page_str.push_back(tmp_str);
       end
-      data_page_str.push_back(".popsection;");
+      if (cfg.use_push_data_section) begin
+        data_page_str.push_back(".popsection;");
+      end
     end
   endfunction
 

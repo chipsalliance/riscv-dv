@@ -158,6 +158,8 @@ class riscv_instr_gen_config extends uvm_object;
   int                    num_of_harts = NUM_HARTS;
   // Use SP as stack pointer
   bit                    fix_sp;
+  // Use push/pop section for data pages
+  bit                    use_push_data_section = 1;
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
@@ -473,6 +475,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(max_directed_instr_stream_seq, UVM_DEFAULT)
     `uvm_field_int(enable_floating_point, UVM_DEFAULT)
     `uvm_field_int(enable_vector_extension, UVM_DEFAULT)
+    `uvm_field_int(use_push_data_section, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
@@ -494,6 +497,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_load_store=", no_load_store);
     get_bool_arg_value("+no_csr_instr=", no_csr_instr);
     get_bool_arg_value("+fix_sp=", fix_sp);
+    get_bool_arg_value("+use_push_data_section=", use_push_data_section);
     get_bool_arg_value("+enable_illegal_csr_instruction=", enable_illegal_csr_instruction);
     get_bool_arg_value("+enable_access_invalid_csr_level=", enable_access_invalid_csr_level);
     get_bool_arg_value("+enable_misaligned_instr=", enable_misaligned_instr);
