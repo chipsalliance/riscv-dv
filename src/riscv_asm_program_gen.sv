@@ -76,6 +76,20 @@ class riscv_asm_program_gen extends uvm_object;
       end
       // Init section
       gen_init_section(hart);
+      // If PMP is supported, we want to generate the associated trap handlers and the test_done
+      // section at the start of the program so we can allow access through the pmpcfg0 CSR
+      if (support_pmp) begin
+        gen_trap_handlers(hart);
+        // Ecall handler
+        gen_ecall_handler(hart);
+        // Instruction fault handler
+        gen_instr_fault_handler(hart);
+        // Load fault handler
+        gen_load_fault_handler(hart);
+        // Store fault handler
+        gen_store_fault_handler(hart);
+        gen_test_done();
+      end
       // Generate sub program
       gen_sub_program(hart, sub_program[hart], sub_program_name, cfg.num_of_sub_program);
       // Generate main program
@@ -99,8 +113,12 @@ class riscv_asm_program_gen extends uvm_object;
       main_program[hart].generate_instr_stream();
       `uvm_info(`gfn, "Generating main program instruction stream...done", UVM_LOW)
       instr_stream = {instr_stream, main_program[hart].instr_string_list};
+      // If PMP is supported, need to jump from end of main program to test_done section at the end
+      // of main_program, as the test_done will have moved to the beginning of the program
+      instr_stream = {instr_stream, $sformatf("%sj test_done", indent)};
       // Test done section
-      if (hart == 0) begin
+      // If PMP isn't supported, generate this in the normal location
+      if (hart == 0 & !support_pmp) begin
         gen_test_done();
       end
       // Shuffle the sub programs and insert to the instruction stream
@@ -370,6 +388,10 @@ class riscv_asm_program_gen extends uvm_object;
     // Init stack pointer to point to the end of the user stack
     str = {indent, $sformatf("la x%0d, %0suser_stack_end", cfg.sp, hart_prefix(hart))};
     instr_stream.push_back(str);
+    if (support_pmp) begin
+      str = {indent, "j main"};
+      instr_stream.push_back(str);
+    end
     if (cfg.enable_floating_point) begin
       init_floating_point_gpr();
     end
@@ -733,6 +755,35 @@ class riscv_asm_program_gen extends uvm_object;
   // Trap handling routine
   virtual function void gen_all_trap_handler(int hart);
     string instr[$];
+    // If PMP isn't supported, generate the relevant trap handler sections as per usual
+    if (!support_pmp) begin
+      gen_trap_handlers(hart);
+      // Ecall handler
+      gen_ecall_handler(hart);
+      // Instruction fault handler
+      gen_instr_fault_handler(hart);
+      // Load fault handler
+      gen_load_fault_handler(hart);
+      // Store fault handler
+      gen_store_fault_handler(hart);
+    end
+    // Ebreak handler
+    gen_ebreak_handler(hart);
+    // Illegal instruction handler
+    gen_illegal_instr_handler(hart);
+    // Generate page table fault handling routine
+    // Page table fault is always handled in machine mode, as virtual address translation may be
+    // broken when page fault happens.
+    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
+    if(page_table_list != null) begin
+      page_table_list.gen_page_fault_handling_routine(instr);
+    end else begin
+      instr.push_back("nop");
+    end
+    gen_section(get_label("pt_fault_handler", hart), instr);
+  endfunction
+
+  virtual function void gen_trap_handlers(int hart);
     foreach(riscv_instr_pkg::supported_privileged_mode[i]) begin
       if(riscv_instr_pkg::supported_privileged_mode[i] < cfg.init_privileged_mode) continue;
       case(riscv_instr_pkg::supported_privileged_mode[i])
@@ -749,28 +800,6 @@ class riscv_asm_program_gen extends uvm_object;
           end
       endcase
     end
-    // Ebreak handler
-    gen_ebreak_handler(hart);
-    // Ecall handler
-    gen_ecall_handler(hart);
-    // Illegal instruction handler
-    gen_illegal_instr_handler(hart);
-    // Instruction fault handler
-    gen_instr_fault_handler(hart);
-    // Load fault handler
-    gen_load_fault_handler(hart);
-    // Store fault handler
-    gen_store_fault_handler(hart);
-    // Generate page table fault handling routine
-    // Page table fault is always handled in machine mode, as virtual address translation may be
-    // broken when page fault happens.
-    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
-    if(page_table_list != null) begin
-      page_table_list.gen_page_fault_handling_routine(instr);
-    end else begin
-      instr.push_back("nop");
-    end
-    gen_section(get_label("pt_fault_handler", hart), instr);
   endfunction
 
   // Generate the interrupt and trap handler for different privileged mode.
