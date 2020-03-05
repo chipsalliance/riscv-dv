@@ -327,12 +327,10 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   virtual function void gen_data_page_begin(int hart);
-    instr_stream.push_back(".data");
+    instr_stream.push_back(".section .data");
     if (hart == 0) begin
-      instr_stream.push_back(".pushsection .tohost,\"aw\",@progbits;");
       instr_stream.push_back(".align 6; .global tohost; tohost: .dword 0;");
       instr_stream.push_back(".align 6; .global fromhost; fromhost: .dword 0;");
-      instr_stream.push_back(".popsection;");
     end
   endfunction
 

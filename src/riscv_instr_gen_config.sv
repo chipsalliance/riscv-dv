@@ -108,8 +108,7 @@ class riscv_instr_gen_config extends uvm_object;
 
   // Dedicated shared memory region for multi-harts atomic operations
   mem_region_t amo_region[$] = '{
-    '{name:"amo_0",    size_in_bytes: 4096,      xwr: 3'b111},
-    '{name:"amo_1",    size_in_bytes: 4096,      xwr: 3'b111}
+    '{name:"amo_0",    size_in_bytes: 64,        xwr: 3'b111}
   };
 
   // Stack section word length
@@ -159,7 +158,7 @@ class riscv_instr_gen_config extends uvm_object;
   // Use SP as stack pointer
   bit                    fix_sp;
   // Use push/pop section for data pages
-  bit                    use_push_data_section = 1;
+  bit                    use_push_data_section = 0;
   // Directed boot privileged mode, u, m, s
   string                 boot_mode_opts;
   int                    enable_page_table_exception;
