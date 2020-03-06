@@ -42,7 +42,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
   constraint sp_rnd_order_c {
     solve use_sp_as_rs1 before rs1_reg;
   }
-  
+
   constraint sp_c {
     use_sp_as_rs1 dist {1 := 1, 0 := 2};
     if (use_sp_as_rs1) {
@@ -242,6 +242,20 @@ class riscv_load_store_stress_instr_stream extends riscv_load_store_base_instr_s
 
   `uvm_object_utils(riscv_load_store_stress_instr_stream)
   `uvm_object_new
+
+endclass
+
+
+// Back to back load/store instructions
+class riscv_load_store_shared_mem_stream extends riscv_load_store_stress_instr_stream;
+
+  `uvm_object_utils(riscv_load_store_shared_mem_stream)
+  `uvm_object_new
+
+  function void pre_randomize();
+    load_store_shared_memory = 1;
+    super.pre_randomize();
+  endfunction
 
 endclass
 
