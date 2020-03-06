@@ -71,6 +71,7 @@ class riscv_mem_access_stream extends riscv_directed_instr_stream;
       la_instr.imm_str = $sformatf("%0s%s+%0d",
                                    hart_prefix(hart), cfg.mem_region[id].name, base);
     end
+    `uvm_info(`gfn, $sformatf("Add load label for hart %0d(%0s)", hart, hart_prefix(hart)), UVM_LOW)
     instr_list.push_front(la_instr);
   endfunction
 
@@ -187,8 +188,7 @@ class riscv_jump_instr extends riscv_directed_instr_stream;
     end
     jump.has_label = 1'b1;
     jump.label = "1";
-    jump.comment = $sformatf("%s jump %0s -> %0s",
-                             hart_prefix(hart), label, target_program_label);
+    jump.comment = $sformatf("jump %0s -> %0s", label, target_program_label);
     branch.imm_str = "1f";
     branch.comment = "branch to jump instr";
     branch.branch_assigned = 1'b1;
