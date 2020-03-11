@@ -347,6 +347,9 @@ class riscv_asm_program_gen extends uvm_object;
     if (cfg.use_push_data_section) begin
       instr_stream.push_back($sformatf(".pushsection .%0suser_stack,\"aw\",@progbits;",
                              hart_prefix(hart)));
+    end else begin
+      instr_stream.push_back($sformatf(".section .%0suser_stack,\"aw\",@progbits;",
+                             hart_prefix(hart)));
     end
     instr_stream.push_back(".align 12");
     instr_stream.push_back(get_label("user_stack_start:", hart));
@@ -364,6 +367,9 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_kernel_stack_section(int hart);
     if (cfg.use_push_data_section) begin
       instr_stream.push_back($sformatf(".pushsection .%0skernel_stack,\"aw\",@progbits;",
+                             hart_prefix(hart)));
+    end else begin
+      instr_stream.push_back($sformatf(".section .%0skernel_stack,\"aw\",@progbits;",
                              hart_prefix(hart)));
     end
     instr_stream.push_back(".align 12");
@@ -1058,6 +1064,9 @@ class riscv_asm_program_gen extends uvm_object;
     if(page_table_list != null) begin
       if (cfg.use_push_data_section) begin
         instr_stream.push_back($sformatf(".pushsection .%0spage_table,\"aw\",@progbits;",
+                                         hart_prefix(hart)));
+      end else begin
+        instr_stream.push_back($sformatf(".section .%0spage_table,\"aw\",@progbits;",
                                          hart_prefix(hart)));
       end
       foreach(page_table_list.page_table[i]) begin
