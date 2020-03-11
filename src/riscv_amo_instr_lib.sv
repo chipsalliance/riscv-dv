@@ -22,7 +22,8 @@ class riscv_amo_base_instr_stream extends riscv_mem_access_stream;
   rand int           offset[];
   rand riscv_reg_t   rs1_reg[];
   rand int           num_of_rs1_reg;
-  rand int unsigned  data_page_id;
+  int unsigned       data_page_id;
+  int unsigned       max_offset;
 
   // User can specify a small group of available registers to generate various hazard condition
   rand riscv_reg_t   avail_regs[];
@@ -42,10 +43,8 @@ class riscv_amo_base_instr_stream extends riscv_mem_access_stream;
   }
 
   constraint addr_range_c {
-    solve data_page_id before offset;
-    data_page_id < max_data_page_id;
     foreach (offset[i]) {
-      offset[i] inside {[0 : data_page[data_page_id].size_in_bytes- 1]};
+      offset[i] inside {[0 : max_offset - 1]};
     }
   }
 
@@ -65,6 +64,8 @@ class riscv_amo_base_instr_stream extends riscv_mem_access_stream;
   function void pre_randomize();
     data_page = cfg.amo_region;
     max_data_page_id = data_page.size();
+    data_page_id = $urandom_range(0, max_data_page_id - 1);
+    max_offset = data_page[data_page_id].size_in_bytes;
   endfunction
 
   // Use "la" instruction to initialize the offset regiseter
