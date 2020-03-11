@@ -165,7 +165,12 @@ class riscv_asm_program_gen extends uvm_object;
   // Generate kernel program/data/stack sections
   //---------------------------------------------------------------------------------------
   virtual function void gen_kernel_sections(int hart);
-    instr_stream.push_back(get_label("kernel_instr_start: .align 12", hart));
+    if (SATP_MODE != BARE) begin
+      instr_stream.push_back(".align 12");
+    end else begin
+      instr_stream.push_back(".align 2");
+    end
+    instr_stream.push_back(get_label("kernel_instr_start:", hart));
     instr_stream.push_back(".text");
     // Kernel programs
     if (cfg.virtual_addr_translation_on) begin
@@ -189,8 +194,13 @@ class riscv_asm_program_gen extends uvm_object;
     // User stack and data pages may not be accessible when executing trap handling programs in
     // machine/supervisor mode. Generate separate kernel data/stack sections to solve it.
     if (cfg.virtual_addr_translation_on) begin
+      if (SATP_MODE != BARE) begin
+        instr_stream.push_back(".align 12");
+      end else begin
+        instr_stream.push_back(".align 2");
+      end
       // Kernel data pages
-      instr_stream.push_back(get_label("kernel_data_start: .align 12", hart));
+      instr_stream.push_back(get_label("kernel_data_start:", hart));
       if(!cfg.no_data_page) begin
         // Data section
         gen_data_page(hart, 1'b1);
@@ -351,7 +361,11 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back($sformatf(".section .%0suser_stack,\"aw\",@progbits;",
                              hart_prefix(hart)));
     end
-    instr_stream.push_back(".align 12");
+    if (SATP_MODE != BARE) begin
+      instr_stream.push_back(".align 12");
+    end else begin
+      instr_stream.push_back(".align 2");
+    end
     instr_stream.push_back(get_label("user_stack_start:", hart));
     instr_stream.push_back($sformatf(".rept %0d", cfg.stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
@@ -372,7 +386,11 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back($sformatf(".section .%0skernel_stack,\"aw\",@progbits;",
                              hart_prefix(hart)));
     end
-    instr_stream.push_back(".align 12");
+    if (SATP_MODE != BARE) begin
+      instr_stream.push_back(".align 12");
+    end else begin
+      instr_stream.push_back(".align 2");
+    end
     instr_stream.push_back(get_label("kernel_stack_start:", hart));
     instr_stream.push_back($sformatf(".rept %0d", cfg.kernel_stack_len - 1));
     instr_stream.push_back($sformatf(".%0dbyte 0x0", XLEN/8));
@@ -840,7 +858,11 @@ class riscv_asm_program_gen extends uvm_object;
     end
     // The trap handler will occupy one 4KB page, it will be allocated one entry in the page table
     // with a specific privileged mode.
-    instr_stream.push_back(".align 12");
+    if (SATP_MODE != BARE) begin
+      instr_stream.push_back(".align 12");
+    end else begin
+      instr_stream.push_back(".align 2");
+    end
     tvec_name = tvec.name();
     gen_section(get_label($sformatf("%0s_handler", tvec_name.tolower()), hart), instr);
     // Exception handler
@@ -1159,8 +1181,12 @@ class riscv_asm_program_gen extends uvm_object;
     interrupt_handler_instr = {interrupt_handler_instr,
                                $sformatf("%0sret;", mode_prefix)
     };
-    // The interrupt handler will use one 4KB page
-    instr_stream.push_back(".align 12");
+    if (SATP_MODE != BARE) begin
+      // The interrupt handler will use one 4KB page
+      instr_stream.push_back(".align 12");
+    end else begin
+      instr_stream.push_back(".align 2");
+    end
     gen_section(get_label($sformatf("%0smode_intr_handler", mode_prefix), hart),
                 interrupt_handler_instr);
   endfunction
