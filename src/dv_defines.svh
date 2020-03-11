@@ -72,7 +72,7 @@
 `else
 `ifndef DV_CHECK_RANDOMIZE_WITH_FATAL
   `define DV_CHECK_RANDOMIZE_WITH_FATAL(VAR_, WITH_C_, MSG_="Randomization failed!", ID_=`gfn) \
-    `DV_CHECK_FATAL(VAR_.randomize(*rc_msm=1*)(), MSG_, ID_, with { WITH_C_ })
+    `DV_CHECK_FATAL(VAR_.randomize(), MSG_, ID_, with { WITH_C_ })
 `endif
 `endif
 
