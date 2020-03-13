@@ -438,6 +438,7 @@ class riscv_asm_program_gen extends uvm_object;
         RV32I, RV64I, RV128I : misa[MISA_EXT_I] = 1'b1;
         RV32M, RV64M         : misa[MISA_EXT_M] = 1'b1;
         RV32A, RV64A         : misa[MISA_EXT_A] = 1'b1;
+        RV32B, RV64B         : misa[MISA_EXT_B] = 1'b1;
         RV32F, RV64F, RV32FC : misa[MISA_EXT_F] = 1'b1;
         RV32D, RV64D, RV32DC : misa[MISA_EXT_D] = 1'b1;
         RV32V, RV64V         : misa[MISA_EXT_V] = 1'b1;

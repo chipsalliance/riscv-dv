@@ -642,7 +642,8 @@ class riscv_instr_gen_config extends uvm_object;
     bit support_64b;
     bit support_128b;
     foreach (riscv_instr_pkg::supported_isa[i]) begin
-      if (riscv_instr_pkg::supported_isa[i] inside {RV64I, RV64M, RV64A, RV64F, RV64D, RV64C}) begin
+      if (riscv_instr_pkg::supported_isa[i] inside {RV64I, RV64M, RV64A, RV64F, RV64D, RV64C,
+                                                    RV64B}) begin
         support_64b = 1'b1;
       end else if (riscv_instr_pkg::supported_isa[i] inside {RV128I, RV128C}) begin
         support_128b = 1'b1;
