@@ -772,6 +772,9 @@ def load_config(args, cwd):
     elif args.target == "multi_harts":
       args.mabi = "ilp32"
       args.isa  = "rv32gc"
+    elif args.target == "rv32imcb":
+      args.mabi = "ilp32"
+      args.isa  = "rv32imcb"
     elif args.target == "rv32i":
       args.mabi = "ilp32"
       args.isa  = "rv32i"
