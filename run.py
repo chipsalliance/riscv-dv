@@ -250,6 +250,7 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_yaml, seed, csr_file,
           if verbose:
             cmd += "+UVM_VERBOSITY=UVM_HIGH "
           cmd = re.sub("<seed>", str(rand_seed), cmd)
+          cmd = re.sub("<test_id>", test_id, cmd)
           sim_seed[test_id] = str(rand_seed)
           if "gen_opts" in test:
             cmd += test['gen_opts']
