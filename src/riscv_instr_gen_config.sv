@@ -396,7 +396,7 @@ class riscv_instr_gen_config extends uvm_object;
   constraint addr_translaction_rnd_order_c {
     solve init_privileged_mode before virtual_addr_translation_on;
   }
-  
+
   constraint addr_translaction_c {
     if ((init_privileged_mode != MACHINE_MODE) && (SATP_MODE != BARE)) {
       virtual_addr_translation_on == 1'b1;
