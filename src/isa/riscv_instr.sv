@@ -374,6 +374,7 @@ class riscv_instr extends uvm_object;
           end else begin
             asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), rs1.name(), rs2.name());
           end
+        default: `uvm_fatal(`gfn, $sformatf("Unsupported format %0s", format.name()))
       endcase
     end else begin
       // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
@@ -580,6 +581,7 @@ class riscv_instr extends uvm_object;
         else
           binary = $sformatf("%8h", {get_func7(), rs2, rs1, get_func3(), rd, get_opcode()});
       end
+      default: `uvm_fatal(`gfn, $sformatf("Unsupported format %0s", format.name()))
     endcase
     return {prefix, binary};
   endfunction

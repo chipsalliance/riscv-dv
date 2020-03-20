@@ -106,7 +106,8 @@ class riscv_asm_program_gen extends uvm_object;
       `DV_CHECK_RANDOMIZE_FATAL(main_program[hart])
       main_program[hart].gen_instr(.is_main_program(1), .no_branch(cfg.no_branch_jump));
       // Setup jump instruction among main program and sub programs
-      gen_callstack(main_program[hart], sub_program[hart], sub_program_name, cfg.num_of_sub_program);
+      gen_callstack(main_program[hart], sub_program[hart], sub_program_name,
+                    cfg.num_of_sub_program);
       `uvm_info(`gfn, "Generating callstack...done", UVM_LOW)
       main_program[hart].post_process_instr();
       `uvm_info(`gfn, "Post-processing main program...done", UVM_LOW)
@@ -648,6 +649,8 @@ class riscv_asm_program_gen extends uvm_object;
                                     .csr(USTATUS));
             gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(UIE));
           end
+          default: `uvm_info(`gfn, $sformatf("Unsupported privileged_mode %0s",
+                                   riscv_instr_pkg::supported_privileged_mode[i]), UVM_LOW)
         endcase
         // Write M-mode CSRs to testbench by default, as these should be implemented
         gen_signature_handshake(.instr(csr_handshake), .signature_type(WRITE_CSR), .csr(MSTATUS));
@@ -748,6 +751,8 @@ class riscv_asm_program_gen extends uvm_object;
         MACHINE_MODE:    trap_vec_reg = MTVEC;
         SUPERVISOR_MODE: trap_vec_reg = STVEC;
         USER_MODE:       trap_vec_reg = UTVEC;
+        default: `uvm_info(`gfn, $sformatf("Unsupported privileged_mode %0s",
+                           riscv_instr_pkg::supported_privileged_mode[i]), UVM_LOW)
       endcase
       // Skip utvec init if trap delegation to u_mode is not supported
       if ((riscv_instr_pkg::supported_privileged_mode[i] == USER_MODE) &&
@@ -821,6 +826,8 @@ class riscv_asm_program_gen extends uvm_object;
             gen_trap_handler_section(hart, "u", UCAUSE, UTVEC, UTVAL,
                                      UEPC, USCRATCH, USTATUS, UIE, UIP);
           end
+        default: `uvm_fatal(`gfn, $sformatf("Unsupported privileged_mode %0s",
+                            riscv_instr_pkg::supported_privileged_mode[i]))
       endcase
     end
   endfunction
@@ -1161,6 +1168,7 @@ class riscv_asm_program_gen extends uvm_object;
           USTATUS: begin
             interrupt_handler_instr.push_back($sformatf("csrsi 0x%0x, 0x%0x", status, 1));
           end
+          default: `uvm_fatal(`gfn, $sformatf("Unsupported status %0s", status))
         endcase
         interrupt_handler_instr.push_back($sformatf("1: csrwi 0x%0x,0", scratch));
       end

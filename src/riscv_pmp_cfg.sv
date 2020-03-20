@@ -163,6 +163,7 @@ class riscv_pmp_cfg extends uvm_object;
       64: begin
         return {10'b0, shifted_addr[XLEN - 11 : 0]};
       end
+      default: `uvm_fatal(`gfn, $sformatf("Unsupported XLEN %0s", XLEN))
     endcase
   endfunction
 

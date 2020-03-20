@@ -109,6 +109,7 @@ class riscv_b_instr extends riscv_instr;
         asm_str_super = $sformatf("%0s%0s, %0s, %0s, %0s", asm_str, rd.name(), rs1.name(),
                                   rs2.name(), rs3.name());
       end
+      default: `uvm_info(`gfn, $sformatf("Unsupported format %0s", format.name()), UVM_LOW)
     endcase
 
     if (comment != "") begin

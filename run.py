@@ -817,6 +817,10 @@ def main():
     # Create output directory
     output_dir = create_output(args.o, args.noclean)
 
+    logging.debug("Run style check")
+    style_err = run_cmd("verilog_style/run.sh")
+    if style_err: logging.info("Found style error: \nERROR: " + style_err)
+
     # Run any handcoded/directed assembly tests specified by args.asm_tests
     if args.asm_tests != "":
       asm_test = args.asm_tests.split(',')
