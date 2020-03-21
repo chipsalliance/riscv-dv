@@ -197,7 +197,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    disable_compressed_instr;
   // "Memory mapped" address that when written to will indicate some event to
   // the testbench - testbench will take action based on the value written
-  int                    signature_addr = 32'hdead_beef;
+  bit [XLEN - 1 : 0]     signature_addr = 32'hdead_beef;
   bit                    require_signature_addr = 1'b0;
   // Enable a full or empty debug_rom section.
   // Full debug_rom will contain random instruction streams.
@@ -566,6 +566,7 @@ class riscv_instr_gen_config extends uvm_object;
     vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
     pmp_cfg = riscv_pmp_cfg::type_id::create("pmp_cfg");
     pmp_cfg.rand_mode(pmp_cfg.pmp_randomize);
+    pmp_cfg.initialize(require_signature_addr);
     setup_instr_distribution();
     get_invalid_priv_lvl_csr();
   endfunction

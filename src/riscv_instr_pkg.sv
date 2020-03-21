@@ -1226,7 +1226,8 @@ package riscv_instr_pkg;
   endfunction
 
   // Get a hex argument from command line
-  function automatic void get_hex_arg_value(string cmdline_str, ref int val);
+  function automatic void get_hex_arg_value(string cmdline_str,
+                                            ref bit [XLEN - 1 : 0] val);
     string s;
     if(inst.get_arg_value(cmdline_str, s)) begin
       val = s.atohex();

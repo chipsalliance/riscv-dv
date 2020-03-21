@@ -129,8 +129,10 @@ class riscv_asm_program_gen extends uvm_object;
       // Program end
       gen_program_end(hart);
       if (!cfg.bare_program_mode) begin
-        // Privileged mode switch routine
-        gen_privileged_mode_switch_routine(hart);
+        if (!riscv_instr_pkg::support_pmp) begin
+          // Privileged mode switch routine
+          gen_privileged_mode_switch_routine(hart);
+        end
         // Generate debug rom section
         if (riscv_instr_pkg::support_debug_mode) begin
           gen_debug_rom(hart);
@@ -617,6 +619,12 @@ class riscv_asm_program_gen extends uvm_object;
     end
     // Setup mepc register, jump to init entry
     setup_epc(hart);
+    // Move privileged mode support to the "safe" section of the program
+    // if PMP is supported
+    if (riscv_instr_pkg::support_pmp) begin
+      // Privileged mode switch routine
+      gen_privileged_mode_switch_routine(hart);
+    end
   endfunction
 
   virtual function void gen_privileged_mode_switch_routine(int hart);
@@ -664,7 +672,7 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Setup EPC before entering target privileged mode
   virtual function void setup_epc(int hart);
-    string instr[];
+    string instr[$];
     string mode_name;
     instr = {$sformatf("la x%0d, %0sinit", cfg.gpr[0], hart_prefix(hart))};
     if(cfg.virtual_addr_translation_on) begin
@@ -676,10 +684,10 @@ class riscv_asm_program_gen extends uvm_object;
                $sformatf("srli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], XLEN - 12)};
     end
     mode_name = cfg.init_privileged_mode.name();
-    instr = {instr,
-             $sformatf("csrw mepc, x%0d", cfg.gpr[0]),
-             $sformatf("j %0sinit_%0s", hart_prefix(hart), mode_name.tolower())
-            };
+    instr.push_back($sformatf("csrw mepc, x%0d", cfg.gpr[0]));
+    if (!riscv_instr_pkg::support_pmp) begin
+      instr.push_back($sformatf("j %0sinit_%0s", hart_prefix(hart), mode_name.tolower()));
+    end
     gen_section(get_label("mepc_setup", hart), instr);
   endfunction
 
