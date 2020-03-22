@@ -232,6 +232,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_floating_point;
   // Vector extension support
   bit                    enable_vector_extension;
+  // Bit manipulation extension support
+  bit                    enable_b_extension;
 
   //-----------------------------------------------------------------------------
   // Command line options for instruction distribution control
@@ -474,6 +476,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(max_directed_instr_stream_seq, UVM_DEFAULT)
     `uvm_field_int(enable_floating_point, UVM_DEFAULT)
     `uvm_field_int(enable_vector_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_b_extension, UVM_DEFAULT)
     `uvm_field_int(use_push_data_section, UVM_DEFAULT)
   `uvm_object_utils_end
 
@@ -527,6 +530,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+set_mstatus_tw=", set_mstatus_tw);
     get_bool_arg_value("+enable_floating_point=", enable_floating_point);
     get_bool_arg_value("+enable_vector_extension=", enable_vector_extension);
+    get_bool_arg_value("+enable_b_extension=", enable_b_extension);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
       `uvm_info(get_full_name(), $sformatf(
                 "Got boot mode option - %0s", boot_mode_opts), UVM_LOW)
