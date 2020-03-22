@@ -731,6 +731,8 @@ def setup_parser():
                       help="Stop on detecting first error")
   parser.add_argument("--noclean", action="store_true", default=True,
                       help="Do not clean the output of the previous runs")
+  parser.add_argument("--verilog_style_check", action="store_true", default=False,
+                      help="Run verilog style check")
   parser.add_argument("-d", "--debug", type=str, default="",
                       help="Generate debug command log file")
   return parser
@@ -817,9 +819,10 @@ def main():
     # Create output directory
     output_dir = create_output(args.o, args.noclean)
 
-    logging.debug("Run style check")
-    style_err = run_cmd("verilog_style/run.sh")
-    if style_err: logging.info("Found style error: \nERROR: " + style_err)
+    if args.verilog_style_check:
+      logging.debug("Run style check")
+      style_err = run_cmd("verilog_style/run.sh")
+      if style_err: logging.info("Found style error: \nERROR: " + style_err)
 
     # Run any handcoded/directed assembly tests specified by args.asm_tests
     if args.asm_tests != "":
