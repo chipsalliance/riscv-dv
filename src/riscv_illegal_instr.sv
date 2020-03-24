@@ -165,6 +165,14 @@ class riscv_illegal_instr extends uvm_object;
     c_op != 2'b11;
   }
 
+  // Avoid generating illegal func3/func7 errors for opcode used by B-extension
+  constraint b_extension_c {
+    if (RV32B inside {supported_isa}) {
+      if (exception inside {kIllegalFunc3, kIllegalFunc7}) {
+        !(opcode inside {7'b0011011, 7'b0010011, 7'b0111011});
+      }
+    }
+  }
 
   constraint illegal_compressed_op_c {
     if (exception == kIllegalCompressedOpcode) {
@@ -320,12 +328,12 @@ class riscv_illegal_instr extends uvm_object;
   constraint illegal_func7_c {
     if (!compressed) {
       if (exception == kIllegalFunc7) {
-        !(func7 inside {7'b0, 7'b0100000, 7'b1});
-        if (opcode == 7'b001001) { // SLLI, SRLI, SRAI
-          !(func7[6:1] inside {6'b0, 6'b010000});
+        !(func7 inside {7'd0, 7'b0100000, 7'd1});
+        if (opcode == 7'b0001001) { // SLLI, SRLI, SRAI
+          !(func7[6:1] inside {6'd0, 6'b010000});
         }
       } else {
-        func7 inside {7'b0, 7'b0100000, 7'b1};
+        func7 inside {7'd0, 7'b0100000, 7'd1};
       }
     }
   }

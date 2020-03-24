@@ -26,6 +26,8 @@ package riscv_instr_pkg;
 
   `define include_file(f) `include `"f`"
 
+  uvm_cmdline_processor  inst;
+
   // Data section setting
   typedef struct {
     string         name;
@@ -145,6 +147,108 @@ package riscv_instr_pkg;
     CSRRWI,
     CSRRSI,
     CSRRCI,
+    // RV32B instructions
+    ANDN,
+    ORN,
+    XNOR,
+    GORC,
+    SLO,
+    SRO,
+    ROL,
+    ROR,
+    SBCLR,
+    SBSET,
+    SBINV,
+    SBEXT,
+    GREV,
+    SLOI,
+    SROI,
+    RORI,
+    SBCLRI,
+    SBSETI,
+    SBINVI,
+    SBEXTI,
+    GORCI,
+    GREVI,
+    CMIX,
+    CMOV,
+    FSL,
+    FSR,
+    FSRI,
+    CLZ,
+    CTZ,
+    PCNT,
+    SEXT_B,
+    SEXT_H,
+    CRC32_B,
+    CRC32_H,
+    CRC32_W,
+    CRC32C_B,
+    CRC32C_H,
+    CRC32C_W,
+    CLMUL,
+    CLMULR,
+    CLMULH,
+    MIN,
+    MAX,
+    MINU,
+    MAXU,
+    SHFL,
+    UNSHFL,
+    BDEP,
+    BEXT,
+    PACK,
+    PACKU,
+    BMATOR,
+    BMATXOR,
+    PACKH,
+    BFP,
+    SHFLI,
+    UNSHFLI,
+    //RV64B instructions
+    ADDIWU,
+    SLLIU_W,
+    ADDWU,
+    SUBWU,
+    BMATFLIP,
+    CRC32_D,
+    CRC32C_D,
+    ADDU_W,
+    SUBU_W,
+    SLOW,
+    SROW,
+    ROLW,
+    RORW,
+    SBCLRW,
+    SBSETW,
+    SBINVW,
+    SBEXTW,
+    GORCW,
+    GREVW,
+    SLOIW,
+    SROIW,
+    RORIW,
+    SBCLRIW,
+    SBSETIW,
+    SBINVIW,
+    GORCIW,
+    GREVIW,
+    FSLW,
+    FSRW,
+    FSRIW,
+    CLZW,
+    CTZW,
+    PCNTW,
+    CLMULW,
+    CLMULRW,
+    CLMULHW,
+    SHFLW,
+    UNSHFLW,
+    BDEPW,
+    BEXTW,
+    PACKW,
+    PACKUW,
+    BFPW,
     // RV32M instructions
     MUL,
     MULH,
@@ -500,7 +604,7 @@ package riscv_instr_pkg;
   } riscv_instr_name_t;
 
   // Maximum virtual address bits used by the program
-  parameter MAX_USED_VADDR_BITS = 30;
+  parameter int MAX_USED_VADDR_BITS = 30;
 
   typedef enum bit [4:0] {
     ZERO = 5'b00000,
@@ -509,8 +613,8 @@ package riscv_instr_pkg;
   } riscv_reg_t;
 
   typedef enum bit [4:0] {
-    F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
-    F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27, F28, F29, F30, F31
+    FT0, FT1, FT2, FT3, FT4, FT5, FT6, FT7, FS0, FS1, FA0, FA1, FA2, FA3, FA4, FA5,
+    FA6, FA7, FS2, FS3, FS4, FS5, FS6, FS7, FS8, FS9, FS10, FS11, FT8, FT9, FT10, FT11
   } riscv_fpr_t;
 
   typedef enum bit [4:0] {
@@ -929,6 +1033,41 @@ package riscv_instr_pkg;
 
   `include "riscv_core_setting.sv"
 
+  // PMP address matching mode
+  typedef enum bit [1:0] {
+    OFF   = 2'b00,
+    TOR   = 2'b01,
+    NA4   = 2'b10,
+    NAPOT = 2'b11
+  } pmp_addr_mode_t;
+
+  // PMP configuration register layout
+  // This configuration struct includes the pmp address for simplicity
+  // TODO (udinator) allow a full 34 bit address for rv32?
+  typedef struct{
+    rand bit                   l;
+    bit [1:0]                  zero;
+    rand pmp_addr_mode_t       a;
+    rand bit                   x;
+    rand bit                   w;
+    rand bit                   r;
+    // RV32: addr is the top 32 bits of a 34 bit PMP address
+    // RV64: addr is the top 54 bits of a 56 bit PMP address
+    rand bit [XLEN - 1 : 0]    addr;
+  } pmp_cfg_reg_t;
+
+  function automatic string hart_prefix(int hart = 0);
+    if (NUM_HARTS <= 1) begin
+      return "";
+    end else begin
+      return $sformatf("h%0d_", hart);
+    end
+  endfunction : hart_prefix
+
+  function automatic string get_label(string label, int hart = 0);
+    return {hart_prefix(hart), label};
+  endfunction : get_label
+
   typedef struct packed {
     bit ill;
     bit [XLEN-2:7] reserved;
@@ -953,19 +1092,19 @@ package riscv_instr_pkg;
   parameter bit [XLEN - 1 : 0] SUM_BIT_MASK  = 'h1 << 18;
   parameter bit [XLEN - 1 : 0] MPP_BIT_MASK  = 'h3 << 11;
 
-  parameter IMM25_WIDTH = 25;
-  parameter IMM12_WIDTH = 12;
-  parameter INSTR_WIDTH = 32;
-  parameter DATA_WIDTH  = 32;
+  parameter int IMM25_WIDTH = 25;
+  parameter int IMM12_WIDTH = 12;
+  parameter int INSTR_WIDTH = 32;
+  parameter int DATA_WIDTH  = 32;
 
   // Parameters for output assembly program formatting
-  parameter MAX_INSTR_STR_LEN = 11;
-  parameter LABEL_STR_LEN     = 18;
+  parameter int MAX_INSTR_STR_LEN = 11;
+  parameter int LABEL_STR_LEN     = 18;
 
   // Parameter for program generation
-  parameter MAX_CALLSTACK_DEPTH = 20;
-  parameter MAX_SUB_PROGRAM_CNT = 20;
-  parameter MAX_CALL_PER_FUNC   = 5;
+  parameter int MAX_CALLSTACK_DEPTH = 20;
+  parameter int MAX_SUB_PROGRAM_CNT = 20;
+  parameter int MAX_CALL_PER_FUNC   = 5;
 
   string indent = {LABEL_STR_LEN{" "}};
 
@@ -1032,7 +1171,8 @@ package riscv_instr_pkg;
         instr.push_back($sformatf("csrr x%0d, 0x%0x // MSTATUS", tp, status));
         instr.push_back($sformatf("srli x%0d, x%0d, 11", tp, tp));  // Move MPP to bit 0
         instr.push_back($sformatf("andi x%0d, x%0d, 0x3", tp, tp)); // keep the MPP bits
-        instr.push_back($sformatf("xori x%0d, x%0d, 0x3", tp, tp)); // Check if MPP equals to M-mode('b11)
+        // Check if MPP equals to M-mode('b11)
+        instr.push_back($sformatf("xori x%0d, x%0d, 0x3", tp, tp));
         instr.push_back($sformatf("bnez x%0d, 1f", tp));      // Use physical address for kernel SP
         // Use virtual address for stack pointer
         instr.push_back($sformatf("slli x%0d, x%0d, %0d", sp, sp, XLEN - MAX_USED_VADDR_BITS));
@@ -1069,6 +1209,31 @@ package riscv_instr_pkg;
     end
   endfunction
 
+  // Get an integer argument from comand line
+  function automatic void get_int_arg_value(string cmdline_str, ref int val);
+    string s;
+    if(inst.get_arg_value(cmdline_str, s)) begin
+      val = s.atoi();
+    end
+  endfunction
+
+  // Get a bool argument from comand line
+  function automatic void get_bool_arg_value(string cmdline_str, ref bit val);
+    string s;
+    if(inst.get_arg_value(cmdline_str, s)) begin
+      val = s.atobin();
+    end
+  endfunction
+
+  // Get a hex argument from command line
+  function automatic void get_hex_arg_value(string cmdline_str,
+                                            ref bit [XLEN - 1 : 0] val);
+    string s;
+    if(inst.get_arg_value(cmdline_str, s)) begin
+      val = s.atohex();
+    end
+  endfunction
+
   riscv_reg_t all_gpr[] = {ZERO, RA, SP, GP, TP, T0, T1, T2, S0, S1, A0,
                            A1, A2, A3, A4, A5, A6, A7, S2, S3, S4, S5, S6,
                            S7, S8, S9, S10, S11, T3, T4, T5, T6};
@@ -1081,10 +1246,12 @@ package riscv_instr_pkg;
   };
 
   `include "riscv_vector_cfg.sv"
+  `include "riscv_pmp_cfg.sv"
   typedef class riscv_instr;
   `include "riscv_instr_gen_config.sv"
   `include "isa/riscv_instr.sv"
   `include "isa/riscv_amo_instr.sv"
+  `include "isa/riscv_b_instr.sv"
   `include "isa/riscv_floating_point_instr.sv"
   `include "isa/riscv_vector_instr.sv"
   `include "isa/riscv_compressed_instr.sv"
@@ -1095,8 +1262,10 @@ package riscv_instr_pkg;
   `include "isa/rv32fc_instr.sv"
   `include "isa/rv32f_instr.sv"
   `include "isa/rv32i_instr.sv"
+  `include "isa/rv32b_instr.sv"
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"
+  `include "isa/rv64b_instr.sv"
   `include "isa/rv64c_instr.sv"
   `include "isa/rv64d_instr.sv"
   `include "isa/rv64f_instr.sv"
