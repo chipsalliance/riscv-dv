@@ -406,19 +406,6 @@ class riscv_instr_gen_config extends uvm_object;
       virtual_addr_translation_on == 1'b0;
     }
   }
-  
-`ifdef _VCP //"addr_translaction_c" constraint problem
- //_VCP: Alternative constraint for cfg object randomization - solve before commented since "init_privileged_mode" 
- // variable has a rand_mode disabled
-  constraint _vcp_addr_translaction_c {
-    //solve init_privileged_mode before virtual_addr_translation_on;
-    if ((init_privileged_mode != MACHINE_MODE) && (SATP_MODE != BARE)) {
-      virtual_addr_translation_on == 1'b1;
-    } else {
-      virtual_addr_translation_on == 1'b0;
-    }
-  }
-`endif  
 
   constraint floating_point_c {
     if (enable_floating_point) {
@@ -496,9 +483,6 @@ class riscv_instr_gen_config extends uvm_object;
   function new (string name = "");
     string s;
     super.new(name);
-`ifdef _VCP //"addr_translaction_c" constraint problem
-	_vcp_addr_translaction_c.constraint_mode(0);
-`endif
     init_delegation();
     inst = uvm_cmdline_processor::get_inst();
     get_int_arg_value("+num_of_tests=", num_of_tests);
@@ -557,13 +541,6 @@ class riscv_instr_gen_config extends uvm_object;
         default: `uvm_fatal(get_full_name(),
                   $sformatf("Illegal boot mode option - %0s", boot_mode_opts))
       endcase
-`ifdef _VCP //"addr_translaction_c" constraint problem
-// Original code disables rand mode of init_privileged_mode variable that is hovewer used 
-// in solve...before in "addr_translaction_c constraint" - this causes error. To solve this 
-// problem oryginal constraint is disabled and replaced by _vcp_addr_translaction_c alternative constraint
-	addr_translaction_c.constraint_mode(0);
-	_vcp_addr_translaction_c.constraint_mode(1);
-`endif
       init_privileged_mode.rand_mode(0);
       addr_translaction_rnd_order_c.constraint_mode(0);
     end
