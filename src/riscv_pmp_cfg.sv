@@ -18,17 +18,37 @@ class riscv_pmp_cfg extends uvm_object;
 
   // default to a single PMP region
   rand int pmp_num_regions = 1;
+
   // default to granularity of 0 (4 bytes grain)
   int pmp_granularity = 0;
+
   // enable bit for pmp randomization
   bit pmp_randomize = 0;
+
   // pmp CSR configurations
   rand pmp_cfg_reg_t pmp_cfg[];
+
   // PMP maximum address - used to set defaults
   bit [XLEN - 1 : 0] pmp_max_address = {XLEN{1'b1}};
+
+  // As supporting PMP will cause the major initialization and exception handling
+  // routines to all be generated before the <main> section of the output program,
+  // this option enables/disables automatic creation of a PMP "safe region"
+  // that enables all accesses to these subroutines without throwing any PMP faults.
+  // pmp_min_addr is used as the configuration address for this region.
+  // Setting this will write the configuration:
+  //  { L:0, A:TOR, X:1, W:1, R:1, ADDR:<pmp_min_address>  }
+  // to the pmpcfg0 and pmpaddr0 CSRs and will cause any explicitly declared
+  // configuration for pmp_region_0 from the command line to be ignored.
+  bit pmp_enable_safe_region = 1'b0;
+
   // PMP "minimum" address - the address written to pmpaddr0
   // to create a "safe region", which contains important setup code,
-  // and cannot throw a PMP fault
+  // and cannot throw a PMP fault.
+  // This should be manually set to just after the location of the <main>
+  // section of the program to allow all initialization routines to not be
+  // interrupted by PMP faults.
+  // This value will default to 0, and will only be valid if pmp_enable_safe_region is set.
   bit [XLEN - 1 : 0] pmp_min_address = 0;
 
   // used to parse addr_mode configuration from cmdline
@@ -38,6 +58,8 @@ class riscv_pmp_cfg extends uvm_object;
   `uvm_object_utils_begin(riscv_pmp_cfg)
     `uvm_field_int(pmp_num_regions, UVM_DEFAULT)
     `uvm_field_int(pmp_granularity, UVM_DEFAULT)
+    `uvm_field_int(pmp_max_address, UVM_DEFAULT)
+    `uvm_field_int(pmp_min_address, UVM_DEFAULT)
   `uvm_object_utils_end
 
   // constraints
@@ -65,29 +87,19 @@ class riscv_pmp_cfg extends uvm_object;
     super.new(name);
     inst = uvm_cmdline_processor::get_inst();
     get_bool_arg_value("+pmp_randomize=", pmp_randomize);
+    get_bool_arg_value("+pmp_enable_safe_region=", pmp_enable_safe_region);
     get_int_arg_value("+pmp_granularity=", pmp_granularity);
     get_int_arg_value("+pmp_num_regions=", pmp_num_regions);
+    get_hex_arg_value("+pmp_min_address=", pmp_min_address);
     get_hex_arg_value("+pmp_max_address=", pmp_max_address);
     pmp_cfg = new[pmp_num_regions];
     // As per privileged spec, the top 10 bits of a rv64 PMP address are all 0.
     if (XLEN == 64) begin
       pmp_max_address[XLEN - 1 : XLEN - 11] = 10'b0;
     end
-    if (!pmp_randomize) begin
-      set_defaults();
-      setup_pmp();
-    end
   endfunction
 
   function void initialize(bit require_signature_addr);
-    // We want to set the "minimum" pmp address to just after the location of the <main>
-    // section of the program to allow all initialization routines to not be interrupted
-    // by PMP faults.
-    // The location of <main> itself will change depending on whether the handshaking
-    // mechanism is enabled or disabled, so we check if it is enabled and then
-    // round up the address of <main>.
-    pmp_min_address = (require_signature_addr) ? 'h80002910 : 'h80001580;
-
     if (!pmp_randomize) begin
       set_defaults();
       setup_pmp();
@@ -107,16 +119,19 @@ class riscv_pmp_cfg extends uvm_object;
       pmp_cfg[i].x    = 1'b1;
       pmp_cfg[i].w    = 1'b1;
       pmp_cfg[i].r    = 1'b1;
-      pmp_cfg[i].addr = (i == 0) ? pmp_min_address : assign_default_addr(pmp_num_regions, i);
+      pmp_cfg[i].addr = assign_default_addr(pmp_num_regions, i);
     end
   endfunction
 
-  // Helper function to break down
   function bit [XLEN - 1 : 0] assign_default_addr(int num_regions, int index);
     bit [XLEN - 1 : 0] total_addr_space, offset;
-    total_addr_space = pmp_max_address - pmp_min_address;
-    offset = total_addr_space / (num_regions - 1) * index;
-    return pmp_min_address + offset;
+    if (pmp_enable_safe_region) begin
+      total_addr_space = pmp_max_address - pmp_min_address;
+      offset = total_addr_space / (num_regions - 1) * index;
+      return pmp_min_address + offset;
+    end else begin
+      return pmp_max_address / num_regions * (index + 1);
+    end
   endfunction
 
   function void setup_pmp();
@@ -132,7 +147,7 @@ class riscv_pmp_cfg extends uvm_object;
     end
   endfunction
 
-  function void parse_pmp_config(string pmp_region, output pmp_cfg_reg_t pmp_cfg_reg);
+  function void parse_pmp_config(string pmp_region, ref pmp_cfg_reg_t pmp_cfg_reg);
     string fields[$];
     string field_vals[$];
     string field_type;
@@ -210,17 +225,21 @@ class riscv_pmp_cfg extends uvm_object;
     foreach (pmp_cfg[i]) begin
       // TODO(udinator) condense this calculations if possible
       pmp_id = i / cfg_per_csr;
-      cfg_byte = {pmp_cfg[i].l, pmp_cfg[i].zero, pmp_cfg[i].a,
-                  pmp_cfg[i].x, pmp_cfg[i].w, pmp_cfg[i].r};
+      if (pmp_enable_safe_region && i == 0) begin
+        cfg_byte = {1'b0, pmp_cfg[i].zero, TOR, 1'b1, 1'b1, 1'b1};
+      end else begin
+        cfg_byte = {pmp_cfg[i].l, pmp_cfg[i].zero, pmp_cfg[i].a,
+                    pmp_cfg[i].x, pmp_cfg[i].w, pmp_cfg[i].r};
+      end
       `uvm_info(`gfn, $sformatf("cfg_byte: 0x%0x", cfg_byte), UVM_DEBUG)
       cfg_bitmask = cfg_byte << ((i % cfg_per_csr) * 8);
       `uvm_info(`gfn, $sformatf("cfg_bitmask: 0x%0x", cfg_bitmask), UVM_DEBUG)
       pmp_word = pmp_word | cfg_bitmask;
       `uvm_info(`gfn, $sformatf("pmp_word: 0x%0x", pmp_word), UVM_DEBUG)
       cfg_bitmask = 0;
-      `uvm_info(`gfn, $sformatf("pmp_addr_%d: 0x%0x", i, pmp_cfg[i].addr), UVM_DEBUG)
       instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg, pmp_cfg[i].addr));
       instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg));
+      `uvm_info(`gfn, $sformatf("pmp_addr_%d: 0x%0x", i, pmp_cfg[i].addr), UVM_DEBUG)
       // short circuit if end of list
       if (i == pmp_cfg.size() - 1) begin
         instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg, pmp_word));
