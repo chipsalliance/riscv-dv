@@ -601,9 +601,10 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void pre_enter_privileged_mode(int hart);
     string instr[];
-    // Setup kerenal stack pointer
-    gen_section(get_label("kernel_sp", hart),
-               {$sformatf("la x%0d, %0skernel_stack_end", cfg.tp, hart_prefix(hart))});
+	string str[$];    
+	// Setup kerenal stack pointer
+	str = {$sformatf("la x%0d, %0skernel_stack_end", cfg.tp, hart_prefix(hart))};
+	gen_section(get_label("kernel_sp", hart), str);
     // Setup interrupt and exception delegation
     if(!cfg.no_delegation && (cfg.init_privileged_mode != MACHINE_MODE)) begin
       gen_delegation(hart);
