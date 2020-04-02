@@ -397,7 +397,7 @@ class riscv_instr_gen_config extends uvm_object;
     foreach (gpr[i]) {
       !(gpr[i] inside {sp, tp, scratch_reg, ZERO, RA, GP});
     }
-	unique {gpr};
+    unique {gpr};
   }
 
   constraint addr_translaction_rnd_order_c {

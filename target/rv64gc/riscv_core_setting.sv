@@ -71,11 +71,7 @@ parameter int NUM_HARTS = 1;
 `ifdef DSIM
 privileged_reg_t implemented_csr[] = {
 `else
-`ifdef _VCP //DKO4049
 const privileged_reg_t implemented_csr[] = {
-`else
-parameter privileged_reg_t implemented_csr[] = {
-`endif
 `endif
     // User mode CSR
     USTATUS,    // User status
@@ -127,11 +123,7 @@ parameter privileged_reg_t implemented_csr[] = {
 `ifdef DSIM
 interrupt_cause_t implemented_interrupt[] = {
 `else
-`ifdef _VCP //DKO4049
 const interrupt_cause_t implemented_interrupt[] = {
-`else
-parameter interrupt_cause_t implemented_interrupt[] = {
-`endif
 `endif
     U_SOFTWARE_INTR,
     S_SOFTWARE_INTR,
@@ -147,11 +139,7 @@ parameter interrupt_cause_t implemented_interrupt[] = {
 `ifdef DSIM
 exception_cause_t implemented_exception[] = {
 `else
-`ifdef _VCP //DKO4049
 const exception_cause_t implemented_exception[] = {
-`else
-parameter exception_cause_t implemented_exception[] = {
-`endif
 `endif
     INSTRUCTION_ACCESS_FAULT,
     ILLEGAL_INSTRUCTION,

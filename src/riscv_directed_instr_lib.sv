@@ -440,7 +440,7 @@ class riscv_int_numeric_corner_stream extends riscv_directed_instr_stream;
   }
 
   constraint avail_regs_c {
-    unique{avail_regs};
+    unique {avail_regs};
     foreach(avail_regs[i]) {
       !(avail_regs[i] inside {cfg.reserved_regs});
       avail_regs[i] != ZERO;

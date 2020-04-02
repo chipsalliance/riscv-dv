@@ -49,7 +49,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       rs1_reg == SP;
     }
   }
-  
+
   constraint rs1_c {
     !(rs1_reg inside {cfg.reserved_regs, reserved_rd, ZERO});
   }
