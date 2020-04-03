@@ -96,8 +96,6 @@ def get_seed(seed):
   """
   if seed >= 0:
     return seed
-  # _VCP: DST644 - Randomization limited to 31 bits because Riviera fails for 32 bit value interpreted as negative number
-  #return random.getrandbits(32)
   return random.getrandbits(31)
 
 
