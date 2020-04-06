@@ -109,15 +109,14 @@
     cmd:
       - "vlib <out>/work"
       - "vlog -work <out>/work
-        +incdir+<ALDEC_PATH>/vlib/uvm-1.2/src
+        -uvmver 1.2
         +define+UVM_REGEX_NO_DPI
-        -l uvm_1_2
         +incdir+<setting>
         +incdir+<user_extension>
         -f <cwd>/files.f
         <cmp_opts>"
   sim:
     cmd: >
-      vsim -c -sv_lib <ALDEC_PATH>/bin/uvm_1_2_dpi <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
+      vsim -c <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
     cov_opts: >
       -acdb_file <out>/cov.acdb
