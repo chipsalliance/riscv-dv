@@ -5,8 +5,8 @@ Prerequisites
 
 To be able to run the instruction generator, you need to have an RTL simulator
 which supports SystemVerilog and UVM 1.2. This generator has been verified with
-Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
-make sure the EDA tool environment is properly setup before running the generator.
+Synopsys VCS, Cadence Incisive/Xcelium, Mentor Questa, and Aldec Riviera-PRO simulators.
+Please make sure the EDA tool environment is properly setup before running the generator.
 
 Install RISCV-DV
 ----------------
