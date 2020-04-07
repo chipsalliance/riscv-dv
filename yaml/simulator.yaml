@@ -104,7 +104,6 @@
       -coverage -ucdb <out>/cov.ucdb
 
 - tool: riviera
-  env_var: ALDEC_PATH
   compile:
     cmd:
       - "vlib <out>/work"
