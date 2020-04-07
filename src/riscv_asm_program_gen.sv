@@ -697,7 +697,7 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[$];
     if (riscv_instr_pkg::support_pmp) begin
       cfg.pmp_cfg.setup_pmp();
-      cfg.pmp_cfg.gen_pmp_instr(instr, cfg.scratch_reg);
+      cfg.pmp_cfg.gen_pmp_instr({cfg.scratch_reg, cfg.gpr[0]}, instr);
       gen_section(get_label("pmp_setup", hart), instr);
     end
   endfunction
