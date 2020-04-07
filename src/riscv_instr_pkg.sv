@@ -1051,9 +1051,9 @@ package riscv_instr_pkg;
     rand bit                   x;
     rand bit                   w;
     rand bit                   r;
-    // RV32: addr is the top 32 bits of a 34 bit PMP address
-    // RV64: addr is the top 54 bits of a 56 bit PMP address
-    rand bit [XLEN - 1 : 0]    addr;
+    // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
+    // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
+    rand bit [XLEN - 1 : 0]    offset;
   } pmp_cfg_reg_t;
 
   function automatic string hart_prefix(int hart = 0);

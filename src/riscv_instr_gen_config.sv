@@ -77,7 +77,8 @@ class riscv_instr_gen_config extends uvm_object;
   // Reserved register
   // Reserved for various hardcoded routines
   rand riscv_reg_t       gpr[4];
-  // Used by any DCSR operations inside of the debug rom
+  // Used by any DCSR operations inside of the debug rom.
+  // Also used by the PMP generation.
   rand riscv_reg_t       scratch_reg;
   // Use a random register for stack pointer/thread pointer
   rand riscv_reg_t       sp;
