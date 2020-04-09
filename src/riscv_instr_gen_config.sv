@@ -174,6 +174,8 @@ class riscv_instr_gen_config extends uvm_object;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
   bit                    enable_interrupt;
   bit                    enable_nested_interrupt;
+  // Enables manual override of MEPC in various exception handlers
+  bit                    write_epc_in_exception_handler;
   // We need a separate control knob for enabling timer interrupts, as Spike
   // throws an exception if xIE.xTIE is enabled
   bit                    enable_timer_irq;
@@ -456,6 +458,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_string(boot_mode_opts, UVM_DEFAULT)
     `uvm_field_int(enable_page_table_exception, UVM_DEFAULT)
     `uvm_field_int(no_directed_instr, UVM_DEFAULT)
+    `uvm_field_int(write_epc_in_exception_handler, UVM_DEFAULT)
     `uvm_field_int(enable_interrupt, UVM_DEFAULT)
     `uvm_field_int(enable_timer_irq, UVM_DEFAULT)
     `uvm_field_int(bare_program_mode, UVM_DEFAULT)
@@ -497,6 +500,7 @@ class riscv_instr_gen_config extends uvm_object;
     inst = uvm_cmdline_processor::get_inst();
     get_int_arg_value("+num_of_tests=", num_of_tests);
     get_int_arg_value("+enable_page_table_exception=", enable_page_table_exception);
+    get_bool_arg_value("+write_epc_in_exception_handler=", write_epc_in_exception_handler);
     get_bool_arg_value("+enable_interrupt=", enable_interrupt);
     get_bool_arg_value("+enable_nested_interrupt=", enable_nested_interrupt);
     get_bool_arg_value("+enable_timer_irq=", enable_timer_irq);

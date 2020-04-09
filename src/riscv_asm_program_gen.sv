@@ -601,7 +601,7 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void pre_enter_privileged_mode(int hart);
     string instr[];
-	string str[$];    
+	string str[$];
 	// Setup kerenal stack pointer
 	str = {$sformatf("la x%0d, %0skernel_stack_end", cfg.tp, hart_prefix(hart))};
 	gen_section(get_label("kernel_sp", hart), str);
@@ -1046,6 +1046,13 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, INSTR_FAULT_EXCEPTION);
     gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    if (cfg.write_epc_in_exception_handler) begin
+      instr = {instr,
+              $sformatf("csrr  x%0d, mepc", cfg.gpr[0]),
+              $sformatf("addi  x%0d, x%0d, 4", cfg.gpr[0], cfg.gpr[0]),
+              $sformatf("csrw  mepc, x%0d", cfg.gpr[0])
+      };
+    end
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
     gen_section(get_label("instr_fault_handler", hart), instr);
@@ -1056,6 +1063,13 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, LOAD_FAULT_EXCEPTION);
     gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    if (cfg.write_epc_in_exception_handler) begin
+      instr = {instr,
+              $sformatf("csrr  x%0d, mepc", cfg.gpr[0]),
+              $sformatf("addi  x%0d, x%0d, 4", cfg.gpr[0], cfg.gpr[0]),
+              $sformatf("csrw  mepc, x%0d", cfg.gpr[0])
+      };
+    end
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
     gen_section(get_label("load_fault_handler", hart), instr);
@@ -1066,6 +1080,13 @@ class riscv_asm_program_gen extends uvm_object;
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, STORE_FAULT_EXCEPTION);
     gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+    if (cfg.write_epc_in_exception_handler) begin
+      instr = {instr,
+              $sformatf("csrr  x%0d, mepc", cfg.gpr[0]),
+              $sformatf("addi  x%0d, x%0d, 4", cfg.gpr[0], cfg.gpr[0]),
+              $sformatf("csrw  mepc, x%0d", cfg.gpr[0])
+      };
+    end
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
     gen_section(get_label("store_fault_handler", hart), instr);
