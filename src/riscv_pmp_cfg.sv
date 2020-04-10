@@ -25,6 +25,9 @@ class riscv_pmp_cfg extends uvm_object;
   // enable bit for pmp randomization
   bit pmp_randomize = 0;
 
+  // allow pmp randomization to cause address range overlap
+  bit pmp_allow_addr_overlap = 0;
+
   // pmp CSR configurations
   rand pmp_cfg_reg_t pmp_cfg[];
 
@@ -46,7 +49,10 @@ class riscv_pmp_cfg extends uvm_object;
     `uvm_field_int(pmp_max_offset, UVM_DEFAULT)
   `uvm_object_utils_end
 
-  // constraints
+  /////////////////////////////////////////////////
+  // Constraints - apply when pmp_randomize is 1 //
+  /////////////////////////////////////////////////
+
   constraint sanity_c {
     pmp_num_regions inside {[1 : 16]};
     pmp_granularity inside {[0 : XLEN + 3]};
@@ -66,8 +72,24 @@ class riscv_pmp_cfg extends uvm_object;
     }
   }
 
-  // TODO: add feature to disable overlapping address ranges
   constraint addr_range_c {
+    foreach (pmp_cfg[i]) {
+      // Offset of pmp_cfg[0] does not matter, since it will be set to <main>,
+      // so we do not constrain it here, as it will be overridden during generation
+      if (i != 0) {
+        pmp_cfg[i].offset inside {[1 : pmp_max_offset + 1]};
+      } else {
+        pmp_cfg[i].offset == 0;
+      }
+    }
+  }
+
+  constraint addr_overlapping_c {
+    foreach (pmp_cfg[i]) {
+      if (!pmp_allow_addr_overlap && i > 0) {
+        pmp_cfg[i].offset > pmp_cfg[i-1].offset;
+      }
+    }
   }
 
   function new(string name = "");
@@ -75,6 +97,7 @@ class riscv_pmp_cfg extends uvm_object;
     super.new(name);
     inst = uvm_cmdline_processor::get_inst();
     get_bool_arg_value("+pmp_randomize=", pmp_randomize);
+    get_bool_arg_value("+pmp_allow_addr_overlap=", pmp_allow_addr_overlap);
     get_int_arg_value("+pmp_granularity=", pmp_granularity);
     get_int_arg_value("+pmp_num_regions=", pmp_num_regions);
     get_hex_arg_value("+pmp_max_offset=", pmp_max_offset);
@@ -221,14 +244,16 @@ class riscv_pmp_cfg extends uvm_object;
       if (i == 0) begin
         // load the address of the <main> section into pmpaddr0
         instr.push_back($sformatf("la x%0d, main", scratch_reg[0]));
+        instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
         `uvm_info(`gfn, "Loaded the address of <main> section into pmpaddr0", UVM_LOW)
       end else begin
         // Add the offset to the base address to get the other pmpaddr values
-        instr.push_back($sformatf("csrr x%0d, 0x%0x", scratch_reg[0], base_pmp_addr));
+        instr.push_back($sformatf("la x%0d, main", scratch_reg[0]));
         instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[1], pmp_cfg[i].offset));
         instr.push_back($sformatf("add x%0d, x%0d, x%0d",
                                   scratch_reg[0], scratch_reg[0], scratch_reg[1]));
+        instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
         `uvm_info(`gfn, $sformatf("Offset of pmp_addr_%d from pmpaddr0: 0x%0x",
                                   i, pmp_cfg[i].offset), UVM_LOW)
