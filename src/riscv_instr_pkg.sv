@@ -1052,9 +1052,9 @@ package riscv_instr_pkg;
     bit                   x;
     bit                   w;
     bit                   r;
-    // RV32: addr is the top 32 bits of a 34 bit PMP address
-    // RV64: addr is the top 54 bits of a 56 bit PMP address
-    bit [XLEN - 1 : 0]    addr;
+    // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
+    // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
+    bit [XLEN - 1 : 0]    offset;
 `else
   typedef struct{
     rand bit                   l;
@@ -1063,10 +1063,9 @@ package riscv_instr_pkg;
     rand bit                   x;
     rand bit                   w;
     rand bit                   r;
-    // RV32: addr is the top 32 bits of a 34 bit PMP address
-    // RV64: addr is the top 54 bits of a 56 bit PMP address
-    rand bit [XLEN - 1 : 0]    addr;
-`endif
+    // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
+    // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
+    rand bit [XLEN - 1 : 0]    offset;
   } pmp_cfg_reg_t;
 
   function automatic string hart_prefix(int hart = 0);
@@ -1095,6 +1094,18 @@ package riscv_instr_pkg;
     RoundDown,
     RoundToOdd
   } vxrm_t;
+
+  typedef enum int {
+    ZBB,
+    ZBS,
+    ZBP,
+    ZBE,
+    ZBF,
+    ZBC,
+    ZBR,
+    ZBM,
+    ZBT
+  } b_ext_group_t;
 
   `VECTOR_INCLUDE("riscv_instr_pkg_inc_variables.sv")
 
@@ -1247,6 +1258,28 @@ package riscv_instr_pkg;
     end
   endfunction
 
+  class cmdline_enum_processor #(parameter type T);
+    static function void get_array_values(string cmdline_str, ref T vals[]);
+      string s;
+      void'(inst.get_arg_value(cmdline_str, s));
+      if(s != "") begin
+        string cmdline_list[$];
+        T value;
+        uvm_split_string(s, ",", cmdline_list);
+        vals = new[cmdline_list.size];
+        foreach (cmdline_list[i]) begin
+          if (uvm_enum_wrapper#(T)::from_name(
+             cmdline_list[i].toupper(), value)) begin
+            vals[i] = value;
+          end else begin
+            `uvm_fatal("riscv_instr_pkg", $sformatf(
+                "Invalid value (%0s) specified in command line: %0s", cmdline_list[i], cmdline_str))
+          end
+        end
+      end
+    endfunction
+  endclass
+
   riscv_reg_t all_gpr[] = {ZERO, RA, SP, GP, TP, T0, T1, T2, S0, S1, A0,
                            A1, A2, A3, A4, A5, A6, A7, S2, S3, S4, S5, S6,
                            S7, S8, S9, S10, S11, T3, T4, T5, T6};
@@ -1261,6 +1294,7 @@ package riscv_instr_pkg;
   `include "riscv_vector_cfg.sv"
   `include "riscv_pmp_cfg.sv"
   typedef class riscv_instr;
+  typedef class riscv_b_instr;
   `include "riscv_instr_gen_config.sv"
   `include "isa/riscv_instr.sv"
   `include "isa/riscv_amo_instr.sv"
