@@ -1046,17 +1046,9 @@ package riscv_instr_pkg;
   // TODO (udinator) allow a full 34 bit address for rv32?
 `ifdef _VCP //GRK958
   typedef struct packed {
-    bit                   l;
-    bit [1:0]                  zero;
-    pmp_addr_mode_t       a;
-    bit                   x;
-    bit                   w;
-    bit                   r;
-    // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
-    // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
-    bit [XLEN - 1 : 0]    offset;
 `else
   typedef struct{
+`endif
     rand bit                   l;
     bit [1:0]                  zero;
     rand pmp_addr_mode_t       a;
@@ -1258,7 +1250,7 @@ package riscv_instr_pkg;
     end
   endfunction
 
-  class cmdline_enum_processor #(parameter type T);
+  class cmdline_enum_processor #(parameter type T = riscv_instr_group_t);
     static function void get_array_values(string cmdline_str, ref T vals[]);
       string s;
       void'(inst.get_arg_value(cmdline_str, s));
