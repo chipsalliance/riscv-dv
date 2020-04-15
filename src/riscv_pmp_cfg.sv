@@ -115,6 +115,9 @@ class riscv_pmp_cfg extends uvm_object;
   // This will only get called if pmp_randomize is set, in which case we apply command line
   // arguments after randomization
   function void post_randomize();
+`ifdef _VCP //GRK958
+    foreach(pmp_cfg[i]) pmp_cfg[i].zero = 2'b00;
+`endif  
     setup_pmp();
   endfunction
 
