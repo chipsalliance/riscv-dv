@@ -138,7 +138,7 @@ class riscv_instr_cov_test extends uvm_test;
       if (riscv_instr::instr_template.exists(instr_name)) begin
         instr.copy(riscv_instr::instr_template[instr_name]);
         if (instr.group inside {RV32I, RV32M, RV32C, RV64I, RV64M, RV64C,
-                                RV32F, RV32B}) begin
+                                RV32F, RV32B, RV64B}) begin
           assign_trace_info_to_instr(instr);
         end
         instr.pre_sample();
@@ -191,6 +191,13 @@ class riscv_instr_cov_test extends uvm_test;
           end else begin
             get_val(operands[1], instr.csr);
           end
+        end else if (instr.instr_name inside {FSRI, FSRIW}) begin
+          // fsri rd, rs1, rs3, imm
+          instr.rs1 = get_gpr(operands[1]);
+          instr.rs1_value = get_gpr_state(operands[1]);
+          instr.rs3 = get_gpr(operands[2]);
+          instr.rs3_value = get_gpr_state(operands[2]);
+          get_val(operands[3], instr.imm);
         end else begin
           // addi rd, rs1, imm
           instr.rs1 = get_gpr(operands[1]);

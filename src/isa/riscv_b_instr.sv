@@ -451,9 +451,9 @@ class riscv_b_instr extends riscv_instr;
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     return cfg.enable_b_extension && (
            (ZBB inside {cfg.enable_bitmanip_groups} && instr_name inside {
-               CLZ, CTZ, PCNT,
+               CLZ, CTZ, CLZW, CTZW, PCNT, PCNTW,
                SLO, SLOI, SLOW, SLOIW,
-               SRO, SLOI, SROW, SLOIW,
+               SRO, SROI, SROW, SROIW,
                MIN, MINU, MAX, MAXU,
                ADDWU, ADDIWU, SUBWU,
                ADDU_W, SUBU_W,
@@ -475,7 +475,9 @@ class riscv_b_instr extends riscv_instr;
                }) ||
            (ZBE inside {cfg.enable_bitmanip_groups} && instr_name inside {
                BEXT, BEXTW,
-               BDEP, BDEPW
+               BDEP, BDEPW,
+               // TODO, spec 0.92 doesn't categorize these 2 instr in any group, put in ZBE for now
+               SEXT_B, SEXT_H
                }) ||
            (ZBF inside {cfg.enable_bitmanip_groups} && instr_name inside {BFP, BFPW}) ||
            (ZBC inside {cfg.enable_bitmanip_groups} && instr_name inside {
