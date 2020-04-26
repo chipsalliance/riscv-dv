@@ -201,12 +201,12 @@ class riscv_instr_cov_item extends riscv_instr;
     case(instr_name)
       BEQ    : is_branch_hit = (rs1_value == rs2_value);
       C_BEQZ : is_branch_hit = (rs1_value == 0);
-      BNE    : is_branch_hit = (rs1_value == rs2_value);
+      BNE    : is_branch_hit = (rs1_value != rs2_value);
       C_BNEZ : is_branch_hit = (rs1_value != 0);
       BLT    : is_branch_hit = ($signed(rs1_value) <  $signed(rs2_value));
-      BGE    : is_branch_hit = ($signed(rs1_value) >  $signed(rs2_value));
+      BGE    : is_branch_hit = ($signed(rs1_value) >=  $signed(rs2_value));
       BLTU   : is_branch_hit = (rs1_value < rs2_value);
-      BGEU   : is_branch_hit = (rs1_value > rs2_value);
+      BGEU   : is_branch_hit = (rs1_value >= rs2_value);
       default: `uvm_error(get_name(), $sformatf("Unexpected instr %0s", instr_name.name()))
     endcase
     return is_branch_hit;
