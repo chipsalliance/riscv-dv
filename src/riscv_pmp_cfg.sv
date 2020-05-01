@@ -117,7 +117,7 @@ class riscv_pmp_cfg extends uvm_object;
   function void post_randomize();
 `ifdef _VCP //GRK958
     foreach(pmp_cfg[i]) pmp_cfg[i].zero = 2'b00;
-`endif  
+`endif
     setup_pmp();
   endfunction
 
@@ -183,7 +183,7 @@ class riscv_pmp_cfg extends uvm_object;
         "ADDR": begin
           // Don't have to convert address to "PMP format" here,
           // since it must be masked off in hardware
-          pmp_cfg_reg.offset = format_addr(field_val.atohex());
+          pmp_cfg_reg.addr = format_addr(field_val.atohex());
         end
         default: begin
           `uvm_fatal(`gfn, $sformatf("%s, Invalid PMP configuration field name!", field_val))
@@ -251,15 +251,33 @@ class riscv_pmp_cfg extends uvm_object;
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
         `uvm_info(`gfn, "Loaded the address of <main> section into pmpaddr0", UVM_LOW)
       end else begin
-        // Add the offset to the base address to get the other pmpaddr values
-        instr.push_back($sformatf("la x%0d, main", scratch_reg[0]));
-        instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[1], pmp_cfg[i].offset));
-        instr.push_back($sformatf("add x%0d, x%0d, x%0d",
-                                  scratch_reg[0], scratch_reg[0], scratch_reg[1]));
-        instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
-        instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
-        `uvm_info(`gfn, $sformatf("Offset of pmp_addr_%d from pmpaddr0: 0x%0x",
-                                  i, pmp_cfg[i].offset), UVM_LOW)
+        // If an actual address has been set from the command line, use this address,
+        // otherwise use the default offset+<main> address
+        //
+        // TODO(udinator) - The practice of passing in a max offset from the command line
+        //  is somewhat unintuitive, and is just an initial step. Eventually a max address
+        //  should be passed in from the command line and this routine do all of the
+        //  calculations to split the address range formed by [<main> : pmp_max_addr].
+        //  This will likely require a complex assembly routine - the code below is a very simple
+        //  first step towards this goal, allowing users to specify a PMP memory address
+        //  from the command line instead of having to calculate an offset themselves.
+        if (pmp_cfg[i].addr != 0) begin
+          instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
+          `uvm_info(`gfn,
+                    $sformatf("Address 0x%0x loaded into pmpaddr[%d] CSR", base_pmp_addr + i, i),
+                    UVM_LOW);
+        end else begin
+          // Add the offset to the base address to get the other pmpaddr values
+          instr.push_back($sformatf("la x%0d, main", scratch_reg[0]));
+          instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[1], pmp_cfg[i].offset));
+          instr.push_back($sformatf("add x%0d, x%0d, x%0d",
+                                    scratch_reg[0], scratch_reg[0], scratch_reg[1]));
+          instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
+          instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
+          `uvm_info(`gfn, $sformatf("Offset of pmp_addr_%d from pmpaddr0: 0x%0x",
+                                    i, pmp_cfg[i].offset), UVM_LOW)
+        end
       end
       // Now, check if we have to write to the appropriate pmpcfg CSR.
         // Short circuit if we reach the end of the list
