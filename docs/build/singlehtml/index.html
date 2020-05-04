@@ -92,6 +92,13 @@
 <li class="toctree-l2"><a class="reference internal" href="index.html#privileged-csr-test-generation-optional">Privileged CSR Test Generation (optional)</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-extension_support">Extension Support</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#bit-manipulation-extension">Bit Manipulation Extension</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#setup-riscv-gcc-compiler-toolchain-and-iss-simulator">Setup RISCV-GCC compiler toolchain and ISS simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#run-bitmanip-simulation">Run bitmanip simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#functional-coverage-support-for-bitmanip">Functional Coverage Support For Bitmanip</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-end_to_end_simulation">End to End Simulation Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-generator_flow">Generator Flow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-coverage_model">Coverage Model</a><ul>
@@ -178,21 +185,21 @@
 <p>RISCV-DV is a SV/UVM based open-source instruction generator for RISC-V
 processor verification. It currently supports the following features:</p>
 <ul class="simple">
-<li>Supported instruction set: RV32IMAFDC, RV64IMAFDC</li>
-<li>Supported privileged mode: machine mode, supervisor mode, user mode</li>
-<li>Page table randomization and exception</li>
-<li>Privileged CSR setup randomization</li>
-<li>Privileged CSR test suite</li>
-<li>Trap/interrupt handling</li>
-<li>Test suite to stress test MMU</li>
-<li>Sub-program generation and random program calls</li>
-<li>Illegal instruction and HINT instruction generation</li>
-<li>Random forward/backward branch instructions</li>
-<li>Supports mixing directed instructions with random instruction stream</li>
-<li>Debug mode support, with fully randomized debug ROM</li>
-<li>Instruction generation coverage model</li>
-<li>Communication of information to any integrated SV testbench</li>
-<li>Co-simulation with multiple ISS : spike, riscv-ovpsim</li>
+<li><p>Supported instruction set: RV32IMAFDC, RV64IMAFDC</p></li>
+<li><p>Supported privileged mode: machine mode, supervisor mode, user mode</p></li>
+<li><p>Page table randomization and exception</p></li>
+<li><p>Privileged CSR setup randomization</p></li>
+<li><p>Privileged CSR test suite</p></li>
+<li><p>Trap/interrupt handling</p></li>
+<li><p>Test suite to stress test MMU</p></li>
+<li><p>Sub-program generation and random program calls</p></li>
+<li><p>Illegal instruction and HINT instruction generation</p></li>
+<li><p>Random forward/backward branch instructions</p></li>
+<li><p>Supports mixing directed instructions with random instruction stream</p></li>
+<li><p>Debug mode support, with fully randomized debug ROM</p></li>
+<li><p>Instruction generation coverage model</p></li>
+<li><p>Communication of information to any integrated SV testbench</p></li>
+<li><p>Co-simulation with multiple ISS : spike, riscv-ovpsim</p></li>
 </ul>
 <p>A CSR test generation script written in Python is also provided, to generate a
 directed test suite that stresses all CSR instructions on all of the CSRs that
@@ -204,16 +211,16 @@ the core implements.</p>
 <h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h3>
 <p>To be able to run the instruction generator, you need to have an RTL simulator
 which supports SystemVerilog and UVM 1.2. This generator has been verified with
-Synopsys VCS, Cadence Incisive/Xcelium, and Mentor Questa simulators. Please
-make sure the EDA tool environment is properly setup before running the generator.</p>
+Synopsys VCS, Cadence Incisive/Xcelium, Mentor Questa, and Aldec Riviera-PRO simulators.
+Please make sure the EDA tool environment is properly setup before running the generator.</p>
 </div>
 <div class="section" id="install-riscv-dv">
 <h3>Install RISCV-DV<a class="headerlink" href="#install-riscv-dv" title="Permalink to this headline">¶</a></h3>
 <p>Getting the source</p>
 <ol class="arabic simple">
-<li>Install <a class="reference external" href="https://git-scm.com/">git</a></li>
-<li><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/google/riscv-dv.git</span></code></li>
-<li><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">riscv-dv</span></code></li>
+<li><p>Install <a class="reference external" href="https://git-scm.com/">git</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/google/riscv-dv.git</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">riscv-dv</span></code></p></li>
 </ol>
 <p>There are two ways that you can run scripts from riscv-dv.</p>
 <p>For developers which may work on multiple clones in parallel, using directly run
@@ -239,11 +246,11 @@ after each change. Example for running:</p>
 <div class="section" id="setup-riscv-gcc-compiler-toolchain">
 <h3>Setup RISCV-GCC compiler toolchain<a class="headerlink" href="#setup-riscv-gcc-compiler-toolchain" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
-<li>Install <a class="reference external" href="https://github.com/riscv/riscv-gcc">riscv-gcc</a> toolchain</li>
-<li>Set environment variable RISCV_GCC to the RISC-V gcc executable
-executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-gcc)</li>
-<li>Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
-executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-objcopy)</li>
+<li><p>Install <a class="reference external" href="https://github.com/riscv/riscv-gcc">riscv-gcc</a> toolchain</p></li>
+<li><p>Set environment variable RISCV_GCC to the RISC-V gcc executable
+executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-gcc)</p></li>
+<li><p>Set environment variable RISCV_OBJCOPY to RISC-v objcopy executable
+executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-objcopy)</p></li>
 </ol>
 <p>Sample .bashrc setup:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">RISCV_TOOLCHAIN</span><span class="o">=&lt;</span><span class="n">riscv_gcc_install_path</span><span class="o">&gt;</span>
@@ -257,28 +264,28 @@ executable. (example: &lt;install_dir&gt;/bin/riscv32-unknown-elf-objcopy)</li>
 <p>Currently three ISS are supported, the default ISS is spike. You can install any
 one of below to run ISS simulation.</p>
 <ol class="arabic simple">
-<li><ul class="first">
-<li><a class="reference external" href="https://github.com/riscv/riscv-isa-sim">spike</a> setup</li>
-<li>Follow the instructions to build spike</li>
-<li>Build spike with “–enable-commitlog”</li>
-<li>Set environment variable SPIKE_PATH to the directory of the spike binary</li>
+<li><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/riscv/riscv-isa-sim">spike</a> setup</p></li>
+<li><p>Follow the instructions to build spike</p></li>
+<li><p>Build spike with “–enable-commitlog”</p></li>
+<li><p>Set environment variable SPIKE_PATH to the directory of the spike binary</p></li>
 </ul>
 </li>
-<li><ul class="first">
-<li><a class="reference external" href="https://github.com/riscv/riscv-ovpsim">riscv-ovpsim</a> setup</li>
-<li>Download the riscv-ovpsim binary</li>
-<li>Set environment variable OVPSIM_PATH to the directory of the ovpsim binary</li>
+<li><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/riscv/riscv-ovpsim">riscv-ovpsim</a> setup</p></li>
+<li><p>Download the riscv-ovpsim binary</p></li>
+<li><p>Set environment variable OVPSIM_PATH to the directory of the ovpsim binary</p></li>
 </ul>
 </li>
-<li><ul class="first">
-<li><a class="reference external" href="https://github.com/westerndigitalcorporation/swerv-ISS">whisper</a> (swerv-ISS) setup</li>
-<li>Follow the instruction to install the ISS, and set WHISPER_ISS to the whisper binary</li>
+<li><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/westerndigitalcorporation/swerv-ISS">whisper</a> (swerv-ISS) setup</p></li>
+<li><p>Follow the instruction to install the ISS, and set WHISPER_ISS to the whisper binary</p></li>
 </ul>
 </li>
-<li><ul class="first">
-<li><a class="reference external" href="https://github.com/rems-project/sail-riscv">sail-riscv</a> setup</li>
-<li>Follow the <a class="reference external" href="https://github.com/rems-project/sail-riscv/blob/master/README.md">sail-riscv steps</a> to install sail-riscv</li>
-<li>Set environment variable SAIL_RISCV to the path of sail-riscv binary</li>
+<li><ul class="simple">
+<li><p><a class="reference external" href="https://github.com/rems-project/sail-riscv">sail-riscv</a> setup</p></li>
+<li><p>Follow the <a class="reference external" href="https://github.com/rems-project/sail-riscv/blob/master/README.md">sail-riscv steps</a> to install sail-riscv</p></li>
+<li><p>Set environment variable SAIL_RISCV to the path of sail-riscv binary</p></li>
 </ul>
 </li>
 </ol>
@@ -307,6 +314,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">questa</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">dsim</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">qrun</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">riviera</span>
 </pre></div>
 </div>
 <p>The complete test list can be found in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/yaml/base_testlist.yaml">base testlist yaml</a>. To run a full regression, simply use below command:</p>
@@ -414,21 +422,21 @@ you can run with these targets if it matches your processor specificationi:</p>
 existing target directory as the template, and modify riscv_core_setting.sv to
 match your processor capability.</p>
 <div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Bit width of RISC-V GPR</span>
-<span class="k">parameter</span> <span class="kt">int</span> <span class="no">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
+<span class="k">parameter</span> <span class="kt">int</span> <span class="n">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
 
 <span class="c1">// Parameter for SATP mode, set to BARE if address translation is not supported</span>
-<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="no">SATP_MODE</span> <span class="o">=</span> <span class="no">SV39</span><span class="p">;</span>
+<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="n">SATP_MODE</span> <span class="o">=</span> <span class="n">SV39</span><span class="p">;</span>
 
 <span class="c1">// Supported Privileged mode</span>
-<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">USER_MODE</span><span class="p">,</span>
-                                                 <span class="no">SUPERVISOR_MODE</span><span class="p">,</span>
-                                                 <span class="no">MACHINE_MODE</span><span class="p">};</span>
+<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">USER_MODE</span><span class="p">,</span>
+                                                 <span class="n">SUPERVISOR_MODE</span><span class="p">,</span>
+                                                 <span class="n">MACHINE_MODE</span><span class="p">};</span>
 
 <span class="c1">// Unsupported instructions</span>
 <span class="n">riscv_instr_name_t</span> <span class="n">unsupported_instr</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{};</span>
 
 <span class="c1">// ISA supported by the processor</span>
-<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">RV32I</span><span class="p">,</span> <span class="no">RV32M</span><span class="p">,</span> <span class="no">RV64I</span><span class="p">,</span> <span class="no">RV64M</span><span class="p">};</span>
+<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">RV32I</span><span class="p">,</span> <span class="n">RV32M</span><span class="p">,</span> <span class="n">RV64I</span><span class="p">,</span> <span class="n">RV64M</span><span class="p">};</span>
 </pre></div>
 </div>
 <p>You can then run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span></code>:</p>
@@ -443,12 +451,12 @@ match your processor capability.</p>
 <p>Here’s a few cases that you might want to allocate the instruction and data
 sections to match the actual memory map</p>
 <ol class="arabic simple">
-<li>The processor has internal memories, and you want to test load/store from
-various internal/externel memory regions</li>
-<li>The processor implments the PMP feature, and you want to configure the memory
-map to match PMP setting.</li>
-<li>Virtual address translation is implmented and you want to test load/store from
-sparse memory locations to verify data TLB replacement logic.</li>
+<li><p>The processor has internal memories, and you want to test load/store from
+various internal/externel memory regions</p></li>
+<li><p>The processor implments the PMP feature, and you want to configure the memory
+map to match PMP setting.</p></li>
+<li><p>Virtual address translation is implmented and you want to test load/store from
+sparse memory locations to verify data TLB replacement logic.</p></li>
 </ol>
 <p>You can configure the memory map in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_gen_config.sv">riscv_instr_gen_config.sv</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mem_region_t mem_region[$] = &#39;{
@@ -530,114 +538,146 @@ conditions for the load/store testing.</p>
 </div>
 <div class="section" id="runtime-options-of-the-generator">
 <h3>Runtime options of the generator<a class="headerlink" href="#runtime-options-of-the-generator" title="Permalink to this headline">¶</a></h3>
-<table border="1" class="docutils">
+<table class="docutils align-default">
 <colgroup>
-<col width="33%" />
-<col width="57%" />
-<col width="10%" />
+<col style="width: 35%" />
+<col style="width: 55%" />
+<col style="width: 10%" />
 </colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Option</th>
-<th class="head">Description</th>
-<th class="head">Default</th>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Default</p></th>
 </tr>
 </thead>
-<tbody valign="top">
-<tr class="row-even"><td>num_of_tests</td>
-<td>Number of assembly tests to be generated</td>
-<td>1</td>
+<tbody>
+<tr class="row-even"><td><p>num_of_tests</p></td>
+<td><p>Number of assembly tests to be generated</p></td>
+<td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td>num_of_sub_program</td>
-<td>Number of sub-program in one test</td>
-<td>5</td>
+<tr class="row-odd"><td><p>num_of_sub_program</p></td>
+<td><p>Number of sub-program in one test</p></td>
+<td><p>5</p></td>
 </tr>
-<tr class="row-even"><td>instr_cnt</td>
-<td>Instruction count per test</td>
-<td>200</td>
+<tr class="row-even"><td><p>instr_cnt</p></td>
+<td><p>Instruction count per test</p></td>
+<td><p>200</p></td>
 </tr>
-<tr class="row-odd"><td>enable_page_table_exception</td>
-<td>Enable page table exception</td>
-<td>0</td>
+<tr class="row-odd"><td><p>enable_page_table_exception</p></td>
+<td><p>Enable page table exception</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>enable_unaligned_load_store</td>
-<td>Enable unaligned memory operations</td>
-<td>0</td>
+<tr class="row-even"><td><p>enable_unaligned_load_store</p></td>
+<td><p>Enable unaligned memory operations</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>no_ebreak</td>
-<td>Disable ebreak instruction</td>
-<td>1</td>
+<tr class="row-odd"><td><p>no_ebreak</p></td>
+<td><p>Disable ebreak instruction</p></td>
+<td><p>1</p></td>
 </tr>
-<tr class="row-even"><td>no_wfi</td>
-<td>Disable WFI instruction</td>
-<td>1</td>
+<tr class="row-even"><td><p>no_wfi</p></td>
+<td><p>Disable WFI instruction</p></td>
+<td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td>no_dret</td>
-<td>Disable dret instruction</td>
-<td>1</td>
+<tr class="row-odd"><td><p>set_mstatus_tw</p></td>
+<td><p>Enable WFI to be treated as illegal instruction</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>no_branch_jump</td>
-<td>Disable branch/jump instruction</td>
-<td>0</td>
+<tr class="row-even"><td><p>no_dret</p></td>
+<td><p>Disable dret instruction</p></td>
+<td><p>1</p></td>
 </tr>
-<tr class="row-odd"><td>no_load_store</td>
-<td>Disable load/store instruction</td>
-<td>0</td>
+<tr class="row-odd"><td><p>no_branch_jump</p></td>
+<td><p>Disable branch/jump instruction</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>no_csr_instr</td>
-<td>Disable CSR instruction</td>
-<td>0</td>
+<tr class="row-even"><td><p>no_csr_instr</p></td>
+<td><p>Disable CSR instruction</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>no_fence</td>
-<td>Disable fence instruction</td>
-<td>0</td>
+<tr class="row-odd"><td><p>enable_illegal_csr_instruction</p></td>
+<td><p>Enable illegal CSR instructions</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>illegal_instr_ratio</td>
-<td>Number of illegal instructions every 1000 instr</td>
-<td>0</td>
+<tr class="row-even"><td><p>enable_access_invalid_csr_level</p></td>
+<td><p>Enable accesses to higher privileged CSRs</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>hint_instr_ratio</td>
-<td>Number of HINT instructions every 1000 instr</td>
-<td>0</td>
+<tr class="row-odd"><td><p>enable_dummy_csr_write</p></td>
+<td><p>Enable some dummy CSR writes in setup routine</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>boot_mode</td>
-<td>m:Machine mode, s:Supervisor mode, u:User mode</td>
-<td>m</td>
+<tr class="row-even"><td><p>enable_misaligned_instr</p></td>
+<td><p>Enable jumps to misaligned instruction addresses</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>no_directed_instr</td>
-<td>Disable directed instruction stream</td>
-<td>0</td>
+<tr class="row-odd"><td><p>no_fence</p></td>
+<td><p>Disable fence instruction</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>require_signature_addr</td>
-<td>Set to 1 if test needs to talk to testbench</td>
-<td>0</td>
+<tr class="row-even"><td><p>no_data_page</p></td>
+<td><p>Disable data page generation</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>signature_addr</td>
-<td>Write to this addr to send data to testbench</td>
-<td>0</td>
+<tr class="row-odd"><td><p>disable_compressed_instr</p></td>
+<td><p>Disable compressed instruction generation</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>enable_interrupt</td>
-<td>Enable MStatus.MIE, used in interrupt test</td>
-<td>0</td>
+<tr class="row-even"><td><p>illegal_instr_ratio</p></td>
+<td><p>Number of illegal instructions every 1000 instr</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>gen_debug_section</td>
-<td>Disables randomized debug_rom section</td>
-<td>0</td>
+<tr class="row-odd"><td><p>hint_instr_ratio</p></td>
+<td><p>Number of HINT instructions every 1000 instr</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>num_debug_sub_program</td>
-<td>Number of debug sub-programs in test</td>
-<td>0</td>
+<tr class="row-even"><td><p>boot_mode</p></td>
+<td><p>m:Machine mode, s:Supervisor mode, u:User mode</p></td>
+<td><p>m</p></td>
 </tr>
-<tr class="row-odd"><td>enable_ebreak_in_debug_rom</td>
-<td>Generate ebreak instructions inside debug ROM</td>
-<td>0</td>
+<tr class="row-odd"><td><p>no_directed_instr</p></td>
+<td><p>Disable directed instruction stream</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-even"><td>set_dcsr_ebreak</td>
-<td>Randomly enable dcsr.ebreak(m/s/u)</td>
-<td>0</td>
+<tr class="row-even"><td><p>require_signature_addr</p></td>
+<td><p>Set to 1 if test needs to talk to testbench</p></td>
+<td><p>0</p></td>
 </tr>
-<tr class="row-odd"><td>randomize_csr</td>
-<td>Fully randomize main CSRs (xSTATUS, xIE)</td>
-<td>0</td>
+<tr class="row-odd"><td><p>signature_addr</p></td>
+<td><p>Write to this addr to send data to testbench</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>enable_interrupt</p></td>
+<td><p>Enable MStatus.MIE, used in interrupt test</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>enable_timer_irq</p></td>
+<td><p>Enable xIE.xTIE, used to enable timer interrupts</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>gen_debug_section</p></td>
+<td><p>Enables randomized debug_rom section</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>num_debug_sub_program</p></td>
+<td><p>Number of debug sub-programs in test</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>enable_ebreak_in_debug_rom</p></td>
+<td><p>Generate ebreak instructions inside debug ROM</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>set_dcsr_ebreak</p></td>
+<td><p>Randomly enable dcsr.ebreak(m/s/u)</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-even"><td><p>enable_debug_single_step</p></td>
+<td><p>Enable debug single stepping functionality</p></td>
+<td><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p>randomize_csr</p></td>
+<td><p>Fully randomize main CSRs (xSTATUS, xIE)</p></td>
+<td><p>0</p></td>
 </tr>
 </tbody>
 </table>
@@ -730,6 +770,85 @@ it with random instructions:</p>
 </div>
 </div>
 </div>
+<span id="document-extension_support"></span><div class="section" id="extension-support">
+<h2>Extension Support<a class="headerlink" href="#extension-support" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bit-manipulation-extension">
+<h3>Bit Manipulation Extension<a class="headerlink" href="#bit-manipulation-extension" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="setup-riscv-gcc-compiler-toolchain-and-iss-simulator">
+<h3>Setup RISCV-GCC compiler toolchain and ISS simulator<a class="headerlink" href="#setup-riscv-gcc-compiler-toolchain-and-iss-simulator" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Install <a class="reference external" href="https://github.com/riscv/riscv-bitmanip">riscv-gcc</a> toolchain</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Download the repo and add ” –enable-commitlog” at the end of line 6 in
+<a class="reference external" href="https://github.com/riscv/riscv-bitmanip/blob/master/tools/riscv-isa-sim-build.sh">build_file</a> as it’s not enabled by default</p></li>
+<li><p>Follow the <a class="reference external" href="https://github.com/riscv/riscv-bitmanip/tree/master/tools#building-tools-with-draft-b-extension-instructions-support">steps</a> to install GCC and spike</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Update environment variable RISCV_GCC to the RISC-V gcc executable
+executable. (example: &lt;install_dir&gt;/bin/riscv64-unknown-elf-gcc)</p></li>
+<li><p>Update environment variable RISCV_OBJCOPY to RISC-V objcopy executable
+executable. (example: &lt;install_dir&gt;/bin/riscv64-unknown-elf-objcopy)</p></li>
+<li><p>Update environment variable SPIKE_PATH to the directory of the spike binary</p></li>
+<li><p>Update <a class="reference external" href="https://github.com/riscv/riscv-ovpsim">riscv-ovpsim</a> to Nov 26, 2019 or later version</p></li>
+</ol>
+<p>Sample .bashrc setup:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">RISCV_TOOLCHAIN</span><span class="o">=&lt;</span><span class="n">riscv_gcc_install_path</span><span class="o">&gt;</span>
+<span class="n">export</span> <span class="n">RISCV_GCC</span><span class="o">=</span><span class="s2">&quot;$RISCV_TOOLCHAIN/bin/riscv64-unknown-elf-gcc&quot;</span>
+<span class="n">export</span> <span class="n">RISCV_OBJCOPY</span><span class="o">=</span><span class="s2">&quot;$RISCV_TOOLCHAIN/bin/riscv64-unknown-elf-objcopy&quot;</span>
+<span class="n">export</span> <span class="n">SPIKE_PATH</span><span class="o">=</span><span class="s2">&quot;$RISCV_TOOLCHAIN/bin&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-bitmanip-simulation">
+<h3>Run bitmanip simulation<a class="headerlink" href="#run-bitmanip-simulation" title="Permalink to this headline">¶</a></h3>
+<p>Bit manipulation tests are added in target “rv32imcb” or “rv64imcb”. Here is the
+example to run bitmanip test with both ISS (spike and ovpsim). The instruction
+trace from these ISS will be cross compared:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imcb</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_b_ext_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">spike</span><span class="p">,</span><span class="n">ovpsim</span>
+</pre></div>
+</div>
+<p>In <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imcb/testlist.yaml">bitmanip testlist</a>, there are a few bitmanip tests. Run option
+“+enable_b_extension=1” enables it and “+enable_bitmanip_groups=zbb,zbt”
+allows user to only enable one or some groups of bit manipulation instructions.</p>
+</div>
+<div class="section" id="functional-coverage-support-for-bitmanip">
+<h3>Functional Coverage Support For Bitmanip<a class="headerlink" href="#functional-coverage-support-for-bitmanip" title="Permalink to this headline">¶</a></h3>
+<p>The functional covergroup is defined in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_cover_group.sv">riscv_instr_cover_group.sv</a>.
+It includes below major categories:</p>
+<ul>
+<li><p>If the operand is a register, cover all possible reg values for each operand:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp_rs1</span> <span class="p">:</span> <span class="n">coverpoint</span> <span class="n">instr</span><span class="o">.</span><span class="n">rs1</span><span class="p">;</span>
+<span class="n">cp_rs2</span> <span class="p">:</span> <span class="n">coverpoint</span> <span class="n">instr</span><span class="o">.</span><span class="n">rs2</span><span class="p">;</span>
+<span class="n">cp_rd</span>  <span class="p">:</span> <span class="n">coverpoint</span> <span class="n">instr</span><span class="o">.</span><span class="n">rd</span><span class="p">;</span>
+</pre></div>
+</div>
+</li>
+<li><p>If the operand is an integer value and the amount of these possible values is
+less than XLEN*2, cover all the values:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>// Cover all the count values of leading/Trailing zeros (0:XLEN-1) for clz, ctz
+`B_R_INSTR_NO_RS2_CG_BEGIN(clz)
+  `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN-1)
+`CG_END
+
+// Cover all the shift values (0:XLEN-1) for slo
+`B_R_INSTR_CG_BEGIN(slo)
+  `CP_VALUE_RANGE(num_ones_shift, instr.rs2_value, 0, XLEN-1)
+`CG_END
+</pre></div>
+</div>
+</li>
+<li><p>Hazard conditions</p></li>
+</ul>
+<p>Before this <a class="reference external" href="https://github.com/riscv/riscv-bitmanip/issues/60">issue</a> is resolved, functional coverage can only be run with OVPsim:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">ovpsim_sim</span> <span class="o">--</span><span class="n">iss</span> <span class="n">ovpsim</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imc</span>
+</pre></div>
+</div>
+</div>
+</div>
 <span id="document-end_to_end_simulation"></span><div class="section" id="end-to-end-simulation-flow">
 <h2>End to End Simulation Flow<a class="headerlink" href="#end-to-end-simulation-flow" title="Permalink to this headline">¶</a></h2>
 <p>We have collaborated with LowRISC to apply this flow for <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/doc/verification.rst">IBEX RISC-V core verification</a>.
@@ -738,20 +857,20 @@ This repo is still under active development, this is the recommended approach to
 customize the instruction generator while keeping the effort of merging
 upstream changes to a minimum.</p>
 <ol class="arabic simple">
-<li>Do not modify the upstream classes directly. When possible, extend from
-the upstream classses and implement your own functionalities.</li>
-<li>Add your extensions under user_extension directory, and add the files to
+<li><p>Do not modify the upstream classes directly. When possible, extend from
+the upstream classses and implement your own functionalities.</p></li>
+<li><p>Add your extensions under user_extension directory, and add the files to
 user_extension/user_extension.svh. If you prefer to put your extensions in a
 different directory, you can use “-ext &lt;user_extension_path&gt;” to override the
-user extension path.</li>
-<li>Create a new target directory and customize the setting and testlist</li>
-<li>Run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span> <span class="pre">--isa</span> <span class="pre">&lt;isa&gt;</span> <span class="pre">--mabi</span> <span class="pre">&lt;mabi&gt;</span></code></li>
-<li>Use command line type override to use your extended classes.
-<code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_type_override=&lt;upstream_class&gt;,&lt;extended_class&gt;&quot;</span></code></li>
-<li>If extending <code class="docutils literal notranslate"><span class="pre">riscv_asm_program_gen</span></code> class is desired, must use this command
+user extension path.</p></li>
+<li><p>Create a new target directory and customize the setting and testlist</p></li>
+<li><p>Run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span> <span class="pre">--isa</span> <span class="pre">&lt;isa&gt;</span> <span class="pre">--mabi</span> <span class="pre">&lt;mabi&gt;</span></code></p></li>
+<li><p>Use command line type override to use your extended classes.
+<code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_type_override=&lt;upstream_class&gt;,&lt;extended_class&gt;&quot;</span></code></p></li>
+<li><p>If extending <code class="docutils literal notranslate"><span class="pre">riscv_asm_program_gen</span></code> class is desired, must use this command
 line override:
 <code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_inst_override=riscv_asm_program_gen,&lt;extended</span>
-<span class="pre">class&gt;,'uvm_test_top.asm_gen'&quot;</span></code></li>
+<span class="pre">class&gt;,'uvm_test_top.asm_gen'&quot;</span></code></p></li>
 </ol>
 <p>You can refer to <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68">riscv-dv extension for ibex</a> for a working example.</p>
 <p>We have plan to open-source the end-to-end environments of other advanced RISC-V
@@ -774,17 +893,17 @@ coverage from there.</p>
 <p>The functional covergroup is defined in <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_instr_cover_group.sv">riscv_instr_cover_group.sv</a>.
 It includes below major categories:</p>
 <ul class="simple">
-<li>Cover all operands for each instruction</li>
-<li>Hazard conditions</li>
-<li>Corner cases like overflow, underflow, divide by zero</li>
-<li>Aligned/unaligned load/store</li>
-<li>Positive/negative immediate value</li>
-<li>Forward/backward branches, branch hit history</li>
-<li>Hint instruction</li>
-<li>Illegal instruction</li>
-<li>All compressed and non-compressed opcode</li>
-<li>Access to all implemened privileged CSR</li>
-<li>Exception and interrupt</li>
+<li><p>Cover all operands for each instruction</p></li>
+<li><p>Hazard conditions</p></li>
+<li><p>Corner cases like overflow, underflow, divide by zero</p></li>
+<li><p>Aligned/unaligned load/store</p></li>
+<li><p>Positive/negative immediate value</p></li>
+<li><p>Forward/backward branches, branch hit history</p></li>
+<li><p>Hint instruction</p></li>
+<li><p>Illegal instruction</p></li>
+<li><p>All compressed and non-compressed opcode</p></li>
+<li><p>Access to all implemened privileged CSR</p></li>
+<li><p>Exception and interrupt</p></li>
 </ul>
 <p>The functional covergroup is still under active development. Please feel free to
 add anything you are interested or file a bug for any feature request.</p>
@@ -813,24 +932,24 @@ in parallel:</p>
 <div class="section" id="add-custom-instructions">
 <h3>Add custom instructions<a class="headerlink" href="#add-custom-instructions" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
-<li>Add the new instruction enum to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr_enum.sv">riscv_custom_instr_enum.sv</a></li>
+<li><p>Add the new instruction enum to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr_enum.sv">riscv_custom_instr_enum.sv</a></p></li>
 </ol>
-<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">CUSTOM_ADD</span><span class="p">,</span>
-<span class="no">CUSTOM_SUB</span><span class="p">,</span>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">CUSTOM_ADD</span><span class="p">,</span>
+<span class="n">CUSTOM_SUB</span><span class="p">,</span>
 <span class="p">...</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li>Add custom instruction definition to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv32x_instr.sv">rv32x_instr.sv</a>/<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv64x_instr.sv">rv64x_instr.sv</a></li>
+<li><p>Add custom instruction definition to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv32x_instr.sv">rv32x_instr.sv</a>/<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv64x_instr.sv">rv64x_instr.sv</a></p></li>
 </ol>
-<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_ADD</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
-<span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_SUB</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="n">CUSTOM_ADD</span><span class="p">,</span> <span class="n">R_FORMAT</span><span class="p">,</span> <span class="n">ARITHMETIC</span><span class="p">,</span> <span class="n">RV32X</span><span class="p">)</span>
+<span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="n">CUSTOM_SUB</span><span class="p">,</span> <span class="n">R_FORMAT</span><span class="p">,</span> <span class="n">ARITHMETIC</span><span class="p">,</span> <span class="n">RV32X</span><span class="p">)</span>
 <span class="p">...</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
-<li>Extend <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr.sv">riscv_custom_instr.sv</a> and implement key functions like get_instr_name, convert2asm</li>
-<li>Add RV32X/RV64X to supported_isa in riscv_core_setting.sv</li>
+<li><p>Extend <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr.sv">riscv_custom_instr.sv</a> and implement key functions like get_instr_name, convert2asm</p></li>
+<li><p>Add RV32X/RV64X to supported_isa in riscv_core_setting.sv</p></li>
 </ol>
 </div>
 </div>
@@ -848,22 +967,24 @@ in parallel:</p>
 <img alt="_images/trace_csv.png" src="_images/trace_csv.png" />
 <p><strong>The CSV format includes the following fields:</strong></p>
 <ul class="simple">
-<li>pc : Program counter (instruction memory address)</li>
-<li>instr: Instruction name</li>
-<li>gpr: General purpose register updated by the instruction (rd, fd, vd etc.)<ul>
-<li>Format: &lt;GPR name&gt;:&lt;Value&gt;</li>
-<li>GPR can be any integer/floating point/vector register</li>
-<li>If more than one general purpose registers are updated, separate them with semicolon</li>
+<li><p>pc : Program counter (instruction memory address)</p></li>
+<li><p>instr: Instruction name</p></li>
+<li><p>gpr: General purpose register updated by the instruction (rd, fd, vd etc.)</p>
+<ul>
+<li><p>Format: &lt;GPR name&gt;:&lt;Value&gt;</p></li>
+<li><p>GPR can be any integer/floating point/vector register</p></li>
+<li><p>If more than one general purpose registers are updated, separate them with semicolon</p></li>
 </ul>
 </li>
-<li>csr: Privileged CSR updated by the instruction<ul>
-<li>The same format as the GPR field</li>
+<li><p>csr: Privileged CSR updated by the instruction</p>
+<ul>
+<li><p>The same format as the GPR field</p></li>
 </ul>
 </li>
-<li>binary: Instruction binary</li>
-<li>instr_str: Instruction in assmebly format</li>
-<li>operand: Instruction operands</li>
-<li>pad: Unused</li>
+<li><p>binary: Instruction binary</p></li>
+<li><p>instr_str: Instruction in assmebly format</p></li>
+<li><p>operand: Instruction operands</p></li>
+<li><p>pad: Unused</p></li>
 </ul>
 <p><strong>Here’s a sample of the CSV trace file:</strong></p>
 <div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">pc</span><span class="p">,</span><span class="n">instr</span><span class="p">,</span><span class="n">gpr</span><span class="p">,</span><span class="n">csr</span><span class="p">,</span><span class="n">binary</span><span class="p">,</span><span class="n">mode</span><span class="p">,</span><span class="n">instr_str</span><span class="p">,</span><span class="n">operand</span><span class="p">,</span><span class="n">pad</span>
@@ -890,9 +1011,9 @@ script <a class="reference external" href="https://github.com/google/riscv-dv/bl
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
 </div>
 
