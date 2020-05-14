@@ -1111,7 +1111,8 @@ package riscv_instr_pkg;
     ZBC,
     ZBR,
     ZBM,
-    ZBT
+    ZBT,
+    ZB_TMP // for uncategorized instructions
   } b_ext_group_t;
 
   `VECTOR_INCLUDE("riscv_instr_pkg_inc_variables.sv")
