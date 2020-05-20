@@ -111,6 +111,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-class_reference">Class Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-cmd_line_reference">Command Line Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#document-handshake">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="index.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#handshake-sequence-architecture">Handshake Sequence Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#sample-testbench-integration">Sample Testbench Integration</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="index.html#document-appendix">Appendix</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="index.html#trace-csv-format">Trace CSV format</a></li>
 </ul>
@@ -267,7 +273,7 @@ one of below to run ISS simulation.</p>
 <li><ul class="simple">
 <li><p><a class="reference external" href="https://github.com/riscv/riscv-isa-sim">spike</a> setup</p></li>
 <li><p>Follow the instructions to build spike</p></li>
-<li><p>Build spike with “–enable-commitlog”</p></li>
+<li><p>Build spike with &quot;--enable-commitlog&quot;</p></li>
 <li><p>Set environment variable SPIKE_PATH to the directory of the spike binary</p></li>
 </ul>
 </li>
@@ -300,7 +306,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="section" id="running-the-generator">
 <h3>Running the generator<a class="headerlink" href="#running-the-generator" title="Permalink to this headline">¶</a></h3>
 <p>A simple script <cite>run.py</cite> is provided for you to run a single test or a regression.</p>
-<p>You can use –help to get the complete command reference:</p>
+<p>You can use --help to get the complete command reference:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
@@ -308,7 +314,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_arithmetic_basic_test</span>
 </pre></div>
 </div>
-<p>You can specify the simulator by “-simulator” option:</p>
+<p>You can specify the simulator by &quot;-simulator&quot; option:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">ius</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">vcs</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">questa</span>
@@ -325,7 +331,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">lsf_cmd</span><span class="o">=</span><span class="s2">&quot;bsub -Is&quot;</span>
 </pre></div>
 </div>
-<p>Here’s a few more examples of the run command:</p>
+<p>Here's a few more examples of the run command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single test 10 times</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iterations</span> <span class="mi">10</span>
 
@@ -409,7 +415,7 @@ from other sources to riscv-dv flow.</p>
 <div class="section" id="configure-the-generator-to-match-your-processor-features">
 <h3>Configure the generator to match your processor features<a class="headerlink" href="#configure-the-generator-to-match-your-processor-features" title="Permalink to this headline">¶</a></h3>
 <p>The default configuration of the instruction generator is <strong>RV32IMC</strong> (machine
-mode only). A few pre-defined configurations can be found under “target” directory,
+mode only). A few pre-defined configurations can be found under &quot;target&quot; directory,
 you can run with these targets if it matches your processor specificationi:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span>                   <span class="c1"># Default target rv32imc</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32i</span>    <span class="c1"># rv32i, machine mode only</span>
@@ -422,21 +428,21 @@ you can run with these targets if it matches your processor specificationi:</p>
 existing target directory as the template, and modify riscv_core_setting.sv to
 match your processor capability.</p>
 <div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Bit width of RISC-V GPR</span>
-<span class="k">parameter</span> <span class="kt">int</span> <span class="n">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
+<span class="k">parameter</span> <span class="kt">int</span> <span class="no">XLEN</span> <span class="o">=</span> <span class="mh">64</span><span class="p">;</span>
 
 <span class="c1">// Parameter for SATP mode, set to BARE if address translation is not supported</span>
-<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="n">SATP_MODE</span> <span class="o">=</span> <span class="n">SV39</span><span class="p">;</span>
+<span class="k">parameter</span> <span class="n">satp_mode_t</span> <span class="no">SATP_MODE</span> <span class="o">=</span> <span class="no">SV39</span><span class="p">;</span>
 
 <span class="c1">// Supported Privileged mode</span>
-<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">USER_MODE</span><span class="p">,</span>
-                                                 <span class="n">SUPERVISOR_MODE</span><span class="p">,</span>
-                                                 <span class="n">MACHINE_MODE</span><span class="p">};</span>
+<span class="n">privileged_mode_t</span> <span class="n">supported_privileged_mode</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">USER_MODE</span><span class="p">,</span>
+                                                 <span class="no">SUPERVISOR_MODE</span><span class="p">,</span>
+                                                 <span class="no">MACHINE_MODE</span><span class="p">};</span>
 
 <span class="c1">// Unsupported instructions</span>
 <span class="n">riscv_instr_name_t</span> <span class="n">unsupported_instr</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{};</span>
 
 <span class="c1">// ISA supported by the processor</span>
-<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">RV32I</span><span class="p">,</span> <span class="n">RV32M</span><span class="p">,</span> <span class="n">RV64I</span><span class="p">,</span> <span class="n">RV64M</span><span class="p">};</span>
+<span class="n">riscv_instr_group_t</span> <span class="n">supported_isa</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="no">RV32I</span><span class="p">,</span> <span class="no">RV32M</span><span class="p">,</span> <span class="no">RV64I</span><span class="p">,</span> <span class="no">RV64M</span><span class="p">};</span>
 </pre></div>
 </div>
 <p>You can then run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span></code>:</p>
@@ -448,7 +454,7 @@ match your processor capability.</p>
 </div>
 <div class="section" id="setup-the-memory-map">
 <h3>Setup the memory map<a class="headerlink" href="#setup-the-memory-map" title="Permalink to this headline">¶</a></h3>
-<p>Here’s a few cases that you might want to allocate the instruction and data
+<p>Here's a few cases that you might want to allocate the instruction and data
 sections to match the actual memory map</p>
 <ol class="arabic simple">
 <li><p>The processor has internal memories, and you want to test load/store from
@@ -735,7 +741,7 @@ another GPR. The reference value will then be compared to the value actually
 stored in the CSR to determine whether to jump to the failure condition or
 continue executing, allowing it to be completely self checking. This script has
 been integrated with run.py. If you want to run it separately, you can get the
-command reference with –help:</p>
+command reference with --help:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="n">scripts</span><span class="o">/</span><span class="n">gen_csr_test</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
@@ -782,8 +788,8 @@ it with random instructions:</p>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p>Download the repo and add ” –enable-commitlog” at the end of line 6 in
-<a class="reference external" href="https://github.com/riscv/riscv-bitmanip/blob/master/tools/riscv-isa-sim-build.sh">build_file</a> as it’s not enabled by default</p></li>
+<li><p>Download the repo and add &quot; --enable-commitlog&quot; at the end of line 6 in
+<a class="reference external" href="https://github.com/riscv/riscv-bitmanip/blob/master/tools/riscv-isa-sim-build.sh">build_file</a> as it's not enabled by default</p></li>
 <li><p>Follow the <a class="reference external" href="https://github.com/riscv/riscv-bitmanip/tree/master/tools#building-tools-with-draft-b-extension-instructions-support">steps</a> to install GCC and spike</p></li>
 </ul>
 </div></blockquote>
@@ -805,14 +811,14 @@ executable. (example: &lt;install_dir&gt;/bin/riscv64-unknown-elf-objcopy)</p></
 </div>
 <div class="section" id="run-bitmanip-simulation">
 <h3>Run bitmanip simulation<a class="headerlink" href="#run-bitmanip-simulation" title="Permalink to this headline">¶</a></h3>
-<p>Bit manipulation tests are added in target “rv32imcb” or “rv64imcb”. Here is the
+<p>Bit manipulation tests are added in target &quot;rv32imcb&quot; or &quot;rv64imcb&quot;. Here is the
 example to run bitmanip test with both ISS (spike and ovpsim). The instruction
 trace from these ISS will be cross compared:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imcb</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_b_ext_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">spike</span><span class="p">,</span><span class="n">ovpsim</span>
 </pre></div>
 </div>
 <p>In <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imcb/testlist.yaml">bitmanip testlist</a>, there are a few bitmanip tests. Run option
-“+enable_b_extension=1” enables it and “+enable_bitmanip_groups=zbb,zbt”
+&quot;+enable_b_extension=1&quot; enables it and &quot;+enable_bitmanip_groups=zbb,zbt&quot;
 allows user to only enable one or some groups of bit manipulation instructions.</p>
 </div>
 <div class="section" id="functional-coverage-support-for-bitmanip">
@@ -861,7 +867,7 @@ upstream changes to a minimum.</p>
 the upstream classses and implement your own functionalities.</p></li>
 <li><p>Add your extensions under user_extension directory, and add the files to
 user_extension/user_extension.svh. If you prefer to put your extensions in a
-different directory, you can use “-ext &lt;user_extension_path&gt;” to override the
+different directory, you can use &quot;-ext &lt;user_extension_path&gt;&quot; to override the
 user extension path.</p></li>
 <li><p>Create a new target directory and customize the setting and testlist</p></li>
 <li><p>Run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span> <span class="pre">--isa</span> <span class="pre">&lt;isa&gt;</span> <span class="pre">--mabi</span> <span class="pre">&lt;mabi&gt;</span></code></p></li>
@@ -884,7 +890,7 @@ processors. Stay tuned!</p>
 <div class="section" id="functional-coverage-work-in-progress">
 <h3>Functional coverage (work in progress)<a class="headerlink" href="#functional-coverage-work-in-progress" title="Permalink to this headline">¶</a></h3>
 <p>This flow extracts functional coverage information from the
-instruction trace generated by ISS. It’s independent of the instruction generation
+instruction trace generated by ISS. It's independent of the instruction generation
 flow and does not require a tracer implementation in the RTL. You can use this
 flow as long as your program can be run with an ISS supported in this flow. The
 flow parses the instruction trace log and converts it to a CSV trace format. After
@@ -907,7 +913,7 @@ It includes below major categories:</p>
 </ul>
 <p>The functional covergroup is still under active development. Please feel free to
 add anything you are interested or file a bug for any feature request.</p>
-<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imc/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don’t need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
+<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imc/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don't need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process spike simulation log and collect functional coverage</span>
 <span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span>
 
@@ -934,16 +940,16 @@ in parallel:</p>
 <ol class="arabic simple">
 <li><p>Add the new instruction enum to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/riscv_custom_instr_enum.sv">riscv_custom_instr_enum.sv</a></p></li>
 </ol>
-<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">CUSTOM_ADD</span><span class="p">,</span>
-<span class="n">CUSTOM_SUB</span><span class="p">,</span>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">CUSTOM_ADD</span><span class="p">,</span>
+<span class="no">CUSTOM_SUB</span><span class="p">,</span>
 <span class="p">...</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
 <li><p>Add custom instruction definition to <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv32x_instr.sv">rv32x_instr.sv</a>/<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/isa/custom/rv64x_instr.sv">rv64x_instr.sv</a></p></li>
 </ol>
-<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="n">CUSTOM_ADD</span><span class="p">,</span> <span class="n">R_FORMAT</span><span class="p">,</span> <span class="n">ARITHMETIC</span><span class="p">,</span> <span class="n">RV32X</span><span class="p">)</span>
-<span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="n">CUSTOM_SUB</span><span class="p">,</span> <span class="n">R_FORMAT</span><span class="p">,</span> <span class="n">ARITHMETIC</span><span class="p">,</span> <span class="n">RV32X</span><span class="p">)</span>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_ADD</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
+<span class="no">`DEFINE_CUSTOM_INSTR</span><span class="p">(</span><span class="no">CUSTOM_SUB</span><span class="p">,</span> <span class="no">R_FORMAT</span><span class="p">,</span> <span class="no">ARITHMETIC</span><span class="p">,</span> <span class="no">RV32X</span><span class="p">)</span>
 <span class="p">...</span>
 </pre></div>
 </div>
@@ -959,11 +965,253 @@ in parallel:</p>
 <span id="document-cmd_line_reference"></span><div class="section" id="command-line-reference">
 <h2>Command Line Reference<a class="headerlink" href="#command-line-reference" title="Permalink to this headline">¶</a></h2>
 </div>
+<span id="document-handshake"></span><div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>While the <code class="docutils literal notranslate"><span class="pre">RISCV-DV</span></code> Instruction Generator provides a <code class="docutils literal notranslate"><span class="pre">debug_rom</span></code> section as
+well as various interrupt and exception handlers, from a verification
+standpoint this is not enough to help ensure that a core’s internal state is being
+updated correctly upon receiving external stimulus such as interrupts or debug
+requests, such as the values of any relevant CSRs.
+To help with this issue, the instruction generator also provides a mechanism by
+which to communicate information to a RTL simulation environment via a
+handshaking protocol.</p>
+<div class="section" id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>Every handshake produced by the instruction generator is just a small segment of
+RISC-V assembly code, that end in one or more <code class="docutils literal notranslate"><span class="pre">sw</span></code> instructions to a specified memory
+address <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code>.
+This <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code> is completely customizable, and
+can be specified through a <code class="docutils literal notranslate"><span class="pre">plusarg</span></code> runtime option to the generator.
+There is also an enable bit <code class="docutils literal notranslate"><span class="pre">require_signature_addr</span></code> that must be set through
+another <code class="docutils literal notranslate"><span class="pre">plusarg</span></code> argument to enable these handshake code segments to be
+generated in the main random assembly program.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">RISCV-DV</span></code> based CPU verification environment that utilizes that handshaking mechanism should
+provide a basic set of tasks to monitor this <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code> for any writes - this will indicate
+that the DUT is executing a particular handshake assembly sequence and is transmitting some
+information to the testbench for analysis.
+As a result, this <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code>
+acts as a memory-mapped address that the testbench will monitor, and as
+such, case should be taken when setting this address to ensure that the generator’s
+program randomization will not somehow create a sequence of random load/store
+instructions that access the same <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code>.
+A suggested value for this <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code> is the value <code class="docutils literal notranslate"><span class="pre">0x8ffffffc</span></code>, but can be set
+to any other address depending on the CPU memory map.
+More details, and an example, as to how to interface the testbench with this
+handshake mechanism will be provided below.</p>
+</div>
+<div class="section" id="handshake-sequence-architecture">
+<h3>Handshake Sequence Architecture<a class="headerlink" href="#handshake-sequence-architecture" title="Permalink to this headline">¶</a></h3>
+<p>The function <code class="docutils literal notranslate"><span class="pre">gen_signature_handshake(...)</span></code> contained in
+<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_asm_program_gen.sv">src/riscv_asm_program_gen.sv</a>.
+is used to actually generate the handshaking code and push it into the specified
+instruction queue. Its usage can be seen repeatedly throughout the program
+generation in various places, such as trap handlers and the debug ROM, where it
+is important to send information to a testbench for further verification.
+The <code class="docutils literal notranslate"><span class="pre">signature_type_t</span></code>, <code class="docutils literal notranslate"><span class="pre">core_status_t</span></code>, and <code class="docutils literal notranslate"><span class="pre">test_result_t</span></code> enums specified as
+input values to this function are defined in
+<a class="reference external" href="https://github.com/google/riscv-dv/blob/master/src/riscv_signature_pkg.sv">src/riscv_signature_pkg.sv</a>.
+Note that all of these definitions are within a standalone package, this is so
+that an RTL simulation environment can also import this package to gain access
+to these enums.
+The <code class="docutils literal notranslate"><span class="pre">signature_type_t</span></code> enum is by far the most important enum value, as
+this specifies what kind of handshake will be generated.</p>
+<p>There are currently 4 defined values of <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>, each corresponding
+to a different handshake type that will be generated; each will be explained below.
+Note that two GPRs must be used to temporarily hold the store address and the
+actual data to store to this address; the generator randomizes these two GPRs
+for every generated program, but for the purposes of this document, <code class="docutils literal notranslate"><span class="pre">x1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">x2</span></code> will be used, and <code class="docutils literal notranslate"><span class="pre">0x8ffffffc</span></code> will be used as the example <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code>.</p>
+<div class="section" id="core-status">
+<h4>CORE_STATUS<a class="headerlink" href="#core-status" title="Permalink to this headline">¶</a></h4>
+<p>When the <code class="docutils literal notranslate"><span class="pre">signature_type</span></code> argument is specified as <code class="docutils literal notranslate"><span class="pre">CORE_STATUS</span></code>, a single word
+of data will be written to the <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code>. As the actual <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>
+value is 8 bits wide, as specified in the <code class="docutils literal notranslate"><span class="pre">riscv_signature_pkg</span></code>, this generated
+data word will contain the <code class="docutils literal notranslate"><span class="pre">CORE_STATUS</span></code> value in its bottom 8 bits, and will
+contain the specified value of <code class="docutils literal notranslate"><span class="pre">core_status_t</span></code> in the upper 24 bits. This
+signature handshake is intended to convey basic information about the core’s
+execution state to an RTL simulation environment; a handshake containing a
+<code class="docutils literal notranslate"><span class="pre">core_status</span></code> of <code class="docutils literal notranslate"><span class="pre">IN_DEBUG_MODE</span></code> is added to the debug ROM to indicate to a
+testbench that the core has jumped into Debug Mode and is executing the debug
+ROM, a handshake containing a <code class="docutils literal notranslate"><span class="pre">core_status</span></code> of <code class="docutils literal notranslate"><span class="pre">ILLEGAL_INSTR_EXCEPTION</span></code> is
+added to the illegal instruction exception handler code created by the generator
+to indicate to a testbench that the core has trapped to and is executing the
+proper handler after encountering an illegal instruction, and so on for the rest
+of the defined <code class="docutils literal notranslate"><span class="pre">core_status_t</span></code> enum values.</p>
+<p>Note that when generating these specific handshakes, it is only necessary to
+specify the parameters <code class="docutils literal notranslate"><span class="pre">instr</span></code>, <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>, and <code class="docutils literal notranslate"><span class="pre">core_status</span></code>. For
+example, to generate this handshake to signal status <code class="docutils literal notranslate"><span class="pre">IN_MACHINE_MODE</span></code> to the
+testbench, the call to the function looks like this:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">gen_signature_handshake</span><span class="p">(.</span><span class="n">instr</span><span class="p">(</span><span class="n">instr_string_queue</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">signature_type</span><span class="p">(</span><span class="no">CORE_STATUS</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">core_status</span><span class="p">(</span><span class="no">IN_MACHINE_MODE</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>The sequence of assembly code generated by this call looks like the following:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// First, load the signature address into a GPR</span>
+<span class="n">li</span> <span class="n">x2</span><span class="p">,</span> <span class="mh">0</span><span class="n">x8ffffffc</span>
+<span class="c1">// Load the intended core_status_t enum value into</span>
+<span class="c1">// a second GPR</span>
+<span class="n">li</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x2</span>
+<span class="c1">// Left-shift the core_status value by 8 bits</span>
+<span class="c1">// to make room for the signature_type</span>
+<span class="n">slli</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">8</span>
+<span class="c1">// Load the intended signature_type_t enum value into</span>
+<span class="c1">// the bottom 8 bits of the data word</span>
+<span class="n">addi</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x0</span>
+<span class="c1">// Store the data word to memory at the location of the signature_addr</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="test-result">
+<h4>TEST_RESULT<a class="headerlink" href="#test-result" title="Permalink to this headline">¶</a></h4>
+<p>As before, when <code class="docutils literal notranslate"><span class="pre">signature_type</span></code> is set to <code class="docutils literal notranslate"><span class="pre">TEST_RESULT</span></code> a single word of data
+will be written to the signature address, and the value <code class="docutils literal notranslate"><span class="pre">TEST_RESULT</span></code> will be
+placed in the bottom 8 bits. The upper 24 bits will then contain a value of type
+<code class="docutils literal notranslate"><span class="pre">test_result_t</span></code>, either <code class="docutils literal notranslate"><span class="pre">TEST_PASS</span></code> or <code class="docutils literal notranslate"><span class="pre">TEST_FAIL</span></code>, to indicate to the testbench
+the exit status of the test. As the ISS co-simulation flow provides a robust
+end-of-test correctness check, the only time that this signature handshake is
+used is in the <code class="docutils literal notranslate"><span class="pre">riscv_csr_test</span></code>. Since this test is generated with a Python
+script and is entirely self-checking, we must send an exit status of <code class="docutils literal notranslate"><span class="pre">TEST_PASS</span></code>
+or <code class="docutils literal notranslate"><span class="pre">TEST_FAIL</span></code> to the testbench to indicate to either throw an error or end the
+test correctly.</p>
+<p>Note that when generating these handshakes, the only arguments that need to be
+specified are <code class="docutils literal notranslate"><span class="pre">instr</span></code>, <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>, and <code class="docutils literal notranslate"><span class="pre">test_result</span></code>. For example, to
+generate a handshake to communicate <code class="docutils literal notranslate"><span class="pre">TEST_PASS</span></code> to a testbench, the function
+call would look like this:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">gen_signature_handshake</span><span class="p">(.</span><span class="n">instr</span><span class="p">(</span><span class="n">instr_string_queue</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">signature_type</span><span class="p">(</span><span class="no">TEST_RESULT</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">test_result</span><span class="p">(</span><span class="no">TEST_PASS</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>The sequence of generated assembly code with this function call would look like
+the following:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Load the signature address into a GPR</span>
+<span class="n">li</span> <span class="n">x2</span> <span class="mh">0</span><span class="n">x8ffffffc</span>
+<span class="c1">// Load the intended test_result_t enum value</span>
+<span class="n">li</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x0</span>
+<span class="c1">// Left-shift the test_result value by 8 bits</span>
+<span class="n">slli</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">8</span>
+<span class="c1">// Load the intended signature_type_t enum value into</span>
+<span class="c1">// the bottom 8 bits of the data word</span>
+<span class="n">addi</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x1</span>
+<span class="c1">// Store this formatted word to memory at the signature address</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="write-gpr">
+<h4>WRITE_GPR<a class="headerlink" href="#write-gpr" title="Permalink to this headline">¶</a></h4>
+<p>When a <code class="docutils literal notranslate"><span class="pre">signature_type</span></code> of <code class="docutils literal notranslate"><span class="pre">WRITE_GPR</span></code> is passed to the
+<code class="docutils literal notranslate"><span class="pre">gen_signature_handshake(...)</span></code> function, one data word will initially be written
+to the signature address, containing the <code class="docutils literal notranslate"><span class="pre">signature_type</span></code> of <code class="docutils literal notranslate"><span class="pre">WRITE_GPR</span></code> in the
+lower 8 bits. After this, the value held by each of the 32 RISC-V general
+purpose registers from <code class="docutils literal notranslate"><span class="pre">x0</span></code> to <code class="docutils literal notranslate"><span class="pre">x31</span></code> will be written to the signature address
+with <code class="docutils literal notranslate"><span class="pre">sw</span></code> instructions.</p>
+<p>For this particular handshake, the only function arguments that need to be
+specified are <code class="docutils literal notranslate"><span class="pre">instr</span></code> and <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>. A function call to generate this
+particular handshake would look like the following:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">gen_signature_handshake</span><span class="p">(.</span><span class="n">instr</span><span class="p">(</span><span class="n">instr_string_queue</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">signature_type</span><span class="p">(</span><span class="no">WRITE_GPR</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>The generated assembly sequence would look like this:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Load the signature address into a GPR</span>
+<span class="n">li</span> <span class="n">x2</span><span class="p">,</span> <span class="mh">0</span><span class="n">x8ffffffc</span>
+<span class="c1">// Load the value of WRITE_GPR into a second GPR</span>
+<span class="n">li</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x2</span>
+<span class="c1">// Store this word to memory at the signature address</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="c1">// Iterate through all 32 GPRs and write each one to</span>
+<span class="c1">// memory at the signature address</span>
+<span class="n">sw</span> <span class="n">x0</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">sw</span> <span class="n">x2</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">sw</span> <span class="n">x3</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="p">...</span>
+<span class="n">sw</span> <span class="n">x30</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="n">sw</span> <span class="n">x31</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="write-csr">
+<h4>WRITE_CSR<a class="headerlink" href="#write-csr" title="Permalink to this headline">¶</a></h4>
+<p>When <code class="docutils literal notranslate"><span class="pre">gen_signature_handshake(...)</span></code> is called with <code class="docutils literal notranslate"><span class="pre">WRITE_CSR</span></code> as the
+<code class="docutils literal notranslate"><span class="pre">signature_type</span></code> argument, we will generate a first <code class="docutils literal notranslate"><span class="pre">sw</span></code> instruction that writes a
+data word to the <code class="docutils literal notranslate"><span class="pre">signature_addr</span></code> that contains the value <code class="docutils literal notranslate"><span class="pre">WRITE_CSR</span></code> in the
+bottom 8 bits, and the address of the desired CSR in the upper 24 bits, to
+indicate to the testbench which CSR will be written.
+This first generated <code class="docutils literal notranslate"><span class="pre">sw</span></code> instruction is then followed by a second one, which
+writes the actual data contained in the specified CSR to the signature address.</p>
+<p>Note the only function arguments that have to be specified to generate this
+handshake are <code class="docutils literal notranslate"><span class="pre">instr</span></code>, <code class="docutils literal notranslate"><span class="pre">signature_type</span></code>, and <code class="docutils literal notranslate"><span class="pre">csr</span></code>. As an example, to generate a
+handshake that writes the value of the <cite>mie</cite> CSR to the RTL simulation
+environment, the function call would look like this:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">gen_signature_handshake</span><span class="p">(.</span><span class="n">instr</span><span class="p">(</span><span class="n">instr_string_queue</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">signature_type</span><span class="p">(</span><span class="no">WRITE_CSR</span><span class="p">),</span>
+                        <span class="p">.</span><span class="n">csr</span><span class="p">(</span><span class="no">MIE</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>The sequence of assembly generated by this call would look like the following:</p>
+<div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="c1">// Load the signature address into a GPR</span>
+<span class="n">li</span> <span class="n">x2</span><span class="p">,</span> <span class="mh">0</span><span class="n">x8ffffffc</span>
+<span class="c1">// Load the address of MIE into the second GPR</span>
+<span class="n">li</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x304</span>
+<span class="c1">// Left-shift the CSR address by 8 bits</span>
+<span class="n">slli</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">8</span>
+<span class="c1">// Load the WRITE_CSR signature_type value into</span>
+<span class="c1">// the bottom 8 bits of the data word.</span>
+<span class="c1">// At this point, the data word is 0x00030403</span>
+<span class="n">addi</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x3</span>
+<span class="c1">// Store this formatted word to memory at the signature address</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+<span class="c1">// Read the actual CSR value into the second GPR</span>
+<span class="n">csrr</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="n">x304</span>
+<span class="c1">// Write the value held by the CSR into memory at the signature address</span>
+<span class="n">sw</span> <span class="n">x1</span><span class="p">,</span> <span class="mh">0</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="sample-testbench-integration">
+<h3>Sample Testbench Integration<a class="headerlink" href="#sample-testbench-integration" title="Permalink to this headline">¶</a></h3>
+<p>Everything previously outlined has been relating to how this handshake
+generation is implemented from the perspective of the <code class="docutils literal notranslate"><span class="pre">RISCV-DV</span></code> instruction
+generator, but some work must be done in the RTL simulation environment to
+actually interface with and use these handshakes to improve verification.</p>
+<p>This handshaking mechanism has been put to use for verification of the <a class="reference external" href="https://github.com/lowRISC/ibex">Ibex
+RISC-V core</a>, in collaboration with lowRISC. To
+interface with the handshaking code produced in the generator, this testbench
+makes heavy use of the task <code class="docutils literal notranslate"><span class="pre">wait_for_mem_txn(...)</span></code> found in
+<a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/core_ibex/tests/core_ibex_base_test.sv">tests/core_ibex_base_test.sv</a>.
+This task polls the Ibex core’s data memory interface for any writes to the
+chosen signature address (<code class="docutils literal notranslate"><span class="pre">0x8ffffffc</span></code>), and then based on the value of
+<code class="docutils literal notranslate"><span class="pre">signature_type</span></code> encoded by the generated handshake code, this task takes
+appropriate action and stores the relevant data into a queue instantiated in the
+base test class.</p>
+<p>For example upon detecting a transaction written to the
+signature address that has a <code class="docutils literal notranslate"><span class="pre">signature_type</span></code> of <code class="docutils literal notranslate"><span class="pre">WRITE_CSR</span></code>, it right-shifts
+the collected data word by 8 to obtain the CSR address, which is then stored to
+the local queue. However, since for <code class="docutils literal notranslate"><span class="pre">WRITE_CSR</span></code> signatures there is a second
+data word that gets written to memory at the signature address, the task waits
+for the second write containing the CSR data to arrive, and then stores that
+into the queue as well. After this task completes, it is now possible to pop
+the stored data off of the queue for analysis anywhere else in the test class,
+in this case examining the values of various CSR fields.</p>
+<p>Additionally, the Ibex testbench provides a fairly basic API of some tasks
+wrapping <code class="docutils literal notranslate"><span class="pre">wait_for_mem_txn(...)</span></code> for frequently used functionalities in various
+test classes. This API is also found in
+<a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/core_ibex/tests/core_ibex_base_test.sv">tests/core_ibex_base_test.sv</a>.
+Examples of use-cases for these API functions can be found throughout the
+library of tests written for the Ibex core, found at
+<a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/core_ibex/tests/core_ibex_test_lib.sv">tests/core_ibex_test_lib.sv</a>, as these are heavily used to verify the core’s response to external debug and interrupt stimulus.</p>
+</div>
+</div>
 <span id="document-appendix"></span><div class="section" id="appendix">
 <h2>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="trace-csv-format">
 <h3>Trace CSV format<a class="headerlink" href="#trace-csv-format" title="Permalink to this headline">¶</a></h3>
-<p>A standard CSV format is defined for the instruction execution trace. It’s used for co-simulation result comparison and functional coverage collection.</p>
+<p>A standard CSV format is defined for the instruction execution trace. It's used for co-simulation result comparison and functional coverage collection.</p>
 <img alt="_images/trace_csv.png" src="_images/trace_csv.png" />
 <p><strong>The CSV format includes the following fields:</strong></p>
 <ul class="simple">
@@ -986,7 +1234,7 @@ in parallel:</p>
 <li><p>operand: Instruction operands</p></li>
 <li><p>pad: Unused</p></li>
 </ul>
-<p><strong>Here’s a sample of the CSV trace file:</strong></p>
+<p><strong>Here's a sample of the CSV trace file:</strong></p>
 <div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">pc</span><span class="p">,</span><span class="n">instr</span><span class="p">,</span><span class="n">gpr</span><span class="p">,</span><span class="n">csr</span><span class="p">,</span><span class="n">binary</span><span class="p">,</span><span class="n">mode</span><span class="p">,</span><span class="n">instr_str</span><span class="p">,</span><span class="n">operand</span><span class="p">,</span><span class="n">pad</span>
 <span class="n">ffffffff8000000c</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">addi</span><span class="p">,</span><span class="nl">ra:</span><span class="n">daab700e</span><span class="p">,,</span><span class="mh">000000</span><span class="n">b9</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.addi  ra, 14&quot;</span><span class="p">,</span><span class="s">&quot;ra,14&quot;</span><span class="p">,</span>
 <span class="n">ffffffff8000000e</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6000</span><span class="p">,,</span><span class="n">ff8e6137</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     sp, 0xff8e6&quot;</span><span class="p">,</span><span class="s">&quot;sp,0xff8e6&quot;</span><span class="p">,</span>
