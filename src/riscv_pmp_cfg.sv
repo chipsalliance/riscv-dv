@@ -121,10 +121,13 @@ class riscv_pmp_cfg extends uvm_object;
     super.new(name);
     cfg_per_csr = XLEN / 8;
     inst = uvm_cmdline_processor::get_inst();
+    if (inst.get_arg_value("+pmp_num_regions=", s)) begin
+      pmp_num_regions = s.atoi();
+      pmp_num_regions.rand_mode(0);
+    end
+    get_int_arg_value("+pmp_granularity=", pmp_granularity);
     get_bool_arg_value("+pmp_randomize=", pmp_randomize);
     get_bool_arg_value("+pmp_allow_addr_overlap=", pmp_allow_addr_overlap);
-    get_int_arg_value("+pmp_granularity=", pmp_granularity);
-    get_int_arg_value("+pmp_num_regions=", pmp_num_regions);
     get_hex_arg_value("+pmp_max_offset=", pmp_max_offset);
     `uvm_info(`gfn, $sformatf("pmp max offset: 0x%0x", pmp_max_offset), UVM_LOW)
     pmp_cfg = new[pmp_num_regions];
