@@ -2100,7 +2100,7 @@ class riscv_instr_cover_group;
         instr = riscv_instr::create_instr(instr_name);
         if ((instr.group inside {supported_isa}) &&
             (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C,
-                                 RV32V, RV64V, RV64B, RV32B})) begin
+                                 RVV, RV64B, RV32B})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||

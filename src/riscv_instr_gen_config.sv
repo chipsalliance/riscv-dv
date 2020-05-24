@@ -144,6 +144,42 @@ class riscv_instr_gen_config extends uvm_object;
   privileged_reg_t       invalid_priv_mode_csrs[$];
 
   //-----------------------------------------------------------------------------
+  // Vector extension setting
+  //-----------------------------------------------------------------------------
+
+  // Allow only vector instructions from the random sequences
+  rand bit only_vec_instr;
+  constraint only_vec_instr_c {soft only_vec_instr == 0;}
+
+  // Allow vector floating-point instructions (Allows SEW to be set <16 or >32).
+  rand bit vec_fp;
+
+  // Allow vector narrowing or widening instructions.
+  rand bit vec_narrowing_widening;
+
+  // Allow vector quad-widening instructions.
+  rand bit vec_quad_widening;
+  constraint vec_quad_widening_c {
+    (!vec_narrowing_widening) -> (!vec_quad_widening);
+    // FP requires at least 16 bits and quad-widening requires no more than ELEN/4 bits.
+    (ELEN < 64) -> (!(vec_fp && vec_quad_widening));
+  }
+
+  rand bit allow_illegal_vec_instr;
+  constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
+
+  rand int repeat_instr_prob;
+  constraint repeat_instr_prob_c {repeat_instr_prob inside {[0:80]};}
+
+  // Cause frequent hazards for the Vector Registers:
+  //  * Write-After-Read (WAR)
+  //  * Read-After-Write (RAW)
+  //  * Read-After-Read (RAR)
+  //  * Write-After-Write (WAW)
+  // These hazard conditions are induced by keeping a small (~5) list of registers to select from.
+  rand bit vec_reg_hazards;
+
+  //-----------------------------------------------------------------------------
   // Command line options or control knobs
   //-----------------------------------------------------------------------------
   // Main options for RISC-V assembly program generation

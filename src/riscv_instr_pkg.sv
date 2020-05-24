@@ -89,9 +89,8 @@ package riscv_instr_pkg;
     RV64C,
     RV128I,
     RV128C,
-    RV32V,
+    RVV,
     RV32B,
-    RV64V,
     RV64B,
     RV32X,
     RV64X
@@ -1090,9 +1089,9 @@ package riscv_instr_pkg;
   typedef struct packed {
     bit ill;
     bit [XLEN-2:7] reserved;
-    bit [1:0] vediv;
-    bit [2:0] vsew;
-    bit [1:0] vlmul;
+    int vediv;
+    int vsew;
+    int vlmul;
   } vtype_t;
 
   typedef enum bit [1:0] {
