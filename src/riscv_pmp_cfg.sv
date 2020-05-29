@@ -559,6 +559,9 @@ class riscv_pmp_cfg extends uvm_object;
       LOAD_ACCESS_FAULT: begin
         instr.push_back($sformatf("30: ori x%0d, x%0d, 1", scratch_reg[3], scratch_reg[3]));
       end
+      default: begin
+        `uvm_fatal(`gfn, "Invalid PMP fault type")
+      end
     endcase
     instr = {instr,
              $sformatf("csrr x%0d, 0x%0x", scratch_reg[0], MSCRATCH),
