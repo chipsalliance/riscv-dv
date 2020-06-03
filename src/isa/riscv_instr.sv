@@ -124,7 +124,9 @@ class riscv_instr extends uvm_object;
           !(cfg.disable_compressed_instr &&
             (instr_inst.group inside {RV32C, RV64C, RV32DC, RV32FC, RV128C})) &&
           !(!cfg.enable_floating_point &&
-            (instr_inst.group inside {RV32F, RV64F, RV32D, RV64D}))
+            (instr_inst.group inside {RV32F, RV64F, RV32D, RV64D})) &&
+          !(!cfg.enable_vector_extension &&
+            (instr_inst.group inside {RV32V, RV64V}))
           ) begin
         instr_category[instr_inst.category].push_back(instr_name);
         instr_group[instr_inst.group].push_back(instr_name);
