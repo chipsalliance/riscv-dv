@@ -328,6 +328,8 @@ class riscv_instr_gen_config extends uvm_object;
   constraint mstatus_c {
     if (set_mstatus_mprv) {
       mstatus_mprv == 1'b1;
+    } else {
+      mstatus_mprv == 1'b0;
     }
     if (SATP_MODE == BARE) {
       mstatus_mxr == 0;
