@@ -79,7 +79,7 @@ class riscv_asm_program_gen extends uvm_object;
       gen_init_section(hart);
       // If PMP is supported, we want to generate the associated trap handlers and the test_done
       // section at the start of the program so we can allow access through the pmpcfg0 CSR
-      if (support_pmp && !cfg.bare_program_mode) begin
+      if (riscv_instr_pkg::support_pmp && !cfg.bare_program_mode) begin
         gen_trap_handlers(hart);
         // Ecall handler
         gen_ecall_handler(hart);
@@ -120,7 +120,7 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream = {instr_stream, $sformatf("%sj test_done", indent)};
       // Test done section
       // If PMP isn't supported, generate this in the normal location
-      if (hart == 0 & !support_pmp) begin
+      if (hart == 0 & !riscv_instr_pkg::support_pmp) begin
         gen_test_done();
       end
       // Shuffle the sub programs and insert to the instruction stream
@@ -424,7 +424,7 @@ class riscv_asm_program_gen extends uvm_object;
     end
     core_is_initialized();
     gen_dummy_csr_write(); // TODO add a way to disable xStatus read
-    if (support_pmp) begin
+    if (riscv_instr_pkg::support_pmp) begin
       str = {indent, "j main"};
       instr_stream.push_back(str);
     end
@@ -806,7 +806,7 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void gen_all_trap_handler(int hart);
     string instr[$];
     // If PMP isn't supported, generate the relevant trap handler sections as per usual
-    if (!support_pmp) begin
+    if (!riscv_instr_pkg::support_pmp) begin
       gen_trap_handlers(hart);
       // Ecall handler
       gen_ecall_handler(hart);
