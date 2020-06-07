@@ -66,6 +66,9 @@ class riscv_vector_cfg extends uvm_object;
   constraint bringup_c {
     vstart == 0;
     vl == VLEN/vtype.vsew;
+    vtype.vlmul inside {1, 2, 4};
+    vtype.vediv == 1;
+    vtype.vsew  == 32;
   }
 
   constraint vlmul_c {
