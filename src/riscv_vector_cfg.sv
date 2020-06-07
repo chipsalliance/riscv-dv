@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Google LLC
+ * Copyright 2020 Andes Technology Co., Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +45,6 @@ class riscv_vector_cfg extends uvm_object;
   rand bit allow_illegal_vec_instr;
   constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
 
-  rand int repeat_instr_prob;
-  constraint repeat_instr_prob_c {repeat_instr_prob inside {[0:80]};}
-
   // Cause frequent hazards for the Vector Registers:
   //  * Write-After-Read (WAR)
   //  * Read-After-Write (RAW)
@@ -66,11 +64,11 @@ class riscv_vector_cfg extends uvm_object;
   constraint bringup_c {
     vstart == 0;
     vl == VLEN/vtype.vsew;
-    vtype.vlmul inside {1, 2, 4};
     vtype.vediv == 1;
-    vtype.vsew  == 32;
   }
 
+  // For all widening instructions, the destination element width must be a supported element
+  // width and the destination LMUL value must also be a supported LMUL value
   constraint vlmul_c {
     vtype.vlmul inside {1, 2, 4, 8};
     if (vec_narrowing_widening) {
@@ -84,7 +82,8 @@ class riscv_vector_cfg extends uvm_object;
   constraint vsew_c {
     vtype.vsew inside {8, 16, 32, 64, 128};
     vtype.vsew <= ELEN;
-    if (vec_fp) {vtype.vsew inside {16, 32};}
+    // TODO: Determine the legal range of floating point format
+    if (vec_fp) {vtype.vsew inside {32};}
     if (vec_narrowing_widening) {vtype.vsew < ELEN;}
     if (vec_quad_widening) {vtype.vsew < (ELEN >> 1);}
   }

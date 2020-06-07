@@ -32,7 +32,7 @@ class riscv_instr extends uvm_object;
   static privileged_reg_t    exclude_reg[];
   static privileged_reg_t    include_reg[];
 
-  riscv_instr_gen_config     cfg;
+  riscv_instr_gen_config     m_cfg;
 
   // Instruction attributes
   riscv_instr_group_t        group;

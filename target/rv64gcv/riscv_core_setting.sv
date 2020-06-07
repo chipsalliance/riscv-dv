@@ -27,8 +27,7 @@ parameter satp_mode_t SATP_MODE = BARE;
 privileged_mode_t supported_privileged_mode[] = {MACHINE_MODE};
 
 // Unsupported instructions
-// TODO: Clean up this list
-riscv_instr_name_t unsupported_instr[] = {VWMACCSU, VMERGE, VFMERGE};
+riscv_instr_name_t unsupported_instr[] = {};
 
 // ISA supported by the processor
 riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C, RV32A, RV64A,

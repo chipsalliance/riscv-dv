@@ -239,7 +239,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     end
     instr = riscv_instr::get_rand_instr(.include_instr(allowed_instr),
                                         .exclude_instr(exclude_instr));
-    instr.cfg = cfg;
+    instr.m_cfg = cfg;
     randomize_gpr(instr);
   endfunction
 

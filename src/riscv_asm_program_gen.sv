@@ -542,14 +542,14 @@ class riscv_asm_program_gen extends uvm_object;
     LMUL = 1;
     SEW = (ELEN <= XLEN) ? ELEN : XLEN;
     // vec registers will be loaded from a scalar GPR, one element at a time
-    instr_stream.push_back($sformatf("%svsetvli t0, x0, e%0d, m%0d, d%0d",
-                                     indent, SEW, LMUL, EDIV));
+    instr_stream.push_back($sformatf("%svsetvli x%0d, x0, e%0d, m%0d, d%0d",
+                                     indent, cfg.gpr[0], SEW, LMUL, EDIV));
     instr_stream.push_back("vec_reg_init:");
     for (int v = 1; v < NUM_VEC_GPR; v++) begin
       for (int e = 0; e < num_elements; e++) begin
         if (e > 0) instr_stream.push_back($sformatf("%0svmv.v.v v0, v%0d", indent, v));
-        instr_stream.push_back($sformatf("%0sli t0, 0x%0x",
-                                         indent, $urandom_range(0, 2 ** SEW - 1)));
+        instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
+                                         indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
         instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, t0", indent, v));
       end
     end
@@ -1471,8 +1471,9 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back({indent, "csrw vxrm, x0"});
     instr_stream.push_back({indent, "csrw frm, x0"});
     init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
-    instr_stream.push_back($sformatf("%svsetvli t0, x0, e%0d, m%0d, d%0d",
+    instr_stream.push_back($sformatf("%svsetvli x%0d, x0, e%0d, m%0d, d%0d",
                                      indent,
+                                     cfg.gpr[0],
                                      cfg.vector_cfg.vtype.vsew,
                                      cfg.vector_cfg.vtype.vlmul,
                                      cfg.vector_cfg.vtype.vediv));

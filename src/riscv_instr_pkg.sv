@@ -474,12 +474,10 @@ package riscv_instr_pkg;
     VWMACC,
     VWMACCSU,
     VWMACCUS,
-    /*
     VQMACCU,
     VQMACC,
     VQMACCSU,
     VQMACCUS,
-    */
     VMERGE,
     VMV,
     VSADDU,
@@ -494,6 +492,7 @@ package riscv_instr_pkg;
     VSSRA,
     VNCLIPU,
     VNCLIP,
+    // 14. Vector Floating-Point Instructions
     VFADD,
     VFSUB,
     VFRSUB,
@@ -543,7 +542,7 @@ package riscv_instr_pkg;
     VFNCVT_F_X_W,
     VFNCVT_F_F_W,
     VFNCVT_ROD_F_F_W,
-    // Vector reduction instruction
+    // 15. Vector reduction instruction
     VREDSUM_VS,
     VREDMAXU_VS,
     VREDMAX_VS,
