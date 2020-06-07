@@ -120,19 +120,11 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
   virtual function void gen_load_store_instr();
     bit enable_compressed_load_store;
     riscv_instr instr;
-    if(avail_regs.size() > 0) begin
-      `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(avail_regs,
-                                         unique{avail_regs};
-                                         avail_regs[0] inside {[S0 : A5]};
-                                         foreach(avail_regs[i]) {
-                                           !(avail_regs[i] inside {cfg.reserved_regs, reserved_rd});
-                                         },
-                                         "Cannot randomize avail_regs")
-    end
+    randomize_avail_regs();
     if ((rs1_reg inside {[S0 : A5], SP}) && !cfg.disable_compressed_instr) begin
       enable_compressed_load_store = 1;
     end
-    foreach(addr[i]) begin
+    foreach (addr[i]) begin
       // Assign the allowed load/store instructions based on address alignment
       // This is done separately rather than a constraint to improve the randomization performance
       allowed_instr = {LB, LBU, SB};
