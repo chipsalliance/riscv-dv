@@ -59,6 +59,10 @@ parameter int NUM_FLOAT_GPR = 32;
 parameter int NUM_GPR = 32;
 parameter int NUM_VEC_GPR = 32;
 
+// ----------------------------------------------------------------------------
+// Vector extension configuration
+// ----------------------------------------------------------------------------
+
 // Parameter for vector extension
 parameter int VECTOR_EXTENSION_ENABLE = 0;
 
@@ -73,13 +77,9 @@ parameter int SELEN = 8;
 // Maximum size of a single vector element (encoded in vsew format)
 parameter int VELEN = int'($ln(ELEN)/$ln(2)) - 3;
 
-// Limit Vector GPR selections to a small subset to increase WAR, RAW, RAR, & WAW hazards.
-parameter int VEC_GPR_HAZARD_Q_SZ = 5;
-
-// Track Vector State
-int SEW = 16;
-int LMUL = 1;
-int EDIV = 1;
+// ----------------------------------------------------------------------------
+// Multi-harts configuration
+// ----------------------------------------------------------------------------
 
 // Number of harts
 parameter int NUM_HARTS = 2;
