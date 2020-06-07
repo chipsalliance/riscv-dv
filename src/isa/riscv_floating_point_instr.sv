@@ -218,7 +218,7 @@ class riscv_floating_point_instr extends riscv_instr;
 
   virtual function riscv_fpr_t get_fpr(input string str);
     str = str.toupper();
-    if (!fpr_enum::from_name(str, get_fpr)) begin
+    if (!uvm_enum_wrapper#(riscv_fpr_t)::from_name(str, get_fpr)) begin
       `uvm_fatal(`gfn, $sformatf("Cannot convert %0s to FPR", str))
     end
   endfunction : get_fpr
