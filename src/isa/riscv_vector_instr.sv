@@ -170,7 +170,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-
   constraint vmv_alignment_c {
     if (instr_name == VMV2R_V) {
       int'(vs2) % 2 == 0;
@@ -190,7 +189,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
 
   // Section 5.3
   // The destination vector register group for a masked vector instruction can only overlap
-  // the source mask regis-ter (v0) when LMUL=1
+  // the source mask register (v0) when LMUL=1
   constraint vmask_overlap_c {
     (vm == 0) && (m_cfg.vector_cfg.vtype.vlmul > 1) -> (vd != 0);
   }
@@ -221,6 +220,13 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   constraint disable_floating_point_varaint_c {
     if (!m_cfg.vector_cfg.vec_fp) {
       va_variant != VF;
+    }
+  }
+
+  // TODO: Check why this is needed?
+  constraint vector_load_store_mask_overlap_c {
+    if (category == STORE) {
+      (vm == 0) -> (vs3 != 0);
     }
   }
 
@@ -325,6 +331,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           end
         end
       end
+      VL_FORMAT: begin
+        asm_str = $sformatf("%0s %s,(%s)", get_instr_name(), vd.name(), rs1.name());
+      end
+      VS_FORMAT: begin
+        asm_str = $sformatf("%0s %s,(%s)", get_instr_name(), vs3.name(), rs1.name());
+      end
       VLS_FORMAT: begin
         asm_str = $sformatf("%0s %0s,(%0s),%0s", get_instr_name(), vd.name(), rs1.name(), rs2.name());
       end
@@ -337,7 +349,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       VSV_FORMAT: begin
         asm_str = $sformatf("%0s,(%0s),%0s,%0s", get_instr_name(), vs3.name(), rs1.name(), vs2.name());
       end
-      default: `uvm_info(`gfn, $sformatf("Unsupported format %0s", format.name()), UVM_LOW)
+      default: begin
+        `uvm_fatal(`gfn, $sformatf("Unsupported format %0s", format.name()))
+      end
     endcase
     // Add vector mask
     asm_str = {asm_str, vec_vm_str()};
