@@ -15,12 +15,13 @@ Regression script for RISC-V random instruction generator
 
 """
 
+
 from collections import defaultdict
-from pygen_src.riscv_instr_gen_config import *
-from pygen_src.riscv_instr_pkg import *
-from pygen_src.isa import rv32i_instr
+from pygen_src.riscv_instr_gen_config import riscv_instr_gen_config
+from pygen_src.riscv_instr_pkg import riscv_instr_group_t
+from pygen_src.isa import rv32i_instr  # NOQA
 import random
-from bitstring import BitArray, BitStream
+from bitstring import BitArray
 import logging
 from copy import copy
 import sys
@@ -84,7 +85,7 @@ class riscv_instr:
     def register(cls, instr_name):
         logging.info("Registering %s", instr_name.name)
         cls.instr_registry[instr_name.name] = 1
-        if(instr_name == None):
+        if(instr_name is None):
             print("\n")
         return 1
 
@@ -109,9 +110,10 @@ class riscv_instr:
             if (instr_name in ["FENCE", "FENCE_I", "SFENCE_VMA"]):
                 continue
             if (instr_inst.group in self.supported_isa and
-                not(cfg.disable_compressed_instr and
-                    instr_inst.group in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
-                    not(not(cfg.enable_floating_point) and instr_inst.group in ["RV32F", "RV64F", "RV32D", "RV64D"])):
+                    not(cfg.disable_compressed_instr and
+                        instr_inst.group in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
+                    not(not(cfg.enable_floating_point) and instr_inst.group in
+                        ["RV32F", "RV64F", "RV32D", "RV64D"])):
                 self.instr_category[instr_inst.category.name].append(instr_name)
                 self.instr_group[instr_inst.group.name].append(instr_name)
                 self.instr_names.append(instr_name)
@@ -120,11 +122,11 @@ class riscv_instr:
         self.create_csr_filter(cfg)
 
     def create_instr(self, instr_name):
-	#TODO This method is specific to RV32I instruction only.
-	#It must be scaled to all instruction extensions.
+        """TODO This method is specific to RV32I instruction only.
+        It must be scaled to all instruction extensions."""
         try:
-            instr_inst = eval("rv32i_instr.riscv_"+instr_name+"_instr()")
-        except:
+            instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+        except Exception:
             logging.critical("Failed to create instr: %0s", instr_name)
             sys.exit(1)
         return instr_inst
@@ -133,8 +135,8 @@ class riscv_instr:
         return 1
 
     def build_basic_instruction_list(self, cfg):
-        self.basic_instr = (self.instr_category["SHIFT"] + self.instr_category["ARITHMETIC"]
-                            + self.instr_category["LOGICAL"] + self.instr_category["COMPARE"])
+        self.basic_instr = (self.instr_category["SHIFT"] + self.instr_category["ARITHMETIC"] +
+                            self.instr_category["LOGICAL"] + self.instr_category["COMPARE"])
         if(cfg.no_ebreak == 0):
             self.basic_instr.append("EBREAK")
             for items in self.supported_isa:
@@ -166,17 +168,68 @@ class riscv_instr:
             else:                                              # User Mode
                 self.include_reg.append("USCRATCH")
 
-    def get_rand_instr(self):
-        pass  # TODO
+    def get_rand_instr(self, include_instr=[], exclude_instr=[],
+                       include_category=[], exclude_category=[],
+                       include_group=[], exclude_group=[]):
+        idx = BitArray(uint = 0, length = 32)
+        name = ""
+        allowed_instr = []
+        disallowed_instr = []
+        # allowed_categories = []
+
+        for items in include_category:
+            allowed_instr.append(self.instr_category[items])
+
+        for items in exclude_category:
+            if(items in self.instr_category):
+                disallowed_instr.append(self.instr_category[items])
+        for items in include_group:
+            allowed_instr.append(self.instr_group[items])
+        for items in exclude_group:
+            if(items in self.instr_group):
+                disallowed_instr.append(self.instr_group[items])
+
+        disallowed_instr.extend(exclude_instr)
+
+        if(len(disallowed_instr) == 0):
+            if(len(include_instr) > 0):
+                idx = random.randrange(0, len(include_instr) - 1)
+                name = include_instr[idx]
+            elif(len(allowed_instr > 0)):
+                idx = random.randrange(0, len(allowed_instr) - 1)
+                name = allowed_instr[idx]
+            else:
+                idx = random.randrange(0, len(self.instr_names) - 1)
+                name = self.instr_names[idx]
+        else:
+            # TODO
+            instr_names_set = set(self.instr_names)
+            disallowed_instr_set = set(disallowed_instr)
+            allowed_instr_set = set(allowed_instr)
+            include_instr_set = set(include_instr)
+            excluded_instr_names_list = list(instr_names_set - disallowed_instr_set)
+            excluded_allowed_instr_list = list(allowed_instr_set - disallowed_instr_set)
+            include_instr_list = list(include_instr_set - disallowed_instr_set)
+
+            name = random.choice(excluded_instr_names_list)
+            if(len(include_instr) > 0):
+                name = random.choice(include_instr_list)
+            if(len(allowed_instr) > 0):
+                name = random.choice(excluded_allowed_instr_list)
+            if(name is None):
+                logging.critical("%s Cannot generate random instruction", riscv_instr.__name__)
+                sys.exit(1)
+
+        instr_h = copy(self.instr_template[name])
+        return instr_h
 
     def get_load_store_instr(self, load_store_instr):
         instr_h = riscv_instr()
         if(len(load_store_instr) == 0):
             load_store_instr = self.instr_category["LOAD"] + \
-				self.instr_category["STORE"]
+                self.instr_category["STORE"]
         self.idx = random.randrange(0, len(load_store_instr) - 1)
         name = load_store_instr[self.idx]
-        # Shallow copy for all relevant fields to improve performance
         instr_h = copy(self.instr_template[name])
         return instr_h
 
@@ -232,7 +285,7 @@ class riscv_instr:
         self.update_imm_str()
 
     def convert2asm(self):
-        pass  # TODO
+        pass
 
     def get_opcode(self):
         if(self.instr_name.name == "LUI"):
@@ -249,10 +302,12 @@ class riscv_instr:
             return (BitArray(uint = 99, length = 7).bin)
         elif(self.instr_name.name in ["SB", "SH", "SW", "SD"]):
             return (BitArray(uint = 35, length = 7).bin)
-        elif(self.instr_name.name in ["ADDI", "SLTI", "SLTIU", "XORI", "ORI", "ANDI", "SLLI", "SRLI", "SRAI", "NOP"]):
+        elif(self.instr_name.name in ["ADDI", "SLTI", "SLTIU", "XORI", "ORI", "ANDI",
+                                      "SLLI", "SRLI", "SRAI", "NOP"]):
             return (BitArray(uint = 19, length = 7).bin)
-        elif(self.instr_name.name in ["ADD", "SUB", "SLL", "SLT", "SLTU", "XOR", "SRL", "SRA", "OR", "AND", "MUL",
-                                      "MULH", "MULHSU", "MULHU", "DIV", "DIVU", "REM", "REMU"]):
+        elif(self.instr_name.name in ["ADD", "SUB", "SLL", "SLT", "SLTU", "XOR", "SRL",
+                                      "SRA", "OR", "AND", "MUL", "MULH", "MULHSU", "MULHU",
+                                      "DIV", "DIVU", "REM", "REMU"]):
             return (BitArray(uint = 51, length = 7).bin)
         elif(self.instr_name.name in ["ADDIW", "SLLIW", "SRLIW", "SRAIW"]):
             return (BitArray(uint = 27, length = 7).bin)
@@ -260,22 +315,27 @@ class riscv_instr:
             return (BitArray(uint = 51, length = 7).bin)
         elif(self.instr_name.name in ["FENCE", "FENCE_I"]):
             return (BitArray(uint = 15, length = 7).bin)
-        elif(self.instr_name.name in ["ECALL", "EBREAK", "CSRRW", "CSRRS", "CSRRC", "CSRRWI", "CSRRSI", "CSRRCI"]):
+        elif(self.instr_name.name in ["ECALL", "EBREAK", "CSRRW", "CSRRS", "CSRRC", "CSRRWI",
+                                      "CSRRSI", "CSRRCI"]):
             return (BitArray(uint = 115, length = 7).bin)
-        elif(self.instr_name.name in ["ADDW", "SUBW", "SLLW", "SRLW", "SRAW", "MULW", "DIVW", "DIVUW", "REMW", "REMUW"]):
+        elif(self.instr_name.name in ["ADDW", "SUBW", "SLLW", "SRLW", "SRAW", "MULW", "DIVW",
+                                      "DIVUW", "REMW", "REMUW"]):
             return (BitArray(uint = 59, length = 7).bin)
-        elif(self.instr_name.name in ["ECALL", "EBREAK", "URET", "SRET", "MRET", "DRET", "WFI", "SFENCE_VMA"]):
+        elif(self.instr_name.name in ["ECALL", "EBREAK", "URET", "SRET", "MRET", "DRET", "WFI",
+                                      "SFENCE_VMA"]):
             return (BitArray(uint = 115, length = 7).bin)
         else:
             logging.critical("Unsupported instruction %0s", self.instr_name.name)
             sys.exit(1)
 
     def get_func3(self):
-        if(self.instr_name.name in ["JALR", "BEQ", "LB", "SB", "ADDI", "NOP", "ADD", "SUB", "FENCE", "ECALL",
-                                    "EBREAK", "ADDIW", "ADDW", "SUBW", "MUL", "MULW", "ECALL", "EBREAK", "URET",
-                                    "SRET", "MRET", "DRET", "WFI", "SFENCE_VMA"]):
+        if(self.instr_name.name in ["JALR", "BEQ", "LB", "SB", "ADDI", "NOP", "ADD", "SUB",
+                                    "FENCE", "ECALL", "EBREAK", "ADDIW", "ADDW", "SUBW", "MUL",
+                                    "MULW", "ECALL", "EBREAK", "URET", "SRET", "MRET", "DRET",
+                                    "WFI", "SFENCE_VMA"]):
             return (BitArray(uint = 0, length = 3).bin)
-        elif(self.instr_name.name in ["BNE", "LH", "SH", "SLLI", "SLL", "FENCE_I", "CSRRW", "SLLIW", "SLLW", "MULH"]):
+        elif(self.instr_name.name in ["BNE", "LH", "SH", "SLLI", "SLL", "FENCE_I", "CSRRW", "SLLIW",
+                                      "SLLW", "MULH"]):
             return (BitArray(uint = 1, length = 3).bin)
         elif(self.instr_name.name in ["LW", "SW", "SLTI", "SLT", "CSRRS", "MULHS"]):
             return (BitArray(uint = 2, length = 3).bin)
@@ -283,7 +343,8 @@ class riscv_instr:
             return (BitArray(uint = 3, length = 3).bin)
         elif(self.instr_name.name in ["BLT", "LBU", "XORI", "XOR", "DIV", "DIVW"]):
             return (BitArray(uint = 4, length = 3).bin)
-        elif(self.instr_name.name in ["BGE", "LHU", "SRLI", "SRAI", "SRL", "SRA", "CSRRWI", "SRLIW", "SRAIW", "SRLW",
+        elif(self.instr_name.name in ["BGE", "LHU", "SRLI", "SRAI", "SRL", "SRA", "CSRRWI", "SRLIW",
+                                      "SRAIW", "SRLW",
                                       "SRAW", "DIVU", "DIVUW"]):
             return (BitArray(uint = 5, length = 3).bin)
         elif(self.instr_name.name in ["BLTU", "ORI", "OR", "CSRRSI", "LWU", "REM", "REMW"]):
@@ -295,13 +356,14 @@ class riscv_instr:
             sys.exit(1)
 
     def get_func7(self):
-        if(self.instr_name.name in ["SLLI", "SRLI", "ADD", "SLL", "SLT", "SLTU", "XOR", "SRL", "OR", "AND",
-                                    "FENCE", "FENCE_I", "SLLIW", "SRLIW", "ADDW", "SLLW", "SRLW", "ECALL", "EBREAK", "URET"]):
+        if(self.instr_name.name in ["SLLI", "SRLI", "ADD", "SLL", "SLT", "SLTU", "XOR",
+                                    "SRL", "OR", "AND", "FENCE", "FENCE_I", "SLLIW",
+                                    "SRLIW", "ADDW", "SLLW", "SRLW", "ECALL", "EBREAK", "URET"]):
             return (BitArray(uint = 0, length = 7).bin)
         elif(self.instr_name.name in ["SUB", "SRA", "SRAIW", "SUBW", "SRAW"]):
             return (BitArray(uint = 32, length = 7).bin)
-        elif(self.instr_name.name in ["MUL", "MULH", "MULHSU", "MULHU", "DIV", "DIVU", "REM", "REMU", "MULW",
-                                      "DIVW", "DIVUW", "REMW", "REMUW"]):
+        elif(self.instr_name.name in ["MUL", "MULH", "MULHSU", "MULHU", "DIV", "DIVU", "REM",
+                                      "REMU", "MULW", "DIVW", "DIVUW", "REMW", "REMUW"]):
             return (BitArray(uint = 1, length = 7).bin)
         elif(self.instr_name.name in ["SRET", "WFI"]):
             return (BitArray(uint = 8, length = 7).bin)

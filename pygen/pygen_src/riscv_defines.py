@@ -15,9 +15,8 @@ Regression script for RISC-V random instruction generator
 
 """
 
-from pygen_src.riscv_instr_pkg import *
-from pygen_src.isa.riscv_instr import *
-from bitstring import BitArray, BitStream
+from pygen_src.riscv_instr_pkg import imm_t
+from pygen_src.isa.riscv_instr import riscv_instr
 
 
 def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):

@@ -1,6 +1,7 @@
 """
 Copyright 2020 Google LLC
 Copyright 2020 PerfectVIPs Inc.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -16,7 +17,8 @@ Regression script for RISC-V random instruction generator
 
 import sys
 sys.path.append("../../")
-from pygen_src.isa.rv32i_instr import *
+from pygen_src.isa.rv32i_instr import * # NOQA
+from pygen_src.isa.riscv_instr import cfg, riscv_instr_ins # NOQA
 
 
 class riscv_instr_base_test:
