@@ -519,7 +519,7 @@ class riscv_load_store_rand_addr_instr_stream extends riscv_load_store_base_inst
 
 endclass
 
-class riscv_vector_stride_load_store_instr_stream extends riscv_mem_access_stream;
+class riscv_vector_unit_stride_load_store_instr_stream extends riscv_mem_access_stream;
 
   typedef enum {B_ALIGNMENT, H_ALIGNMENT, W_ALIGNMENT, E_ALIGNMENT} alignment_e;
 
@@ -549,7 +549,7 @@ class riscv_vector_stride_load_store_instr_stream extends riscv_mem_access_strea
   int max_load_store_addr;
   riscv_instr load_store_instr;
 
-  `uvm_object_utils(riscv_vector_stride_load_store_instr_stream)
+  `uvm_object_utils(riscv_vector_unit_stride_load_store_instr_stream)
   `uvm_object_new
 
   virtual function int get_addr_alignment_mask(int alignment_bytes);
