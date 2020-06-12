@@ -71,6 +71,7 @@ class riscv_vector_cfg extends uvm_object;
   // width and the destination LMUL value must also be a supported LMUL value
   constraint vlmul_c {
     vtype.vlmul inside {1, 2, 4, 8};
+    vtype.vlmul <= MAX_LMUL;
     if (vec_narrowing_widening) {
       vtype.vlmul < 8;
     }
