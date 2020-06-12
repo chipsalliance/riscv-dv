@@ -541,9 +541,10 @@ class riscv_asm_program_gen extends uvm_object;
     if (!(RVV inside {supported_isa})) return;
     LMUL = 1;
     SEW = (ELEN <= XLEN) ? ELEN : XLEN;
+    instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
     // vec registers will be loaded from a scalar GPR, one element at a time
-    instr_stream.push_back($sformatf("%svsetvli x%0d, x0, e%0d, m%0d, d%0d",
-                                     indent, cfg.gpr[0], SEW, LMUL, EDIV));
+    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
+                                     indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL, EDIV));
     instr_stream.push_back("vec_reg_init:");
     for (int v = 1; v < NUM_VEC_GPR; v++) begin
       for (int e = 0; e < num_elements; e++) begin
@@ -1467,13 +1468,16 @@ class riscv_asm_program_gen extends uvm_object;
 
   virtual function void randomize_vec_gpr_and_csr();
     if (!(RVV inside {supported_isa})) return;
-    instr_stream.push_back({indent, "csrw vxsat, x0"});
-    instr_stream.push_back({indent, "csrw vxrm, x0"});
-    instr_stream.push_back({indent, "csrw frm, x0"});
+    instr_stream.push_back({indent, $sformatf("li x%0d, %0d", cfg.gpr[0], cfg.vector_cfg.vxsat)});
+    instr_stream.push_back({indent, $sformatf("csrw vxsat, x%0d", cfg.gpr[0])});
+    instr_stream.push_back({indent, $sformatf("li x%0d, %0d", cfg.gpr[0], cfg.vector_cfg.vxrm)});
+    instr_stream.push_back({indent, $sformatf("csrw vxrm, x%0d", cfg.gpr[0])});
     init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
-    instr_stream.push_back($sformatf("%svsetvli x%0d, x0, e%0d, m%0d, d%0d",
+    instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
+    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
                                      indent,
                                      cfg.gpr[0],
+                                     cfg.gpr[1],
                                      cfg.vector_cfg.vtype.vsew,
                                      cfg.vector_cfg.vtype.vlmul,
                                      cfg.vector_cfg.vtype.vediv));
