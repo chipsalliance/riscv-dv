@@ -37,7 +37,7 @@ class riscv_floating_point_instr extends riscv_instr;
         if (category == LOAD) begin
           asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
         end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
-                                        FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D, FCVT_LU_S,
+                                        FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D,
                                         FCVT_W_D, FCVT_WU_D}) begin
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), fs1.name());
         end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
