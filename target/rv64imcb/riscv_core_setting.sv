@@ -77,6 +77,9 @@ parameter int SELEN = 8;
 // Maximum size of a single vector element (encoded in vsew format)
 parameter int VELEN = int'($ln(ELEN)/$ln(2)) - 3;
 
+// Maxium LMUL supported by the core
+parameter int MAX_LMUL = 8;
+
 // ----------------------------------------------------------------------------
 // Multi-harts configuration
 // ----------------------------------------------------------------------------
