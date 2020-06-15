@@ -321,7 +321,8 @@ class riscv_asm_program_gen extends uvm_object;
     if (cfg.disable_compressed_instr) begin
       instr_stream.push_back(".option norvc;");
     end
-    str = {"csrr x5, mhartid"};
+    str.push_back(".include \"user_init.s\"");
+    str.push_back("csrr x5, mhartid");
     for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       str = {str, $sformatf("li x6, %0d", hart),
                   $sformatf("beq x5, x6, %0df", hart)};
