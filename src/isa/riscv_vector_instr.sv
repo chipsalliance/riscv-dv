@@ -344,10 +344,10 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         asm_str = $sformatf("%0s %0s,(%0s),%0s", get_instr_name(), vs3.name(), rs1.name(), rs2.name());
       end
       VLV_FORMAT: begin
-        asm_str = $sformatf("%0s,(%0s),%0s,%0s", get_instr_name(), vd.name(), rs1.name(), vs2.name());
+        asm_str = $sformatf("%0s,%0s,(%0s),%0s", get_instr_name(), vd.name(), rs1.name(), vs2.name());
       end
       VSV_FORMAT: begin
-        asm_str = $sformatf("%0s,(%0s),%0s,%0s", get_instr_name(), vs3.name(), rs1.name(), vs2.name());
+        asm_str = $sformatf("%0s,%0s,(%0s),%0s", get_instr_name(), vs3.name(), rs1.name(), vs2.name());
       end
       default: begin
         `uvm_fatal(`gfn, $sformatf("Unsupported format %0s", format.name()))
