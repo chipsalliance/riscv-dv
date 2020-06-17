@@ -412,13 +412,13 @@ class riscv_asm_program_gen extends uvm_object;
     string str;
     str = format_string(get_label("init:", hart), LABEL_STR_LEN);
     instr_stream.push_back(str);
+    if (cfg.enable_floating_point) begin
+      init_floating_point_gpr();
+    end
     init_gpr();
     // Init stack pointer to point to the end of the user stack
     str = {indent, $sformatf("la x%0d, %0suser_stack_end", cfg.sp, hart_prefix(hart))};
     instr_stream.push_back(str);
-    if (cfg.enable_floating_point) begin
-      init_floating_point_gpr();
-    end
     if (cfg.enable_vector_extension) begin
       randomize_vec_gpr_and_csr();
     end
@@ -560,20 +560,103 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void init_floating_point_gpr();
     int int_gpr;
     string str;
-    // TODO: Initialize floating point GPR with more interesting numbers
     for(int i = 0; i < NUM_FLOAT_GPR; i++) begin
-      int_gpr = $urandom_range(0, NUM_GPR - 1);
-      // Use a random integer GPR to initialize floating point GPR
-      if (RV64F inside {supported_isa}) begin
-        str = $sformatf("%0sfcvt.d.l f%0d, x%0d", indent, i, int_gpr);
-      end else begin
-        str = $sformatf("%0sfcvt.s.w f%0d, x%0d", indent, i, int_gpr);
-      end
-      instr_stream.push_back(str);
+      randcase
+        1: init_floating_point_gpr_with_spf(i);
+        RV64D inside {supported_isa}: init_floating_point_gpr_with_dpf(i);
+      endcase
     end
     // Initialize rounding mode of FCSR
     str = $sformatf("%0sfsrmi %0d", indent, cfg.fcsr_rm);
     instr_stream.push_back(str);
+  endfunction
+
+  // get instructions initialize floating_point_gpr with single precision floating value
+  virtual function void init_floating_point_gpr_with_spf(int int_floating_gpr);
+    string str;
+    bit [31:0] imm = get_rand_spf_value();
+    int int_gpr = $urandom_range(0, NUM_GPR - 1);
+
+    str = $sformatf("%0sli x%0d, %0d", indent, int_gpr, imm);
+    instr_stream.push_back(str);
+    str = $sformatf("%0sfmv.w.x f%0d, x%0d", indent, int_floating_gpr, int_gpr);
+    instr_stream.push_back(str);
+  endfunction
+
+  // get instructions initialize floating_point_gpr with double precision floating value
+  virtual function void init_floating_point_gpr_with_dpf(int int_floating_gpr);
+    string str;
+    bit [63:0] imm = get_rand_dpf_value();
+    int int_gpr1 = $urandom_range(1, NUM_GPR - 1);
+    int int_gpr2 = $urandom_range(1, NUM_GPR - 1);
+
+    str = $sformatf("%0sli x%0d, %0d", indent, int_gpr1, imm[63:32]);
+    instr_stream.push_back(str);
+    // shift to upper 32bits
+    repeat (2) begin
+      str = $sformatf("%0sslli x%0d, x%0d, 16", indent, int_gpr1, int_gpr1);
+      instr_stream.push_back(str);
+    end
+    str = $sformatf("%0sli x%0d, %0d", indent, int_gpr2, imm[31:0]);
+    instr_stream.push_back(str);
+    str = $sformatf("%0sor x%0d, x%0d, x%0d", indent, int_gpr2, int_gpr2, int_gpr1);
+    instr_stream.push_back(str);
+    str = $sformatf("%0sfmv.d.x f%0d, x%0d", indent, int_floating_gpr, int_gpr2);
+    instr_stream.push_back(str);
+  endfunction
+
+  // get a random single precision floating value
+  virtual function bit [XLEN-1:0] get_rand_spf_value();
+    bit [31:0] value;
+
+    randcase
+      // infinity
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {32'h7f80_0000, 32'hff80_0000};)
+      // largest
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {32'h7f7f_ffff, 32'hff7f_ffff};)
+      // zero
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {32'h0000_0000, 32'h8000_0000};)
+      // NaN
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {32'h7f80_0001, 32'h7fc0_0000};)
+      // normal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[30:SINGLE_PRECISION_FRACTION_BITS] > 0;)
+      // subnormal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[30:SINGLE_PRECISION_FRACTION_BITS] == 0;)
+    endcase
+    return value;
+  endfunction
+
+  // get a random double precision floating value
+  virtual function bit [XLEN-1:0] get_rand_dpf_value();
+    bit [63:0] value;
+
+    randcase
+      // infinity
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value inside {64'h7ff0_0000_0000_0000, 64'hfff0_0000_0000_0000};)
+      // largest
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value inside {64'h7fef_ffff_ffff_ffff, 64'hffef_ffff_ffff_ffff};)
+      // zero
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value inside {64'h0000_0000_0000_0000, 64'h8000_0000_0000_0000};)
+      // NaN
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value inside {64'h7ff0_0000_0000_0001, 64'h7ff8_0000_0000_0000};)
+      // normal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value[62:DOUBLE_PRECISION_FRACTION_BITS] > 0;)
+      // subnormal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+             value[62:DOUBLE_PRECISION_FRACTION_BITS] == 0;)
+    endcase
+    return value;
   endfunction
 
   // Generate "test_done" section, test is finished by an ECALL instruction

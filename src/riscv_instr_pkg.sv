@@ -650,6 +650,9 @@ package riscv_instr_pkg;
   // Maximum virtual address bits used by the program
   parameter int MAX_USED_VADDR_BITS = 30;
 
+  parameter int SINGLE_PRECISION_FRACTION_BITS = 23;
+  parameter int DOUBLE_PRECISION_FRACTION_BITS = 52;
+
   typedef enum bit [4:0] {
     ZERO = 5'b00000,
     RA, SP, GP, TP, T0, T1, T2, S0, S1, A0, A1, A2, A3, A4, A5, A6, A7,
