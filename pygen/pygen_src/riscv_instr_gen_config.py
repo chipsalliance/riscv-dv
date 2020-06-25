@@ -15,6 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import logging
 import sys
 from bitstring import BitArray
+import vsc
 from pygen_src.riscv_instr_pkg import mtvec_mode_t, f_rounding_mode_t, \
     riscv_reg_t, privileged_mode_t, \
     riscv_instr_group_t
