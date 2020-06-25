@@ -21,6 +21,7 @@ from bitstring import BitArray
 import logging
 from copy import copy
 import sys
+import vsc
 
 
 class riscv_instr:
