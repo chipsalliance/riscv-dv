@@ -576,11 +576,9 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void init_floating_point_gpr_with_spf(int int_floating_gpr);
     string str;
     bit [31:0] imm = get_rand_spf_value();
-    int int_gpr = $urandom_range(0, NUM_GPR - 1);
-
-    str = $sformatf("%0sli x%0d, %0d", indent, int_gpr, imm);
+    str = $sformatf("%0sli x%0d, %0d", indent, cfg.gpr[0], imm);
     instr_stream.push_back(str);
-    str = $sformatf("%0sfmv.w.x f%0d, x%0d", indent, int_floating_gpr, int_gpr);
+    str = $sformatf("%0sfmv.w.x f%0d, x%0d", indent, int_floating_gpr, cfg.gpr[0]);
     instr_stream.push_back(str);
   endfunction
 
@@ -588,8 +586,8 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void init_floating_point_gpr_with_dpf(int int_floating_gpr);
     string str;
     bit [63:0] imm = get_rand_dpf_value();
-    int int_gpr1 = $urandom_range(1, NUM_GPR - 1);
-    int int_gpr2 = $urandom_range(1, NUM_GPR - 1);
+    int int_gpr1 = cfg.gpr[0];
+    int int_gpr2 = cfg.gpr[1];
 
     str = $sformatf("%0sli x%0d, %0d", indent, int_gpr1, imm[63:32]);
     instr_stream.push_back(str);

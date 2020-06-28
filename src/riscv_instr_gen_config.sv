@@ -245,6 +245,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_floating_point;
   // Vector extension support
   bit                    enable_vector_extension;
+  // Only generate vector instructions
+  bit                    vector_instr_only;
   // Bit manipulation extension support
   bit                    enable_b_extension;
   b_ext_group_t          enable_bitmanip_groups[] = {ZBB, ZBS, ZBP, ZBE, ZBF, ZBC, ZBR, ZBM, ZBT,
@@ -501,6 +503,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(max_directed_instr_stream_seq, UVM_DEFAULT)
     `uvm_field_int(enable_floating_point, UVM_DEFAULT)
     `uvm_field_int(enable_vector_extension, UVM_DEFAULT)
+    `uvm_field_int(vector_instr_only, UVM_DEFAULT)
     `uvm_field_int(enable_b_extension, UVM_DEFAULT)
     `uvm_field_array_enum(b_ext_group_t, enable_bitmanip_groups, UVM_DEFAULT)
     `uvm_field_int(use_push_data_section, UVM_DEFAULT)
