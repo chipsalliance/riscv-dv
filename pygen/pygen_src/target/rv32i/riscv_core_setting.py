@@ -23,3 +23,5 @@ supported_isa = ['RV32I']
 supported_privileged_mode = ['MACHINE_MODE']
 
 NUM_HARTS = 1
+
+support_pmp = 0

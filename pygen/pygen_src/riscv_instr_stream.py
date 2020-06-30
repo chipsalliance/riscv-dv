@@ -11,11 +11,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 import random
-from pygen_src.riscv_instr_pkg import riscv_instr_name_t, riscv_instr_format_t,\
-    riscv_instr_category_t, riscv_reg_t
-from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins, cfg
 import logging
 import sys
+from pygen_src.riscv_instr_pkg import riscv_instr_name_t,\
+    riscv_instr_category_t, riscv_reg_t
+from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
+from pygen_src.riscv_instr_gen_config import cfg
 
 
 class riscv_instr_stream:
@@ -29,7 +30,7 @@ class riscv_instr_stream:
     def __init__(self):
         self.instr_list = []
         self.instr_cnt = 0
-        self.label = ""
+        self.label = " "
         # User can specify a small group of available registers to generate various hazard condition
         self.avail_regs = []
         # Some additional reserved registers that should not be used as rd register
@@ -47,7 +48,7 @@ class riscv_instr_stream:
             instr = riscv_instr()
             self.instr_list.append(instr)
 
-    def insert_instr(self, instr, idx=-1):
+    def insert_instr(self, instr, idx = -1):
         """
            Insert an instruction to the existing instruction stream at the given index
            When index is -1, the instruction is injected at a random location
@@ -64,7 +65,7 @@ class riscv_instr_stream:
             logging.error("Cannot insert instr:%0s at idx %0d", instr.convert2asm(), idx)
         self.instr_list.insert(idx, instr)
 
-    def insert_instr_stream(self, new_instr, idx=-1, replace=0):
+    def insert_instr_stream(self, new_instr, idx = -1, replace = 0):
         """
             Insert an instruction to the existing instruction stream at the given index
             When index is -1, the instruction is injected at a random location
@@ -113,7 +114,7 @@ class riscv_instr_stream:
                 self.instr_list = self.instr_list[0:idx - 1] + new_instr + \
                     self.instr_list[idx:current_instr_cnt - 1]
 
-    def mix_instr_stream(self, new_instr, contained=0):
+    def mix_instr_stream(self, new_instr, contained = 0):
         """
         Mix the input instruction stream with the original instruction, the instruction order is
         preserved. When 'contained' is set, the original instruction stream will be inside the
@@ -156,7 +157,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
 
     def __init__(self):
         # calling super constructor
-        super().__init__(self)
+        super().__init__()
         self.kernel_mode = 0
         self.allowed_instr = []
         self.category_dist = []
@@ -165,15 +166,15 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         for i in range(self.instr_cnt):
             self.instr_list.append(None)
 
-    def setup_allowed_instr(self, no_branch=0, no_load_store=1):
+    def setup_allowed_instr(self, no_branch = 0, no_load_store = 1):
         self.allowed_instr = riscv_instr_ins.basic_instr
         if no_branch == 0:
-            self.allowed_instr.append(
+            self.allowed_instr.extend(
                 riscv_instr_ins.instr_category[riscv_instr_category_t.BRANCH.name])
         if no_load_store == 0:
-            self.allowed_instr.append(
+            self.allowed_instr.extend(
                 riscv_instr_ins.instr_category[riscv_instr_category_t.LOAD.name])
-            self.allowed_instr.append(
+            self.allowed_instr.extend(
                 riscv_instr_ins.instr_category[riscv_instr_category_t.STORE.name])
         self.setup_instruction_dist(no_branch, no_load_store)
 
@@ -181,7 +182,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
     def randomize_avail_regs(self):
         pass
 
-    def setup_instruction_dist(self, no_branch=0, no_load_store=1):
+    def setup_instruction_dist(self, no_branch = 0, no_load_store = 1):
         if cfg.dist_control_mode:
             self.category_dist = cfg.category_dist
             if no_branch:
@@ -189,49 +190,43 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             if no_load_store:
                 self.category_dist[riscv_instr_category_t.LOAD.name] = 0
                 self.category_dist[riscv_instr_category_t.STORE.name] = 0
-            logging.info("setup_instruction_dist: %0d", category_dist.size())
+            logging.info("setup_instruction_dist: %0d", len(self.category_dist))
 
-    def gen_instr(self, no_branch=0, no_load_store=1, is_debug_program=0):
+    def gen_instr(self, no_branch = 0, no_load_store = 1, is_debug_program = 0):
         self.setup_allowed_instr(no_branch, no_load_store)
         for i in range(len(self.instr_list)):
             self.instr_list[i] = self.randomize_instr(self.instr_list[i], is_debug_program)
         while self.instr_list[-1].category == riscv_instr_category_t.BRANCH:
             self.instr_list.pop()
-            if len(self.instr_list):
+            if len(self.instr_list) == 0:
                 break
 
-    def randomize_instr(self, instr, is_in_debug=0, disable_dist=0):
+    def randomize_instr(self, instr, is_in_debug = 0, disable_dist = 0):
         exclude_instr = []
         is_SP_in_reserved_rd = riscv_reg_t.SP in self.reserved_rd
         is_SP_in_reserved_regs = riscv_reg_t.SP in cfg.reserved_regs
         is_SP_in_avail_regs = riscv_reg_t.SP in self.avail_regs
-        if ((is_SP_in_reserved_rd or is_SP_in_reserved_regs) or (not is_SP_in_avail_regs)):
-            exclude_instr.append(riscv_instr_name_t.C_ADDI4SPN)
-            exclude_instr.append(riscv_instr_name_t.C_ADDI16SP)
-            exclude_instr.append(riscv_instr_name_t.C_LWSP)
-            exclude_instr.append(riscv_instr_name_t.C_LDSP)
+        if ((is_SP_in_reserved_rd or is_SP_in_reserved_regs) or
+                (len(self.avail_regs) > 0 and not is_SP_in_avail_regs)):
+            exclude_instr.append(riscv_instr_name_t.C_ADDI4SPN.name)
+            exclude_instr.append(riscv_instr_name_t.C_ADDI16SP.name)
+            exclude_instr.append(riscv_instr_name_t.C_LWSP.name)
+            exclude_instr.append(riscv_instr_name_t.C_LDSP.name)
         if is_in_debug and (not cfg.enable_ebreak_in_debug_rom):
-            exclude_instr.append(riscv_instr_name_t.EBREAK)
-            exclude_instr.append(riscv_instr_name_t.C_EBREAK)
+            exclude_instr.append(riscv_instr_name_t.EBREAK.name)
+            exclude_instr.append(riscv_instr_name_t.C_EBREAK.name)
         instr = riscv_instr_ins.get_rand_instr(
-            include_instr=self.allowed_instr, exclude_instr=exclude_instr)
+            include_instr = self.allowed_instr, exclude_instr = exclude_instr)
         instr = self.randomize_gpr(instr)
         return instr
 
     def randomize_gpr(self, instr):
         # TODO
-        avail_regs_set = set(self.avail_regs)
-        reserved_rd_set = set(self.reserved_rd)
-        reserved_regs_set = set(cfg.reserved_regs)
-        excluded_avail_regs = list(avail_regs_set - reserved_rd_set - reserved_regs_set)
-        if len(self.avail_regs) > 0:
-            if self.has_rs1:
-                if self.format == riscv_instr_format_t.CB_FORMAT:
-                    self.rs1 = random.choice(excluded_avail_regs)
-                else:
-                    self.rs1 = random.choice(self.avail_regs)
-            if self.has_rs2:
-                self.rs2 = random.choice(self.avail_regs)
-            if self.has_rd:
-                self.rd = random.choice(excluded_avail_regs)
+        """
+        PyVSC library doesn't support inline randomization for list of enum types.
+        The randomization is done directly here.
+        it will be updated once randomization for list of enum types supports in PyVSC.
+        """
+        instr.randomize()
+        instr.post_process()
         return instr

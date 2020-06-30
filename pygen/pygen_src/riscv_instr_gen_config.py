@@ -26,7 +26,7 @@ logging.basicConfig(format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(
 
 class riscv_instr_gen_config:
     def __init__(self):
-        self.main_program_instr_cnt = 0  # count of main_prog
+        self.main_program_instr_cnt = 100  # count of main_prog
         self.sub_program_instr_cnt = []  # count of sub_prog
         self.debug_program_instr_cnt = 0  # count of debug_rom
         self.debug_sub_program_instr_cnt = []  # count of debug sub_progrms

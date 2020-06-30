@@ -9,6 +9,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 """
 
 
@@ -25,7 +26,6 @@ import vsc
 
 
 class riscv_instr:
-
     instr_registry = {}
 
     def __init__(self):
@@ -113,7 +113,6 @@ class riscv_instr:
                 self.instr_category[instr_inst.category.name].append(instr_name)
                 self.instr_group[instr_inst.group.name].append(instr_name)
                 self.instr_names.append(instr_name)
-
         self.build_basic_instruction_list(cfg)
         self.create_csr_filter(cfg)
 
@@ -186,36 +185,30 @@ class riscv_instr:
                 disallowed_instr.append(self.instr_group[items])
 
         disallowed_instr.extend(exclude_instr)
-
         if(len(disallowed_instr) == 0):
-            if(len(include_instr) > 0):
-                idx = random.randrange(0, len(include_instr) - 1)
-                name = include_instr[idx]
-            elif(len(allowed_instr > 0)):
-                idx = random.randrange(0, len(allowed_instr) - 1)
-                name = allowed_instr[idx]
-            else:
-                idx = random.randrange(0, len(self.instr_names) - 1)
-                name = self.instr_names[idx]
-        else:
-            # TODO
-            instr_names_set = set(self.instr_names)
-            disallowed_instr_set = set(disallowed_instr)
-            allowed_instr_set = set(allowed_instr)
-            include_instr_set = set(include_instr)
-            excluded_instr_names_list = list(instr_names_set - disallowed_instr_set)
-            excluded_allowed_instr_list = list(allowed_instr_set - disallowed_instr_set)
-            include_instr_list = list(include_instr_set - disallowed_instr_set)
-
-            name = random.choice(excluded_instr_names_list)
-            if(len(include_instr) > 0):
-                name = random.choice(include_instr_list)
-            if(len(allowed_instr) > 0):
-                name = random.choice(excluded_allowed_instr_list)
-            if(name is None):
-                logging.critical("%s Cannot generate random instruction", riscv_instr.__name__)
+            try:
+                if(len(include_instr) > 0):
+                    idx = random.randrange(0, len(include_instr) - 1)
+                    name = include_instr[idx]
+                elif(len(allowed_instr) > 0):
+                    idx = random.randrange(0, len(allowed_instr) - 1)
+                    name = allowed_instr[idx]
+                else:
+                    idx = random.randrange(0, len(self.instr_names) - 1)
+                    name = self.instr_names[idx]
+            except Exception:
+                logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
-
+        else:
+            try:
+                name = random.choice(self.instr_names)
+                if(len(include_instr) > 0):
+                    name = random.choice(include_instr)
+                if(len(allowed_instr) > 0):
+                    name = random.choice(allowed_instr)
+            except Exception:
+                logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
+                sys.exit(1)
         instr_h = copy(self.instr_template[name])
         return instr_h
 
@@ -280,7 +273,7 @@ class riscv_instr:
         self.extend_imm()
         self.update_imm_str()
 
-    def convert2asm(self):
+    def convert2asm(self, prefix=" "):
         pass
 
     def get_opcode(self):

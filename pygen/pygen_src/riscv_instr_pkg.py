@@ -9,9 +9,18 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 """
 
 from enum import Enum, auto
+from bitstring import BitArray
+from pygen_src.target.rv32i import riscv_core_setting as rcs
+
+
+class mem_region_t:
+    name = 0
+    size_in_bytes = auto()
+    xwr = auto()
 
 
 class satp_mode_t(Enum):
@@ -711,12 +720,8 @@ class riscv_instr_category_t(Enum):
     CHANGELEVEL = auto()
     TRAP = auto()
     INTERRUPT = auto()
-    # VECTOR_INCLUDE #TODO
     AMO = auto()
-
-
-class riscv_csr_t(Enum):
-    pass
+# typedef bit[11:0] riscv_csr_t;
 
 
 class privileged_reg_t(Enum):
@@ -1064,6 +1069,14 @@ class pmp_addr_mode_t(Enum):
     NAPOT = 0b11
 
 
+class vtype_t(Enum):
+    ill = 0
+    reserved = auto()
+    vediv = auto()
+    vsew = auto()
+    vlmul = auto()
+
+
 class vxrm_t(Enum):
     RoundToNearestUp = 0
     RoundToNearestEven = auto()
@@ -1082,3 +1095,233 @@ class b_ext_group_t(Enum):
     ZBM = auto()
     ZBT = auto()
     ZB_TMP = auto()
+
+
+class all_gpr(Enum):
+    ZERO = 0
+    RA = auto()
+    SP = auto()
+    GP = auto()
+    TP = auto()
+    T0 = auto()
+    T1 = auto()
+    T2 = auto()
+    S0 = auto()
+    S1 = auto()
+    A0 = auto()
+    A1 = auto()
+    A2 = auto()
+    A3 = auto()
+    A4 = auto()
+    A5 = auto()
+    A6 = auto()
+    A7 = auto()
+    S2 = auto()
+    S3 = auto()
+    S4 = auto()
+    S5 = auto()
+    S6 = auto()
+    S7 = auto()
+    S8 = auto()
+    S9 = auto()
+    S10 = auto()
+    S11 = auto()
+    T3 = auto()
+    T4 = auto()
+    T5 = auto()
+    T6 = auto()
+
+
+class compressed_gpr(Enum):
+    S0 = 0
+    S1 = auto()
+    A0 = auto()
+    A1 = auto()
+    A2 = auto()
+    A3 = auto()
+    A4 = auto()
+    A5 = auto()
+
+
+class all_categories(Enum):
+    LOAD = 0
+    STORE = auto()
+    SHIFT = auto()
+    ARITHMETIC = auto()
+    LOGICAL = auto()
+    COMPARE = auto()
+    BRANCH = auto()
+    JUMP = auto()
+    SYNCH = auto()
+    SYSTEM = auto()
+    COUNTER = auto()
+    CSR = auto()
+    CHANGELEVEL = auto()
+    TRAP = auto()
+    INTERRUPT = auto()
+    AMO = auto()
+
+
+def MAX_USED_VADDR_BITS():
+    return 30
+
+# # TODO - Can be implemented with argparse
+# _VCP = auto()
+# if(_VCP):
+#     class pmp_cfg_reg_t(Enum):
+#         l = 0
+#         zero = auto()
+#         a = auto()
+#         x = auto()
+#         w = auto()
+#         r = auto()
+#         addr = auto()
+#         offset = auto()
+# else:
+#     class pmp_cfg_reg_t(Enum):
+#         l = 0
+#         zero = auto()
+#         a = auto()
+#         x = auto()
+#         w = auto()
+#         r = auto()
+#         addr = auto()
+#         offset = auto()
+
+
+class riscv_instr_pkg:
+    def __init__(self):
+        self.MPRV_BIT_MASK = BitArray(uint= 0x1 << 0x17, length = rcs.XLEN)
+        self.SUM_BIT_MASK = BitArray(uint = 0x1 << 0x18, length = rcs.XLEN)
+        self.MPP_BIT_MASK = BitArray(uint = 0x3 << 0x11, length = rcs.XLEN)
+        self.IMM25_WIDTH = BitArray(uint = 25, length = 32)
+        self.IMM12_WIDTH = BitArray(uint = 12, length = 32)
+        self.INSTR_WIDTH = BitArray(uint = 32, length = 32)
+        self.DATA_WIDTH = 32
+        self.MAX_INSTR_STR_LEN = 11
+        self.LABEL_STR_LEN = BitArray(uint = 18, length = 32)
+        self.MAX_CALLSTACK_DEPTH = BitArray(uint = 20, length = 32)
+        self.MAX_SUB_PROGRAM_CNT = BitArray(uint = 20, length = 32)
+        self.MAX_CALL_PER_FUNC = BitArray(uint = 5, length = 32)
+        self.indent = "{:18s}".format(" ")
+
+    def hart_prefix(self, hart = 0):
+        if(rcs.NUM_HARTS <= 1):
+            return ""
+        else:
+            return f"h{hart}_"
+
+    def get_label(self, label, hart=0):
+        return (self.hart_prefix(hart) + label)
+
+    # TODO
+    # typedef bit [15:0] program_id_t; Can be achieve by importing riscv_callstack_gen.py
+
+    def format_string(self, string, length=10):
+        formatted_str = int(length.bin) * " "
+        if (int(length.bin) < len(string)):
+            return string
+        formatted_str = string + formatted_str[0: (int(length.bin) - len(string) - 1)]
+        return formatted_str
+
+    def format_data(self, data, byte_per_group = 4):
+        string = "0x"
+        for i in range(len(data)):
+            if ((i % byte_per_group == 0) and (i != len(data) - 1) and (i != 0)):
+                string = string + ", 0x"
+            string = string + f"{hex(data[i])}"
+        return string
+
+
+pkg_ins = riscv_instr_pkg()
+# def get_instr_name(self, str):
+#     instr = riscv_instr_name_t()
+#     instr = instr.first
+#     for_loop = 0
+#     while(for_loop >= 0):
+#         if (str.toupper() == instr.name):
+#             return instr
+#         if (instr == instr.last):
+#             pass
+#             # return INVALID_INSTR
+#         instr = instr.next
+#         for_loop += 1
+
+# # status = privileged_reg_t()
+# # scratch = privileged_reg_t()
+# # sp = riscv_reg_t()
+# # tp = riscv_reg_t()
+
+# def push_gpr_to_kernel_stack(status, scratch, mprv, sp, tp, instr=[]):
+#     # XLEN = auto()
+#     store_instr = "sw" if (rcs.XLEN == 32) else "sd"
+#     # if (scratch inside {implemented_csr}):
+#     #     instr.push_back(print("add ", sp, tp))
+
+#     if((status == "MSTATUS") and (rcs.SATP_MODE != "BARE")):
+#         if(mprv):
+#             instr.append(print("csrr // MSTATUS", tp, status))
+#             instr.append(print("srli ", tp, tp))
+#             instr.append(print("andi ", tp, tp))
+#             instr.append(print("xori ", tp, tp))
+#             instr.append(print("bnez ", tp))
+#             instr.append(print("slli ", sp, sp, rcs.XLEN - MAX_USED_VADDR_BITS))
+#     instr.append(print("1:", sp, sp, 31 * (rcs.XLEN / 8)))
+#     for i in range(0, 32):
+#         instr.append(print("the store_instr, sp", store_instr, i, i * (rcs.XLEN / 8), sp))
+
+# def pop_gpr_from_kernel_stack(status, scratch, mprv, sp, tp, instr=[]):
+#     load_instr = "lw" if (rcs.XLEN == 32) else "ld"
+#     for i in range(0, 32):
+#         instr.append(print(load_instr, i, i * (rcs.XLEN / 8), sp))
+#     instr.push_back(print("addi", sp, sp, 31 * (rcs.XLEN / 8)))
+#     # if(scratch inside {implemented_csr}):
+#     # instr.append(print("add ", tp, sp))
+#     # instr.append(print("csrrw ", sp, scratch, sp))
+
+# def get_int_arg_value(cmdline_str, val):
+#     s = auto()
+#     inst = auto()
+#     if(inst.get_arg_value(cmdline_str, s)):
+#         val = s.atoi()
+
+# def get_bool_arg_value(cmdline_str, val):
+#     s = auto()
+#     if(inst.get_arg_value(cmdline_str, s)):
+#         val = s.atobin()
+
+# def get_hex_arg_value(cmdline_str, val):
+#     s = auto()
+#     if(inst.get_arg_value(cmdline_str, s)):
+#         val = s.atohex()
+
+# class cmdline_enum_processor:
+#     def get_array_values(self, cmdline_strcmdline_str, vals=[]):
+#         self.s = auto()
+# #    casting_static = int(inst.get_arg_value(cmdline_str, s))
+# #          print("casting_static =",casting_static)
+# #    if(s != " "):
+# #        cmdline_list = []
+# #        T value
+# #        uvm_split_string(s, ",", cmdline_list);
+# #        vals = new[cmdline_list.size]
+# #        for i in range(0,):
+# #            if (uvm_enum_wrapper#(T)::from_name(cmdline_list[i].toupper(), value)):
+# #               vals[i] = value
+# #            else:
+# #               print( "Invalid value (%0s) specified in command line: %0s",
+# cmdline_list[i], cmdline_str))  #uvm_fatal
+
+# def get_val(str, val, hex=0):
+#     if(str.len() > 2):
+#         if (str.substr(0, 1) == "0x"):
+#             str = str.substr(2, str.len() - 1)
+#             val = str.atohex()
+#             return
+#     if (hex):
+#         val = str.atohex()
+#     elif (str.substr(0, 0) == "-"):
+#         str = str.substr(1, str.len() - 1)
+#         val = - str.atoi()
+#     else:
+#         val = str.atoi()
