@@ -79,6 +79,12 @@ parameter int VELEN = int'($ln(ELEN)/$ln(2)) - 3;
 // Maxium LMUL supported by the core
 parameter int MAX_LMUL = 8;
 
+// Initialization of the vregs
+// SAME_VALUES_ALL_ELEMS - Using vmv.v.x to fill the all the elements of the vreg with the same value as the GPR selected
+// RANDOM_VALUES_VMV - Using vmv.v.x + vslide1up.vx to randomize the contents of each vector element
+// RANDOM_VALUES_LOAD - Using vle.v, same approach as RANDOM_VALUES_VMV but more efficient for big VLEN
+parameter vreg_init_method_t VREG_INIT_METHOD = RANDOM_VALUES_LOAD;
+
 // ----------------------------------------------------------------------------
 // Multi-harts configuration
 // ----------------------------------------------------------------------------

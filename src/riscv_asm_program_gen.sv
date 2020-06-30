@@ -543,18 +543,43 @@ class riscv_asm_program_gen extends uvm_object;
     LMUL = 1;
     SEW = (ELEN <= XLEN) ? ELEN : XLEN;
     instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
-    // vec registers will be loaded from a scalar GPR, one element at a time
     instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
                                      indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL, EDIV));
     instr_stream.push_back("vec_reg_init:");
-    for (int v = 1; v < NUM_VEC_GPR; v++) begin
-      for (int e = 0; e < num_elements; e++) begin
-        if (e > 0) instr_stream.push_back($sformatf("%0svmv.v.v v0, v%0d", indent, v));
-        instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
-                                         indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
-        instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, t0", indent, v));
+
+    // Vector registers will be initialized using one of the following three methods
+    case (VREG_INIT_METHOD)
+      SAME_VALUES_ALL_ELEMS: begin
+        for (int v = 0; v < NUM_VEC_GPR; v++) begin
+          instr_stream.push_back($sformatf("%0svmv.v.x v%0d, x%0d", indent, v, v));
+        end
       end
-    end
+      RANDOM_VALUES_VMV: begin
+        for (int v = 0; v < NUM_VEC_GPR; v++) begin
+          for (int e = 0; e < num_elements; e++) begin
+            if (e > 0) instr_stream.push_back($sformatf("%0svmv.v.v v0, v%0d", indent, v));
+            instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
+                                             indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
+            instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, t0", indent, v));
+          end
+        end
+      end
+      RANDOM_VALUES_LOAD: begin
+        // Select those memory regions that are big enough for load a vreg
+        mem_region_t valid_mem_region [$];
+        foreach (cfg.mem_region[i])
+          if (cfg.mem_region[i].size_in_bytes * 8 >= VLEN) valid_mem_region.push_back(cfg.mem_region[i]);
+
+        if (valid_mem_region.size() == 0)
+          `uvm_fatal(`gfn, "Couldn't find a memory region big enough to initialize the vector registers")
+
+        for (int v = 0; v < NUM_VEC_GPR; v++) begin
+          int region = $urandom_range(0, valid_mem_region.size()-1);
+          instr_stream.push_back($sformatf("%0sla t0, %0s", indent, valid_mem_region[region].name));
+          instr_stream.push_back($sformatf("%0svle.v v%0d, (t0)", indent, v));
+        end
+      end
+    endcase
   endfunction
 
   // Initialize floating point general purpose registers
