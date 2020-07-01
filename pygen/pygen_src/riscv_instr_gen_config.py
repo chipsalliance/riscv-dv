@@ -90,7 +90,7 @@ class riscv_instr_gen_config:
         self.instr_cnt = 200
         self.num_of_tests = 1
         self.no_data_page = 0
-        self.no_branch_jump = 0
+        self.no_branch_jump = 1
         self.no_load_store = 0
         self.no_csr_instr = 0
         self.no_ebreak = 1

@@ -49,7 +49,7 @@ class riscv_instr:
         self.rs2 = vsc.rand_enum_t(riscv_reg_t)
         self.rs1 = vsc.rand_enum_t(riscv_reg_t)
         self.rd = vsc.rand_enum_t(riscv_reg_t)
-        self.imm = BitArray(hex="0x00000000")
+        self.imm = vsc.rand_int32_t()
 
         self.imm_mask = BitArray(hex="0xffffffff")
         self.is_branch_target = None
@@ -63,7 +63,7 @@ class riscv_instr:
         self.is_floating_point = None
         self.imm_str = None
         self.comment = ""
-        self.label = None
+        self.label = " "
         self.is_local_numeric_label = None
         self.idx = -1
         self.has_rs1 = 1
@@ -263,24 +263,24 @@ class riscv_instr:
         sign = 0
         self.imm = self.imm << (32 - self.imm_len)
         # sign = imm[31]
-        sign = self.imm.bin[0:1:1]
+        sign = self.imm[0]
         self.imm = self.imm >> (32 - self.imm_len)
         # Signed extension
         if((sign and not(self.format == "U_FORMAT")) or (self.imm_type in ["UIMM", "NZUIMM"])):
             self.imm = self.imm_mask | self.imm
 
     def post_randomize(self):
-        self.extend_imm()
-        self.update_imm_str()
+        pass
+        # self.extend_imm()
+        # self.update_imm_str()
 
     def convert2asm(self, prefix=" "):
-        # print("[ RISCV_INSTR ] [ CONVERT2ASM ]")
         asm_str = pkg_ins.format_string(string=self.get_instr_name(), length = pkg_ins.MAX_INSTR_STR_LEN)
         if(self.category.name != "SYSTEM"):
             if self.format.name == "J_FORMAT":
-                asm_str = '{} {} {}'.format(asm_str, self.rd.name, self.get_imm())
+                asm_str = '{} {} {}'.format(asm_str, self.rd.name, str(self.imm))
             elif self.format.name == "U_FORMAT":
-                asm_str = '{} {} {}'.format(asm_str, self.rd.name, self.get_imm())
+                asm_str = '{} {} {}'.format(asm_str, self.rd.name, str(self.imm))
             elif self.format.name == "I_FORMAT":
                 if(self.instr_name.name == "NOP"):
                     asm_str = "nop"
@@ -291,22 +291,24 @@ class riscv_instr:
                 elif(self.instr_name.name == "FENCE_I"):
                     asm_str = "fence.i"
                 elif(self.category.name == "LOAD"):
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.get_imm(), self.rs1.name)
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, str(self.imm), self.rs1.name)
                 elif(self.category.name == "CSR"):
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.csr, self.get_imm())
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.csr, str(self.imm))
                 else:
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.rs1.name, self.get_imm())
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.rs1.name, str(self.imm))
+                    # print("Object", self)
+                    # print("Imm_str", self.imm_str)
             elif self.format.name == "S_FORMAT":
                 if(self.category.name == "STORE"):
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, str(self.imm), self.rs1.name)
                 else:
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, str(self.imm))
 
             elif self.format.name == "B_FORMAT":
                 if(self.category.name == "STORE"):
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, str(self.imm), self.rs1.name)
                 else:
-                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, str(self.imm))
 
             elif self.format.name == "R_FORMAT":
                 if(self.category.name == "CSR"):
@@ -325,6 +327,7 @@ class riscv_instr:
 
         if(self.comment != ""):
             asm_str = asm_str + " #" + self.comment
+
         return asm_str.lower()
 
     def get_opcode(self):
@@ -422,6 +425,7 @@ class riscv_instr:
 
     def get_instr_name(self):
         get_instr_name = self.instr_name.name
+        # print(get_instr_name)
         for i in get_instr_name:
             if(i == "_"):
                 get_instr_name = get_instr_name.replace(i, ".")
@@ -440,8 +444,8 @@ class riscv_instr:
     def do_copy(self):
         pass  # TODO
 
-    def update_imm_str(self):
-        self.imm_str = str(self.imm)
+    # def update_imm_str(self):
+    #     self.imm_str = str(self.imm)
 
 
 riscv_instr_ins = riscv_instr()

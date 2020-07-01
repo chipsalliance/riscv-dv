@@ -1198,7 +1198,6 @@ class riscv_instr_pkg:
         self.MAX_SUB_PROGRAM_CNT = BitArray(uint = 20, length = 32)
         self.MAX_CALL_PER_FUNC = BitArray(uint = 5, length = 32)
         self.indent = "{:18s}".format(" ")
-        self.TEMP = BitArray(uint = 10, length = 32)
 
     def hart_prefix(self, hart = 0):
         if(riscv_core_setting.NUM_HARTS <= 1):
@@ -1212,8 +1211,8 @@ class riscv_instr_pkg:
     # TODO
     # typedef bit [15:0] program_id_t; Can be achieve by importing riscv_callstack_gen.py
 
-    def format_string(self, string, length = BitArray(uint=10,length=32)):
-        formatted_str = int(length.bin) * " "
+    def format_string(self, string, length = 10):
+        formatted_str =  "{:11s}".format(" ")
         if (int(length.bin) < len(string)):
             return string
         formatted_str = string + formatted_str[0 : (int(length.bin) - len(string) - 1)]
