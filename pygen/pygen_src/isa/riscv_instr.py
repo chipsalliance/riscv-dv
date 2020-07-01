@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 from collections import defaultdict
 from pygen_src.riscv_instr_gen_config import riscv_instr_gen_config
-from pygen_src.riscv_instr_pkg import riscv_instr_group_t
+from pygen_src.riscv_instr_pkg import riscv_instr_group_t, pkg_ins, riscv_reg_t
 from pygen_src.isa import rv32i_instr  # NOQA
 import random
 from bitstring import BitArray
@@ -24,7 +24,7 @@ from copy import copy
 import sys
 import vsc
 
-
+@vsc.randobj
 class riscv_instr:
     instr_registry = {}
 
@@ -46,9 +46,9 @@ class riscv_instr:
         self.imm_len = 0
 
         self.csr = None
-        self.rs2 = None
-        self.rs1 = None
-        self.rd = None
+        self.rs2 = vsc.rand_enum_t(riscv_reg_t)
+        self.rs1 = vsc.rand_enum_t(riscv_reg_t)
+        self.rd = vsc.rand_enum_t(riscv_reg_t)
         self.imm = BitArray(hex="0x00000000")
 
         self.imm_mask = BitArray(hex="0xffffffff")
@@ -62,7 +62,7 @@ class riscv_instr:
         self.is_hint_instr = None
         self.is_floating_point = None
         self.imm_str = None
-        self.comment = None
+        self.comment = ""
         self.label = None
         self.is_local_numeric_label = None
         self.idx = -1
@@ -164,8 +164,8 @@ class riscv_instr:
                 self.include_reg.append("USCRATCH")
 
     def get_rand_instr(self, include_instr=[], exclude_instr=[],
-                       include_category=[], exclude_category=[],
-                       include_group=[], exclude_group=[]):
+                   include_category=[], exclude_category=[],
+                   include_group=[], exclude_group=[]):
         idx = BitArray(uint = 0, length = 32)
         name = ""
         allowed_instr = []
@@ -274,7 +274,58 @@ class riscv_instr:
         self.update_imm_str()
 
     def convert2asm(self, prefix=" "):
-        pass
+        # print("[ RISCV_INSTR ] [ CONVERT2ASM ]")
+        asm_str = pkg_ins.format_string(string=self.get_instr_name(), length = pkg_ins.MAX_INSTR_STR_LEN)
+        if(self.category.name != "SYSTEM"):
+            if self.format.name == "J_FORMAT":
+                asm_str = '{} {} {}'.format(asm_str, self.rd.name, self.get_imm())
+            elif self.format.name == "U_FORMAT":
+                asm_str = '{} {} {}'.format(asm_str, self.rd.name, self.get_imm())
+            elif self.format.name == "I_FORMAT":
+                if(self.instr_name.name == "NOP"):
+                    asm_str = "nop"
+                elif(self.instr_name.name == "WFI"):
+                    asm_str = "wfi"
+                elif(self.instr_name.name == "FENCE"):
+                    asm_str = "fence"
+                elif(self.instr_name.name == "FENCE_I"):
+                    asm_str = "fence.i"
+                elif(self.category.name == "LOAD"):
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.get_imm(), self.rs1.name)
+                elif(self.category.name == "CSR"):
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.csr, self.get_imm())
+                else:
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.rs1.name, self.get_imm())
+            elif self.format.name == "S_FORMAT":
+                if(self.category.name == "STORE"):
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                else:
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+
+            elif self.format.name == "B_FORMAT":
+                if(self.category.name == "STORE"):
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                else:
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+
+            elif self.format.name == "R_FORMAT":
+                if(self.category.name == "CSR"):
+                    sel.asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.csr, self.rs1.name)
+                elif(self.instr_name.name == "SFENCE_VMA"):
+                    asm_str = "sfence.vma x0, x0"
+                else:
+                    asm_str = '{} {} {} {}'.format(asm_str, self.rd.name, self.rs1.name, self.rs2.name)
+            else:
+                asm_str = 'Fatal_unsupported_format: {} {}'.format(self.format.name, self.instr_name.name)
+
+
+        else:
+            if(self.instr_name.name == "EBREAK"):
+                asm_str = ".4byte 0x00100073 # ebreak"
+
+        if(self.comment != ""):
+            asm_str = asm_str + " #" + self.comment
+        return asm_str.lower()
 
     def get_opcode(self):
         if(self.instr_name.name == "LUI"):

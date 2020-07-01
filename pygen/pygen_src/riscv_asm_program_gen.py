@@ -13,13 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 import subprocess
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
-from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t)
+from pygen_src.riscv_instr_pkg import (pkg_ins,privileged_reg_t)
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 import logging
 import random
 from bitstring import BitArray
-
 
 class riscv_asm_program_gen:
 
@@ -32,7 +31,7 @@ class riscv_asm_program_gen:
         self.sub_program = []
 
     logging.basicConfig(level = logging.INFO)
-
+    
     # This is the main function to generate all sections of the program.
     def gen_program(self):
         # Generate program header
@@ -59,12 +58,12 @@ class riscv_asm_program_gen:
                 # Load fault handler
                 self.gen_load_fault_handler(hart)
                 # Store fault handler
-                self.gen_store_fault_handler(hart)
+                self.gen_store_fault_handler(hart) 
                 self.gen_test_done()
 
-            # Generate sub program
+            #Generate sub program
             # self.gen_sub_program(self, hart, self.sub_program,
-                # sub_program_name, cfg.num_of_sub_program)
+                            # sub_program_name, cfg.num_of_sub_program)
             gt_lbl_str = pkg_ins.get_label("main", hart)
             gt_lbl_str = riscv_instr_sequence()
             self.main_program.append(gt_lbl_str)
@@ -85,9 +84,9 @@ class riscv_asm_program_gen:
             # # logging.info("Generating callstack...done")
             # main_program[hart].post_process_instr()
             # logging.info("Post-processing main program...done")
-            # main_program[hart].generate_instr_stream()
-            # logging.info("Generating main program instruction stream...done")
-        self.instr_stream.append(self.main_program[hart].instr_string_list)
+        self.main_program[hart].generate_instr_stream()
+        logging.info("Generating main program instruction stream...done")
+        self.instr_stream.extend(self.main_program[hart].instr_string_list)
         self.instr_stream.append("{}j test_done".format(pkg_ins.indent))
 
         if(hart == 0 and not(rcs.support_pmp)):
@@ -128,7 +127,7 @@ class riscv_asm_program_gen:
 
         for hart in range(cfg.num_of_harts):
             string.append("li x6, {}\n{}beq x5, x6, {}f".format(hart, pkg_ins.indent, hart))
-
+            
         self.gen_section("_start", string)
 
         for hart in range(cfg.num_of_harts):
@@ -261,7 +260,7 @@ class riscv_asm_program_gen:
         # TODO
         mode_name = cfg.init_privileged_mode
         instr.append("csrw mepc, x{}".format(cfg.gpr[0]))
-        if(not rcs.support_pmp):  # TODO
+        if(not rcs.support_pmp): # TODO
             instr.append("j {}init_{}".format(pkg_ins.hart_prefix(hart), mode_name.name.lower()))
 
         self.gen_section(pkg_ins.get_label("mepc_setup", hart), instr)
@@ -310,8 +309,7 @@ class riscv_asm_program_gen:
                              "srli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], rcs.XLEN - 20))
 
             instr.append("ori x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], cfg.mtvec_mode))
-            instr.append("csrw {}, x{}, # {}".format(
-                hex(trap_vec_reg.value), cfg.gpr[0], trap_vec_reg.name))
+            instr.append("csrw {}, x{}, # {}".format(hex(trap_vec_reg.value), cfg.gpr[0], trap_vec_reg.name))
 
         self.gen_section(pkg_ins.get_label("trap_vec_init", hart), instr)
 
@@ -394,8 +392,8 @@ class riscv_asm_program_gen:
         pass
 
     def generate_directed_instr_stream(self, hart=0, label="", original_instr_cnt=None,
-                                       min_insert_cnt=0, kernel_mode=0, instr_stream=[]):
+        min_insert_cnt=0, kernel_mode=0, instr_stream=[]):
         pass
-
+        
     def gen_debug_rom(self, hart):
         pass
