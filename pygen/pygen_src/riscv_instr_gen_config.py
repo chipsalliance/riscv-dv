@@ -14,18 +14,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 import logging
 import sys
-from bitstring import BitArray
 import vsc
+from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import mtvec_mode_t, f_rounding_mode_t, \
     riscv_reg_t, privileged_mode_t, \
     riscv_instr_group_t
 from pygen_src.target.rv32i import riscv_core_setting as rcs
-logging.basicConfig(format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
-                    level=logging.DEBUG)
 
 
+@vsc.randobj
 class riscv_instr_gen_config:
     def __init__(self):
+        # TODO Support for command line argument
         self.main_program_instr_cnt = 100  # count of main_prog
         self.sub_program_instr_cnt = []  # count of sub_prog
         self.debug_program_instr_cnt = 0  # count of debug_rom
@@ -56,18 +56,18 @@ class riscv_instr_gen_config:
         self.mstatus_tvm = 0
         self.mstatus_fs = BitArray(bin(0b0), length=2)
         self.mstatus_vs = BitArray(bin(0b0), length=2)
-        self.mtvec_mode = list(map(lambda vec_md: vec_md.name, mtvec_mode_t))
+        self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
 
         self.tvec_alignment = 2
 
         self.fcsr_rm = list(map(lambda csr_rm: csr_rm.name, f_rounding_mode_t))
         self.enable_sfence = 0
-        self.gpr = [list(map(lambda gpr_i: gpr_i.name, riscv_reg_t))] * 5
-        self.scratch_reg = list(map(lambda scr_rg: scr_rg.name, riscv_reg_t))
-        self.pmp_reg = list(map(lambda pmp_rg: pmp_rg.name, riscv_reg_t))
-        self.sp = list(map(lambda sp_rg: sp_rg.name, riscv_reg_t))
-        self.tp = list(map(lambda tp_rg: tp_rg.name, riscv_reg_t))
-        self.ra = list(map(lambda ra_rg: ra_rg.name, riscv_reg_t))
+        self.gpr = vsc.rand_list_t(vsc.enum_t(riscv_reg_t), sz =4)
+        self.scratch_reg = vsc.rand_enum_t(riscv_reg_t)
+        self.pmp_reg = vsc.rand_enum_t(riscv_reg_t)
+        self.sp = vsc.rand_enum_t(riscv_reg_t)
+        self.tp = vsc.rand_enum_t(riscv_reg_t)
+        self.ra = vsc.rand_enum_t(riscv_reg_t)
         self.check_misa_init_val = 0
         self.check_xstatus = 1
         self.virtual_addr_translation_on = 0
@@ -136,7 +136,7 @@ class riscv_instr_gen_config:
         self.max_stack_len_per_program = 16 * (rcs.XLEN / 8)
         self.max_branch_step = 20
         self.max_directed_instr_stream_seq = 20
-        self.reserved_regs = []
+        self.reserved_regs = vsc.list_t(vsc.enum_t(riscv_reg_t))
         self.enable_floating_point = 0
         self.enable_vector_extension = 0
         self.enable_b_extension = 0
@@ -145,6 +145,10 @@ class riscv_instr_gen_config:
         # 'ZBC', 'ZBR', 'ZBM', 'ZBT', 'ZB_TMP']
         self.dist_control_mode = 0
         self.category_dist = {}
+
+    @vsc.constraint
+    def gpr_c(self):
+        pass  # TODO
 
     def check_setting(self):
         support_64b = 0
@@ -219,14 +223,16 @@ class riscv_instr_gen_config:
         pass
 
     def post_randomize(self):
-        self.reserved_regs = [self.tp + self.sp + self.scratch_reg]
+        self.reserved_regs.append(self.tp)
+        self.reserved_regs.append(self.sp)
+        self.reserved_regs.append(self.scratch_reg)
         self.min_stack_len_per_program = 2 * (rcs.XLEN / 8)
         logging.info("min_stack_len_per_program value = %d"
                      % self.min_stack_len_per_program)
         self.check_setting()  # to check the setting is legal
 
         # TODO, Need to change the logic once the constraints are up.
-        if "USER_MODE" in self.init_privileged_mode:
+        if "USER_MODE" == self.init_privileged_mode:
             logging.info("mode=%s" % "USER_MODE")
             self.no_wfi = 1
 

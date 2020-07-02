@@ -25,3 +25,7 @@ supported_privileged_mode = ['MACHINE_MODE']
 NUM_HARTS = 1
 
 support_pmp = 0
+
+unsupported_instr = []
+
+support_umode_trap = 0
