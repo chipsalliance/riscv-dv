@@ -548,7 +548,7 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back("vec_reg_init:");
 
     // Vector registers will be initialized using one of the following three methods
-    case (VREG_INIT_METHOD)
+    case (cfg.vreg_init_method)
       SAME_VALUES_ALL_ELEMS: begin
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
           instr_stream.push_back($sformatf("%0svmv.v.x v%0d, x%0d", indent, v, v));
