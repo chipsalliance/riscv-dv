@@ -36,6 +36,13 @@ package riscv_instr_pkg;
     bit [2:0]      xwr; // Excutable,Writable,Readale
   } mem_region_t;
 
+  // Initialization of the vregs
+  typedef enum {
+    SAME_VALUES_ALL_ELEMS,
+    RANDOM_VALUES_VMV,
+    RANDOM_VALUES_LOAD
+  } vreg_init_method_t;
+
   typedef enum bit [3:0] {
     BARE = 4'b0000,
     SV32 = 4'b0001,

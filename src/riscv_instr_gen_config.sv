@@ -39,6 +39,12 @@ class riscv_instr_gen_config extends uvm_object;
   // Pattern of data section: RAND_DATA, ALL_ZERO, INCR_VAL
   rand data_pattern_t    data_page_pattern;
 
+  // Initialization of the vregs
+  // SAME_VALUES_ALL_ELEMS - Using vmv.v.x to fill all the elements of the vreg with the same value as the one in the GPR selected
+  // RANDOM_VALUES_VMV     - Using vmv.v.x + vslide1up.vx to randomize the contents of each vector element
+  // RANDOM_VALUES_LOAD    - Using vle.v, same approach as RANDOM_VALUES_VMV but more efficient for big VLEN
+  vreg_init_method_t vreg_init_method = RANDOM_VALUES_VMV;
+
   // Associate array for delegation configuration for each exception and interrupt
   // When the bit is 1, the corresponding delegation is enabled.
   rand bit               m_mode_exception_delegation[exception_cause_t];
