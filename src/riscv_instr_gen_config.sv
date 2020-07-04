@@ -72,7 +72,7 @@ class riscv_instr_gen_config extends uvm_object;
   // TVEC alignment
   // This value is the log_2 of the byte-alignment of TVEC.BASE field
   // As per RISC-V privileged spec, default will be set to 2 (4-byte aligned)
-  int tvec_alignment = 2;
+  rand int tvec_alignment = 2;
 
   // Floating point rounding mode
   rand f_rounding_mode_t fcsr_rm;
@@ -331,6 +331,13 @@ class riscv_instr_gen_config extends uvm_object;
 
   constraint mtvec_c {
     mtvec_mode inside {supported_interrupt_mode};
+    if (mtvec_mode == DIRECT) {
+     soft tvec_alignment == 2;
+    } else {
+     // Setting MODE = Vectored may impose an additional alignmentconstraint on BASE,
+     // requiring up to 4×XLEN-byte alignment
+     soft tvec_alignment == $clog2((XLEN * 4) / 8);
+    }
   }
 
   constraint mstatus_c {
@@ -528,7 +535,6 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_timer_irq=", enable_timer_irq);
     get_int_arg_value("+num_of_sub_program=", num_of_sub_program);
     get_int_arg_value("+instr_cnt=", instr_cnt);
-    get_int_arg_value("+tvec_alignment=", tvec_alignment);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
     get_bool_arg_value("+no_dret=", no_dret);
     get_bool_arg_value("+no_wfi=", no_wfi);
@@ -557,6 +563,9 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+randomize_csr=", randomize_csr);
     if (this.require_signature_addr) begin
       get_hex_arg_value("+signature_addr=", signature_addr);
+    end
+    if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
+      tvec_alignment.rand_mode(0);
     end
     get_bool_arg_value("+gen_debug_section=", gen_debug_section);
     get_bool_arg_value("+bare_program_mode=", bare_program_mode);
