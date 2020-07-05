@@ -117,10 +117,7 @@ class riscv_instr_gen_config extends uvm_object;
 
   mem_region_t mem_region[$] = '{
     '{name:"region_0", size_in_bytes: 4096,      xwr: 3'b111},
-    '{name:"region_1", size_in_bytes: 4096 * 4,  xwr: 3'b111},
-    '{name:"region_2", size_in_bytes: 4096 * 2,  xwr: 3'b111},
-    '{name:"region_3", size_in_bytes: 512,       xwr: 3'b111},
-    '{name:"region_4", size_in_bytes: 4096,      xwr: 3'b111}
+    '{name:"region_1", size_in_bytes: 4096 * 16, xwr: 3'b111}
   };
 
   // Dedicated shared memory region for multi-harts atomic operations
