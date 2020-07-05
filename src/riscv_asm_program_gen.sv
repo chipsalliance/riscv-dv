@@ -560,7 +560,13 @@ class riscv_asm_program_gen extends uvm_object;
             if (e > 0) instr_stream.push_back($sformatf("%0svmv.v.v v0, v%0d", indent, v));
             instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
                                              indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
-            instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, t0", indent, v));
+            if (v > 0) begin
+              instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, x%0d",
+                                               indent, v, cfg.gpr[0]));
+            end else begin
+              instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v1, x%0d",
+                                               indent, v, cfg.gpr[0]));
+            end
           end
         end
       end

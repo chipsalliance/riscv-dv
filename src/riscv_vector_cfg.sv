@@ -22,6 +22,7 @@ class riscv_vector_cfg extends uvm_object;
   rand bit [XLEN-1:0]    vstart;
   rand vxrm_t            vxrm;
   rand bit               vxsat;
+  riscv_vreg_t           reserved_vregs[$];
 
   // Allow only vector instructions from the random sequences
   rand bit only_vec_instr;
