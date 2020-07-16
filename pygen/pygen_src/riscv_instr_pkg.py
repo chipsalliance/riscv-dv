@@ -9,9 +9,18 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 """
 
 from enum import Enum, auto
+from bitstring import BitArray
+from pygen_src.target.rv32i import riscv_core_setting as rcs
+
+
+class mem_region_t:
+    name = 0
+    size_in_bytes = auto()
+    xwr = auto()
 
 
 class satp_mode_t(Enum):
@@ -711,12 +720,8 @@ class riscv_instr_category_t(Enum):
     CHANGELEVEL = auto()
     TRAP = auto()
     INTERRUPT = auto()
-    # VECTOR_INCLUDE #TODO
     AMO = auto()
-
-
-class riscv_csr_t(Enum):
-    pass
+# typedef bit[11:0] riscv_csr_t;
 
 
 class privileged_reg_t(Enum):
@@ -883,29 +888,28 @@ class privileged_reg_t(Enum):
     MHPMCOUNTER7H = 0xB87
     MHPMCOUNTER8H = 0xB88
     MHPMCOUNTER9H = 0xB89
-    MHPMCOUNTER10H = 0xB8
-    MHPMCOUNTER11H = 0xB8
-    MHPMCOUNTER12H = 0xB8
-    MHPMCOUNTER13H = 0xB8
-    MHPMCOUNTER14H = 0xB8
-    MHPMCOUNTER15H = 0xB8
-    MHPMCOUNTER16H = 0xB9
-    MHPMCOUNTER17H = 0xB9
-    MHPMCOUNTER18H = 0xB9
-    MHPMCOUNTER19H = 0xB9
-    MHPMCOUNTER20H = 0xB9
-    MHPMCOUNTER21H = 0xB9
-    MHPMCOUNTER22H = 0xB9
-    MHPMCOUNTER23H = 0xB9
-    MHPMCOUNTER24H = 0xB9
-    MHPMCOUNTER25H = 0xB9
-    MHPMCOUNTER26H = 0xB9
-    MHPMCOUNTER27H = 0xB9
-    MHPMCOUNTER28H = 0xB9
-    MHPMCOUNTER29H = 0xB9
-    MHPMCOUNTER30H = 0xB9
-    MHPMCOUNTER31H = 0xB9
-    MCOUNTINHIBIT = 0x320
+    MHPMCOUNTER10H = 0xB8A
+    MHPMCOUNTER11H = 0xB8B
+    MHPMCOUNTER12H = 0xB8C
+    MHPMCOUNTER13H = 0xB8D
+    MHPMCOUNTER14H = 0xB8E
+    MHPMCOUNTER15H = 0xB8F
+    MHPMCOUNTER17H = 0xB90
+    MHPMCOUNTER18H = 0xB91
+    MHPMCOUNTER19H = 0xB92
+    MHPMCOUNTER20H = 0xB93
+    MHPMCOUNTER21H = 0xB94
+    MHPMCOUNTER22H = 0xB95
+    MHPMCOUNTER23H = 0xB96
+    MHPMCOUNTER24H = 0xB97
+    MHPMCOUNTER25H = 0xB98
+    MHPMCOUNTER26H = 0xB99
+    MHPMCOUNTER27H = 0xB9A
+    MHPMCOUNTER28H = 0xB9B
+    MHPMCOUNTER29H = 0xB9C
+    MHPMCOUNTER30H = 0xB9D
+    MHPMCOUNTER31H = 0xB9E
+    MCOUNTINHIBIT = 0x320F
     MHPMEVENT3 = 0x323
     MHPMEVENT4 = 0x324
     MHPMEVENT5 = 0x325
@@ -1064,6 +1068,14 @@ class pmp_addr_mode_t(Enum):
     NAPOT = 0b11
 
 
+class vtype_t(Enum):
+    ill = 0
+    reserved = auto()
+    vediv = auto()
+    vsew = auto()
+    vlmul = auto()
+
+
 class vxrm_t(Enum):
     RoundToNearestUp = 0
     RoundToNearestEven = auto()
@@ -1082,3 +1094,113 @@ class b_ext_group_t(Enum):
     ZBM = auto()
     ZBT = auto()
     ZB_TMP = auto()
+
+
+class all_gpr(Enum):
+    ZERO = 0
+    RA = auto()
+    SP = auto()
+    GP = auto()
+    TP = auto()
+    T0 = auto()
+    T1 = auto()
+    T2 = auto()
+    S0 = auto()
+    S1 = auto()
+    A0 = auto()
+    A1 = auto()
+    A2 = auto()
+    A3 = auto()
+    A4 = auto()
+    A5 = auto()
+    A6 = auto()
+    A7 = auto()
+    S2 = auto()
+    S3 = auto()
+    S4 = auto()
+    S5 = auto()
+    S6 = auto()
+    S7 = auto()
+    S8 = auto()
+    S9 = auto()
+    S10 = auto()
+    S11 = auto()
+    T3 = auto()
+    T4 = auto()
+    T5 = auto()
+    T6 = auto()
+
+
+class compressed_gpr(Enum):
+    S0 = 0
+    S1 = auto()
+    A0 = auto()
+    A1 = auto()
+    A2 = auto()
+    A3 = auto()
+    A4 = auto()
+    A5 = auto()
+
+
+class all_categories(Enum):
+    LOAD = 0
+    STORE = auto()
+    SHIFT = auto()
+    ARITHMETIC = auto()
+    LOGICAL = auto()
+    COMPARE = auto()
+    BRANCH = auto()
+    JUMP = auto()
+    SYNCH = auto()
+    SYSTEM = auto()
+    COUNTER = auto()
+    CSR = auto()
+    CHANGELEVEL = auto()
+    TRAP = auto()
+    INTERRUPT = auto()
+    AMO = auto()
+
+
+class riscv_instr_pkg:
+    def __init__(self):
+        self.MPRV_BIT_MASK = BitArray(uint= 0x1 << 0x17, length = rcs.XLEN)
+        self.SUM_BIT_MASK = BitArray(uint = 0x1 << 0x18, length = rcs.XLEN)
+        self.MPP_BIT_MASK = BitArray(uint = 0x3 << 0x11, length = rcs.XLEN)
+        self.MAX_USED_VADDR_BITS = 30
+        self.IMM25_WIDTH = 25
+        self.IMM12_WIDTH = 12
+        self.INSTR_WIDTH = 32
+        self.DATA_WIDTH = 32
+        self.MAX_INSTR_STR_LEN = 11
+        self.LABEL_STR_LEN = 18
+        self.MAX_CALLSTACK_DEPTH = 20
+        self.MAX_SUB_PROGRAM_CNT = 20
+        self.MAX_CALL_PER_FUNC = 5
+        self.indent = self.LABEL_STR_LEN * " "
+
+    def hart_prefix(self, hart = 0):
+        if(rcs.NUM_HARTS <= 1):
+            return ""
+        else:
+            return f"h{hart}_"
+
+    def get_label(self, label, hart=0):
+        return (self.hart_prefix(hart) + label)
+
+    def format_string(self, string, length = 10):
+        formatted_str = length * " "
+        if (int(length) < len(string)):
+            return string
+        formatted_str = string + formatted_str[0: (int(length) - len(string) - 1)]
+        return formatted_str
+
+    def format_data(self, data, byte_per_group = 4):
+        string = "0x"
+        for i in range(len(data)):
+            if ((i % byte_per_group == 0) and (i != len(data) - 1) and (i != 0)):
+                string = string + ", 0x"
+            string = string + f"{hex(data[i])}"
+        return string
+
+
+pkg_ins = riscv_instr_pkg()

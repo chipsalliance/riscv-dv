@@ -21,7 +21,7 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_
 
     def __init__(self):
         riscv_instr.__init__(self)
-        self.instr_name = instr_n
+        self.instr_name = instr_n.name
         self.format = instr_format
         self.category = instr_category
         self.group = instr_group
