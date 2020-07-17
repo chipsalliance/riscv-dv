@@ -365,7 +365,7 @@ def parse_args():
     parse.add_argument('--enable_b_extension', help = 'enable_b_extension',
                        choices = [0, 1], type = int, default = 0)
 
-    # TO DO Need to figure out way to implement this.
+    # TODO
     '''
     cmdline_enum_processor #(b_ext_group_t)::get_array_values("+enable_bitmanip_groups=",
                                                               enable_bitmanip_groups);
@@ -388,16 +388,6 @@ def parse_args():
     // Directed march list from the runtime options, ex. RV32I, RV32M etc.
     cmdline_enum_processor #(riscv_instr_group_t)::get_array_values("+march=", march_isa);
     if (march_isa.size != 0) riscv_instr_pkg::supported_isa = march_isa;
-
-    if (!(RV32C inside {supported_isa})) begin
-      disable_compressed_instr = 1;
-    end
-    vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
-    pmp_cfg = riscv_pmp_cfg::type_id::create("pmp_cfg");
-    pmp_cfg.rand_mode(pmp_cfg.pmp_randomize);
-    pmp_cfg.initialize(require_signature_addr);
-    setup_instr_distribution();
-    get_invalid_priv_lvl_csr();
     '''
 
     args = parse.parse_args()
