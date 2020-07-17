@@ -15,6 +15,7 @@ import logging
 import copy
 import sys
 import random
+import os
 import vsc
 from collections import defaultdict
 from bitstring import BitArray
@@ -22,7 +23,7 @@ from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t
 from pygen_src.isa import rv32i_instr  # NOQA
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 
-logging.basicConfig(filename = "logname.log", filemode ='w',
+logging.basicConfig(filename = os.path.abspath('../test/out/logname.log'), filemode ='w',
                     format = "%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
                     level = logging.DEBUG)
 
