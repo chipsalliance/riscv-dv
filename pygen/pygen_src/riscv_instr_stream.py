@@ -228,5 +228,4 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         it will be updated once randomization for list of enum types supports in PyVSC.
         """
         instr.randomize()
-        instr.post_process()
         return instr
