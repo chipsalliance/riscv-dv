@@ -275,13 +275,6 @@ class riscv_instr:
             self.imm = self.imm_mask | self.imm
 
     def post_randomize(self):
-        pass
-
-    # TODO : This needs to be fix later
-    # Using a explicit post_process function calling it from riscv_instr_stream class
-    # because for some cases the post_randomization was not properly called
-    # and getting the output of imm value as none
-    def post_process(self):
         self.extend_imm()
         self.update_imm_str()
 
