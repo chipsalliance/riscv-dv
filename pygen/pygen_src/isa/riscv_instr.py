@@ -19,7 +19,7 @@ import os
 import vsc
 from collections import defaultdict
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t
+from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t
 from pygen_src.isa import rv32i_instr  # NOQA
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 
@@ -275,7 +275,23 @@ class riscv_instr:
                         (self.imm_type.name in ["UIMM", "NZUIMM"]))):
             self.imm = self.imm_mask | self.imm
 
+    def imm_c(self):
+        imm_t = BitArray(uint = self.imm, length = 32)
+        if self.instr_name in [riscv_instr_name_t.SLLIW.name, riscv_instr_name_t.SRLIW.name,
+                               riscv_instr_name_t.SRAIW.name]:
+            imm_t[20:27:1] = 0
+            self.imm = imm_t.uint
+        if self.instr_name in [riscv_instr_name_t.SLLI.name, riscv_instr_name_t.SRLI.name,
+                               riscv_instr_name_t.SRAI.name]:
+            if rcs.XLEN == 32:
+                imm_t[20:27:1] = 0
+                self.imm = imm_t.uint
+            else:
+                self.imm_t[20:26:1] = 0
+                self.imm = imm_t.uint
+
     def post_randomize(self):
+        self.imm_c()
         self.extend_imm()
         self.update_imm_str()
 
