@@ -271,7 +271,8 @@ class riscv_instr:
         sign = (self.imm & 0x80000000) >> 31
         self.imm = self.imm >> (32 - self.imm_len) & self.shift_t
         # Signed extension
-        if((sign and not(self.format == "U_FORMAT")) or (self.imm_type in ["UIMM", "NZUIMM"])):
+        if(sign and not((self.format.name == "U_FORMAT") or
+                        (self.imm_type.name in ["UIMM", "NZUIMM"]))):
             self.imm = self.imm_mask | self.imm
 
     def post_randomize(self):
