@@ -295,7 +295,7 @@ class riscv_instr:
         self.extend_imm()
         self.update_imm_str()
 
-    def convert2asm(self, prefix=" "):
+    def convert2asm(self, prefix = " "):
         asm_str = pkg_ins.format_string(string = self.get_instr_name(),
                                         length = pkg_ins.MAX_INSTR_STR_LEN)
         if(self.category.name != "SYSTEM"):
