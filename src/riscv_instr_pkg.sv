@@ -1013,6 +1013,10 @@ package riscv_instr_pkg;
     TDATA1          = 'h7A1,  // First Debug/Trace trigger data register
     TDATA2          = 'h7A2,  // Second Debug/Trace trigger data register
     TDATA3          = 'h7A3,  // Third Debug/Trace trigger data register
+    TINFO           = 'h7A4,  // Debug trigger info register
+    TCONTROL        = 'h7A5,  // Debug trigger control register
+    MCONTEXT        = 'h7A8,  // Machine mode trigger context register
+    SCONTEXT        = 'h7AA,  // Supervisor mode trigger context register
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
     DSCRATCH0       = 'h7B2,  // Debug scratch register
