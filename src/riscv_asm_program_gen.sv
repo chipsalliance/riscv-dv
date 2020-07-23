@@ -322,7 +322,7 @@ class riscv_asm_program_gen extends uvm_object;
       instr_stream.push_back(".option norvc;");
     end
     str.push_back(".include \"user_init.s\"");
-    str.push_back("csrr x5, mhartid");
+    str.push_back($sformatf("csrr x5, 0x%0x", MHARTID));
     for (int hart = 0; hart < cfg.num_of_harts; hart++) begin
       str = {str, $sformatf("li x6, %0d", hart),
                   $sformatf("beq x5, x6, %0df", hart)};
@@ -437,7 +437,7 @@ class riscv_asm_program_gen extends uvm_object;
     misa[XLEN-1:XLEN-2] = (XLEN == 32) ? 2'b01 :
                           (XLEN == 64) ? 2'b10 : 2'b11;
     if (cfg.check_misa_init_val) begin
-      instr_stream.push_back({indent, "csrr x15, misa"});
+      instr_stream.push_back({indent, $sformatf("csrr x15, 0x%0x", MISA)});
     end
     foreach (supported_isa[i]) begin
       case (supported_isa[i]) inside
@@ -457,8 +457,8 @@ class riscv_asm_program_gen extends uvm_object;
     if (SUPERVISOR_MODE inside {supported_privileged_mode}) begin
       misa[MISA_EXT_S] = 1'b1;
     end
-    instr_stream.push_back({indent, $sformatf("li x%0d, 0x%0x",cfg.gpr[0], misa)});
-    instr_stream.push_back({indent, $sformatf("csrw misa, x%0d",cfg.gpr[0])});
+    instr_stream.push_back({indent, $sformatf("li x%0d, 0x%0x", cfg.gpr[0], misa)});
+    instr_stream.push_back({indent, $sformatf("csrw 0x%0x, x%0d", MISA, cfg.gpr[0])});
   endfunction
 
   // Write to the signature_addr with values to indicate to the core testbench
@@ -814,7 +814,7 @@ class riscv_asm_program_gen extends uvm_object;
                $sformatf("srli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], XLEN - 12)};
     end
     mode_name = cfg.init_privileged_mode.name();
-    instr.push_back($sformatf("csrw mepc, x%0d", cfg.gpr[0]));
+    instr.push_back($sformatf("csrw 0x%0x, x%0d", MEPC, cfg.gpr[0]));
     if (!riscv_instr_pkg::support_pmp) begin
       instr.push_back($sformatf("j %0sinit_%0s", hart_prefix(hart), mode_name.tolower()));
     end
@@ -1157,9 +1157,9 @@ class riscv_asm_program_gen extends uvm_object;
     gen_signature_handshake(instr, CORE_STATUS, EBREAK_EXCEPTION);
     gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
     instr = {instr,
-            $sformatf("csrr  x%0d, mepc", cfg.gpr[0]),
+            $sformatf("csrr  x%0d, 0x%0x", cfg.gpr[0], MEPC),
             $sformatf("addi  x%0d, x%0d, 4", cfg.gpr[0], cfg.gpr[0]),
-            $sformatf("csrw  mepc, x%0d", cfg.gpr[0])
+            $sformatf("csrw  0x%0x, x%0d", MEPC, cfg.gpr[0])
     };
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
@@ -1178,9 +1178,9 @@ class riscv_asm_program_gen extends uvm_object;
     gen_signature_handshake(instr, CORE_STATUS, ILLEGAL_INSTR_EXCEPTION);
     gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
     instr = {instr,
-            $sformatf("csrr  x%0d, mepc", cfg.gpr[0]),
+            $sformatf("csrr  x%0d, 0x%0x", cfg.gpr[0], MEPC),
             $sformatf("addi  x%0d, x%0d, 4", cfg.gpr[0], cfg.gpr[0]),
-            $sformatf("csrw  mepc, x%0d", cfg.gpr[0])
+            $sformatf("csrw  0x%0x, x%0d", MEPC, cfg.gpr[0])
     };
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
