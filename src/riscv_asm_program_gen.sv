@@ -747,6 +747,8 @@ class riscv_asm_program_gen extends uvm_object;
     end
     // Setup mepc register, jump to init entry
     setup_epc(hart);
+    // Initialization of any implementation-specific custom CSRs
+    setup_custom_csrs(hart);
     // Move privileged mode support to the "safe" section of the program
     // if PMP is supported
     if (riscv_instr_pkg::support_pmp) begin
@@ -827,6 +829,23 @@ class riscv_asm_program_gen extends uvm_object;
       cfg.pmp_cfg.gen_pmp_instr('{cfg.scratch_reg, cfg.gpr[0]}, instr);
       gen_section(get_label("pmp_setup", hart), instr);
     end
+  endfunction
+
+  // Handles creation of a subroutine to initialize any custom CSRs
+  virtual function void setup_custom_csrs(int hart);
+    string instr[$];
+    init_custom_csr(instr);
+    gen_section(get_label("custom_csr_setup", hart), instr);
+  endfunction
+
+  // This function should be overridden in the riscv_asm_program_gen extended class
+  // corresponding to the RTL implementation if it has any custom CSRs defined.
+  //
+  // All that needs to be done in the overridden function is to manually create
+  // the instruction strings to set up any custom CSRs and then to push those strings
+  // into the instr queue.
+  virtual function void init_custom_csr(ref string instr[$]);
+    instr.push_back("nop");
   endfunction
 
   //---------------------------------------------------------------------------------------
