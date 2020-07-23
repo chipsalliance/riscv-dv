@@ -63,6 +63,7 @@ class riscv_instr_stream:
                     return
         elif idx > current_instr_cnt or idx < 0:
             logging.error("Cannot insert instr:%0s at idx %0d", instr.convert2asm(), idx)
+            sys.exit(1)
         self.instr_list.insert(idx, instr)
 
     def insert_instr_stream(self, new_instr, idx = -1, replace = 0):
