@@ -1,6 +1,8 @@
+import sys
 import vsc
 import logging
 from enum import Enum, auto
+from pygen_src.riscv_instr_pkg import riscv_reg_t
 
 class operand_sign_e(Enum):
     POSITIVE = auto()
@@ -28,12 +30,12 @@ class special_val_e(Enum):
     MAX_VAL = auto()
     ZERO_VAL = auto()
 
-# dictionary to keep track of reg_name:reg_value throughout the program 
-gpr_state = {}
 
 def get_gpr(reg_name):
     reg_name = reg_name.upper()
-    # logging.error...
+    if not reg_name in riscv_reg_t:
+        logging.fatal("Cannot convert {} to GPR".format(reg_name))
+    return riscv_reg_t[reg_name]
 
 def get_gpr_state(reg_name):
     if reg_name in ["zero", "x0"]:

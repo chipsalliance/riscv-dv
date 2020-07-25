@@ -1161,7 +1161,7 @@ class all_categories(Enum):
     INTERRUPT = auto()
     AMO = auto()
 
-def get_val(in_string, out_val, hexa=0):
+def get_val(in_string, hexa=0):
     if len(in_string) > 2:
         if "0x" in in_string:
             out_val = hex(int(in_string, base=16))
