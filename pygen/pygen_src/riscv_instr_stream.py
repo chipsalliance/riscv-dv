@@ -129,7 +129,7 @@ class riscv_instr_stream:
         if len(insert_instr_position) > 0:
             insert_instr_position.sort()
         for i in range(new_instr_cnt):
-            insert_instr_position[i] = random.rangeint(0, current_instr_cnt)
+            insert_instr_position[i] = random.randint(0, current_instr_cnt)
         if len(insert_instr_position) > 0:
             insert_instr_position.sort()
         if contained:
@@ -202,7 +202,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             if len(self.instr_list) == 0:
                 break
 
-    def randomize_instr(self, instr, is_in_debug = 0, disable_dist = 0):
+    def randomize_instr(self, instr, is_in_debug = 0):
         exclude_instr = []
         is_SP_in_reserved_rd = riscv_reg_t.SP in self.reserved_rd
         is_SP_in_reserved_regs = riscv_reg_t.SP in cfg.reserved_regs
