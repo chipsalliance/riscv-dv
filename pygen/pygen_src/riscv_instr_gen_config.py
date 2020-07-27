@@ -252,7 +252,7 @@ class riscv_instr_gen_config:
         for mode in self.init_privileged_mode:
             if mode == "MACHINE_MODE":
                 continue
-            elif mode == 'SUPERVISOR_MODE':
+            if mode == 'SUPERVISOR_MODE':
                 invalid_lvl.append('M')
                 logging.info("supr_mode---")
                 logging.debug(invalid_lvl)
