@@ -151,7 +151,7 @@ class riscv_instr():
     def update_dst_regs(self, reg_name, val_str):
         pass
 
-class riscv_instr_cov_test():
+class riscv_instr_cov_test(argv):
     """ Main class for applying the functional coverage test """
     def __init__(self):
         self.trace = {}
@@ -160,10 +160,10 @@ class riscv_instr_cov_test():
 
     def run_phase(self):
         logging.info("{} CSV trace files to be "
-                     "processed...\n".format(len(sys.argv)))
+                     "processed...\n".format(len(argv)))
         expect_illegal_instr = False
-        # Assuming we get list of csv files pathname from cov.py in sys.argv
-        for csv_file in sys.argv:
+        # Assuming we get list of csv files pathname from cov.py in argv
+        for csv_file in argv:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
                 header = []
@@ -211,7 +211,7 @@ class riscv_instr_cov_test():
                                                                self.entry_cnt))
                 self.total_entry_cnt += self.entry_cnt
         logging.info("Finished processing {} trace CSV, {} "
-                     "instructions".format(len(sys.argv),
+                     "instructions".format(len(argv),
                                           self.total_entry_cnt))
         if self.skipped_cnt > 0 or self.unexpected_illegal_instr_cnt > 0:
             logging.error("{} instruction skipped, {} illegal "
@@ -285,9 +285,9 @@ class riscv_instr_cov_test():
         return instruction
 
 
-def main(): 
-    cov_test = riscv_instr_cov_test()
+def main(argv): 
+    cov_test = riscv_instr_cov_test(argv)
     cov_test.run_phase()
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
