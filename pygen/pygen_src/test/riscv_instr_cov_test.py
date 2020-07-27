@@ -7,6 +7,7 @@ import argparse
 import vsc  # PyVSC library
 import csv  # Python library to read/write from/to CSV files
 
+
 sys.path.append("../../")
 from pygen_src.riscv_instr_pkg import *
 from pygen_src.isa.riscv_instr_cov import *
@@ -151,19 +152,22 @@ class riscv_instr():
     def update_dst_regs(self, reg_name, val_str):
         pass
 
-class riscv_instr_cov_test(argv):
+class riscv_instr_cov_test():
     """ Main class for applying the functional coverage test """
-    def __init__(self):
+    def __init__(self, argv):
         self.trace = {}
+        self.csv_trace = argv
         self.entry_cnt, self.total_entry_cnt, self.skipped_cnt, \
         self.unexpected_illegal_instr_cnt = 0, 0, 0, 0
 
     def run_phase(self):
+        if not self.csv_trace:
+            sys.exit("No CSV file found!")
         logging.info("{} CSV trace files to be "
-                     "processed...\n".format(len(argv)))
+                     "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
         # Assuming we get list of csv files pathname from cov.py in argv
-        for csv_file in argv:
+        for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
                 header = []
@@ -211,7 +215,7 @@ class riscv_instr_cov_test(argv):
                                                                self.entry_cnt))
                 self.total_entry_cnt += self.entry_cnt
         logging.info("Finished processing {} trace CSV, {} "
-                     "instructions".format(len(argv),
+                     "instructions".format(len(self.csv_trace),
                                           self.total_entry_cnt))
         if self.skipped_cnt > 0 or self.unexpected_illegal_instr_cnt > 0:
             logging.error("{} instruction skipped, {} illegal "
