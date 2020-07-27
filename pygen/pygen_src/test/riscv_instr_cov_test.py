@@ -62,12 +62,10 @@ class riscv_instr():
         self.compare_result = None
         self.logical_similarity = None
 
-        # Already attributes...
+        # TODO: add & map...
         #self.imm
         #self.format
         #self.category
-
-
 
     def pre_sample(self):
         unaligned_pc = self.pc[-2:] != "00"
@@ -101,7 +99,7 @@ class riscv_instr():
             self.logical_similarity = self.get_logical_similarity()
         if self.category == riscv_instr_category_t.BRANCH:
             self.branch_hit = self.is_branch_hit()
-        #TODO: keep it string or make it enumeration?
+        #TODO: string > enumeration
         if self.instr in ["DIV", "DIVU", "REM", "REMU", "DIVW", "DIVUW", 
                           "REMW", "REMUW"]:
             self.div_result = self.get_div_result()
@@ -114,7 +112,7 @@ class riscv_instr():
             return operand_sign_e["POSITIVE"]
 
     def is_unaligned_mem_access(self):
-        #TODO: string or enumeration?
+        #TODO: string > enumeration
         if (self.instr in ["LWU", "LD", "SD", "C_LD", "C_SD"] and
             self.mem_addr % 8 != 0):
             return True
@@ -152,28 +150,21 @@ class riscv_instr():
 
     def update_dst_regs(self, reg_name, val_str):
         pass
-        #get_val(val_str, gpr_state[reg_name], hexa=1)
-        #rd = get_gpr(reg_name)
-        #rd_value = get_gpr_state(reg_name)
 
 class riscv_instr_cov_test():
     """ Main class for applying the functional coverage test """
-    def __init__(self, argv):
-        self.trace_csv = []
+    def __init__(self):
         self.trace = {}
-        self.csv_dir = argv.csv_dir
         self.entry_cnt, self.total_entry_cnt, self.skipped_cnt, \
         self.unexpected_illegal_instr_cnt = 0, 0, 0, 0
 
     def run_phase(self):
-        self.trace_csv = os.listdir(self.csv_dir)
-        self.trace_csv = list(filter(lambda f: f.endswith('.csv'),
-                                     self.trace_csv))
         logging.info("{} CSV trace files to be "
-                     "processed...\n".format(len(self.trace_csv)))
+                     "processed...\n".format(len(sys.argv)))
         expect_illegal_instr = False
-        for csv_file in self.trace_csv:
-            with open("{}/{}".format(self.csv_dir, csv_file)) as trace_file:
+        # Assuming we get list of csv files pathname from cov.py in sys.argv
+        for csv_file in sys.argv:
+            with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
                 header = []
                 entry = []
@@ -220,7 +211,7 @@ class riscv_instr_cov_test():
                                                                self.entry_cnt))
                 self.total_entry_cnt += self.entry_cnt
         logging.info("Finished processing {} trace CSV, {} "
-                     "instructions".format(len(self.trace_csv),
+                     "instructions".format(len(sys.argv),
                                           self.total_entry_cnt))
         if self.skipped_cnt > 0 or self.unexpected_illegal_instr_cnt > 0:
             logging.error("{} instruction skipped, {} illegal "
@@ -294,19 +285,8 @@ class riscv_instr_cov_test():
         return instruction
 
 
-def parse_args():
-    parse = argparse.ArgumentParser()
-    parse.add_argument("--csv_dir", help="directory consists of the CSV files",
-                       type=str, default = ".")
-    args = parse.parse_args()
-    return args
-
-def main():
-    parse = argparse.ArgumentParser()
-    parse.add_argument("--csv_dir", help="directory consists of the CSV files",
-                       type=str, default = ".")
-    args = parse.parse_args()
-    cov_test = riscv_instr_cov_test(args)
+def main(): 
+    cov_test = riscv_instr_cov_test()
     cov_test.run_phase()
 
 if __name__ == "__main__":
