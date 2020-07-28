@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
+import logging
 from enum import Enum, auto
 from bitstring import BitArray
 from pygen_src.target.rv32i import riscv_core_setting as rcs
@@ -1160,6 +1161,17 @@ class all_categories(Enum):
     INTERRUPT = auto()
     AMO = auto()
 
+def get_val(in_string, hexa=0):
+    if len(in_string) > 2:
+        if "0x" in in_string:
+            out_val = hex(int(in_string, base=16))
+            return out_val
+        if hexa:
+            out_val = hex(int(in_string, base=16))
+        else:
+            out_val = int(in_string)
+            logging.info("riscv_instr_pkg: imm: {} -> {}".format(in_string, out_val))
+        return out_val
 
 class riscv_instr_pkg:
     def __init__(self):
