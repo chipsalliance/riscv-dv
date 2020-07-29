@@ -6,11 +6,12 @@ import logging
 import argparse
 import vsc  # PyVSC library
 import csv  # Python library to read/write from/to CSV files
+from bitstring import BitArray
+from pygen.pygen_src.isa.riscv_instr_cov import *
+from pygen.pygen_src.riscv_instr_pkg import *
+from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
-sys.path.append("../../")
-from pygen_src.riscv_instr_pkg import *
-from pygen_src.isa.riscv_instr_cov import *
 
 logging.basicConfig(filename='logging.log',level=logging.DEBUG)
 
@@ -105,9 +106,10 @@ class riscv_instr():
                           "REMW", "REMUW"]:
             self.div_result = self.get_div_result()
 
-    def get_operand_sign(self, value):
-        #TODO: cast value to vsc.bit_t
-        if value[0]:
+    def get_operand_sign(self, operand):
+        #TODO: change operand to vsc.bit_t
+        out = BitArray(int=operand.val, length=rcs.XLEN)
+        if out[0]:
             return operand_sign_e["NEGATIVE"]
         else:
             return operand_sign_e["POSITIVE"]
@@ -125,26 +127,134 @@ class riscv_instr():
             return True
         return False
 
-    def get_imm_sign(self):
-        pass
-
-    def get_operand_special_value(self):
-        pass
-
-    def get_imm_special_val(self):
-        pass
-
-    def get_compare_result(self):
-        pass
-
-    def get_logical_similarity(self):
-        pass
-
-    def is_branch_hit(self):
-        pass
+    def get_imm_sign(self, imm):
+        #TODO: change imm to vsc.int_t(32)
+        out = BitArray(int=imm.val, length=rcs.XLEN)
+        if out[0]:
+            return operand_sign_e["NEGATIVE"]
+        else:
+            return operand_sign_e["POSITIVE"]
 
     def get_div_result(self):
-        pass
+        #TODO: change rs2_value to vsc.int_t(32)
+        if self.rs2_value.val == 0:
+            return div_result_e["DIV_BY_ZERO"]
+        elif self.rs2_value.val == 1 and self.rs1_value.val == (1 << (rcs.XLEN-1)):
+            return div_result_e["DIV_OVERFLOW"]
+        else:
+            return div_result_e["DIV_NORMAL"]
+
+    def get_operand_special_value(self, operand):
+        if operand.val == 0:
+            return special_val_e["ZERO_VAL"]
+        elif operand.val == 1 << (rcs.XLEN-1):
+            return special_val_e["MIN_VAL"]
+        elif operand.val == 1 >> 1:
+            return special_val_e["MAX_VAL"]
+        else:
+            return special_val_e["NORMAL_VAL"]
+
+    def get_imm_special_val(self, imm):
+        if imm.val == 0:
+            return special_val_e["ZERO_VAL"]
+        elif self.format == riscv_instr_format_t.U_FORMAT:
+            # unsigned immediate value
+            # TODO: self.imm_len
+            max = vsc.int_t(32, (1 << self.imm_len)-1)
+            if imm.val == 0:
+                return special_val_e["MIN_VAL"]
+            if imm.val == max.val:
+                return special_val_e["MAX_VAL"]
+        else:
+            # signed immediate value
+            max = vsc.int_t(32, (2 ** (self.imm_len - 1)) - 1)
+            min = vsc.int_t(32, -2 ** (self.imm_len - 1))
+            if min.val == imm.val:
+                return special_val_e["MIN_VAL"]
+            if max.val == imm.val:
+                return special_val_e["MAX_VAL"]
+        return special_val_e["NORMAL_VAL"]
+
+    def get_compare_result(self):
+        val1 = vsc.int_t(rcs.XLEN)
+        val2 = vsc.int_t(rcs.XLEN)
+        val1.val = self.rs1_value.val
+        val2.val = self.imm.val if (
+                self.format == riscv_instr_format_t.I_FORMAT) \
+            else self.rs2_value.val
+        if val1.val == val2.val:
+            return compare_result_e["EQUAL"]
+        elif val1.val < val2.val:
+            return compare_result_e["SMALLER"]
+        else:
+            return compare_result_e["LARGER"]
+
+    def is_branch_hit(self):
+        # TODO: string/enumeration
+        if self.instr == "BEQ":
+            return self.rs1_value.val == self.rs2_value.val
+        elif self.instr == "C_BEQZ":
+            return self.rs1_value.val == 0
+        elif self.instr == "BNE":
+            return self.rs1_value.val != self.rs2_value.val
+        elif self.instr == "C_BNEZ":
+            return self.rs1_value.val != 0
+        elif self.instr == "BLT" or self.instr == "BLTU":
+            return self.rs1_value.val < self.rs2_value.val
+        elif self.instr == "BGE" or self.instr == "BGEU":
+            return self.rs1_value.val >= self.rs2_value.val
+        else:
+            logging.error("Unexpected instruction {}".format(self.instr))
+
+    def get_logical_similarity(self):
+        val1 = vsc.int_t(rcs.XLEN, self.rs1_value.val)
+        val2 = vsc.int_t(rcs.XLEN)
+        val2.val = (self.imm.val if self.format == riscv_instr_format_t.I_FORMAT
+                    else self.rs2_value.val)
+        temp = bin(val1.val ^ val2.val)
+        bit_difference = len([[ones for ones in temp[2:] if ones=='1']])
+        if val1.val == val2.val:
+            return logical_similarity_e["IDENTICAL"]
+        elif bit_difference == 32:
+            return logical_similarity_e["OPPOSITE"]
+        elif bit_difference < 5:
+            return logical_similarity_e["SIMILAR"]
+        else:
+            return logical_similarity_e["DIFFERENT"]
+
+    def check_hazard_condition(self, pre_instr):
+        # TODO: has_rd(), has_rs1, has_rs2, rd, category, convert2asm (from IG)
+        if pre_instr.has_rd():
+            if ((self.has_rs1 and self.rs1 == pre_instr.rd) or
+                    (self.has_rs2 and self.rs1 == pre_instr.rd)):
+                self.gpr_hazard = hazard_e["RAW_HAZARD"]
+            elif self.has_rd and self.rd == pre_instr.rd:
+                self.gpr_hazard = hazard_e["WAW_HAZARD"]
+            elif (self.has_rd and
+                  ((pre_instr.has_rs1 and (pre_instr.rs1 == self.rd)) or
+                   (pre_instr.has_rs2 and (pre_instr.rs2 == self.rd)))):
+                self.gpr_hazard = hazard_e["WAR_HAZARD"]
+            else:
+                self.gpr_hazard = hazard_e["NO_HAZARD"]
+        if self.category == riscv_instr_category_t.LOAD:
+            # TODO: change mem_addr to vsc type
+            if (pre_instr.category == riscv_instr_category_t.STORE and
+                    pre_instr.mem_addr == self.mem_addr):
+                self.lsu_hazard = hazard_e["RAW_HAZARD"]
+            else:
+                self.lsu_hazard = hazard_e["NO_HAZARD"]
+        if self.category == riscv_instr_category_t.STORE:
+            if (pre_instr.category == riscv_instr_category_t.STORE and
+                    pre_instr.mem_addr == self.mem_addr):
+                self.lsu_hazard = hazard_e["WAW_HAZARD"]
+            elif (pre_instr.category == riscv_instr_category_t.LOAD and
+                    pre_instr.mem_addr == self.mem_addr):
+                self.lsu_hazard = hazard_e["WAR_HAZARD"]
+            else:
+                self.lsu_hazard = hazard_e["NO_HAZARD"]
+        logging.info("Pre: {}, Cur: {}, Hazard: {}/{}".format(
+            pre_instr.convert2asm(), self.convert2asm(),
+            self.gpr_hazard.name, self.lsu_hazard.name))
 
     def update_src_regs(self, operands):
         pass

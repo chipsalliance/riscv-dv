@@ -5,27 +5,27 @@ from enum import Enum, auto
 from pygen_src.riscv_instr_pkg import riscv_reg_t
 
 class operand_sign_e(Enum):
-    POSITIVE = auto()
+    POSITIVE = 0
     NEGATIVE = auto()
 
 class div_result_e(Enum):
-    DIV_NORMAL = auto()
+    DIV_NORMAL = 0
     DIV_BY_ZERO = auto()
     DIV_OVERFLOW = auto()
 
 class compare_result_e(Enum):
-    EQUAL = auto()
+    EQUAL = 0
     LARGER = auto()
     SMALLER = auto()
 
 class logical_similarity_e(Enum):
-    IDENTICAL = auto()
+    IDENTICAL = 0
     OPPOSITE = auto()
     SIMILAR = auto()
     DIFFERENT = auto()
 
 class special_val_e(Enum):
-    NORMAL_VAL = auto()
+    NORMAL_VAL = 0
     MIN_VAL = auto()
     MAX_VAL = auto()
     ZERO_VAL = auto()

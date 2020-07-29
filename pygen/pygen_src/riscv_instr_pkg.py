@@ -1173,6 +1173,12 @@ def get_val(in_string, hexa=0):
             logging.info("riscv_instr_pkg: imm: {} -> {}".format(in_string, out_val))
         return out_val
 
+class hazard_e(Enum):
+    NO_HAZARD = 0
+    RAW_HAZARD = auto()
+    WAR_HAZARD = auto()
+    WAW_HAZARD = auto()
+
 class riscv_instr_pkg:
     def __init__(self):
         self.MPRV_BIT_MASK = BitArray(uint= 0x1 << 0x17, length = rcs.XLEN)
