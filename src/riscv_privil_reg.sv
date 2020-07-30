@@ -304,6 +304,7 @@ class riscv_privil_reg extends riscv_reg#(privileged_reg_t);
           add_field("PMP14CFG", 8, WARL);
           add_field("PMP15CFG", 8, WARL);
         end
+      end
       // Physical Memory Protection Configuration Register
       PMPCFG3: begin
         if(XLEN!=32) begin
