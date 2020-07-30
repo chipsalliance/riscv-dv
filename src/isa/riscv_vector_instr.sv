@@ -183,7 +183,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Vector register numbers accessed by the segment load or store would increment
   // cannot past 31
   constraint nfields_c {
-    if (check_sub_extension(sub_extension,"zvlsseg")) {
+    if (check_sub_extension(sub_extension, "zvlsseg")) {
       if (m_cfg.vector_cfg.vtype.vlmul < 8) {
         (nfields + 1) * m_cfg.vector_cfg.vtype.vlmul <= 8;
         if (category == LOAD) {
@@ -505,8 +505,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     return $sformatf("%0s%0d%0s", prefix, nfields + 1, suffix);
   endfunction
   
-  function bit check_sub_extension(string s, literal);
-    return s==literal;
+  function bit check_sub_extension(string s, string literal);
+    return s == literal;
   endfunction
   
 endclass : riscv_vector_instr
