@@ -236,7 +236,7 @@ class riscv_instr_gen_config:
             self.s_mode_interrupt_delegation[j] = 0
 
     def pre_randomize(self):
-        # clearing the contents of self.gpr after each randomiaztion.
+        # Clearing the contents of self.gpr after each randomization.
         # As it is being extended in post_randomize function.
         self.gpr.clear()
         for x in rcs.supported_privileged_mode:
