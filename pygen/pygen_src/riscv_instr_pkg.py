@@ -1220,5 +1220,11 @@ class riscv_instr_pkg:
             string = string + f"{hex(data[i])}"
         return string
 
+    def push_gpr_to_kernel_stack(self, status, scratch, mprv, sp, tp, instr):
+        pass
+
+    def pop_gpr_from_kernel_stack(self, status, scratch, mprv, sp, tp, instr):
+        pass
+
 
 pkg_ins = riscv_instr_pkg()
