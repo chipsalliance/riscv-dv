@@ -84,6 +84,7 @@ class riscv_asm_program_gen:
             self.main_program[hart].label_name = "main"
             self.main_program[hart].gen_instr(is_main_program = 1, no_branch = cfg.no_branch_jump)
 
+            self.main_program[hart].post_process_instr()
             self.main_program[hart].generate_instr_stream()
             logging.info("Generating main program instruction stream...done")
             self.instr_stream.extend(self.main_program[hart].instr_string_list)
