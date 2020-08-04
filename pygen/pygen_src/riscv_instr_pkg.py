@@ -722,6 +722,8 @@ class riscv_instr_category_t(Enum):
     TRAP = auto()
     INTERRUPT = auto()
     AMO = auto()
+
+
 # typedef bit[11:0] riscv_csr_t;
 
 
@@ -1161,17 +1163,26 @@ class all_categories(Enum):
     INTERRUPT = auto()
     AMO = auto()
 
+
 def get_val(in_string, hexa=0):
     if len(in_string) > 2:
         if "0x" in in_string:
-            out_val = hex(int(in_string, base=16))
+            out_val = int(in_string, base=16)
             return out_val
         if hexa:
-            out_val = hex(int(in_string, base=16))
+            out_val = int(in_string, base=16)
         else:
             out_val = int(in_string)
             logging.info("riscv_instr_pkg: imm: {} -> {}".format(in_string, out_val))
         return out_val
+
+
+def add_functions_as_methods(function):
+    def decorator(Class):
+        setattr(Class, function.__name__, function)
+        return Class
+    return decorator
+
 
 class hazard_e(Enum):
     NO_HAZARD = 0
@@ -1179,11 +1190,12 @@ class hazard_e(Enum):
     WAR_HAZARD = auto()
     WAW_HAZARD = auto()
 
+
 class riscv_instr_pkg:
     def __init__(self):
-        self.MPRV_BIT_MASK = BitArray(uint= 0x1 << 0x17, length = rcs.XLEN)
-        self.SUM_BIT_MASK = BitArray(uint = 0x1 << 0x18, length = rcs.XLEN)
-        self.MPP_BIT_MASK = BitArray(uint = 0x3 << 0x11, length = rcs.XLEN)
+        self.MPRV_BIT_MASK = BitArray(uint=0x1 << 0x17, length=rcs.XLEN)
+        self.SUM_BIT_MASK = BitArray(uint=0x1 << 0x18, length=rcs.XLEN)
+        self.MPP_BIT_MASK = BitArray(uint=0x3 << 0x11, length=rcs.XLEN)
         self.MAX_USED_VADDR_BITS = 30
         self.IMM25_WIDTH = 25
         self.IMM12_WIDTH = 12
@@ -1196,8 +1208,8 @@ class riscv_instr_pkg:
         self.MAX_CALL_PER_FUNC = 5
         self.indent = self.LABEL_STR_LEN * " "
 
-    def hart_prefix(self, hart = 0):
-        if(rcs.NUM_HARTS <= 1):
+    def hart_prefix(self, hart=0):
+        if (rcs.NUM_HARTS <= 1):
             return ""
         else:
             return f"h{hart}_"
@@ -1205,14 +1217,14 @@ class riscv_instr_pkg:
     def get_label(self, label, hart=0):
         return (self.hart_prefix(hart) + label)
 
-    def format_string(self, string, length = 10):
+    def format_string(self, string, length=10):
         formatted_str = length * " "
         if (int(length) < len(string)):
             return string
         formatted_str = string + formatted_str[0: (int(length) - len(string))]
         return formatted_str
 
-    def format_data(self, data, byte_per_group = 4):
+    def format_data(self, data, byte_per_group=4):
         string = "0x"
         for i in range(len(data)):
             if ((i % byte_per_group == 0) and (i != len(data) - 1) and (i != 0)):

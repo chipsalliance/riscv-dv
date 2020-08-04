@@ -1,0 +1,515 @@
+import os
+import sys
+import vsc
+import logging
+from enum import Enum, auto
+from bitstring import BitArray
+from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen.pygen_src.isa._riscv_cov_instr import assign_attributes
+from pygen.pygen_src.riscv_instr_pkg import *
+
+
+class operand_sign_e(Enum):
+    POSITIVE = 0
+    NEGATIVE = auto()
+
+
+class div_result_e(Enum):
+    DIV_NORMAL = 0
+    DIV_BY_ZERO = auto()
+    DIV_OVERFLOW = auto()
+
+
+class compare_result_e(Enum):
+    EQUAL = 0
+    LARGER = auto()
+    SMALLER = auto()
+
+
+class logical_similarity_e(Enum):
+    IDENTICAL = 0
+    OPPOSITE = auto()
+    SIMILAR = auto()
+    DIFFERENT = auto()
+
+
+class special_val_e(Enum):
+    NORMAL_VAL = 0
+    MIN_VAL = auto()
+    MAX_VAL = auto()
+    ZERO_VAL = auto()
+
+
+@add_functions_as_methods(assign_attributes)
+class riscv_cov_instr():
+    """ Class for a riscv instruction; data parsed from the CSV file will fill
+    different fields of an instruction """
+    # class attr. to keep track of reg_name:reg_value throughout the program
+    gpr_state = {}
+
+    def __init__(self, instr_name):
+        self.pc = 0  # Program counter (PC) of the instruction
+        self.instr = riscv_instr_name_t[instr_name]
+        self.gpr = None  # destination operand of the instruction
+        self.csr = None
+        self.binary = 0  # Instruction binary
+        self.mode = None  # Instruction mode
+        self.trace = "None"  # String representation of the instruction
+        self.operands = "None"  # Instruction operands (srcss/dests)
+        self.pad = None  # Not used
+
+        self.rs1_value = vsc.int_t(rcs.XLEN)
+        self.rs2_value = vsc.int_t(rcs.XLEN)
+        self.rs3_value = vsc.int_t(rcs.XLEN)
+        self.rd_value = vsc.int_t(rcs.XLEN)
+        self.fs1_value = vsc.int_t(rcs.XLEN)
+        self.fs2_value = vsc.int_t(rcs.XLEN)
+        self.fs3_value = vsc.int_t(rcs.XLEN)
+        self.fd_value = vsc.int_t(rcs.XLEN)
+
+        self.mem_addr = vsc.int_t(rcs.XLEN)
+        self.unaligned_pc = 0
+        self.unaligned_mem_access = 0
+        self.compressed = 0
+        self.branch_hit = 0
+        self.div_result = None
+        self.rs1_sign = None
+        self.rs2_sign = None
+        self.rs3_sign = None
+        self.fs1_sign = None
+        self.fs2_sign = None
+        self.fs3_sign = None
+        self.imm_sign = None
+        self.rd_sign = None
+        self.fd_sign = None
+        self.gpr_hazard = None
+        self.lsu_hazard = None
+        self.rs1_special_value = None
+        self.rs2_special_value = None
+        self.rs3_special_value = None
+        self.rd_special_value = None
+        self.imm_special_value = None
+        self.compare_result = None
+        self.logical_similarity = None
+
+        self.group = None
+        self.format = None
+        self.category = None
+        self.imm_type = None
+
+        self.csr = vsc.int_t(32)
+        ''' TODO: rs2, rs1, rd, group, format, category, imm_type will be
+        changed to vsc.enum_t once the issue with set/get_val is fixed '''
+        self.rs2 = None
+        self.rs1 = None
+        self.rd = None
+        self.imm = vsc.int_t(32)
+        self.imm_str = None
+        self.comment = ""
+        self.has_rs1 = 1
+        self.has_rs2 = 1
+        self.has_rd = 1
+        self.has_imm = 1
+        self.imm_len = 0
+
+    def pre_sample(self):
+        unaligned_pc = self.pc[-2:] != "00"
+        self.rs1_sign = self.get_operand_sign(self.rs1_value)
+        self.rs2_sign = self.get_operand_sign(self.rs2_value)
+        self.rs3_sign = self.get_operand_sign(self.rs3_value)
+        self.rd_sign = self.get_operand_sign(self.rd_value)
+        self.fs1_sign = self.get_operand_sign(self.fs1_value)
+        self.fs2_sign = self.get_operand_sign(self.fs2_value)
+        self.fs3_sign = self.get_operand_sign(self.fs3_value)
+        self.fd_sign = self.get_operand_sign(self.fd_value)
+        self.imm_sign = self.get_imm_sign(self.imm)
+        self.rs1_special_value = self.get_operand_special_value(self.rs1_value)
+        self.rd_special_value = self.get_operand_special_value(self.rd_value)
+        self.rs2_special_value = self.get_operand_special_value(self.rs2_value)
+        self.rs3_special_value = self.get_operand_special_value(self.rs3_value)
+        if (self.format != riscv_instr_format_t.R_FORMAT and
+                self.format != riscv_instr_format_t.CR_FORMAT):
+            self.imm_special_value = self.get_imm_special_val(self.imm)
+        if self.category in [riscv_instr_category_t.COMPARE,
+                             riscv_instr_category_t.BRANCH]:
+            self.compare_result = self.get_compare_result()
+        if self.category in [riscv_instr_category_t.LOAD,
+                             riscv_instr_category_t.STORE]:
+            self.mem_addr = self.rs1_value + self.imm
+            self.unaligned_mem_access = self.is_unaligned_mem_access()
+            if self.unaligned_mem_access:
+                logging.info("Unaligned: {}, mem_addr: {}".format(
+                    self.instr.name, self.mem_addr.get_val()))
+        if self.category == riscv_instr_category_t.LOGICAL:
+            self.logical_similarity = self.get_logical_similarity()
+        if self.category == riscv_instr_category_t.BRANCH:
+            self.branch_hit = self.is_branch_hit()
+        if self.instr.name in ["DIV", "DIVU", "REM", "REMU", "DIVW", "DIVUW",
+                               "REMW", "REMUW"]:
+            self.div_result = self.get_div_result()
+
+    @staticmethod
+    def get_operand_sign(operand):
+        out = BitArray(int=operand.get_val(), length=rcs.XLEN)
+        if not out[0]:
+            return operand_sign_e["POSITIVE"]
+        else:
+            return operand_sign_e["NEGATIVE"]
+
+    def is_unaligned_mem_access(self):
+        if (self.instr.name in ["LWU", "LD", "SD", "C_LD", "C_SD"] and
+                self.mem_addr.get_val() % 8 != 0):
+            return True
+        elif (self.instr.name in ["LW", "SW", "C_LW", "C_SW"] and
+              self.mem_addr.get_val() % 4 != 0):
+            return True
+        elif (self.instr.name in ["LH", "LHU", "SH"] and
+              self.mem_addr.get_val() % 2 != 0):
+            return True
+        return False
+
+    @staticmethod
+    def get_imm_sign(imm):
+        out = BitArray(int=imm.get_val(), length=rcs.XLEN)
+        if not out[0]:
+            return operand_sign_e["POSITIVE"]
+        else:
+            return operand_sign_e["NEGATIVE"]
+
+    def get_div_result(self):
+        if self.rs2_value.get_val() == 0:
+            return div_result_e["DIV_BY_ZERO"]
+        elif (self.rs2_value.get_val() == 1
+              and self.rs1_value.get_val() == (1 << (rcs.XLEN - 1))):
+            return div_result_e["DIV_OVERFLOW"]
+        else:
+            return div_result_e["DIV_NORMAL"]
+
+    @staticmethod
+    def get_operand_special_value(operand):
+        if operand.get_val() == 0:
+            return special_val_e["ZERO_VAL"]
+        elif operand.get_val() == 1 << (rcs.XLEN - 1):
+            return special_val_e["MIN_VAL"]
+        elif operand.get_val() == 1 >> 1:
+            return special_val_e["MAX_VAL"]
+        else:
+            return special_val_e["NORMAL_VAL"]
+
+    def get_imm_special_val(self, imm):
+        if imm.get_val() == 0:
+            return special_val_e["ZERO_VAL"]
+        elif self.format == riscv_instr_format_t.U_FORMAT:
+            # unsigned immediate value
+            max_val = vsc.int_t(32, (1 << self.imm_len) - 1)
+            if imm.get_val() == 0:
+                return special_val_e["MIN_VAL"]
+            if imm.get_val() == max_val.get_val():
+                return special_val_e["MAX_VAL"]
+        else:
+            # signed immediate value
+            max_val = vsc.int_t(32, (2 ** (self.imm_len - 1)) - 1)
+            min_val = vsc.int_t(32, -2 ** (self.imm_len - 1))
+            if min_val.get_val() == imm.get_val():
+                return special_val_e["MIN_VAL"]
+            if max_val.get_val() == imm.get_val():
+                return special_val_e["MAX_VAL"]
+        return special_val_e["NORMAL_VAL"]
+
+    def get_compare_result(self):
+        val1 = vsc.int_t(rcs.XLEN, self.rs1_value.get_val())
+        val2 = vsc.int_t(rcs.XLEN, self.imm.get_val() if (
+                self.format == riscv_instr_format_t.I_FORMAT) else
+        self.rs2_value.val)
+        if val1.get_val() == val2.get_val():
+            return compare_result_e["EQUAL"]
+        elif val1.get_val() < val2.get_val():
+            return compare_result_e["SMALLER"]
+        else:
+            return compare_result_e["LARGER"]
+
+    def is_branch_hit(self):
+        if self.instr.name == "BEQ":
+            return self.rs1_value.get_val() == self.rs2_value.get_val()
+        elif self.instr.name == "C_BEQZ":
+            return self.rs1_value.get_val() == 0
+        elif self.instr.name == "BNE":
+            return self.rs1_value.get_val() != self.rs2_value.get_val()
+        elif self.instr.name == "C_BNEZ":
+            return self.rs1_value.get_val() != 0
+        elif self.instr.name == "BLT" or self.instr.name == "BLTU":
+            return self.rs1_value.get_val() < self.rs2_value.get_val()
+        elif self.instr.name == "BGE" or self.instr.name == "BGEU":
+            return self.rs1_value.get_val() >= self.rs2_value.get_val()
+        else:
+            logging.error("Unexpected instruction {}".format(self.instr.name))
+
+    def get_logical_similarity(self):
+        val1 = vsc.int_t(rcs.XLEN, self.rs1_value.get_val())
+        val2 = vsc.int_t(rcs.XLEN, (self.imm.get_val() if
+                                    self.format == riscv_instr_format_t.I_FORMAT
+                                    else self.rs2_value.val))
+        temp = bin(val1.get_val() ^ val2.get_val())
+        bit_difference = len([[ones for ones in temp[2:] if ones == '1']])
+        if val1.get_val() == val2.get_val():
+            return logical_similarity_e["IDENTICAL"]
+        elif bit_difference == 32:
+            return logical_similarity_e["OPPOSITE"]
+        elif bit_difference < 5:
+            return logical_similarity_e["SIMILAR"]
+        else:
+            return logical_similarity_e["DIFFERENT"]
+
+    def check_hazard_condition(self, pre_instr):
+        if pre_instr.has_rd:
+            if ((self.has_rs1 and self.rs1 == pre_instr.rd) or
+                    (self.has_rs2 and self.rs1 == pre_instr.rd)):
+                self.gpr_hazard = hazard_e["RAW_HAZARD"]
+            elif self.has_rd and self.rd == pre_instr.rd:
+                self.gpr_hazard = hazard_e["WAW_HAZARD"]
+            elif (self.has_rd and
+                  ((pre_instr.has_rs1 and (pre_instr.rs1 == self.rd)) or
+                   (pre_instr.has_rs2 and (pre_instr.rs2 == self.rd)))):
+                self.gpr_hazard = hazard_e["WAR_HAZARD"]
+            else:
+                self.gpr_hazard = hazard_e["NO_HAZARD"]
+        if self.category == riscv_instr_category_t.LOAD:
+            if (pre_instr.category == riscv_instr_category_t.STORE and
+                    pre_instr.mem_addr.get_val() == self.mem_addr.get_val()):
+                self.lsu_hazard = hazard_e["RAW_HAZARD"]
+            else:
+                self.lsu_hazard = hazard_e["NO_HAZARD"]
+        if self.category == riscv_instr_category_t.STORE:
+            if (pre_instr.category == riscv_instr_category_t.STORE and
+                    pre_instr.mem_addr.get_val() == self.mem_addr.get_val()):
+                self.lsu_hazard = hazard_e["WAW_HAZARD"]
+            elif (pre_instr.category == riscv_instr_category_t.LOAD and
+                  pre_instr.mem_addr.get_val() == self.mem_addr.get_val()):
+                self.lsu_hazard = hazard_e["WAR_HAZARD"]
+            else:
+                self.lsu_hazard = hazard_e["NO_HAZARD"]
+        logging.info("Pre: {}, Cur: {}, Hazard: {}/{}".format(
+            pre_instr.convert2asm(), self.convert2asm(),
+            self.gpr_hazard.name, self.lsu_hazard.name))
+
+    def convert2asm(self, prefix=" "):
+        asm_str = pkg_ins.format_string(string=self.get_instr_name(),
+                                        length=pkg_ins.MAX_INSTR_STR_LEN)
+        if self.category.name != "SYSTEM":
+            if self.format.name == "J_FORMAT":
+                asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
+            elif self.format.name == "U_FORMAT":
+                asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
+            elif self.format.name == "I_FORMAT":
+                if self.instr.name == "NOP":
+                    asm_str = "nop"
+                elif self.instr.name == "WFI":
+                    asm_str = "wfi"
+                elif self.instr.name == "FENCE":
+                    asm_str = "fence"
+                elif self.instr.name == "FENCE_I":
+                    asm_str = "fence.i"
+                elif self.category.name == "LOAD":
+                    asm_str = '{} {}, {} ({})'.format(
+                        asm_str, self.rd.name, self.get_imm(), self.rs1.name)
+                elif self.category.name == "CSR":
+                    asm_str = '{} {}, 0x{}, {}'.format(
+                        asm_str, self.rd.name, self.csr.get_val(), self.get_imm())
+                else:
+                    asm_str = '{} {}, {}, {}'.format(
+                        asm_str, self.rd.name, self.rs1.name, self.get_imm())
+            elif self.format.name == "S_FORMAT":
+                if self.category.name == "STORE":
+                    asm_str = '{} {}, {} ({})'.format(
+                        asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                else:
+                    asm_str = '{} {}, {}, {}'.format(
+                        asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+
+            elif self.format.name == "B_FORMAT":
+                if self.category.name == "STORE":
+                    asm_str = '{} {}, {} ({})'.format(
+                        asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
+                else:
+                    asm_str = '{} {}, {}, {}'.format(
+                        asm_str, self.rs1.name, self.rs2.name, self.get_imm())
+
+            elif self.format.name == "R_FORMAT":
+                if self.category.name == "CSR":
+                    asm_str = '{} {}, 0x{}, {}'.format(
+                        asm_str, self.rd.name, self.csr.get_val(), self.rs1.name)
+                elif self.instr.name == "SFENCE_VMA":
+                    asm_str = "sfence.vma x0, x0"
+                else:
+                    asm_str = '{} {}, {}, {}'.format(
+                        asm_str, self.rd.name, self.rs1.name, self.rs2.name)
+            else:
+                asm_str = 'Fatal_unsupported_format: {} {}'.format(
+                    self.format.name, self.instr.name)
+
+        else:
+            if self.instr.name == "EBREAK":
+                asm_str = ".4byte 0x00100073 # ebreak"
+
+        if self.comment != "":
+            asm_str = asm_str + " #" + self.comment
+        return asm_str.lower()
+
+    def get_instr_name(self):
+        get_instr_name = self.instr.name
+        for i in get_instr_name:
+            if i == "_":
+                get_instr_name = get_instr_name.replace(i, ".")
+        return get_instr_name
+
+    def get_imm(self):
+        return self.imm_str
+
+    def update_src_regs(self, operands):
+        if self.format.name in ["J_FORMAT", "UORMAT"]:
+            # instr rd,imm
+            assert len(operands) == 2
+            self.imm.set_val(get_val(operands[1]))
+        elif self.format.name == "I_FORMAT":
+            assert len(operands) == 3
+            if self.category.name == "LOAD":
+                # load rd, imm(rs1)
+                self.rs1 = self.get_gpr(operands[2])
+                self.rs1_value.set_val(self.get_gpr_state(operands[2]))
+                self.imm.set_val(get_val(operands[1]))
+            elif self.category.name == "CSR":
+                # csrrwi rd, csr, imm
+                self.imm.set_val(get_val(operands[2]))
+                if operands[1].upper() in privileged_reg_t.__members__:
+                    self.csr.set_val(privileged_reg_t[operands[1].upper()])
+                else:
+                    self.csr.set_val(get_val(operands[1]))
+            else:
+                # addi rd, rs1, imm
+                self.rs1 = self.get_gpr(operands[1])
+                self.rs1_value.set_val(self.get_gpr_state(operands[1]))
+                self.imm.set_val(get_val(operands[2]))
+        elif self.format.name in ["S_FORMAT", "B_FORMAT"]:
+            assert len(operands) == 3
+            if self.category.name == "STORE":
+                self.rs2 = self.get_gpr(operands[0])
+                self.rs2_value.set_val(self.get_gpr_state(operands[0]))
+                self.rs1 = self.get_gpr(operands[2])
+                self.rs1_value.set_val(self.get_gpr_state(operands[2]))
+                self.imm.set_val(get_val(operands[1]))
+            else:
+                # bne rs1, rs2, imm
+                self.rs1 = self.get_gpr(operands[0])
+                self.rs1_value.set_val(self.get_gpr_state(operands[0]))
+                self.rs2 = self.get_gpr(operands[1])
+                self.rs2_value.set_val(self.get_gpr_state(operands[1]))
+                self.imm.set_val(get_val(operands[2]))
+        elif self.format.name == "R_FORMAT":
+            if self.has_rs2 or self.category.name == "CSR":
+                assert len(operands) == 3
+            else:
+                assert len(operands) == 2
+            if self.catefory.name == "CSR":
+                # csrrw rd, csr, rs1
+                if operands[1].upper() in privileged_reg_t.__members__:
+                    self.csr.set_val(privileged_reg_t[operands[1].upper()])
+                else:
+                    self.csr.set_val(get_val(operands[1]))
+                self.rs1 = self.get_gpr(operands[2])
+                self.rs1_value.set_val(self.get_gpr_state(operands[2]))
+            else:
+                # add rd, rs1, rs2
+                self.rs1 = self.get_gpr(operands[1])
+                self.rs1_value.set_val(self.get_gpr_state(operands[1]))
+                if self.has_rs2:
+                    self.rs2 = self.get_gpr(operands[2])
+                    self.rs2_value.set_val(self.get_gpr_state(operands[2]))
+        elif self.format.name == "R4_FORMAT":
+            assert len(operands) == 4
+            self.rs1 = self.get_gpr(operands[1])
+            self.rs1_value.set_val(self.get_gpr_state(operands[1]))
+            self.rs2 = self.get_gpr(operands[2])
+            self.rs2_value.set_val(self.get_gpr_state(operands[2]))
+            self.rs2 = self.get_gpr(operands[3])
+            self.rs2_value.set_val(self.get_gpr_state(operands[3]))
+        elif self.format.name in ["CI_FORMAT", "CIW_FORMAT"]:
+            if self.instr.name == "C_ADDI16SP":
+                self.imm.set_val(get_val(operands[1]))
+                self.rs1 = riscv_reg_t.SP
+                self.rs1_value.set_val(self.get_gpr_state("sp"))
+            elif self.instr.name == "C_ADDI4SPN":
+                self.rs1 = riscv_reg_t.SP
+                self.rs1_value.set_val(self.get_gpr_state("sp"))
+            elif self.instr.name in ["C_LDSP", "C_LWSP", "C_LQSP"]:
+                # c.ldsp rd, imm
+                self.imm.set_val(get_val(operands[1]))
+                self.rs1 = riscv_reg_t.SP
+                self.rs1_value.set_val(self.get_gpr_state("sp"))
+            else:
+                # c.lui rd, imm
+                self.imm.set_val(get_val(operands[1]))
+        elif self.format.name == "CL_FORMAT":
+            # c.lw rd, imm(rs1)
+            self.imm.set_val(get_val(operands[1]))
+            self.rs1 = self.get_gpr(operands[2])
+            self.rs1_value.set_val(self.get_gpr_state(operands[2]))
+        elif self.format.name == "CS_FORMAT":
+            # c.sw rs2,imm(rs1)
+            self.rs2 = self.get_gpr(operands[0])
+            self.rs2_value.set_val(self.get_gpr_state(operands[0]))
+            self.rs1 = self.get_gpr(operands[2])
+            self.rs1_value.set_val(self.get_gpr_state(operands[2]))
+            self.imm.set_val(get_val(operands[1]))
+        elif self.format.name == "CA_FORMAT":
+            # c.and rd, rs2 (rs1 == rd)
+            self.rs2 = self.get_gpr(operands[1])
+            self.rs2_value.set_val(self.get_gpr_state(operands[1]))
+            self.rs1 = self.get_gpr(operands[0])
+            self.rs1_value.set_val(self.get_gpr_state(operands[0]))
+        elif self.format.name == "CB_FORMAT":
+            # c.beqz rs1, imm
+            self.rs1 = self.get_gpr(operands[0])
+            self.rs1_value.set_val(self.get_gpr_state(operands[0]))
+            self.imm.set_val(get_val(operands[1]))
+        elif self.format.name == "CSS_FORMAT":
+            # c.swsp rs2, imm
+            self.rs2 = self.get_gpr(operands[0])
+            self.rs2_value.set_val(self.get_gpr_state(operands[0]))
+            self.rs1 = riscv_reg_t.SP
+            self.rs1_value.set_val(self.get_gpr_state("sp"))
+            self.imm.set_val(get_val(operands[1]))
+        elif self.format.name == "CR_FORMAT":
+            if self.instr.name in ["C_JR", "C_JALR"]:
+                # c.jalr rs1
+                self.rs1 = self.get_gpr(operands[0])
+                self.rs1_value.set_val(self.get_gpr_state(operands[0]))
+            else:
+                # c.add rd, rs2
+                self.rs2 = self.get_gpr(operands[1])
+                self.rs2_value.set_val(self.get_gpr_state(operands[1]))
+        elif self.format.name == "CJ_FORMAT":
+            # c.j imm
+            self.imm.set_val(get_val(operands[0]))
+        else:
+            logging.error("Unsupported format {}".format(self.format.name))
+
+    def update_dst_regs(self, reg_name, val_str):
+        self.gpr_state[reg_name] = get_val(val_str, hexa=1)
+        self.rd = self.get_gpr(reg_name)
+        self.rd_value.set_val(self.get_gpr_state(reg_name))
+
+    @staticmethod
+    def get_gpr(reg_name):
+        reg_name = reg_name.upper()
+        if reg_name not in riscv_reg_t.__members__:
+            logging.error("Cannot convert {} to GPR".format(reg_name))
+        return riscv_reg_t[reg_name]
+
+    def get_gpr_state(self, name):
+        if name in ["zero", "x0"]:
+            return 0
+        elif name in self.gpr_state:
+            return self.gpr_state[name]
+        else:
+            logging.warning("Cannot find GPR state: {}".format(name))
+            return 0
