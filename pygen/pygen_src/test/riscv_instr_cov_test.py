@@ -1,4 +1,18 @@
-"""Tests for riscv_instr_cov."""
+"""Copyright 2020 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import sys
 import os
 import logging
@@ -6,9 +20,11 @@ import argparse
 import vsc
 import csv
 from pygen.pygen_src.isa.riscv_cov_instr import riscv_cov_instr
+from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen.pygen_src.riscv_instr_pkg import *
 
 logging.basicConfig(filename='logging.log', level=logging.DEBUG)
+
 
 class riscv_instr_cov_test():
     """ Main class for applying the functional coverage test """
@@ -30,7 +46,6 @@ class riscv_instr_cov_test():
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
                 header = []
-                entry = []
                 csv_reader = csv.reader(trace_file, delimiter=',')
                 line_count = 0
                 # Get the header line
@@ -46,6 +61,8 @@ class riscv_instr_cov_test():
                             self.skipped_cnt += 1
                         else:
                             self.trace["csv_entry"] = row
+                            logging.info("-----------------------------"
+                                         "-----------------------------")
                             for idx in range(len(header)):
                                 if "illegal" in entry[idx]:
                                     expect_illegal_instr = True
@@ -56,9 +73,9 @@ class riscv_instr_cov_test():
                             self.post_process_trace()
                             if self.trace["instr"] in ["li", "ret", "la"]:
                                 pass
-                            if "amo" in self.trace["instr"] or \
-                                    "lr" in self.trace["instr"] or \
-                                    "sc" in self.trace["instr"]:
+                            if ("amo" in self.trace["instr"] or
+                                    "lr" in self.trace["instr"] or
+                                    "sc" in self.trace["instr"]):
                                 # TODO: Enable functional coverage for AMO test
                                 pass
                             if not self.sample():
@@ -78,38 +95,51 @@ class riscv_instr_cov_test():
                                            self.total_entry_cnt))
         if self.skipped_cnt > 0 or self.unexpected_illegal_instr_cnt > 0:
             logging.error("{} instruction skipped, {} illegal "
-                          "instructions".format(self.skipped_cnt),
-                          self.unexpected_illegal_instr_cnt)
+                          "instructions".format(self.skipped_cnt,
+                                                self.unexpected_illegal_instr_cnt))
 
     def post_process_trace(self):
         pass
 
     def sample(self):
-        instr_name, binary = "", ""
-        binary = get_val(self.trace["binary"], hexa=1)
-        if binary[-2:] != "11":  # TODO: and RV32C in supported_isa
+        instr_name = None
+        binary = vsc.int_t(rcs.XLEN)
+        binary.set_val(get_val(self.trace["binary"], hexa=1))
+        # TODO: Currently handled using string formatting as part select
+        #  isn't yet supported for global vsc variables
+        # width is rcs.XLEN+2 because of 0b in the beginning of binary_bin
+        binary_bin = format(binary.get_val(), '#0{}b'.format(rcs.XLEN + 2))
+        if binary_bin[-2:] != "11":  # TODO: and RV32C in supported_isa
             # TODO: sample compressed instruction
             pass
-        if binary[-2:] == "11":
+        if binary_bin[-2:] == "11":
             # TODO: sampling
             pass
-        # TODO: buch of if statements to check if the instruction name is valid
-        # and is a member of registered ones
-        instr_name = self.process_instr_name(self.trace["instr"])
-        instruction = riscv_cov_instr(instr_name)
-        # TODO: check the instruction group...
-        self.assign_trace_info_to_instr(instruction)
-        # TODO: instruction.pre_sample() and sample(instruction)
-        return True
+        processed_instr_name = self.process_instr_name(self.trace["instr"])
+        if processed_instr_name in riscv_instr_name_t.__members__:
+            instr_name = riscv_instr_name_t[processed_instr_name]
+            instruction = riscv_cov_instr(instr_name)
+            # cov_instr is created, time to manually assign attributes
+            # TODO: This will get fixed later when we get an inst from template
+            instruction.assign_attributes()
+            if instruction.group.name in ["RV32I", "RV32M", "RV32C", "RV64I",
+                                          "RV64M", "RV64C", "RV32F", "RV64F",
+                                          "RV32D", "RV64D", "RV32B", "RV64B"]:
+                self.assign_trace_info_to_instr(instruction)
+                instruction.pre_sample()
+                # TODO: actual sampling
+            return True
+        logging.info("Cannot find opcode: {}".format(processed_instr_name))
+        return False
 
     def assign_trace_info_to_instr(self, instruction):
         operands, gpr_update, pair = [], [], []
-        instruction.pc = get_val(self.trace["pc"], hexa=1)
-        instruction.binary = get_val(self.trace["binary"], hexa=1)
+        instruction.pc.set_val(get_val(self.trace["pc"], hexa=1))
+        instruction.binary.set_val(get_val(self.trace["binary"], hexa=1))
+        instruction.trace = self.trace["instr_str"]
         instruction.gpr = self.trace["gpr"]
         instruction.csr = self.trace["csr"]
         instruction.mode = self.trace["mode"]
-        instruction.trace = self.trace["instr_str"]
         instruction.operands = self.trace["operand"]
         operands = self.trace["operand"].split(",")
         instruction.update_src_regs(operands)

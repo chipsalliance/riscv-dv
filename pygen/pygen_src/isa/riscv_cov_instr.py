@@ -1,3 +1,18 @@
+"""Copyright 2020 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import os
 import sys
 import vsc
@@ -5,7 +20,6 @@ import logging
 from enum import Enum, auto
 from bitstring import BitArray
 from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
-from pygen.pygen_src.isa._riscv_cov_instr import assign_attributes
 from pygen.pygen_src.riscv_instr_pkg import *
 
 
@@ -40,19 +54,18 @@ class special_val_e(Enum):
     ZERO_VAL = auto()
 
 
-@add_functions_as_methods(assign_attributes)
 class riscv_cov_instr():
-    """ Class for a riscv instruction; data parsed from the CSV file will fill
-    different fields of an instruction """
+    """ Class for a riscv instruction in functional coverage phase;
+    data parsed from the CSV file fill different fields of an instruction """
     # class attr. to keep track of reg_name:reg_value throughout the program
     gpr_state = {}
 
     def __init__(self, instr_name):
-        self.pc = 0  # Program counter (PC) of the instruction
-        self.instr = riscv_instr_name_t[instr_name]
+        self.pc = vsc.bit_t(rcs.XLEN)  # Program counter (PC) of the instruction
+        self.instr = instr_name
         self.gpr = None  # destination operand of the instruction
         self.csr = None
-        self.binary = 0  # Instruction binary
+        self.binary = vsc.bit_t(32)  # Instruction binary
         self.mode = None  # Instruction mode
         self.trace = "None"  # String representation of the instruction
         self.operands = "None"  # Instruction operands (srcss/dests)
@@ -104,13 +117,49 @@ class riscv_cov_instr():
         self.rs1 = None
         self.rd = None
         self.imm = vsc.int_t(32)
-        self.imm_str = None
-        self.comment = ""
         self.has_rs1 = 1
         self.has_rs2 = 1
         self.has_rd = 1
         self.has_imm = 1
         self.imm_len = 0
+
+    def assign_attributes(self):
+        attr_list = get_attr_list(self.instr)
+        self.format = attr_list[0]
+        self.category = attr_list[1]
+        self.group = attr_list[2]
+        self.imm_type = imm_t.IMM
+        if len(attr_list) > 3:
+            self.imm_type = attr_list[3]
+        self.set_imm_len()
+        self.set_mode()
+
+    def set_imm_len(self):
+        if self.format.name in ["U_FORMAT", "J_FORMAT"]:
+            self.imm_len = 20
+        elif self.format.name in ["I_FORMAT", "S_FORMAT", "B_FORMAT"]:
+            if self.imm_type.name == "UIMM":
+                self.imm_len = 5
+            else:
+                self.imm_len = 11
+
+    def set_mode(self):
+        # mode setting for Instruction Format
+        if self.format.name == "R_FORMAT":
+            self.has_imm = 0
+        if self.format.name == "I_FORMAT":
+            self.has_rs2 = 0
+        if self.format.name in ["S_FORMAT", "B_FORMAT"]:
+            self.has_rd = 0
+        if self.format.name in ["U_FORMAT", "J_FORMAT"]:
+            self.has_rs1 = 0
+            self.has_rs2 = 0
+
+        # mode setting for Instruction Category
+        if self.category.name == "CSR":
+            self.has_rs2 = 0
+            if self.format.name == "I_FORMAT":
+                self.has_rs1 = 0
 
     def pre_sample(self):
         unaligned_pc = self.pc[-2:] != "00"
@@ -150,8 +199,11 @@ class riscv_cov_instr():
 
     @staticmethod
     def get_operand_sign(operand):
-        out = BitArray(int=operand.get_val(), length=rcs.XLEN)
-        if not out[0]:
+        # TODO: Currently handled using string formatting as part select
+        #  isn't yet supported for global vsc variables
+        operand_bin = format(operand.get_val(), '#0{}b'.format(rcs.XLEN + 2))
+        # "0b" is the prefix, so operand_bin[2] is the sign bit
+        if operand_bin[2] == "0":
             return operand_sign_e["POSITIVE"]
         else:
             return operand_sign_e["NEGATIVE"]
@@ -170,8 +222,11 @@ class riscv_cov_instr():
 
     @staticmethod
     def get_imm_sign(imm):
-        out = BitArray(int=imm.get_val(), length=rcs.XLEN)
-        if not out[0]:
+        # TODO: Currently handled using string formatting as part select
+        #  isn't yet supported for global vsc variables
+        imm_bin = format(imm.get_val(), '#0{}b'.format(rcs.XLEN + 2))
+        # "0b" is the prefix, so imm_bin[2] is the sign bit
+        if imm_bin[2] == "0":
             return operand_sign_e["POSITIVE"]
         else:
             return operand_sign_e["NEGATIVE"]
@@ -288,72 +343,13 @@ class riscv_cov_instr():
                 self.lsu_hazard = hazard_e["WAR_HAZARD"]
             else:
                 self.lsu_hazard = hazard_e["NO_HAZARD"]
-        logging.info("Pre: {}, Cur: {}, Hazard: {}/{}".format(
-            pre_instr.convert2asm(), self.convert2asm(),
-            self.gpr_hazard.name, self.lsu_hazard.name))
-
-    def convert2asm(self, prefix=" "):
-        asm_str = pkg_ins.format_string(string=self.get_instr_name(),
-                                        length=pkg_ins.MAX_INSTR_STR_LEN)
-        if self.category.name != "SYSTEM":
-            if self.format.name == "J_FORMAT":
-                asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
-            elif self.format.name == "U_FORMAT":
-                asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
-            elif self.format.name == "I_FORMAT":
-                if self.instr.name == "NOP":
-                    asm_str = "nop"
-                elif self.instr.name == "WFI":
-                    asm_str = "wfi"
-                elif self.instr.name == "FENCE":
-                    asm_str = "fence"
-                elif self.instr.name == "FENCE_I":
-                    asm_str = "fence.i"
-                elif self.category.name == "LOAD":
-                    asm_str = '{} {}, {} ({})'.format(
-                        asm_str, self.rd.name, self.get_imm(), self.rs1.name)
-                elif self.category.name == "CSR":
-                    asm_str = '{} {}, 0x{}, {}'.format(
-                        asm_str, self.rd.name, self.csr.get_val(), self.get_imm())
-                else:
-                    asm_str = '{} {}, {}, {}'.format(
-                        asm_str, self.rd.name, self.rs1.name, self.get_imm())
-            elif self.format.name == "S_FORMAT":
-                if self.category.name == "STORE":
-                    asm_str = '{} {}, {} ({})'.format(
-                        asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
-                else:
-                    asm_str = '{} {}, {}, {}'.format(
-                        asm_str, self.rs1.name, self.rs2.name, self.get_imm())
-
-            elif self.format.name == "B_FORMAT":
-                if self.category.name == "STORE":
-                    asm_str = '{} {}, {} ({})'.format(
-                        asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
-                else:
-                    asm_str = '{} {}, {}, {}'.format(
-                        asm_str, self.rs1.name, self.rs2.name, self.get_imm())
-
-            elif self.format.name == "R_FORMAT":
-                if self.category.name == "CSR":
-                    asm_str = '{} {}, 0x{}, {}'.format(
-                        asm_str, self.rd.name, self.csr.get_val(), self.rs1.name)
-                elif self.instr.name == "SFENCE_VMA":
-                    asm_str = "sfence.vma x0, x0"
-                else:
-                    asm_str = '{} {}, {}, {}'.format(
-                        asm_str, self.rd.name, self.rs1.name, self.rs2.name)
-            else:
-                asm_str = 'Fatal_unsupported_format: {} {}'.format(
-                    self.format.name, self.instr.name)
-
-        else:
-            if self.instr.name == "EBREAK":
-                asm_str = ".4byte 0x00100073 # ebreak"
-
-        if self.comment != "":
-            asm_str = asm_str + " #" + self.comment
-        return asm_str.lower()
+        logging.debug("Pre PC/name: {}/{}, Cur PC/name: {}/{}, "
+                      "Hazard: {}/{}".format(pre_instr.pc.get_val(),
+                                             pre_instr.instr.name,
+                                             self.pc.get_val(),
+                                             self.instr.name,
+                                             self.gpr_hazard.name,
+                                             self.lsu_hazard.name))
 
     def get_instr_name(self):
         get_instr_name = self.instr.name
@@ -361,9 +357,6 @@ class riscv_cov_instr():
             if i == "_":
                 get_instr_name = get_instr_name.replace(i, ".")
         return get_instr_name
-
-    def get_imm(self):
-        return self.imm_str
 
     def update_src_regs(self, operands):
         if self.format.name in ["J_FORMAT", "UORMAT"]:
@@ -409,7 +402,7 @@ class riscv_cov_instr():
                 assert len(operands) == 3
             else:
                 assert len(operands) == 2
-            if self.catefory.name == "CSR":
+            if self.category.name == "CSR":
                 # csrrw rd, csr, rs1
                 if operands[1].upper() in privileged_reg_t.__members__:
                     self.csr.set_val(privileged_reg_t[operands[1].upper()])
