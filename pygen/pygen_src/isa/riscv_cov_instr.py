@@ -63,13 +63,12 @@ class riscv_cov_instr():
     def __init__(self, instr_name):
         self.pc = vsc.bit_t(rcs.XLEN)  # Program counter (PC) of the instruction
         self.instr = instr_name
-        self.gpr = None  # destination operand of the instruction
-        self.csr = None
+        # self.gpr = None  # destination operand of the instruction
         self.binary = vsc.bit_t(32)  # Instruction binary
-        self.mode = None  # Instruction mode
+        # self.mode = None  # Instruction mode
         self.trace = "None"  # String representation of the instruction
-        self.operands = "None"  # Instruction operands (srcss/dests)
-        self.pad = None  # Not used
+        # self.operands = "None"  # Instruction operands (srcss/dests)
+        # self.pad = None  # Not used
 
         self.rs1_value = vsc.int_t(rcs.XLEN)
         self.rs2_value = vsc.int_t(rcs.XLEN)
@@ -359,7 +358,7 @@ class riscv_cov_instr():
         return get_instr_name
 
     def update_src_regs(self, operands):
-        if self.format.name in ["J_FORMAT", "UORMAT"]:
+        if self.format.name in ["J_FORMAT", "U_FORMAT"]:
             # instr rd,imm
             assert len(operands) == 2
             self.imm.set_val(get_val(operands[1]))

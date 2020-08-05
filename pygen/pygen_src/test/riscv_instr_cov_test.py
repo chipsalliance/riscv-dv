@@ -102,7 +102,6 @@ class riscv_instr_cov_test():
         pass
 
     def sample(self):
-        instr_name = None
         binary = vsc.int_t(rcs.XLEN)
         binary.set_val(get_val(self.trace["binary"], hexa=1))
         # TODO: Currently handled using string formatting as part select
@@ -133,16 +132,16 @@ class riscv_instr_cov_test():
         return False
 
     def assign_trace_info_to_instr(self, instruction):
-        operands, gpr_update, pair = [], [], []
         instruction.pc.set_val(get_val(self.trace["pc"], hexa=1))
         instruction.binary.set_val(get_val(self.trace["binary"], hexa=1))
         instruction.trace = self.trace["instr_str"]
-        instruction.gpr = self.trace["gpr"]
-        instruction.csr = self.trace["csr"]
-        instruction.mode = self.trace["mode"]
-        instruction.operands = self.trace["operand"]
+        if instruction.instr.name in ["NOP", "WFI", "FENCE", "FENCE_I",
+                                      "EBREAK", "C_EBREAK", "SFENCE_VMA",
+                                      "ECALL", "C_NOP", "MRET", "SRET", "URET"]:
+            return
         operands = self.trace["operand"].split(",")
         instruction.update_src_regs(operands)
+
         gpr_update = self.trace["gpr"].split(";")
         if len(gpr_update) == 1 and gpr_update[0] == "":
             gpr_update = []
@@ -151,7 +150,10 @@ class riscv_instr_cov_test():
             if len(pair) != 2:
                 logging.error("Illegal gpr update format: {}".format(dest))
             instruction.update_dst_regs(pair[0], pair[1])
-        instruction.pad = self.trace["pad"]
+        # instruction.gpr = self.trace["gpr"]
+        # instruction.csr = self.trace["csr"]
+        # instruction.mode = self.trace["mode"]
+        # instruction.pad = self.trace["pad"]
 
     def process_instr_name(self, instruction):
         instruction = instruction.upper()
