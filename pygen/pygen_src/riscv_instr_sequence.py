@@ -17,10 +17,8 @@ from collections import defaultdict
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import pkg_ins
-import vsc
 
 
-@vsc.randobj
 class riscv_instr_sequence:
 
     def __init__(self):
@@ -34,7 +32,7 @@ class riscv_instr_sequence:
         self.directed_instr = []    # List of all directed instruction stream
         self.illegal_instr_pct = 0  # Percentage of illegal instructions
         self.hint_instr_pct = 0     # Percentage of hint instructions
-        self.branch_idx = [None] * 32  # vsc.rand_list_t(vsc.uint32_t(), 32)
+        self.branch_idx = [None] * 30
 
     def gen_instr(self, is_main_program, no_branch = 1):
         self.is_main_program = is_main_program
@@ -77,6 +75,7 @@ class riscv_instr_sequence:
     def post_process_instr(self):
         label_idx = 0
         branch_cnt = 0
+        j = 0 
 
         def def_val():
             return 0
@@ -85,7 +84,7 @@ class riscv_instr_sequence:
         for instr in self.directed_instr:
             self.instr_stream.insert_instr_stream(instr.instr_list)
         '''
-        Assign an index for all instructions, these indexes won't change
+        Assign an index for all instructions, these indexes wont change
         even a new instruction is injected in the post process.
         '''
         for i in range(len(self.instr_stream.instr_list)):
@@ -95,19 +94,18 @@ class riscv_instr_sequence:
                 if((self.illegal_instr_pct > 0) and
                    (self.instr_stream.instr_list[i].insert_illegal_instr == 0)):
                     '''
-                    The illegal instruction generator always increase PC by 4 when resume
-                    execution,need to make sure PC + 4 is at the correct instruction boundary.
+                    The illegal instruction generator always increase PC by 4 when resume execution,
+                    need to make sure PC + 4 is at the correct instruction boundary.
                     '''
                     if(self.instr_stream.instr_list[i].is_compressed):
                         if(i < (len(self.instr_stream.instr_list) - 1)):
                             if(self.instr_stream.instr_list[i + 1].is_compressed):
                                 self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
                                     0, min(100, self.illegal_instr_pct))
-                    else:
-                        self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
-                            0, min(100, self.illegal_instr_pct))
-                if(self.hint_instr_pct > 0 and
-                   (self.instr_stream.instr_list[i].is_illegal_instr == 0)):
+                        else:
+                            self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
+                                0, min(100, self.illegal_instr_pct))
+                if(self.hint_instr_pct > 0 and (self.instr_stream.instr_list[i].is_illegal_instr == 0)):
                     if(self.instr_stream.instr_list[i].is_compressed):
                         self.instr_stream.instr_list[i].is_hint_instr = random.randrange(
                             0, min(100, self.hint_instr_pct))
@@ -119,24 +117,20 @@ class riscv_instr_sequence:
         # Generate branch target
         for i in range(len(self.branch_idx)):
             self.branch_idx[i] = random.randint(1, cfg.max_branch_step)
-        # with self.randomize_with() as it:
-            # with vsc.foreach(self.branch_idx, idx = True) as i:
-            # self.branch_idx[i] in vsc.rangelist(1, cfg.max_branch_step)
-            # print("BI ", self.branch_idx[i])
-        while(i < len(self.instr_stream.instr_list)):
-            if((self.instr_stream.instr_list[i].category.name == "BRANCH") and
-                    not(self.instr_stream.instr_list[i].branch_assigned) and
-                    not(self.instr_stream.instr_list[i].is_illegal_instr)):
+
+        while(j < len(self.instr_stream.instr_list)):
+            if((self.instr_stream.instr_list[j].category.name == "BRANCH") and
+                    (not self.instr_stream.instr_list[j].branch_assigned) and
+                    (not self.instr_stream.instr_list[j].is_illegal_instr)):
                 '''
                 Post process the branch instructions to give a valid local label
                 Here we only allow forward branch to avoid unexpected infinite loop
                 The loop structure will be inserted with a separate routine using
                 reserved loop registers
                 '''
-                print(self.instr_stream.instr_list[i].category)
                 branch_target_label = 0
                 branch_byte_offset = 0
-                branch_target_label = self.instr_stream.instr_list[i].idx + \
+                branch_target_label = self.instr_stream.instr_list[j].idx + \
                     self.branch_idx[branch_cnt]
                 if(branch_target_label >= label_idx):
                     branch_target_label = label_idx - 1
@@ -144,24 +138,24 @@ class riscv_instr_sequence:
                 if(branch_cnt == len(self.branch_idx)):
                     branch_cnt = 0
                     random.shuffle(self.branch_idx)
-                logging.info("Processing branch instruction[%0d]:%0s # %0d -> %0d", i,
-                             self.instr_stream.instr_list[i].convert2asm(),
-                             self.instr_stream.instr_list[i].idx, branch_target_label)
-                self.instr_stream.instr_list[i].imm_str = "{}f".format(branch_target_label)
+                logging.info("Processing branch instruction[%0d]:%0s # %0d -> %0d", j,
+                             self.instr_stream.instr_list[j].convert2asm(),
+                             self.instr_stream.instr_list[j].idx, branch_target_label)
+                self.instr_stream.instr_list[j].imm_str = "{}f".format(branch_target_label)
+                self.instr_stream.instr_list[j].branch_assigned = 1
+                branch_target[branch_target_label] = 1
 
             # Remove the local label which is not used as branch target
-            if(self.instr_stream.instr_list[i].has_label and
-                    self.instr_stream.instr_list[i].is_local_numeric_label):
-                idx_t = [str(ord(val)) for val in self.instr_stream.instr_list[i].label]
-                idx = int(''.join(idx_t))
-            if(not branch_target[idx]):
-                self.instr_stream.instr_list[i].has_label = 0
-            i += 1
+            if(self.instr_stream.instr_list[j].has_label and
+                    self.instr_stream.instr_list[j].is_local_numeric_label):
+                idx = int(self.instr_stream.instr_list[j].label)
+                if(not branch_target[idx]):
+                    self.instr_stream.instr_list[j].has_label = 0
+            j += 1
         logging.info("Finished post-processing instructions")
 
-    # TODO
     def insert_jump_instr(self):
-        pass
+        pass # TODO
 
     def generate_instr_stream(self, no_label = 0):
         prefix = ''
@@ -185,6 +179,7 @@ class riscv_instr_sequence:
                     prefix = pkg_ins.format_string(string = " ", length = pkg_ins.LABEL_STR_LEN)
             string = prefix + self.instr_stream.instr_list[i].convert2asm()
             self.instr_string_list.append(string)
+            prefix = pkg_ins.format_string(str(i), pkg_ins.LABEL_STR_LEN)
 
     # TODO
     def generate_return_routine(self):
