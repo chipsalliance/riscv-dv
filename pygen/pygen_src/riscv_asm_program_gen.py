@@ -292,7 +292,20 @@ class riscv_asm_program_gen:
             self.instr_stream.append(pkg_ins.indent + "ecall")
 
     def gen_register_dump(self):
-        pass
+        string = ""
+        # load base address
+        string = "{} la x{}, _start".format(pkg_ins.indent, cfg.gpr[0].value)
+        self.instr_stream.append(string)
+
+        # Generate sw/sd instructions
+        for i in range(32):
+            if (rcs.XLEN == 64):
+                string = "{} sd x{}, {}(x{})".format(
+                    pkg_ins.indent, i, i * (rcs.XLEN / 8), cfg.gpr[0].value)
+            else:
+                string = "{} sw x{}, {}(x{})".format(
+                    pkg_ins.indent, i, int(i * (rcs.XLEN / 8)), cfg.gpr[0].value)
+            self.instr_stream.append(string)
 
     def pre_enter_privileged_mode(self, hart):
         instr = []
@@ -430,7 +443,15 @@ class riscv_asm_program_gen:
         pass
 
     def gen_ecall_handler(self, hart):
-        pass
+        string = ""
+        string = pkg_ins.format_string(pkg_ins.get_label(
+            "ecall_handler:", hart), pkg_ins.LABEL_STR_LEN)
+        self.instr_stream.append(string)
+        self.dump_perf_stats()
+        self.gen_register_dump()
+        string = pkg_ins.format_string(" ", pkg_ins.LABEL_STR_LEN)
+        string = string + "j write_tohost"
+        self.instr_stream.append(string)
 
     def gen_ebreak_handler(self, hart):
         pass
