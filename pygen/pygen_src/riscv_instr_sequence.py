@@ -75,7 +75,7 @@ class riscv_instr_sequence:
     def post_process_instr(self):
         label_idx = 0
         branch_cnt = 0
-        j = 0 
+        j = 0
 
         def def_val():
             return 0
@@ -105,7 +105,8 @@ class riscv_instr_sequence:
                         else:
                             self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
                                 0, min(100, self.illegal_instr_pct))
-                if(self.hint_instr_pct > 0 and (self.instr_stream.instr_list[i].is_illegal_instr == 0)):
+                if(self.hint_instr_pct > 0 and
+                        (self.instr_stream.instr_list[i].is_illegal_instr == 0)):
                     if(self.instr_stream.instr_list[i].is_compressed):
                         self.instr_stream.instr_list[i].is_hint_instr = random.randrange(
                             0, min(100, self.hint_instr_pct))
@@ -155,7 +156,7 @@ class riscv_instr_sequence:
         logging.info("Finished post-processing instructions")
 
     def insert_jump_instr(self):
-        pass # TODO
+        pass  # TODO
 
     def generate_instr_stream(self, no_label = 0):
         prefix = ''
@@ -173,7 +174,7 @@ class riscv_instr_sequence:
                 self.instr_stream.instr_list[i].has_label = 1
             else:
                 if(self.instr_stream.instr_list[i].has_label):
-                    prefix = pkg_ins.format_string(string = '{}'.format(
+                    prefix = pkg_ins.format_string(string = '{}:'.format(
                         self.instr_stream.instr_list[i].label), length = pkg_ins.LABEL_STR_LEN)
                 else:
                     prefix = pkg_ins.format_string(string = " ", length = pkg_ins.LABEL_STR_LEN)
