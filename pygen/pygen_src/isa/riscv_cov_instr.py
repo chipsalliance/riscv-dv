@@ -175,8 +175,7 @@ class riscv_cov_instr:
         self.rd_special_value = self.get_operand_special_value(self.rd_value)
         self.rs2_special_value = self.get_operand_special_value(self.rs2_value)
         self.rs3_special_value = self.get_operand_special_value(self.rs3_value)
-        if (self.format.name != "R_FORMAT" and
-                self.format.name != "CR_FORMAT"):
+        if self.format.name not in ["R_FORMAT", "CR_FORMAT"]:
             self.imm_special_value = self.get_imm_special_val(self.imm)
         if self.category.name in ["COMPARE", "BRANCH"]:
             self.compare_result = self.get_compare_result()
@@ -209,14 +208,14 @@ class riscv_cov_instr:
     def is_unaligned_mem_access(self):
         if (self.instr.name in ["LWU", "LD", "SD", "C_LD", "C_SD"] and
                 self.mem_addr.get_val() % 8 != 0):
-            return True
+            return 1
         elif (self.instr.name in ["LW", "SW", "C_LW", "C_SW"] and
               self.mem_addr.get_val() % 4 != 0):
-            return True
+            return 1
         elif (self.instr.name in ["LH", "LHU", "SH"] and
               self.mem_addr.get_val() % 2 != 0):
-            return True
-        return False
+            return 1
+        return 0
 
     @staticmethod
     def get_imm_sign(imm):
@@ -283,17 +282,17 @@ class riscv_cov_instr:
 
     def is_branch_hit(self):
         if self.instr.name == "BEQ":
-            return self.rs1_value.get_val() == self.rs2_value.get_val()
+            return int(self.rs1_value.get_val() == self.rs2_value.get_val())
         elif self.instr.name == "C_BEQZ":
-            return self.rs1_value.get_val() == 0
+            return int(self.rs1_value.get_val() == 0)
         elif self.instr.name == "BNE":
-            return self.rs1_value.get_val() != self.rs2_value.get_val()
+            return int(self.rs1_value.get_val() != self.rs2_value.get_val())
         elif self.instr.name == "C_BNEZ":
-            return self.rs1_value.get_val() != 0
+            return int(self.rs1_value.get_val() != 0)
         elif self.instr.name == "BLT" or self.instr.name == "BLTU":
-            return self.rs1_value.get_val() < self.rs2_value.get_val()
+            return int(self.rs1_value.get_val() < self.rs2_value.get_val())
         elif self.instr.name == "BGE" or self.instr.name == "BGEU":
-            return self.rs1_value.get_val() >= self.rs2_value.get_val()
+            return int(self.rs1_value.get_val() >= self.rs2_value.get_val())
         else:
             logging.error("Unexpected instruction {}".format(self.instr.name))
 
@@ -314,6 +313,10 @@ class riscv_cov_instr:
             return logical_similarity_e["DIFFERENT"]
 
     def check_hazard_condition(self, pre_instr):
+        '''TODO: There are cases where instruction actually has destination but
+        ovpsim doesn't log it because of no change in its value. Hence,
+        the result of the check_hazard_condition won't be accurate. Need to
+        explicitly extract the destination register from the operands '''
         if pre_instr.has_rd:
             if ((self.has_rs1 and self.rs1 == pre_instr.rd) or
                     (self.has_rs2 and self.rs1 == pre_instr.rd)):

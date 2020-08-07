@@ -41,12 +41,12 @@ class riscv_instr_cov_test:
         logging.info("{} CSV trace files to be "
                      "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
-        # self.csv_trace = ["riscv_arithmetic_basic_test.0.csv"]
         # Assuming we get list of csv files pathname from cov.py in argv
         for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
                 header = []
+                self.instr_cg.reset()
                 csv_reader = csv.reader(trace_file, delimiter=',')
                 line_count = 0
                 # Get the header line
@@ -98,8 +98,6 @@ class riscv_instr_cov_test:
             logging.error("{} instruction skipped, {} illegal "
                           "instructions".format(self.skipped_cnt,
                                                 self.unexpected_illegal_instr_cnt))
-        # str_report = vsc.get_coverage_report(details=True)
-        # logging.info("Report:\n" + str_report)
 
     def post_process_trace(self):
         pass
@@ -154,10 +152,6 @@ class riscv_instr_cov_test:
             if len(pair) != 2:
                 logging.error("Illegal gpr update format: {}".format(dest))
             instruction.update_dst_regs(pair[0], pair[1])
-        # instruction.gpr = self.trace["gpr"]
-        # instruction.csr = self.trace["csr"]
-        # instruction.mode = self.trace["mode"]
-        # instruction.pad = self.trace["pad"]
 
     def process_instr_name(self, instruction):
         instruction = instruction.upper()
