@@ -295,16 +295,16 @@ class riscv_asm_program_gen:
     def gen_register_dump(self):
         string = ""
         # load base address
-        string = "{} la x{}, _start".format(pkg_ins.indent, cfg.gpr[0].value)
+        string = "{}la x{}, _start".format(pkg_ins.indent, cfg.gpr[0].value)
         self.instr_stream.append(string)
 
         # Generate sw/sd instructions
         for i in range(32):
             if (rcs.XLEN == 64):
-                string = "{} sd x{}, {}(x{})".format(
+                string = "{}sd x{}, {}(x{})".format(
                     pkg_ins.indent, i, i * (rcs.XLEN / 8), cfg.gpr[0].value)
             else:
-                string = "{} sw x{}, {}(x{})".format(
+                string = "{}sw x{}, {}(x{})".format(
                     pkg_ins.indent, i, int(i * (rcs.XLEN / 8)), cfg.gpr[0].value)
             self.instr_stream.append(string)
 

@@ -76,10 +76,7 @@ class riscv_instr_sequence:
         label_idx = 0
         branch_cnt = 0
         j = 0
-
-        def def_val():
-            return 0
-        branch_target = defaultdict(def_val)
+        branch_target = defaultdict(lambda: None)
 
         for instr in self.directed_instr:
             self.instr_stream.insert_instr_stream(instr.instr_list)
@@ -102,9 +99,9 @@ class riscv_instr_sequence:
                             if(self.instr_stream.instr_list[i + 1].is_compressed):
                                 self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
                                     0, min(100, self.illegal_instr_pct))
-                        else:
-                            self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
-                                0, min(100, self.illegal_instr_pct))
+                    else:
+                        self.instr_stream.instr_list[i].is_illegal_instr = random.randrange(
+                            0, min(100, self.illegal_instr_pct))
                 if(self.hint_instr_pct > 0 and
                         (self.instr_stream.instr_list[i].is_illegal_instr == 0)):
                     if(self.instr_stream.instr_list[i].is_compressed):
