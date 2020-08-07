@@ -15,11 +15,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import subprocess
 import logging
 import random
+import copy
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
+from pygen_src.riscv_directed_instr_lib import factory
 '''
     RISC-V assembly program generator
 
@@ -33,7 +36,8 @@ class riscv_asm_program_gen:
 
     def __init__(self):
         self.instr_stream = []
-        self.directed_instr_stream_ratio = []
+        self.directed_instr = []
+        self.directed_instr_stream_ratio = {}
         self.hart = 0
         self.page_table_list = []
         self.main_program = []
@@ -82,6 +86,13 @@ class riscv_asm_program_gen:
             self.main_program[hart].instr_cnt = cfg.main_program_instr_cnt
             self.main_program[hart].is_debug_program = 0
             self.main_program[hart].label_name = "main"
+            self.generate_directed_instr_stream(hart = hart,
+                                                label = self.main_program[hart].label_name,
+                                                original_instr_cnt =
+                                                self.main_program[hart].instr_cnt,
+                                                min_insert_cnt = 1,
+                                                instr_stream =
+                                                self.main_program[hart].directed_instr)
             self.main_program[hart].gen_instr(is_main_program = 1, no_branch = cfg.no_branch_jump)
 
             self.main_program[hart].post_process_instr()
@@ -577,14 +588,64 @@ class riscv_asm_program_gen:
         pass
 
     def add_directed_instr_stream(self, name, ratio):
-        pass
+        self.directed_instr_stream_ratio[name] = ratio
+        logging.info("Adding directed instruction stream:%0s ratio:%0d/1000", name, ratio)
 
     def get_directed_instr_stream(self):
-        pass
+        opts = []
+        for i in range(cfg.max_directed_instr_stream_seq):
+            # args = "directed_instr_{}=".format(i)
+            # stream_name_opts = "stream_name_{}=".format(i)
+            # stream_freq_opts = "stream_freq_{}=".format(i)
+            val = "riscv_int_numeric_corner_stream,4"
+            if(val):  # TO DO
+                opts = val.split(",")
+                if(len(opts) != 2):
+                    logging.critical(
+                        "Incorrect directed instruction format : %0s, expect: name,ratio", val)
+                else:
+                    self.add_directed_instr_stream(opts[0], int(opts[1]))
+            # TO DO
+            """
+            end else if ($value$plusargs({stream_name_opts,"%0s"}, stream_name) &&
+                         $value$plusargs({stream_freq_opts,"%0d"}, stream_freq)) begin
+              add_directed_instr_stream(stream_name, stream_freq);
+            end
+            """
 
     def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = None,
                                        min_insert_cnt = 0, kernel_mode = 0, instr_stream = []):
-        pass
+        new_instr_stream = riscv_rand_instr_stream()
+        instr_insert_cnt = 0
+        idx = 0
+        if(cfg.no_directed_instr):
+            return
+        for instr_stream_name in self.directed_instr_stream_ratio:
+            instr_insert_cnt = int(original_instr_cnt *
+                                   self.directed_instr_stream_ratio[instr_stream_name] / 1000)
+            if(instr_insert_cnt <= min_insert_cnt):
+                instr_insert_cnt = min_insert_cnt
+            logging.info("Insert directed instr stream %0s %0d/%0d times",
+                         instr_stream_name, instr_insert_cnt, original_instr_cnt)
+            for i in range(instr_insert_cnt):
+                name = "{}_{}".format(instr_insert_cnt, i)
+                object_h = factory(instr_stream_name)
+                # print(object_h)
+                if(object_h is None):
+                    logging.critical("Cannot create instr stream %0s", name)
+                # TO DO
+                # if(type(new_instr_stream) == type(object_h)):
+                new_instr_stream = copy.deepcopy(object_h)
+                if(new_instr_stream):
+                    # new_instr_stream.cfg = cfg
+                    new_instr_stream.hart = hart
+                    new_instr_stream.label = "{}_{}".format(label, idx)
+                    new_instr_stream.kernel_mode = kernel_mode
+                    instr_stream.append(new_instr_stream)
+                else:
+                    logging.critical("Cannot cast instr stream %0s", name)
+                idx += 1
+            # random.shuffle(self.instr_stream)
 
     def gen_debug_rom(self, hart):
         pass

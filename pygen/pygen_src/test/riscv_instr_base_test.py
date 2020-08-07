@@ -27,5 +27,6 @@ class riscv_instr_base_test:
         cfg.randomize()
         riscv_instr_ins.create_instr_list(cfg)
         test_name = "riscv_asm_test_{}.S".format(_)
+        asm.get_directed_instr_stream()
         asm.gen_program()
         asm.gen_test_file(test_name)
