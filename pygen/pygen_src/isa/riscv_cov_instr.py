@@ -54,15 +54,15 @@ class special_val_e(Enum):
     ZERO_VAL = auto()
 
 
-class riscv_cov_instr():
+class riscv_cov_instr:
     """ Class for a riscv instruction in functional coverage phase;
     data parsed from the CSV file fill different fields of an instruction """
     # class attr. to keep track of reg_name:reg_value throughout the program
     gpr_state = {}
 
-    def __init__(self, instr_name):
+    def __init__(self):
         self.pc = vsc.bit_t(rcs.XLEN)  # Program counter (PC) of the instruction
-        self.instr = instr_name
+        self.instr = None
         # self.gpr = None  # destination operand of the instruction
         self.binary = vsc.bit_t(32)  # Instruction binary
         # self.mode = None  # Instruction mode
@@ -109,7 +109,7 @@ class riscv_cov_instr():
         self.category = None
         self.imm_type = None
 
-        self.csr = vsc.int_t(32)
+        self.csr = vsc.bit_t(12)
         ''' TODO: rs2, rs1, rd, group, format, category, imm_type will be
         changed to vsc.enum_t once the issue with set/get_val is fixed '''
         self.rs2 = None
@@ -161,7 +161,7 @@ class riscv_cov_instr():
                 self.has_rs1 = 0
 
     def pre_sample(self):
-        unaligned_pc = self.pc[-2:] != "00"
+        unaligned_pc = self.pc.get_val() % 4 != 0
         self.rs1_sign = self.get_operand_sign(self.rs1_value)
         self.rs2_sign = self.get_operand_sign(self.rs2_value)
         self.rs3_sign = self.get_operand_sign(self.rs3_value)
@@ -175,22 +175,21 @@ class riscv_cov_instr():
         self.rd_special_value = self.get_operand_special_value(self.rd_value)
         self.rs2_special_value = self.get_operand_special_value(self.rs2_value)
         self.rs3_special_value = self.get_operand_special_value(self.rs3_value)
-        if (self.format != riscv_instr_format_t.R_FORMAT and
-                self.format != riscv_instr_format_t.CR_FORMAT):
+        if (self.format.name != "R_FORMAT" and
+                self.format.name != "CR_FORMAT"):
             self.imm_special_value = self.get_imm_special_val(self.imm)
-        if self.category in [riscv_instr_category_t.COMPARE,
-                             riscv_instr_category_t.BRANCH]:
+        if self.category.name in ["COMPARE", "BRANCH"]:
             self.compare_result = self.get_compare_result()
-        if self.category in [riscv_instr_category_t.LOAD,
-                             riscv_instr_category_t.STORE]:
-            self.mem_addr = self.rs1_value + self.imm
+        if self.category.name in ["LOAD", "STORE"]:
+            self.mem_addr.set_val(self.rs1_value.get_val() +
+                                  self.imm.get_val())
             self.unaligned_mem_access = self.is_unaligned_mem_access()
             if self.unaligned_mem_access:
                 logging.info("Unaligned: {}, mem_addr: {}".format(
                     self.instr.name, self.mem_addr.get_val()))
-        if self.category == riscv_instr_category_t.LOGICAL:
+        if self.category.name == "LOGICAL":
             self.logical_similarity = self.get_logical_similarity()
-        if self.category == riscv_instr_category_t.BRANCH:
+        if self.category.name == "BRANCH":
             self.branch_hit = self.is_branch_hit()
         if self.instr.name in ["DIV", "DIVU", "REM", "REMU", "DIVW", "DIVUW",
                                "REMW", "REMUW"]:
@@ -373,7 +372,7 @@ class riscv_cov_instr():
                 # csrrwi rd, csr, imm
                 self.imm.set_val(get_val(operands[2]))
                 if operands[1].upper() in privileged_reg_t.__members__:
-                    self.csr.set_val(privileged_reg_t[operands[1].upper()])
+                    self.csr.set_val(privileged_reg_t[operands[1].upper()].value)
                 else:
                     self.csr.set_val(get_val(operands[1]))
             else:
@@ -404,7 +403,7 @@ class riscv_cov_instr():
             if self.category.name == "CSR":
                 # csrrw rd, csr, rs1
                 if operands[1].upper() in privileged_reg_t.__members__:
-                    self.csr.set_val(privileged_reg_t[operands[1].upper()])
+                    self.csr.set_val(privileged_reg_t[operands[1].upper()].value)
                 else:
                     self.csr.set_val(get_val(operands[1]))
                 self.rs1 = self.get_gpr(operands[2])
@@ -486,7 +485,7 @@ class riscv_cov_instr():
             logging.error("Unsupported format {}".format(self.format.name))
 
     def update_dst_regs(self, reg_name, val_str):
-        self.gpr_state[reg_name] = get_val(val_str, hexa=1)
+        riscv_cov_instr.gpr_state[reg_name] = get_val(val_str, hexa=1)
         self.rd = self.get_gpr(reg_name)
         self.rd_value.set_val(self.get_gpr_state(reg_name))
 
@@ -497,11 +496,14 @@ class riscv_cov_instr():
             logging.error("Cannot convert {} to GPR".format(reg_name))
         return riscv_reg_t[reg_name]
 
-    def get_gpr_state(self, name):
+    @staticmethod
+    def get_gpr_state(name):
         if name in ["zero", "x0"]:
             return 0
-        elif name in self.gpr_state:
-            return self.gpr_state[name]
+        elif name in riscv_cov_instr.gpr_state:
+            return riscv_cov_instr.gpr_state[name]
         else:
-            logging.warning("Cannot find GPR state: {}".format(name))
+            logging.warning("Cannot find GPR state: {}; initialize to 0".format(name))
+            if name.upper() in riscv_reg_t.__members__:
+                riscv_cov_instr.gpr_state[name] = 0
             return 0

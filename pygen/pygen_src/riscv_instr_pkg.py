@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import logging
 from enum import Enum, auto
 from bitstring import BitArray
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
 class mem_region_t:
@@ -1173,7 +1173,7 @@ def get_val(in_string, hexa=0):
         out_val = int(in_string, base=16)
     else:
         out_val = int(in_string)
-    logging.info("riscv_instr_pkg: imm: {} -> {}".format(in_string, out_val))
+    logging.info("imm: {} -> {}".format(in_string, out_val))
     return out_val
 
 

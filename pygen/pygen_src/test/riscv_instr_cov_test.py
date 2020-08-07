@@ -14,22 +14,22 @@ limitations under the License.
 """
 
 import sys
-import os
-import logging
-import argparse
 import vsc
 import csv
 from pygen.pygen_src.isa.riscv_cov_instr import riscv_cov_instr
-from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen.pygen_src.riscv_instr_cover_group import *
 from pygen.pygen_src.riscv_instr_pkg import *
 
-logging.basicConfig(filename='logging.log', level=logging.DEBUG)
+logging.basicConfig(filename='logging.log', filemode='w',
+                    format="%(filename)s %(lineno)s %(levelname)s %(message)s",
+                    level=logging.DEBUG)
 
 
-class riscv_instr_cov_test():
+class riscv_instr_cov_test:
     """ Main class for applying the functional coverage test """
 
     def __init__(self, argv):
+        self.instr_cg = riscv_instr_cover_group()
         self.trace = {}
         self.csv_trace = argv
         self.entry_cnt, self.total_entry_cnt, self.skipped_cnt, \
@@ -41,6 +41,7 @@ class riscv_instr_cov_test():
         logging.info("{} CSV trace files to be "
                      "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
+        # self.csv_trace = ["riscv_arithmetic_basic_test.0.csv"]
         # Assuming we get list of csv files pathname from cov.py in argv
         for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
@@ -97,6 +98,8 @@ class riscv_instr_cov_test():
             logging.error("{} instruction skipped, {} illegal "
                           "instructions".format(self.skipped_cnt,
                                                 self.unexpected_illegal_instr_cnt))
+        # str_report = vsc.get_coverage_report(details=True)
+        # logging.info("Report:\n" + str_report)
 
     def post_process_trace(self):
         pass
@@ -117,7 +120,8 @@ class riscv_instr_cov_test():
         processed_instr_name = self.process_instr_name(self.trace["instr"])
         if processed_instr_name in riscv_instr_name_t.__members__:
             instr_name = riscv_instr_name_t[processed_instr_name]
-            instruction = riscv_cov_instr(instr_name)
+            instruction = riscv_cov_instr()
+            instruction.instr = instr_name
             # cov_instr is created, time to manually assign attributes
             # TODO: This will get fixed later when we get an inst from template
             instruction.assign_attributes()
@@ -126,7 +130,7 @@ class riscv_instr_cov_test():
                                           "RV32D", "RV64D", "RV32B", "RV64B"]:
                 self.assign_trace_info_to_instr(instruction)
                 instruction.pre_sample()
-                # TODO: actual sampling
+                self.instr_cg.sample(instruction)
             return True
         logging.info("Cannot find opcode: {}".format(processed_instr_name))
         return False
