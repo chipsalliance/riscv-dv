@@ -22,7 +22,7 @@ from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
-from pygen_src.riscv_directed_instr_lib import factory
+from pygen_src.riscv_utils import factory
 '''
     RISC-V assembly program generator
 
@@ -605,6 +605,7 @@ class riscv_asm_program_gen:
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
                 else:
                     self.add_directed_instr_stream(opts[0], int(opts[1]))
+            print(opts)
             # TO DO
             """
             end else if ($value$plusargs({stream_name_opts,"%0s"}, stream_name) &&
@@ -622,11 +623,13 @@ class riscv_asm_program_gen:
             return
         for instr_stream_name in self.directed_instr_stream_ratio:
             instr_insert_cnt = int(original_instr_cnt *
-                                   self.directed_instr_stream_ratio[instr_stream_name] / 1000)
+                                   self.directed_instr_stream_ratio[instr_stream_name] // 1000)
+            print(instr_insert_cnt)
             if(instr_insert_cnt <= min_insert_cnt):
                 instr_insert_cnt = min_insert_cnt
             logging.info("Insert directed instr stream %0s %0d/%0d times",
                          instr_stream_name, instr_insert_cnt, original_instr_cnt)
+            print(instr_insert_cnt)
             for i in range(instr_insert_cnt):
                 name = "{}_{}".format(instr_insert_cnt, i)
                 object_h = factory(instr_stream_name)
@@ -641,7 +644,9 @@ class riscv_asm_program_gen:
                     new_instr_stream.hart = hart
                     new_instr_stream.label = "{}_{}".format(label, idx)
                     new_instr_stream.kernel_mode = kernel_mode
-                    instr_stream.append(new_instr_stream)
+                    new_instr_stream.randomize()
+                    self.instr_stream.append(type(new_instr_stream).__name__)
+                    print(type(new_instr_stream).__name__)
                 else:
                     logging.critical("Cannot cast instr stream %0s", name)
                 idx += 1

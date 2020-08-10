@@ -12,6 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 Regression script for RISC-V random instruction generator
 """
+
 import vsc
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr_ins
@@ -51,14 +52,15 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
         super().__init__()
         self.num_of_avail_regs = vsc.uint8_t(10)
         self.num_of_instr = vsc.rand_uint8_t()
-        self.init_val = vsc.randsz_list_t(vsc.rand_bit_t())
-        self.init_val_type = vsc.randsz_list_t(vsc.enum_t(int_numeric_e))
+        self.init_val = vsc.rand_list_t(vsc.rand_bit_t(), sz = 10)
+        self.init_val_type = vsc.rand_list_t(vsc.enum_t(int_numeric_e), sz =10)
         self.init_instr = []
+
     """
     @vsc.constraint
     def init_val_c(self):
-        # TO DO
-        # solve init_val_type before init_val;
+        TO DO
+        solve init_val_type before init_val;
         self.init_val_type.size in vsc.rangelist(self.num_of_avail_regs)
         self.init_val.size in vsc.rangelist(self.num_of_avail_regs)
         self.num_of_instr in vsc.rangelist(vsc.rng(15, 30))
@@ -74,7 +76,6 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
     def pre_randomize(self):
         print("pre randomize")
         self.avail_regs = [0] * self.num_of_avail_regs
-        super().pre_randomize()
 
     def post_randomize(self):
         print("post_randomize")
@@ -86,24 +87,16 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
                 self.init_val[i] = 1
             elif self.init_val_type[i] == int_numeric_e.NegativeMax:
                 self.init_val[i] = 1 << (riscv_instr_ins.XLEN - 1)
-
+            print(self.init_instr)
             self.init_instr[i].rd = self.avail_regs[i]
             self.init_instr[i].pseudo_instr_name = 'LI'
             self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
             self.instr_list.append(self.init_instr[i])
-        for i in range(0, self.num_of_instr):
+        for i in range(self.num_of_instr):
             instr = riscv_instr_ins.get_rand_instr(
                 include_category = ['ARITHMETIC'],
                 exclude_group = ['RV32C', 'RV64C', 'RV32F', 'RV64F', 'RV32D', 'RV64D'])
             instr = super().randomize_gpr(instr)
             self.instr_list.append(instr)
+            print(self.instr_list)
         super().post_randomize()
-
-
-def factory(obj_of):
-    # print("Factory getting called")
-    objs = {
-        "riscv_directed_instr_stream": riscv_directed_instr_stream,
-        "riscv_int_numeric_corner_stream": riscv_int_numeric_corner_stream
-    }
-    return objs[obj_of]()
