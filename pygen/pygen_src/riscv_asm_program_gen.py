@@ -19,7 +19,7 @@ import copy
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
-from pygen_src.riscv_instr_gen_config import cfg
+from pygen_src.riscv_instr_gen_config import cfg, args, args_dict
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_utils import factory
@@ -594,25 +594,23 @@ class riscv_asm_program_gen:
     def get_directed_instr_stream(self):
         opts = []
         for i in range(cfg.max_directed_instr_stream_seq):
-            # args = "directed_instr_{}=".format(i)
-            # stream_name_opts = "stream_name_{}=".format(i)
-            # stream_freq_opts = "stream_freq_{}=".format(i)
-            val = "riscv_int_numeric_corner_stream,4"
-            if(val):  # TO DO
+            arg = "directed_instr_{}".format(i)
+            stream_name_opts = "stream_name_{}".format(i)
+            stream_freq_opts = "stream_freq_{}".format(i)
+            if(arg in args):
+                val = args_dict[arg]
                 opts = val.split(",")
+                print(opts)
                 if(len(opts) != 2):
                     logging.critical(
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
                 else:
                     self.add_directed_instr_stream(opts[0], int(opts[1]))
-            print(opts)
-            # TO DO
-            """
-            end else if ($value$plusargs({stream_name_opts,"%0s"}, stream_name) &&
-                         $value$plusargs({stream_freq_opts,"%0d"}, stream_freq)) begin
-              add_directed_instr_stream(stream_name, stream_freq);
-            end
-            """
+            elif(stream_name_opts in args and stream_freq_opts in args):
+                stream_name = args_dict[stream_name_opts]
+                stream_freq = args_dict[stream_freq_opts]
+                self.add_directed_instr_stream(stream_name, stream_freq)
+
 
     def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = None,
                                        min_insert_cnt = 0, kernel_mode = 0, instr_stream = []):
@@ -624,12 +622,10 @@ class riscv_asm_program_gen:
         for instr_stream_name in self.directed_instr_stream_ratio:
             instr_insert_cnt = int(original_instr_cnt *
                                    self.directed_instr_stream_ratio[instr_stream_name] // 1000)
-            print(instr_insert_cnt)
             if(instr_insert_cnt <= min_insert_cnt):
                 instr_insert_cnt = min_insert_cnt
             logging.info("Insert directed instr stream %0s %0d/%0d times",
                          instr_stream_name, instr_insert_cnt, original_instr_cnt)
-            print(instr_insert_cnt)
             for i in range(instr_insert_cnt):
                 name = "{}_{}".format(instr_insert_cnt, i)
                 object_h = factory(instr_stream_name)
