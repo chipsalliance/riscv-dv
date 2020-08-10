@@ -611,7 +611,6 @@ class riscv_asm_program_gen:
                 stream_freq = args_dict[stream_freq_opts]
                 self.add_directed_instr_stream(stream_name, stream_freq)
 
-
     def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = None,
                                        min_insert_cnt = 0, kernel_mode = 0, instr_stream = []):
         new_instr_stream = riscv_rand_instr_stream()

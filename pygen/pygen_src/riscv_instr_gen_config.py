@@ -179,7 +179,6 @@ class riscv_instr_gen_config:
         if(rcs.supported_isa != 'RV32C'):
             self.disable_compressed_instr = 1
 
-
     @vsc.constraint
     def gpr_c(self):
         self.gpr0.not_inside(vsc.rangelist(self.sp, self.tp, self.scratch_reg, self.pmp_reg,
@@ -414,8 +413,10 @@ def parse_args():
     parse.add_argument('--asm_test_suffix', help = 'asm_test_suffix', default = "")
     parse.add_argument('--march_isa', help = 'march_isa', default = [],
                        choices = [i.name for i in riscv_instr_group_t], nargs = '*')
-    parse.add_argument('--directed_instr_0', help = 'directed_instr_0', default = "riscv_int_numeric_corner_stream,4")
-    parse.add_argument('--stream_name_opts', help = 'stream_name_0', default = "riscv_load_store_rand_instr_stream")
+    parse.add_argument('--directed_instr_0', help = 'directed_instr_0',
+                       default = "riscv_int_numeric_corner_stream,4")
+    parse.add_argument('--stream_name_opts', help = 'stream_name_0',
+                       default = "riscv_load_store_rand_instr_stream")
     parse.add_argument('--stream_freq_opts', help = 'stream_freq_0', default = 4)
     # TODO
     '''

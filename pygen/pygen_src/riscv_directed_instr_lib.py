@@ -13,12 +13,14 @@ limitations under the License.
 Regression script for RISC-V random instruction generator
 """
 
+from enum import Enum, auto
 import vsc
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import riscv_reg_t
-from enum import Enum, auto
+from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 
 
 class riscv_directed_instr_stream(riscv_rand_instr_stream):
@@ -75,7 +77,7 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
 
     def pre_randomize(self):
         print("pre randomize")
-        self.avail_regs = [0] * self.num_of_avail_regs
+        self.avail_regs = [None] * self.num_of_avail_regs
 
     def post_randomize(self):
         print("post_randomize")
@@ -86,8 +88,9 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
             elif self.init_val_type[i] == int_numeric_e.AllOne:
                 self.init_val[i] = 1
             elif self.init_val_type[i] == int_numeric_e.NegativeMax:
-                self.init_val[i] = 1 << (riscv_instr_ins.XLEN - 1)
+                self.init_val[i] = 1 << (rcs.XLEN - 1)
             print(self.init_instr)
+            self.init_instr[i] = riscv_pseudo_instr()
             self.init_instr[i].rd = self.avail_regs[i]
             self.init_instr[i].pseudo_instr_name = 'LI'
             self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
@@ -100,3 +103,4 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
             self.instr_list.append(instr)
             print(self.instr_list)
         super().post_randomize()
+
