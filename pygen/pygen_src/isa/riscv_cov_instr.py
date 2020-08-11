@@ -61,7 +61,8 @@ class riscv_cov_instr:
     gpr_state = {}
 
     def __init__(self):
-        self.pc = vsc.bit_t(rcs.XLEN)  # Program counter (PC) of the instruction
+        self.pc = vsc.bit_t(
+            rcs.XLEN)  # Program counter (PC) of the instruction
         self.instr = None
         # self.gpr = None  # destination operand of the instruction
         self.binary = vsc.bit_t(32)  # Instruction binary
@@ -85,24 +86,24 @@ class riscv_cov_instr:
         self.compressed = 0
         self.branch_hit = 0
         self.div_result = None
-        self.rs1_sign = None
-        self.rs2_sign = None
-        self.rs3_sign = None
-        self.fs1_sign = None
-        self.fs2_sign = None
-        self.fs3_sign = None
-        self.imm_sign = None
-        self.rd_sign = None
-        self.fd_sign = None
+        self.rs1_sign = 0
+        self.rs2_sign = 0
+        self.rs3_sign = 0
+        self.fs1_sign = 0
+        self.fs2_sign = 0
+        self.fs3_sign = 0
+        self.imm_sign = 0
+        self.rd_sign = 0
+        self.fd_sign = 0
         self.gpr_hazard = hazard_e.NO_HAZARD
         self.lsu_hazard = hazard_e.NO_HAZARD
-        self.rs1_special_value = None
-        self.rs2_special_value = None
-        self.rs3_special_value = None
-        self.rd_special_value = None
-        self.imm_special_value = None
-        self.compare_result = None
-        self.logical_similarity = None
+        self.rs1_special_value = 0
+        self.rs2_special_value = 0
+        self.rs3_special_value = 0
+        self.rd_special_value = 0
+        self.imm_special_value = 0
+        self.compare_result = 0
+        self.logical_similarity = 0
 
         self.group = None
         self.format = None
@@ -112,9 +113,9 @@ class riscv_cov_instr:
         self.csr = vsc.bit_t(12)
         ''' TODO: rs2, rs1, rd, group, format, category, imm_type will be
         changed to vsc.enum_t once the issue with set/get_val is fixed '''
-        self.rs2 = None
-        self.rs1 = None
-        self.rd = None
+        self.rs2 = 0
+        self.rs1 = 0
+        self.rd = 0
         self.imm = vsc.int_t(32)
         self.has_rs1 = 1
         self.has_rs2 = 1
@@ -375,7 +376,8 @@ class riscv_cov_instr:
                 # csrrwi rd, csr, imm
                 self.imm.set_val(get_val(operands[2]))
                 if operands[1].upper() in privileged_reg_t.__members__:
-                    self.csr.set_val(privileged_reg_t[operands[1].upper()].value)
+                    self.csr.set_val(
+                        privileged_reg_t[operands[1].upper()].value)
                 else:
                     self.csr.set_val(get_val(operands[1]))
             else:
@@ -406,7 +408,8 @@ class riscv_cov_instr:
             if self.category.name == "CSR":
                 # csrrw rd, csr, rs1
                 if operands[1].upper() in privileged_reg_t.__members__:
-                    self.csr.set_val(privileged_reg_t[operands[1].upper()].value)
+                    self.csr.set_val(
+                        privileged_reg_t[operands[1].upper()].value)
                 else:
                     self.csr.set_val(get_val(operands[1]))
                 self.rs1 = self.get_gpr(operands[2])
@@ -506,7 +509,8 @@ class riscv_cov_instr:
         elif name in riscv_cov_instr.gpr_state:
             return riscv_cov_instr.gpr_state[name]
         else:
-            logging.warning("Cannot find GPR state: {}; initialize to 0".format(name))
+            logging.warning(
+                "Cannot find GPR state: {}; initialize to 0".format(name))
             if name.upper() in riscv_reg_t.__members__:
                 riscv_cov_instr.gpr_state[name] = 0
             return 0

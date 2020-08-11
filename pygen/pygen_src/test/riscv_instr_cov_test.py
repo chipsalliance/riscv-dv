@@ -16,13 +16,14 @@ limitations under the License.
 import sys
 import vsc
 import csv
+from tabulate import *
 from pygen.pygen_src.isa.riscv_cov_instr import riscv_cov_instr
 from pygen.pygen_src.riscv_instr_cover_group import *
 from pygen.pygen_src.riscv_instr_pkg import *
 
-logging.basicConfig(filename='logging.log', filemode='w',
+logging.basicConfig(filename='logging_two_files_new.log', filemode='w',
                     format="%(filename)s %(lineno)s %(levelname)s %(message)s",
-                    level=logging.DEBUG)
+                    level=logging.ERROR)
 
 
 class riscv_instr_cov_test:
@@ -42,8 +43,6 @@ class riscv_instr_cov_test:
                      "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
         # Assuming we get list of csv files pathname from cov.py in argv
-        self.csv_trace = ["/mnt/c/Users/Hodja/OneDrive/Documents" \
-                          "/riscv_arithmetic_basic_test.0_spike.csv"]
         for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
@@ -101,6 +100,22 @@ class riscv_instr_cov_test:
             logging.error("{} instruction skipped, {} illegal "
                           "instructions".format(self.skipped_cnt,
                                                 self.unexpected_illegal_instr_cnt))
+        self.get_coverage_report()
+
+    @staticmethod
+    def get_coverage_report():
+        model = vsc.get_coverage_report_model()
+        file = open('CoverageReport.txt', 'w')
+        file.write("Groups Coverage Summary\n")
+        file.write("Total groups in report: {}\n".format(
+            len(model.covergroups)))
+        headers = ["SCORE", "WEIGHT", "NAME"]
+        table = []
+        for cg in model.covergroups:
+            table.append([cg.coverage, cg.weight, cg.name])
+        file.write(tabulate(table, headers, tablefmt="grid",
+                            numalign="center", stralign="center"))
+        file.close()
 
     def post_process_trace(self):
         pass
