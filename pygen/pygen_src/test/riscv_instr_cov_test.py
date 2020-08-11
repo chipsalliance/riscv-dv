@@ -42,6 +42,8 @@ class riscv_instr_cov_test:
                      "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
         # Assuming we get list of csv files pathname from cov.py in argv
+        self.csv_trace = ["/mnt/c/Users/Hodja/OneDrive/Documents" \
+                          "/riscv_arithmetic_basic_test.0_spike.csv"]
         for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
@@ -73,18 +75,19 @@ class riscv_instr_cov_test:
                                                                   entry[idx]))
                             self.post_process_trace()
                             if self.trace["instr"] in ["li", "ret", "la"]:
-                                pass
+                                continue
                             if ("amo" in self.trace["instr"] or
                                     "lr" in self.trace["instr"] or
                                     "sc" in self.trace["instr"]):
                                 # TODO: Enable functional coverage for AMO test
-                                pass
+                                continue
                             if not self.sample():
                                 if not expect_illegal_instr:
                                     logging.error("Found unexpected illegal "
                                                   "instr: {} "
                                                   "[{}]".format(self.trace[
-                                                                    "instr"], entry))
+                                                                    "instr"],
+                                                                entry))
                                     self.unexpected_illegal_instr_cnt += 1
                         self.entry_cnt += 1
                     line_count += 1
@@ -139,7 +142,8 @@ class riscv_instr_cov_test:
         instruction.trace = self.trace["instr_str"]
         if instruction.instr.name in ["NOP", "WFI", "FENCE", "FENCE_I",
                                       "EBREAK", "C_EBREAK", "SFENCE_VMA",
-                                      "ECALL", "C_NOP", "MRET", "SRET", "URET"]:
+                                      "ECALL", "C_NOP", "MRET", "SRET",
+                                      "URET"]:
             return
         operands = self.trace["operand"].split(",")
         instruction.update_src_regs(operands)
@@ -166,12 +170,12 @@ class riscv_instr_cov_test:
             "FMV_S_X": "FMV_W_X",
             "FMV_X_S": "FMV_X_W",
             # Convert pseudoinstructions
-            "FMV_S": "FSGNJ_S",
-            "FABS_S": "FSGNJX_S",
-            "FNEG_S": "FSGNJN_S",
-            "FMV_D": "FSGNJ_D",
-            "FABS_D": "FSGNJX_D",
-            "FNEG_D": "FSGNJN_D",
+            "FMV_S"  : "FSGNJ_S",
+            "FABS_S" : "FSGNJX_S",
+            "FNEG_S" : "FSGNJN_S",
+            "FMV_D"  : "FSGNJ_D",
+            "FABS_D" : "FSGNJX_D",
+            "FNEG_D" : "FSGNJN_D",
         }
         # if instruction is not present in the dictionary,second argument well
         # be assigned as default value of passed argument

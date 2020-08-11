@@ -17,37 +17,37 @@ import os
 import sys
 import vsc
 import logging
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from bitstring import BitArray
 from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen.pygen_src.riscv_instr_pkg import *
 
 
-class operand_sign_e(Enum):
+class operand_sign_e(IntEnum):
     POSITIVE = 0
     NEGATIVE = auto()
 
 
-class div_result_e(Enum):
+class div_result_e(IntEnum):
     DIV_NORMAL = 0
     DIV_BY_ZERO = auto()
     DIV_OVERFLOW = auto()
 
 
-class compare_result_e(Enum):
+class compare_result_e(IntEnum):
     EQUAL = 0
     LARGER = auto()
     SMALLER = auto()
 
 
-class logical_similarity_e(Enum):
+class logical_similarity_e(IntEnum):
     IDENTICAL = 0
     OPPOSITE = auto()
     SIMILAR = auto()
     DIFFERENT = auto()
 
 
-class special_val_e(Enum):
+class special_val_e(IntEnum):
     NORMAL_VAL = 0
     MIN_VAL = auto()
     MAX_VAL = auto()
@@ -94,8 +94,8 @@ class riscv_cov_instr:
         self.imm_sign = None
         self.rd_sign = None
         self.fd_sign = None
-        self.gpr_hazard = None
-        self.lsu_hazard = None
+        self.gpr_hazard = hazard_e.NO_HAZARD
+        self.lsu_hazard = hazard_e.NO_HAZARD
         self.rs1_special_value = None
         self.rs2_special_value = None
         self.rs3_special_value = None

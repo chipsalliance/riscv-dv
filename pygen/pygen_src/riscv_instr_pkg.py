@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
 import logging
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from bitstring import BitArray
 from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
 
@@ -560,7 +560,7 @@ class riscv_instr_name_t(Enum):
     INVALID_INSTR = auto()
 
 
-class riscv_reg_t(Enum):
+class riscv_reg_t(IntEnum):
     ZERO = 0
     RA = auto()
     SP = auto()
@@ -1057,7 +1057,7 @@ class misa_ext_t(Enum):
     MISA_EXT_Z = auto()
 
 
-class hazard_e(Enum):
+class hazard_e(IntEnum):
     NO_HAZARD = 0
     RAW_HAZARD = auto()
     WAR_HAZARD = auto()
@@ -1067,25 +1067,25 @@ class hazard_e(Enum):
 # TODO: ignore bins is not yet supported in pyvsc; extra enums will be removed
 #  once support is added
 # Ignore WAR/WAW_HAZARD for branch instructions
-class branch_hazard_e(Enum):
+class branch_hazard_e(IntEnum):
     NO_HAZARD = 0
     RAW_HAZARD = auto()
 
 # Ignore RAW_HAZARD for store lsu hazard
-class store_lsu_hazard_e(Enum):
+class store_lsu_hazard_e(IntEnum):
     NO_HAZARD = 0
     WAR_HAZARD = auto()
     WAW_HAZARD = auto()
 
 
 # RA/T1 for rs1/rd_link in jalr instruction
-class jalr_riscv_reg_t(Enum):
+class jalr_riscv_reg_t(IntEnum):
     RA = 0
     T1 = auto()
 
 
 # Ignore ZERO as src1 of load instructions
-class riscv_reg_ex_zero_t(Enum):
+class riscv_reg_ex_zero_t(IntEnum):
     RA = 0
     SP = auto()
     GP = auto()
