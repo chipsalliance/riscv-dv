@@ -13,12 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import random
 import logging
 import sys
+import vsc
 from pygen_src.riscv_instr_pkg import riscv_instr_name_t,\
     riscv_instr_category_t, riscv_reg_t
 from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
 
 
+@vsc.randobj
 class riscv_instr_stream:
     '''
      Base class for RISC-V instruction stream
@@ -32,7 +34,7 @@ class riscv_instr_stream:
         self.instr_cnt = 0
         self.label = " "
         # User can specify a small group of available registers to generate various hazard condition
-        self.avail_regs = []
+        self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t))
         # Some additional reserved registers that should not be used as rd register
         # by this instruction stream
         self.reserved_rd = []

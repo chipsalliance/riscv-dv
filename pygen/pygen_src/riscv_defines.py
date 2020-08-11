@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
+import vsc
 from pygen_src.riscv_instr_pkg import imm_t
 from pygen_src.isa.riscv_instr import riscv_instr
 

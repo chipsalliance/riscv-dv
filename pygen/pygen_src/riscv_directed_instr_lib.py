@@ -13,8 +13,8 @@ limitations under the License.
 Regression script for RISC-V random instruction generator
 """
 
-from enum import Enum, auto
 import vsc
+from enum import Enum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
@@ -57,7 +57,6 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
         self.init_val = vsc.rand_list_t(vsc.rand_bit_t(), sz = 10)
         self.init_val_type = vsc.rand_list_t(vsc.enum_t(int_numeric_e), sz =10)
         self.init_instr = []
-
     """
     @vsc.constraint
     def init_val_c(self):
@@ -77,10 +76,12 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
 
     def pre_randomize(self):
         print("pre randomize")
-        self.avail_regs = [None] * self.num_of_avail_regs
+        print("Directed: avail_reg", self.avail_regs)
+        self.avail_regs = [0] * self.num_of_avail_regs
 
     def post_randomize(self):
         print("post_randomize")
+        print("num_of_avail_regs ", self.num_of_avail_regs)
         self.init_instr = [0] * self.num_of_avail_regs
         for i in range(len(self.init_val_type)):
             if self.init_val_type[i] == int_numeric_e.Zero:
@@ -103,4 +104,3 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
             self.instr_list.append(instr)
             print(self.instr_list)
         super().post_randomize()
-

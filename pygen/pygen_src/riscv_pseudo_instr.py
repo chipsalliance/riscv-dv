@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
-
+import vsc
 from pygen_src.isa.riscv_instr import riscv_instr
-from pygen_src.riscv_instr_pkg import (riscv_instr_name_t, riscv_instr_format_t,
-                                       riscv_instr_category_t, riscv_instr_group_t, pkg_ins,
-                                       riscv_pseudo_instr_name_t)
+from pygen_src.riscv_instr_pkg import (riscv_pseudo_instr_name_t, riscv_instr_format_t,
+                                       riscv_instr_category_t, riscv_instr_group_t, pkg_ins)
 from pygen_src.riscv_defines import add_pseudo_instr
 
 
 # Psuedo instructions are used to simplify assembly program writing
+@vsc.randobj
 class riscv_pseudo_instr(riscv_instr):
     def __init__(self):
         super().__init__()
@@ -28,9 +28,9 @@ class riscv_pseudo_instr(riscv_instr):
         self.format = riscv_instr_format_t.I_FORMAT
         self.pseudo_instr_name = vsc.rand_enum_t(riscv_pseudo_instr_name_t)
 
-    add_pseudo_instr(riscv_instr_name_t.LI, riscv_instr_format_t.I_FORMAT,
+    add_pseudo_instr(riscv_pseudo_instr_name_t.LI, riscv_instr_format_t.I_FORMAT,
                      riscv_instr_category_t.LOAD, riscv_instr_group_t.RV32I)
-    add_pseudo_instr(riscv_instr_name_t.LA, riscv_instr_format_t.I_FORMAT,
+    add_pseudo_instr(riscv_pseudo_instr_name_t.LA, riscv_instr_format_t.I_FORMAT,
                      riscv_instr_category_t.LOAD, riscv_instr_group_t.RV32I)
 
     def convert2asm(self, prefix = ""):
