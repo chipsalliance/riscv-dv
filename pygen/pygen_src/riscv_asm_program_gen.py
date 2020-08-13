@@ -86,13 +86,8 @@ class riscv_asm_program_gen:
             self.main_program[hart].instr_cnt = cfg.main_program_instr_cnt
             self.main_program[hart].is_debug_program = 0
             self.main_program[hart].label_name = "main"
-            self.generate_directed_instr_stream(hart = hart,
-                                                label = self.main_program[hart].label_name,
-                                                original_instr_cnt =
-                                                self.main_program[hart].instr_cnt,
-                                                min_insert_cnt = 1,
-                                                instr_stream =
-                                                self.main_program[hart].directed_instr)
+            self.generate_directed_instr_stream(hart = hart,label = self.main_program[hart].label_name, original_instr_cnt =
+                                                self.main_program[hart].instr_cnt,min_insert_cnt = 1, instr_stream = self.main_program[hart].directed_instr)
             self.main_program[hart].gen_instr(is_main_program = 1, no_branch = cfg.no_branch_jump)
 
             self.main_program[hart].post_process_instr()
@@ -616,6 +611,7 @@ class riscv_asm_program_gen:
         new_instr_stream = riscv_rand_instr_stream()
         instr_insert_cnt = 0
         idx = 0
+        # instr_stream = []
         if(cfg.no_directed_instr):
             return
         for instr_stream_name in self.directed_instr_stream_ratio:
@@ -634,18 +630,21 @@ class riscv_asm_program_gen:
                 # TO DO
                 # if(type(new_instr_stream) == type(object_h)):
                 new_instr_stream = copy.deepcopy(object_h)
+                print(new_instr_stream)
+                print("ASM gen_directed", new_instr_stream.avail_regs)
                 if(new_instr_stream):
                     # new_instr_stream.cfg = cfg
                     new_instr_stream.hart = hart
                     new_instr_stream.label = "{}_{}".format(label, idx)
                     new_instr_stream.kernel_mode = kernel_mode
                     new_instr_stream.randomize()
-                    self.instr_stream.append(type(new_instr_stream).__name__)
+                    instr_stream.append(new_instr_stream)
                     print(type(new_instr_stream).__name__)
                 else:
                     logging.critical("Cannot cast instr stream %0s", name)
                 idx += 1
-            # random.shuffle(self.instr_stream)
+        random.shuffle(instr_stream)
+        # return instr_stream
 
     def gen_debug_rom(self, hart):
         pass

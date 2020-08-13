@@ -37,10 +37,11 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_
     g[class_name] = NewClass
 
 
-def add_pseudo_instr(instr_n, instr_format, instr_category, instr_group):
-    @vsc.constraint
-    def instr_c(self):
+'''
+@vsc.constraint
+def add_pseudo_instr(self, instr_n, instr_format, instr_category, instr_group):
         with vsc.if_then(self.pseudo_instr_name == instr_n):
             self.format == instr_format.name
             self.category == instr_category.name
             self.group == instr_group.name
+'''

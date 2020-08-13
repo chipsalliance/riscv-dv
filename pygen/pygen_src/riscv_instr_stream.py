@@ -39,6 +39,7 @@ class riscv_instr_stream:
         # by this instruction stream
         self.reserved_rd = []
         self.hart = 0
+        print("In riscv_Stream",self.avail_regs)
 
     def initialize_instr_list(self, instr_cnt):
         self.instr_list.clear()

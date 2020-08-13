@@ -165,6 +165,8 @@ class riscv_instr:
     def get_rand_instr(self, include_instr=[], exclude_instr=[],
                        include_category=[], exclude_category=[],
                        include_group=[], exclude_group=[]):
+        import pdb
+        # pdb.set_trace()
         idx = BitArray(uint = 0, length = 32)
         name = ""
         allowed_instr = []
@@ -183,36 +185,45 @@ class riscv_instr:
             if(items in self.instr_group):
                 disallowed_instr.append(self.instr_group[items])
 
-        disallowed_instr.extend(exclude_instr)
+        disallowed_instr.append(exclude_instr)
 
         # TODO Randomization logic needs to be frame with PyVSC library
         if(len(disallowed_instr) == 0):
             try:
                 if(len(include_instr) > 0):
-                    idx = random.randrange(0, len(include_instr) - 1)
+                    idx = random.randrange(0, len(include_instr))
                     name = include_instr[idx]
+                    print("L 196", name)
                 elif(len(allowed_instr) > 0):
-                    idx = random.randrange(0, len(allowed_instr) - 1)
+                    idx = random.randrange(0, len(allowed_instr))
                     name = allowed_instr[idx]
+                    print("L 200", name)
                 else:
-                    idx = random.randrange(0, len(self.instr_names) - 1)
+                    idx = random.randrange(0, len(self.instr_names))
                     name = self.instr_names[idx]
+                    print("L 204", name)
             except Exception:
                 logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
         else:
             try:
                 name = random.choice(self.instr_names)
+                print("L 212", name)
+                '''
                 if(len(include_instr) > 0):
                     name = random.choice(include_instr)
+                    print("L 214", name)
                 if(len(allowed_instr) > 0):
                     name = random.choice(allowed_instr)
+                    print("L 217", name) '''
             except Exception:
                 logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
+
+        print("L 224", name)
         instr_h = copy.deepcopy(self.instr_template[name])
         return instr_h
 

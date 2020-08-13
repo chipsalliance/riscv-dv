@@ -117,7 +117,7 @@ class riscv_instr_sequence:
             self.branch_idx[i] = random.randint(1, cfg.max_branch_step)
 
         while(j < len(self.instr_stream.instr_list)):
-            if((self.instr_stream.instr_list[j].category.name == "BRANCH") and
+            if((self.instr_stream.instr_list[j].category == "BRANCH") and
                     (not self.instr_stream.instr_list[j].branch_assigned) and
                     (not self.instr_stream.instr_list[j].is_illegal_instr)):
                 '''

@@ -30,7 +30,7 @@ class riscv_directed_instr_stream(riscv_rand_instr_stream):
         self.label = ""
 
     def post_randomize(self):
-        for i in self.instr_list:
+        for i in range(len(self.instr_list)):
             self.instr_list[i].has_label = 0
             self.instr_list[i].atomic = 1
         self.instr_list[0].comment = "Start %0s" % (self.__class__.__name__)
@@ -76,13 +76,17 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
 
     def pre_randomize(self):
         print("pre randomize")
+        # self.avail_regs = [None] * self.num_of_avail_regs
         print("Directed: avail_reg", self.avail_regs)
-        self.avail_regs = [0] * self.num_of_avail_regs
+
 
     def post_randomize(self):
+        import pdb
         print("post_randomize")
         print("num_of_avail_regs ", self.num_of_avail_regs)
-        self.init_instr = [0] * self.num_of_avail_regs
+        
+        self.init_instr = [None] * self.num_of_avail_regs
+        print("init_val_type len", len(self.init_val_type))
         for i in range(len(self.init_val_type)):
             if self.init_val_type[i] == int_numeric_e.Zero:
                 self.init_val[i] = 0
@@ -92,15 +96,24 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
                 self.init_val[i] = 1 << (rcs.XLEN - 1)
             print(self.init_instr)
             self.init_instr[i] = riscv_pseudo_instr()
-            self.init_instr[i].rd = self.avail_regs[i]
-            self.init_instr[i].pseudo_instr_name = 'LI'
-            self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
+            print("init_instr", self.init_instr)
+            print("POST", self.avail_regs)
+            print("Inside for",self.avail_regs)
+            print("I value", i)
+            # self.init_instr[i].rd = self.avail_regs[i+1]
+            print("RD",self.init_instr[i].rd)
+            # self.init_instr[i].rd = "RA"
+            # self.init_instr[i].pseudo_instr_name = 'LI'
+            # self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
             self.instr_list.append(self.init_instr[i])
+        print("num_of_instr",self.num_of_instr)
         for i in range(self.num_of_instr):
             instr = riscv_instr_ins.get_rand_instr(
                 include_category = ['ARITHMETIC'],
                 exclude_group = ['RV32C', 'RV64C', 'RV32F', 'RV64F', 'RV32D', 'RV64D'])
+            print("Instr", instr)
             instr = super().randomize_gpr(instr)
+            
             self.instr_list.append(instr)
-            print(self.instr_list)
+            print("instr_list",self.instr_list)
         super().post_randomize()
