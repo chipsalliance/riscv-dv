@@ -97,7 +97,7 @@ class riscv_pmp_cfg extends uvm_object;
       // Offset of pmp_cfg[0] does not matter, since it will be set to <main>,
       // so we do not constrain it here, as it will be overridden during generation
       if (i != 0) {
-        pmp_cfg[i].offset inside {[1 : pmp_max_offset + 1]};
+        pmp_cfg[i].offset inside {[1 : pmp_max_offset]};
       } else {
         pmp_cfg[i].offset == 0;
       }
