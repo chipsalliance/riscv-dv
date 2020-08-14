@@ -32,14 +32,13 @@ class riscv_instr_stream:
     def __init__(self):
         self.instr_list = []
         self.instr_cnt = 0
-        self.label = " "
+        self.label = ""
         # User can specify a small group of available registers to generate various hazard condition
         self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t))
         # Some additional reserved registers that should not be used as rd register
         # by this instruction stream
         self.reserved_rd = []
         self.hart = 0
-        print("In riscv_Stream",self.avail_regs)
 
     def initialize_instr_list(self, instr_cnt):
         self.instr_list.clear()
@@ -142,6 +141,7 @@ class riscv_instr_stream:
             self.insert_instr(new_instr[i], insert_instr_position[i] + i)
 
     def convert2string(self):
+        print("convert2asm")
         s = ""
         for i in range(len(self.instr_list)):
             s = s + self.instr_list[i].convert2asm() + "\n"

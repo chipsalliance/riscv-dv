@@ -81,13 +81,14 @@ class riscv_asm_program_gen:
 
             # Generate main program
             gt_lbl_str = pkg_ins.get_label("main", hart)
+            label_name = gt_lbl_str
             gt_lbl_str = riscv_instr_sequence()
             self.main_program.append(gt_lbl_str)
             self.main_program[hart].instr_cnt = cfg.main_program_instr_cnt
             self.main_program[hart].is_debug_program = 0
-            self.main_program[hart].label_name = "main"
-            self.generate_directed_instr_stream(hart = hart,label = self.main_program[hart].label_name, original_instr_cnt =
-                                                self.main_program[hart].instr_cnt,min_insert_cnt = 1, instr_stream = self.main_program[hart].directed_instr)
+            self.main_program[hart].label_name = label_name
+            self.generate_directed_instr_stream(hart = hart, label = self.main_program[hart].label_name, original_instr_cnt =
+                                                self.main_program[hart].instr_cnt, min_insert_cnt = 1, instr_stream = self.main_program[hart].directed_instr)
             self.main_program[hart].gen_instr(is_main_program = 1, no_branch = cfg.no_branch_jump)
 
             self.main_program[hart].post_process_instr()
@@ -595,7 +596,6 @@ class riscv_asm_program_gen:
             if(arg in args):
                 val = args_dict[arg]
                 opts = val.split(",")
-                print(opts)
                 if(len(opts) != 2):
                     logging.critical(
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
@@ -606,12 +606,11 @@ class riscv_asm_program_gen:
                 stream_freq = args_dict[stream_freq_opts]
                 self.add_directed_instr_stream(stream_name, stream_freq)
 
-    def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = None,
+    def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = 0,
                                        min_insert_cnt = 0, kernel_mode = 0, instr_stream = []):
         new_instr_stream = riscv_rand_instr_stream()
         instr_insert_cnt = 0
         idx = 0
-        # instr_stream = []
         if(cfg.no_directed_instr):
             return
         for instr_stream_name in self.directed_instr_stream_ratio:
@@ -622,29 +621,22 @@ class riscv_asm_program_gen:
             logging.info("Insert directed instr stream %0s %0d/%0d times",
                          instr_stream_name, instr_insert_cnt, original_instr_cnt)
             for i in range(instr_insert_cnt):
-                name = "{}_{}".format(instr_insert_cnt, i)
+                name = "{}_{}".format(instr_stream_name, i)
                 object_h = factory(instr_stream_name)
-                # print(object_h)
+                object_h.name = name
                 if(object_h is None):
                     logging.critical("Cannot create instr stream %0s", name)
-                # TO DO
-                # if(type(new_instr_stream) == type(object_h)):
-                new_instr_stream = copy.deepcopy(object_h)
-                print(new_instr_stream)
-                print("ASM gen_directed", new_instr_stream.avail_regs)
-                if(new_instr_stream):
-                    # new_instr_stream.cfg = cfg
+                new_instr_stream = copy.copy(object_h)
+                if(new_instr_stream != None):
                     new_instr_stream.hart = hart
                     new_instr_stream.label = "{}_{}".format(label, idx)
                     new_instr_stream.kernel_mode = kernel_mode
                     new_instr_stream.randomize()
                     instr_stream.append(new_instr_stream)
-                    print(type(new_instr_stream).__name__)
                 else:
-                    logging.critical("Cannot cast instr stream %0s", name)
+                    logging.critical("Cannot Create instr stream %0s", name)
                 idx += 1
         random.shuffle(instr_stream)
-        # return instr_stream
 
     def gen_debug_rom(self, hart):
         pass

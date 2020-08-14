@@ -16,8 +16,6 @@ from pygen_src.riscv_directed_instr_lib import (riscv_directed_instr_stream,
 
 
 def factory(obj_of):
-    # print("Factory getting called")
-    # objs = {}
     objs = {
         "riscv_directed_instr_stream": riscv_directed_instr_stream,
         "riscv_int_numeric_corner_stream": riscv_int_numeric_corner_stream

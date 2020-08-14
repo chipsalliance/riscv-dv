@@ -29,6 +29,7 @@ class riscv_pseudo_instr(riscv_instr):
         self.pseudo_instr_name = vsc.rand_enum_t(riscv_pseudo_instr_name_t)
 
     '''
+    TODO
     add_pseudo_instr(self, riscv_pseudo_instr_name_t.LI, riscv_instr_format_t.I_FORMAT,
                      riscv_instr_category_t.LOAD, riscv_instr_group_t.RV32I)
     add_pseudo_instr(self, riscv_pseudo_instr_name_t.LA, riscv_instr_format_t.I_FORMAT,
@@ -36,11 +37,10 @@ class riscv_pseudo_instr(riscv_instr):
     '''
 
     def convert2asm(self, prefix = ""):
-        print("Convert2asm")
         asm_str = pkg_ins.format_string(self.get_instr_name(), pkg_ins.MAX_INSTR_STR_LEN)
-        asm_str = "{}{} {}".format(asm_str, self.rd.name, self.get_imm())
+        asm_str = "{}{}, {}".format(asm_str, self.rd.name, self.get_imm())
 
-        if(self.comment != ""):
+        if(self.comment is not ""):
             asm_str = "{} #{}".format(asm_str, self.comment)
         return asm_str.lower()
 
