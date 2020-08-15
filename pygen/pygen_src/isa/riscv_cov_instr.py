@@ -61,8 +61,8 @@ class riscv_cov_instr:
     gpr_state = {}
 
     def __init__(self):
-        self.pc = vsc.bit_t(
-            rcs.XLEN)  # Program counter (PC) of the instruction
+        # Program counter (PC) of the instruction
+        self.pc = vsc.bit_t(rcs.XLEN)
         self.instr = None
         # self.gpr = None  # destination operand of the instruction
         self.binary = vsc.bit_t(32)  # Instruction binary
