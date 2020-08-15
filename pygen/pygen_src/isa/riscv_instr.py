@@ -27,6 +27,7 @@ logging.basicConfig(filename = os.path.abspath('../test/out/logname.log'), filem
                     format = "%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
                     level = logging.DEBUG)
 
+
 @vsc.randobj
 class riscv_instr:
     instr_registry = {}
@@ -211,7 +212,6 @@ class riscv_instr:
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
-        # print("Name", name)
         instr_h = copy.deepcopy(self.instr_template[name])
         return instr_h
 

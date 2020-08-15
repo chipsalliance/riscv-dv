@@ -36,7 +36,6 @@ class riscv_asm_program_gen:
 
     def __init__(self):
         self.instr_stream = []
-        self.directed_instr = []
         self.directed_instr_stream_ratio = {}
         self.hart = 0
         self.page_table_list = []
@@ -87,9 +86,12 @@ class riscv_asm_program_gen:
             self.main_program[hart].instr_cnt = cfg.main_program_instr_cnt
             self.main_program[hart].is_debug_program = 0
             self.main_program[hart].label_name = label_name
-            self.generate_directed_instr_stream(hart = hart, label = self.main_program[hart].label_name, original_instr_cnt =
-                                                self.main_program[hart].instr_cnt, min_insert_cnt = 1, instr_stream = self.main_program[hart].directed_instr)
-            self.main_program[hart].gen_instr(is_main_program = 1, no_branch = cfg.no_branch_jump)
+            self.generate_directed_instr_stream(hart=hart,
+                                                label=self.main_program[hart].label_name,
+                                                original_instr_cnt=self.main_program[hart].instr_cnt,
+                                                min_insert_cnt=1,
+                                                instr_stream=self.main_program[hart].directed_instr)
+            self.main_program[hart].gen_instr(is_main_program=1, no_branch=cfg.no_branch_jump)
 
             self.main_program[hart].post_process_instr()
             self.main_program[hart].generate_instr_stream()
@@ -627,7 +629,7 @@ class riscv_asm_program_gen:
                 if(object_h is None):
                     logging.critical("Cannot create instr stream %0s", name)
                 new_instr_stream = copy.copy(object_h)
-                if(new_instr_stream != None):
+                if(new_instr_stream):
                     new_instr_stream.hart = hart
                     new_instr_stream.label = "{}_{}".format(label, idx)
                     new_instr_stream.kernel_mode = kernel_mode

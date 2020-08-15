@@ -40,7 +40,7 @@ class riscv_pseudo_instr(riscv_instr):
         asm_str = pkg_ins.format_string(self.get_instr_name(), pkg_ins.MAX_INSTR_STR_LEN)
         asm_str = "{}{}, {}".format(asm_str, self.rd.name, self.get_imm())
 
-        if(self.comment is not ""):
+        if(self.comment != ""):
             asm_str = "{} #{}".format(asm_str, self.comment)
         return asm_str.lower()
 
