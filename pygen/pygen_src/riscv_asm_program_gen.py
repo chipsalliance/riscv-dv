@@ -610,7 +610,6 @@ class riscv_asm_program_gen:
 
     def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = 0,
                                        min_insert_cnt = 0, kernel_mode = 0, instr_stream = []):
-        new_instr_stream = riscv_rand_instr_stream()
         instr_insert_cnt = 0
         idx = 0
         if(cfg.no_directed_instr):

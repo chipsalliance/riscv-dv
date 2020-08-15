@@ -11,6 +11,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
+import sys
+import logging
 from pygen_src.riscv_directed_instr_lib import (riscv_directed_instr_stream,
                                                 riscv_int_numeric_corner_stream)
 
@@ -20,4 +22,9 @@ def factory(obj_of):
         "riscv_directed_instr_stream": riscv_directed_instr_stream,
         "riscv_int_numeric_corner_stream": riscv_int_numeric_corner_stream
     }
-    return objs[obj_of]()
+
+    try:
+        return objs[obj_of]()
+    except KeyError:
+        logging.critical("Cannot Create object of %s", obj_of)
+        sys.exit(1)

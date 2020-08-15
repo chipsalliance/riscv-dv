@@ -141,7 +141,6 @@ class riscv_instr_stream:
             self.insert_instr(new_instr[i], insert_instr_position[i] + i)
 
     def convert2string(self):
-        print("convert2asm")
         s = ""
         for i in range(len(self.instr_list)):
             s = s + self.instr_list[i].convert2asm() + "\n"

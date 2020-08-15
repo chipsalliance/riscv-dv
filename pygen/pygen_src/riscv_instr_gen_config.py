@@ -165,9 +165,6 @@ class riscv_instr_gen_config:
         self.enable_floating_point = argv.enable_floating_point
         self.enable_vector_extension = argv.enable_vector_extension
         self.enable_b_extension = argv.enable_b_extension
-        # Commenting out for now
-        # self.enable_bitmanip_groups = ['ZBB', 'ZBS', 'ZBP', 'ZBE', 'ZBF',
-        # 'ZBC', 'ZBR', 'ZBM', 'ZBT', 'ZB_TMP']
         self.enable_bitmanip_groups = argv.enable_bitmanip_groups
         self.dist_control_mode = 0
         self.category_dist = {}
