@@ -34,7 +34,7 @@ class riscv_instr_stream:
         self.instr_cnt = 0
         self.label = ""
         # User can specify a small group of available registers to generate various hazard condition
-        self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t))
+        self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t),10)
         # Some additional reserved registers that should not be used as rd register
         # by this instruction stream
         self.reserved_rd = []

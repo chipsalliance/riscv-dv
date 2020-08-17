@@ -56,23 +56,24 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
         self.init_val_type = vsc.rand_list_t(vsc.enum_t(int_numeric_e), sz =10)
         self.init_instr = []
 
-    """
-    TODO
+
+    #TODO
+    
     @vsc.constraint
     def init_val_c(self):
-        TO DO
-        solve init_val_type before init_val;
+        #TO DO
+        #solve init_val_type before init_val;
         self.init_val_type.size in vsc.rangelist(self.num_of_avail_regs)
         self.init_val.size in vsc.rangelist(self.num_of_avail_regs)
         self.num_of_instr in vsc.rangelist(vsc.rng(15, 30))
+    
     @vsc.constraint
     def avail_regs_c(self):
-        #self.dummy = self.avail_regs
         vsc.unique(self.avail_regs)
         with vsc.foreach(self.avail_regs, idx = True) as i:
             self.avail_regs[i].not_inside(cfg.reserved_regs)
             self.avail_regs[i] != 0
-    """
+    
 
     def pre_randomize(self):
         # self.avail_regs = [None] * self.num_of_avail_regs
@@ -90,8 +91,8 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
             self.init_instr[i] = riscv_pseudo_instr()
             # TODO Issue with PyVSC.
             # TO be fix after getting support from Pyvsc
-            # self.init_instr[i].rd = self.avail_regs[i]
-            # self.init_instr[i].pseudo_instr_name = 'LI'
+            self.init_instr[i].rd = self.avail_regs[i]
+            #self.init_instr[i].pseudo_instr_name = 'LI'
             self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
             self.instr_list.append(self.init_instr[i])
         for i in range(self.num_of_instr):
