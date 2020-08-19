@@ -16,6 +16,7 @@ import subprocess
 import logging
 import random
 import copy
+import sys
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
@@ -627,6 +628,7 @@ class riscv_asm_program_gen:
                 object_h.name = name
                 if(object_h is None):
                     logging.critical("Cannot create instr stream %0s", name)
+                    sys.exit(1)
                 new_instr_stream = copy.copy(object_h)
                 if(new_instr_stream):
                     new_instr_stream.hart = hart
@@ -636,6 +638,7 @@ class riscv_asm_program_gen:
                     instr_stream.append(new_instr_stream)
                 else:
                     logging.critical("Cannot Create instr stream %0s", name)
+                    sys.exit(1)
                 idx += 1
         random.shuffle(instr_stream)
 

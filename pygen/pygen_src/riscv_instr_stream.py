@@ -113,7 +113,7 @@ class riscv_instr_stream:
             if idx == 0:
                 self.instr_list = new_instr + self.instr_list[idx:current_instr_cnt - 1]
             else:
-                self.instr_list = self.instr_list[0:idx - 1] + new_instr + \
+                self.instr_list = self.instr_list[0:idx] + new_instr + \
                     self.instr_list[idx:current_instr_cnt - 1]
 
     def mix_instr_stream(self, new_instr, contained = 0):
