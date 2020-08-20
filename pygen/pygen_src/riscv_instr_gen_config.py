@@ -264,6 +264,7 @@ class riscv_instr_gen_config:
         pass
 
     def post_randomize(self):
+        self.reserved_regs = []
         # Temporary fix for gpr_c constraint.
         self.gpr.extend((self.gpr0, self.gpr1, self.gpr2, self.gpr3))
 
