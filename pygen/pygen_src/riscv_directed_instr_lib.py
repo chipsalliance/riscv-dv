@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
 import vsc
+import random
 from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
-from pygen_src.isa.riscv_instr import riscv_instr_ins
+from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t
 from pygen_src.target.rv32i import riscv_core_setting as rcs
@@ -37,6 +38,70 @@ class riscv_directed_instr_stream(riscv_rand_instr_stream):
         if self.label != "":
             self.instr_list[0].label = self.label
             self.instr_list[0].has_label = 1
+
+
+@vsc.randobj
+class riscv_jal_instr(riscv_rand_instr_stream):
+    def __init__(self):
+        super().__init__()
+        self.name = ""
+        self.jump = []
+        self.jump_start = riscv_instr()
+        self.jump_end = riscv_instr()
+        self.num_of_jump_instr = vsc.rand_int_t()
+        self.jal = []
+    
+    @vsc.constraint
+    def instr_c(self):
+        self.num_of_jump_instr in vsc.rangelist(vsc.rng(10,30))
+    
+    def post_randomize(self):
+        order = []
+        order = [0] * self.num_of_jump_instr
+        self.jump = [0] * self.num_of_jump_instr
+        for i in range(len(order)):
+            order[i] = i
+        random.shuffle(order)
+        self.setup_allowed_instr(1, 1)
+        self.jal = ['JAL']
+        if(not cfg.disable_compressed_instr):
+            self.jal.append('C_J')
+            if(rcs.XLEN == 32):
+                self.jal.append('C_JAL')
+        # First instruction
+        #jump_start = riscv_instr::get_instr(JAL);
+        #`DV_CHECK_RANDOMIZE_WITH_FATAL(jump_start, rd == cfg.ra;)
+        self.jump_start = riscv_instr_ins.get_instr('JAL')
+        self.jump_start.randomize()
+        self.jump_start.imm_str = "{}f".format(order[0])
+        self.jump_start.label = self.label
+        # Last instruction
+        self.randomize_instr(self.jump_end)
+        self.jump_end.label = "{}".format(self.num_of_jump_instr)
+        for i in range(len(self.jump)):
+            self.jump[i] = riscv_instr_ins.get_rand_instr(include_category = ['jal'])
+            self.jump[i].randomize()
+            #`DV_CHECK_RANDOMIZE_WITH_FATAL(jump[i],
+            #if (has_rd) {
+            #    rd dist {RA := 5, T1 := 2, [SP:T0] :/ 1, [T2:T6] :/ 2};
+            #    !(rd inside {cfg.reserved_regs});
+            #}
+            #)
+        self.jump[i].label = "{}".format(i)
+        for i in range(len(order)):
+            if(i == self.num_of_jump_instr - 1):
+                self.jump[order[i]].imm_str = "{}f".format(self.num_of_jump_instr)
+            else:
+                if(order[i+1] > order[i]):
+                    self.jump[order[i]].imm_str = "{}f".format(order[i+1])
+                else:
+                    self.jump[order[i]].imm_str = "{}b".format(order[i+1])
+        self.instr_list.append(self.jump_start)
+        self.instr_list.extend(self.jump)
+        self.instr_list.append(self.jump_end)
+        for i in range(len(self.instr_list)):
+            self.instr_list[i].has_label = 1
+            self.instr_list[i].atomic = 1
 
 
 class int_numeric_e(IntEnum):
