@@ -106,16 +106,16 @@ class riscv_instr_stream:
             new_instr[0].label = self.instr_list[idx].label
             new_instr[0].has_label = self.instr_list[idx].has_label
             if idx == 0:
-                self.instr_list = new_instr + self.instr_list[idx + 1:current_instr_cnt - 1]
-            else:
-                self.instr_list = self.instr_list[0:idx - 1] + new_instr + \
-                    self.instr_list[idx + 1:current_instr_cnt - 1]
-        else:
-            if idx == 0:
-                self.instr_list = new_instr + self.instr_list[idx:current_instr_cnt - 1]
+                self.instr_list = new_instr + self.instr_list[idx + 1:current_instr_cnt]
             else:
                 self.instr_list = self.instr_list[0:idx] + new_instr + \
-                    self.instr_list[idx:current_instr_cnt - 1]
+                    self.instr_list[idx + 1:current_instr_cnt]
+        else:
+            if idx == 0:
+                self.instr_list = new_instr + self.instr_list[idx:current_instr_cnt]
+            else:
+                self.instr_list = self.instr_list[0:idx] + new_instr + \
+                    self.instr_list[idx:current_instr_cnt]
 
     def mix_instr_stream(self, new_instr, contained = 0):
         """
