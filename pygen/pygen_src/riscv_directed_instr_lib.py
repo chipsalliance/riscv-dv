@@ -17,7 +17,7 @@ from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t
+from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t, riscv_instr_name_t
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 
@@ -63,11 +63,11 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             order[i] = i
         random.shuffle(order)
         self.setup_allowed_instr(1, 1)
-        self.jal = ['JAL']
+        self.jal = [riscv_instr_name_t.JAL]
         if(not cfg.disable_compressed_instr):
-            self.jal.append('C_J')
+            self.jal.append(riscv_instr_name_t.C_J)
             if(rcs.XLEN == 32):
-                self.jal.append('C_JAL')
+                self.jal.append(riscv_instr_name_t.C_JAL)
         # First instruction
         #jump_start = riscv_instr::get_instr(JAL);
         #`DV_CHECK_RANDOMIZE_WITH_FATAL(jump_start, rd == cfg.ra;)
@@ -76,8 +76,9 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         self.jump_start.imm_str = "{}f".format(order[0])
         self.jump_start.label = self.label
         # Last instruction
-        self.randomize_instr(self.jump_end)
+        self.jump_end = self.randomize_instr(self.jump_end)
         self.jump_end.label = "{}".format(self.num_of_jump_instr)
+        
         for i in range(len(self.jump)):
             self.jump[i] = riscv_instr_ins.get_rand_instr(include_category = ['jal'])
             self.jump[i].randomize()
@@ -87,7 +88,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             #    !(rd inside {cfg.reserved_regs});
             #}
             #)
-        self.jump[i].label = "{}".format(i)
+            self.jump[i].label = "{}".format(i)
         for i in range(len(order)):
             if(i == self.num_of_jump_instr - 1):
                 self.jump[order[i]].imm_str = "{}f".format(self.num_of_jump_instr)
