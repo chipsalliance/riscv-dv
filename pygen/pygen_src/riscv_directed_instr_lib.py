@@ -53,16 +53,10 @@ class riscv_jal_instr(riscv_rand_instr_stream):
     @vsc.constraint
     def instr_c(self):
         self.num_of_jump_instr in vsc.rangelist(vsc.rng(10,30))
-    '''
-    @vsc.constraint
-    def jump_rd_c(self):
-        if(riscv_instr_ins.has_rd):
-                    vsc.dist(riscv_instr_ins.rd, [ vsc.weight(riscv_reg_t.RA,5), vsc.weight(vsc.rng(riscv_reg_t.SP,riscv_reg_t.T0),1), vsc.weight(vsc.rng(riscv_reg_t.T2,riscv_reg_t.T6),2)])
-    '''
-
-
+ 
     def post_randomize(self):
         order = []
+        RA = cfg.ra
         order = [0] * self.num_of_jump_instr
         self.jump = [0] * self.num_of_jump_instr
         for i in range(len(order)):
@@ -74,12 +68,12 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             jal.append(riscv_instr_name_t.C_J)
             if(rcs.XLEN == 32):
                 jal.append(riscv_instr_name_t.C_JAL)
-        #TODO
-        #with self.jump_start.randomize_with() as it:
-        #    self.jump_start.rd == cfg.ra
         self.jump_start = riscv_instr_ins.get_instr(riscv_instr_name_t.JAL.name)
+        with self.jump_start.randomize_with() as it:
+            self.jump_start.rd == RA
         self.jump_start.imm_str = "{}f".format(order[0])
         self.jump_start.label = self.label
+
         # Last instruction
         self.jump_end = self.randomize_instr(self.jump_end)
         self.jump_end.label = "{}".format(self.num_of_jump_instr)
@@ -90,6 +84,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
                     vsc.dist(self.jump[i].rd, [ vsc.weight(riscv_reg_t.RA,5), vsc.weight(vsc.rng(riscv_reg_t.SP,riscv_reg_t.T0),1), vsc.weight(vsc.rng(riscv_reg_t.T2,riscv_reg_t.T6),2)])
                     self.jump[i].rd.not_inside(cfg.reserved_regs)
             self.jump[i].label = "{}".format(i)
+
             
         for i in range(len(order)):
             if(i == self.num_of_jump_instr - 1):
