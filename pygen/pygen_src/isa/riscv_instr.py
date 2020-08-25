@@ -215,7 +215,7 @@ class riscv_instr:
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
-        instr_h = copy.deepcopy(self.instr_template[name])
+        instr_h = copy.copy(self.instr_template[name])
         return instr_h
 
     def get_load_store_instr(self, load_store_instr):
@@ -225,7 +225,7 @@ class riscv_instr:
                 self.instr_category["STORE"]
         self.idx = random.randrange(0, len(load_store_instr) - 1)
         name = load_store_instr[self.idx]
-        instr_h = copy(self.instr_template[name])
+        instr_h = copy.copy(self.instr_template[name])
         return instr_h
 
     def get_instr(self, name):

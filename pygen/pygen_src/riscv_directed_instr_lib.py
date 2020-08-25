@@ -24,10 +24,11 @@ from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 
 class riscv_directed_instr_stream(riscv_rand_instr_stream):
 
+    label = ""
+
     def __init__(self):
         super().__init__()
         self.name = ""
-        self.label = ""
 
     def post_randomize(self):
         for i in range(len(self.instr_list)):
@@ -35,8 +36,8 @@ class riscv_directed_instr_stream(riscv_rand_instr_stream):
             self.instr_list[i].atomic = 1
         self.instr_list[0].comment = "Start %0s" % (self.name)
         self.instr_list[-1].comment = "End %0s" % (self.name)
-        if self.label != "":
-            self.instr_list[0].label = self.label
+        if riscv_directed_instr_stream.label != "":
+            self.instr_list[0].label = riscv_directed_instr_stream.label
             self.instr_list[0].has_label = 1
 
 
