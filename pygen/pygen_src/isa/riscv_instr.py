@@ -188,7 +188,10 @@ class riscv_instr:
         if(len(disallowed_instr) == 0):
             try:
                 if(len(include_instr) > 0):
-                    idx = random.randrange(0, len(include_instr) - 1)
+                    if(len(include_instr)==1):
+                        idx=0
+                    else:
+                        idx = random.randrange(0, len(include_instr) - 1)
                     name = include_instr[idx]
                 elif(len(allowed_instr) > 0):
                     idx = random.randrange(0, len(allowed_instr) - 1)
