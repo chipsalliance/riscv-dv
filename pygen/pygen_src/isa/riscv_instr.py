@@ -215,7 +215,7 @@ class riscv_instr:
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
-        instr_h = copy.copy(self.instr_template[name])
+        instr_h = copy.deepcopy(self.instr_template[name])
         return instr_h
 
     def get_load_store_instr(self, load_store_instr):
