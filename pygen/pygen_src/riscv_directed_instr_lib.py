@@ -11,8 +11,8 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
-import vsc
 import random
+import vsc
 from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
@@ -50,11 +50,11 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         self.jump_start = riscv_instr()
         self.jump_end = riscv_instr()
         self.num_of_jump_instr = vsc.rand_int_t()
-    
+
     @vsc.constraint
     def instr_c(self):
-        self.num_of_jump_instr in vsc.rangelist(vsc.rng(10,30))
- 
+        self.num_of_jump_instr in vsc.rangelist(vsc.rng(10, 30))
+
     def post_randomize(self):
         order = []
         RA = cfg.ra
@@ -82,16 +82,17 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             self.jump[i] = riscv_instr_ins.get_rand_instr(include_instr = [jal[0].name])
             with self.jump[i].randomize_with() as it:
                 if(self.jump[i].has_rd):
-                    vsc.dist(self.jump[i].rd, [ vsc.weight(riscv_reg_t.RA,5), vsc.weight(vsc.rng(riscv_reg_t.SP,riscv_reg_t.T0),1), vsc.weight(vsc.rng(riscv_reg_t.T2,riscv_reg_t.T6),2)])
+                    vsc.dist(self.jump[i].rd, [vsc.weight(riscv_reg_t.RA, 5), vsc.weight(
+                        vsc.rng(riscv_reg_t.SP, riscv_reg_t.T0), 1),
+                        vsc.weight(vsc.rng(riscv_reg_t.T2, riscv_reg_t.T6), 2)])
                     self.jump[i].rd.not_inside(cfg.reserved_regs)
             self.jump[i].label = "{}".format(i)
 
-            
         for i in range(len(order)):
             if(i == self.num_of_jump_instr - 1):
                 self.jump[order[i]].imm_str = "{}f".format(self.num_of_jump_instr)
             else:
-                if(order[i+1] > order[i]):
+                if(order[i + 1] > order[i]):
                     self.jump[order[i]].imm_str = "{}f".format(order[i+1])
                 else:
                     self.jump[order[i]].imm_str = "{}b".format(order[i+1])
