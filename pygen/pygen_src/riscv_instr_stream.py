@@ -215,9 +215,15 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             exclude_instr.append(riscv_instr_name_t.C_ADDI16SP.name)
             exclude_instr.append(riscv_instr_name_t.C_LWSP.name)
             exclude_instr.append(riscv_instr_name_t.C_LDSP.name)
-        if is_in_debug and (not cfg.enable_ebreak_in_debug_rom):
-            exclude_instr.append(riscv_instr_name_t.EBREAK.name)
-            exclude_instr.append(riscv_instr_name_t.C_EBREAK.name)
+        # Post-process the allowed_instr and exclude_instr lists to handle
+        # adding ebreak instructions into the debug ROM.
+        if is_in_debug:
+            if (cfg.no_ebreak and cfg.enable_ebreak_in_debug_rom):
+                allowed_instr.extend([riscv_instr_name_t.EBREAK.name,
+                                      riscv_instr_name_t.C_EBREAK.name])
+            elif (not cfg.no_ebreak and not cfg.enable_ebreak_in_debug_rom):
+                exclude_instr.extend([riscv_instr_name_t.EBREAK.name,
+                                      riscv_instr_name_t.C_EBREAK.name])
         instr = riscv_instr_ins.get_rand_instr(
             include_instr = self.allowed_instr, exclude_instr = exclude_instr)
         instr = self.randomize_gpr(instr)
