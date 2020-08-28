@@ -65,9 +65,9 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         random.shuffle(order)
         self.setup_allowed_instr(1, 1)
         jal = [riscv_instr_name_t.JAL]
-        if(not cfg.disable_compressed_instr):
+        if not cfg.disable_compressed_instr:
             jal.append(riscv_instr_name_t.C_J)
-            if(rcs.XLEN == 32):
+            if rcs.XLEN == 32:
                 jal.append(riscv_instr_name_t.C_JAL)
         self.jump_start = riscv_instr_ins.get_instr(riscv_instr_name_t.JAL.name)
         with self.jump_start.randomize_with() as it:
@@ -81,7 +81,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         for i in range(self.num_of_jump_instr):
             self.jump[i] = riscv_instr_ins.get_rand_instr(include_instr = [jal[0].name])
             with self.jump[i].randomize_with() as it:
-                if(self.jump[i].has_rd):
+                if self.jump[i].has_rd:
                     vsc.dist(self.jump[i].rd, [vsc.weight(riscv_reg_t.RA, 5), vsc.weight(
                         vsc.rng(riscv_reg_t.SP, riscv_reg_t.T0), 1),
                         vsc.weight(vsc.rng(riscv_reg_t.T2, riscv_reg_t.T6), 2)])
@@ -89,13 +89,13 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             self.jump[i].label = "{}".format(i)
 
         for i in range(len(order)):
-            if(i == self.num_of_jump_instr - 1):
+            if i == self.num_of_jump_instr - 1:
                 self.jump[order[i]].imm_str = "{}f".format(self.num_of_jump_instr)
             else:
-                if(order[i + 1] > order[i]):
-                    self.jump[order[i]].imm_str = "{}f".format(order[i+1])
+                if order[i + 1] > order[i]:
+                    self.jump[order[i]].imm_str = "{}f".format(order[i + 1])
                 else:
-                    self.jump[order[i]].imm_str = "{}b".format(order[i+1])
+                    self.jump[order[i]].imm_str = "{}b".format(order[i + 1])
         self.instr_list.append(self.jump_start)
         self.instr_list.extend(self.jump)
         self.instr_list.append(self.jump_end)
