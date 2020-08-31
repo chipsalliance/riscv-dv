@@ -411,16 +411,13 @@ def parse_args():
     parse.add_argument('--asm_test_suffix', help = 'asm_test_suffix', default = "")
     parse.add_argument('--march_isa', help = 'march_isa', default = [],
                        choices = [i.name for i in riscv_instr_group_t], nargs = '*')
-    parse.add_argument('--directed_instr_0', help = 'directed_instr_0',
-                       default = "riscv_int_numeric_corner_stream,4")
-    parse.add_argument('--directed_instr_6', help = 'directed_instr_6',
-                       default = "riscv_jal_instr,4")
-    parse.add_argument('--stream_name_0', help = 'stream_name_0',
-                       default = "riscv_load_store_rand_instr_stream")
-    parse.add_argument('--stream_name_6', help = 'stream_name_6',
-                       default = "riscv_int_numeric_corner_stream")
-    parse.add_argument('--stream_freq_0', help = 'stream_freq_0', default = 4)
-    parse.add_argument('--stream_freq_6', help = 'stream_freq_6', default = 4)
+    for i in range(7):
+        parse.add_argument('--directed_instr_{}'.format(i),
+                           help = 'directed_instr_{}'.format(i), default = "")
+        parse.add_argument('--stream_name_{}'.format(i),
+                           help = 'stream_name_{}'.format(i), default = "")
+        parse.add_argument('--stream_freq_{}'.format(i),
+                           help = 'stream_freq_{}'.format(i), default = 4)
     # TODO
     '''
     if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
