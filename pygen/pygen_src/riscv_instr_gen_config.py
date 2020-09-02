@@ -416,6 +416,11 @@ def parse_args():
     parse.add_argument('--stream_name_opts', help = 'stream_name_0',
                        default = "riscv_load_store_rand_instr_stream")
     parse.add_argument('--stream_freq_opts', help = 'stream_freq_0', default = 4)
+    parse.add_argument('--start_idx', help='start index', type=int, default=0)
+    parse.add_argument('--asm_file_name', help='asm file name',
+                       default="riscv_asm_test")
+    parse.add_argument('--log_file_name', help='log file name',
+                       default="")
     # TODO
     '''
     if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
