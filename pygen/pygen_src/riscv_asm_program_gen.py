@@ -116,8 +116,8 @@ class riscv_asm_program_gen:
             self.gen_program_end(hart)
             for hart in range(cfg.num_of_harts):
                 self.gen_data_page_begin(hart)
-                if(cfg.no_data_page):
-                    self.gen_data_page()
+                if not cfg.no_data_page:
+                    self.gen_data_page(hart)
 
                     if((hart == 0) and ("RV32A" in rcs.supported_isa)):
                         self.gen_data_page(hart, amo = 1)
