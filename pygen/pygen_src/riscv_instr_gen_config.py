@@ -111,16 +111,16 @@ class riscv_instr_gen_config:
         self.num_of_harts = argv.num_of_harts
         self.fix_sp = argv.fix_sp
         self.use_push_data_section = argv.use_push_data_section
-        self.boot_mode_opts = argv.boot_mode_opts
+        self.boot_mode_opts = argv.boot_mode
 
-        if(self.boot_mode_opts):
+        if self.boot_mode_opts:
             logging.info("Got boot mode option - %0s", self.boot_mode_opts)
-            if(self.boot_mode_opts == "m"):
-                self.init_privileged_mode = privileged_mode_t.MACHINE_MODE.name
-            elif(self.boot_mode_opts == "s"):
-                self.init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE.name
-            elif(self.boot_mode_opts == "u"):
-                self.init_privileged_mode = privileged_mode_t.USER_MODE.name
+            if self.boot_mode_opts == "m":
+                self.init_privileged_mode = privileged_mode_t.MACHINE_MODE
+            elif self.boot_mode_opts == "s":
+                self.init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE
+            elif self.boot_mode_opts == "u":
+                self.init_privileged_mode = privileged_mode_t.USER_MODE
             else:
                 logging.error("Illegal boot mode option - %0s", self.boot_mode_opts)
 
@@ -407,7 +407,7 @@ def parse_args():
     parse.add_argument('--enable_bitmanip_groups', help = 'enable_bitmanip_groups',
                        default = ['ZBB', 'ZBS', 'ZBP', 'ZBE', 'ZBF',
                                   'ZBC', 'ZBR', 'ZBM', 'ZBT', 'ZB_TMP'], nargs = '*')
-    parse.add_argument('--boot_mode_opts', help = 'boot_mode_opts', default = "")
+    parse.add_argument('--boot_mode', help = 'boot_mode', default = "")
     parse.add_argument('--asm_test_suffix', help = 'asm_test_suffix', default = "")
     parse.add_argument('--march_isa', help = 'march_isa', default = [],
                        choices = [i.name for i in riscv_instr_group_t], nargs = '*')
