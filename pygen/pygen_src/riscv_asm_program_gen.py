@@ -596,7 +596,7 @@ class riscv_asm_program_gen:
             arg = "directed_instr_{}".format(i)
             stream_name_opts = "stream_name_{}".format(i)
             stream_freq_opts = "stream_freq_{}".format(i)
-            if(arg in cfg.argv):
+            if(arg in cfg.args_dict):
                 val = cfg.args_dict[arg]
                 opts = val.split(",")
                 if(len(opts) != 2):
@@ -604,7 +604,7 @@ class riscv_asm_program_gen:
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
                 else:
                     self.add_directed_instr_stream(opts[0], int(opts[1]))
-            elif(stream_name_opts in cfg.argv and stream_freq_opts in cfg.argv):
+            elif(stream_name_opts in cfg.args_dict and stream_freq_opts in cfg.args_dict):
                 stream_name = cfg.args_dict[stream_name_opts]
                 stream_freq = cfg.args_dict[stream_freq_opts]
                 self.add_directed_instr_stream(stream_name, stream_freq)
