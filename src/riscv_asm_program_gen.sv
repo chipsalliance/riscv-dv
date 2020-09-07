@@ -1612,19 +1612,23 @@ class riscv_asm_program_gen extends uvm_object;
   //---------------------------------------------------------------------------------------
 
   virtual function void randomize_vec_gpr_and_csr();
+    string lmul;
     if (!(RVV inside {supported_isa})) return;
-    instr_stream.push_back({indent, $sformatf("li x%0d, %0d", cfg.gpr[0], cfg.vector_cfg.vxsat)});
-    instr_stream.push_back({indent, $sformatf("csrw vxsat, x%0d", cfg.gpr[0])});
-    instr_stream.push_back({indent, $sformatf("li x%0d, %0d", cfg.gpr[0], cfg.vector_cfg.vxrm)});
-    instr_stream.push_back({indent, $sformatf("csrw vxrm, x%0d", cfg.gpr[0])});
+    instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", cfg.vector_cfg.vxsat)});
+    instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", cfg.vector_cfg.vxrm)});
     init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
     instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
-    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
+    if ((cfg.vector_cfg.vtype.vlmul > 1) && (cfg.vector_cfg.vtype.fractional_lmul)) begin
+      lmul = $sformatf("mf%0d", cfg.vector_cfg.vtype.vlmul);
+    end else begin
+      lmul = $sformatf("m%0d", cfg.vector_cfg.vtype.vlmul);
+    end
+    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, %0s, d%0d",
                                      indent,
                                      cfg.gpr[0],
                                      cfg.gpr[1],
                                      cfg.vector_cfg.vtype.vsew,
-                                     cfg.vector_cfg.vtype.vlmul,
+                                     lmul,
                                      cfg.vector_cfg.vtype.vediv));
   endfunction
 
