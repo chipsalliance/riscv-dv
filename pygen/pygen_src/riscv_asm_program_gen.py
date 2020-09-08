@@ -20,7 +20,7 @@ import sys
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
-from pygen_src.riscv_instr_gen_config import cfg, args, args_dict
+from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_utils import factory
@@ -595,17 +595,17 @@ class riscv_asm_program_gen:
             arg = "directed_instr_{}".format(i)
             stream_name_opts = "stream_name_{}".format(i)
             stream_freq_opts = "stream_freq_{}".format(i)
-            if(arg in args):
-                val = args_dict[arg]
+            if(arg in cfg.args_dict):
+                val = cfg.args_dict[arg]
                 opts = val.split(",")
                 if(len(opts) != 2):
                     logging.critical(
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
                 else:
                     self.add_directed_instr_stream(opts[0], int(opts[1]))
-            elif(stream_name_opts in args and stream_freq_opts in args):
-                stream_name = args_dict[stream_name_opts]
-                stream_freq = args_dict[stream_freq_opts]
+            elif(stream_name_opts in cfg.args_dict and stream_freq_opts in cfg.args_dict):
+                stream_name = cfg.args_dict[stream_name_opts]
+                stream_freq = cfg.args_dict[stream_freq_opts]
                 self.add_directed_instr_stream(stream_name, stream_freq)
 
     def generate_directed_instr_stream(self, hart = 0, label = "", original_instr_cnt = 0,
@@ -628,7 +628,7 @@ class riscv_asm_program_gen:
                 if(object_h is None):
                     logging.critical("Cannot create instr stream %0s", name)
                     sys.exit(1)
-                new_instr_stream = copy.copy(object_h)
+                new_instr_stream = copy.deepcopy(object_h)
                 if(new_instr_stream):
                     new_instr_stream.hart = hart
                     new_instr_stream.label = "{}_{}".format(label, idx)

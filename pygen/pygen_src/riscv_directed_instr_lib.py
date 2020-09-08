@@ -11,22 +11,24 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
+import random
 import vsc
 from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
-from pygen_src.isa.riscv_instr import riscv_instr_ins
+from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t
+from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t, riscv_instr_name_t
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 
 
 class riscv_directed_instr_stream(riscv_rand_instr_stream):
 
+    label = ""
+
     def __init__(self):
         super().__init__()
         self.name = ""
-        self.label = ""
 
     def post_randomize(self):
         for i in range(len(self.instr_list)):
@@ -34,9 +36,72 @@ class riscv_directed_instr_stream(riscv_rand_instr_stream):
             self.instr_list[i].atomic = 1
         self.instr_list[0].comment = "Start %0s" % (self.name)
         self.instr_list[-1].comment = "End %0s" % (self.name)
-        if self.label != "":
-            self.instr_list[0].label = self.label
+        if riscv_directed_instr_stream.label != "":
+            self.instr_list[0].label = riscv_directed_instr_stream.label
             self.instr_list[0].has_label = 1
+
+
+@vsc.randobj
+class riscv_jal_instr(riscv_rand_instr_stream):
+    def __init__(self):
+        super().__init__()
+        self.name = ""
+        self.jump = []
+        self.jump_start = riscv_instr()
+        self.jump_end = riscv_instr()
+        self.num_of_jump_instr = vsc.rand_int_t()
+
+    @vsc.constraint
+    def instr_c(self):
+        self.num_of_jump_instr in vsc.rangelist(vsc.rng(10, 30))
+
+    def post_randomize(self):
+        order = []
+        RA = cfg.ra
+        order = [0] * self.num_of_jump_instr
+        self.jump = [0] * self.num_of_jump_instr
+        for i in range(len(order)):
+            order[i] = i
+        random.shuffle(order)
+        self.setup_allowed_instr(1, 1)
+        jal = [riscv_instr_name_t.JAL]
+        if not cfg.disable_compressed_instr:
+            jal.append(riscv_instr_name_t.C_J)
+            if rcs.XLEN == 32:
+                jal.append(riscv_instr_name_t.C_JAL)
+        self.jump_start = riscv_instr_ins.get_instr(riscv_instr_name_t.JAL.name)
+        with self.jump_start.randomize_with() as it:
+            self.jump_start.rd == RA
+        self.jump_start.imm_str = "{}f".format(order[0])
+        self.jump_start.label = self.label
+
+        # Last instruction
+        self.jump_end = self.randomize_instr(self.jump_end)
+        self.jump_end.label = "{}".format(self.num_of_jump_instr)
+        for i in range(self.num_of_jump_instr):
+            self.jump[i] = riscv_instr_ins.get_rand_instr(include_instr = [jal[0].name])
+            with self.jump[i].randomize_with() as it:
+                if self.jump[i].has_rd:
+                    vsc.dist(self.jump[i].rd, [vsc.weight(riscv_reg_t.RA, 5), vsc.weight(
+                        vsc.rng(riscv_reg_t.SP, riscv_reg_t.T0), 1),
+                        vsc.weight(vsc.rng(riscv_reg_t.T2, riscv_reg_t.T6), 2)])
+                    self.jump[i].rd.not_inside(cfg.reserved_regs)
+            self.jump[i].label = "{}".format(i)
+
+        for i in range(len(order)):
+            if i == self.num_of_jump_instr - 1:
+                self.jump[order[i]].imm_str = "{}f".format(self.num_of_jump_instr)
+            else:
+                if order[i + 1] > order[i]:
+                    self.jump[order[i]].imm_str = "{}f".format(order[i + 1])
+                else:
+                    self.jump[order[i]].imm_str = "{}b".format(order[i + 1])
+        self.instr_list.append(self.jump_start)
+        self.instr_list.extend(self.jump)
+        self.instr_list.append(self.jump_end)
+        for i in range(len(self.instr_list)):
+            self.instr_list[i].has_label = 1
+            self.instr_list[i].atomic = 1
 
 
 class int_numeric_e(IntEnum):
