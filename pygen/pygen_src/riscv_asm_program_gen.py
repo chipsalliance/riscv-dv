@@ -574,8 +574,7 @@ class riscv_asm_program_gen:
         pass
 
     def gen_test_file(self, test_name):
-        subprocess.run(["mkdir", "-p", "out/asm_tests"])
-        file = open("./out/asm_tests/{}".format(test_name), "w+")
+        file = open(test_name, "w+")
         for items in self.instr_stream:
             file.write("{}\n".format(items))
 

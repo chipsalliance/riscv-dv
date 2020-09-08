@@ -71,15 +71,17 @@ def get_generator_cmd(simulator, simulator_yaml, cov, exp, debug_cmd):
   """ Setup the compile and simulation command for the generator
 
   Args:
-    simulator      : RTL simulator used to run instruction generator
-    simulator_yaml : RTL simulator configuration file in YAML format
+    simulator      : RTL/pyflow simulator used to run instruction generator
+    simulator_yaml : RTL/pyflow simulator configuration file in YAML format
     cov            : Enable functional coverage
     exp            : Use experimental version
     debug_cmd      : Produce the debug cmd log without running
 
   Returns:
-    compile_cmd    : RTL simulator command to compile the instruction generator
-    sim_cmd        : RTL simulator command to run the instruction generator
+    compile_cmd    : RTL/pyflow simulator command to compile the instruction
+                     generator
+    sim_cmd        : RTL/pyflow simulator command to run the instruction
+                     generator
   """
   logging.info("Processing simulator setup file : %s" % simulator_yaml)
   yaml_data = read_yaml(simulator_yaml)
@@ -87,15 +89,18 @@ def get_generator_cmd(simulator, simulator_yaml, cov, exp, debug_cmd):
   for entry in yaml_data:
     if entry['tool'] == simulator:
       logging.info("Found matching simulator: %s" % entry['tool'])
-      compile_spec = entry['compile']
-      compile_cmd = compile_spec['cmd']
-      for i in range(len(compile_cmd)):
-        if ('cov_opts' in compile_spec) and cov:
-          compile_cmd[i] = re.sub('<cov_opts>', compile_spec['cov_opts'].rstrip(), compile_cmd[i])
-        else:
-          compile_cmd[i] = re.sub('<cov_opts>', '', compile_cmd[i])
-        if exp:
-          compile_cmd[i] += " +define+EXPERIMENTAL "
+      if simulator == "pyflow":
+        compile_cmd = ""
+      else:
+        compile_spec = entry['compile']
+        compile_cmd = compile_spec['cmd']
+        for i in range(len(compile_cmd)):
+          if ('cov_opts' in compile_spec) and cov:
+            compile_cmd[i] = re.sub('<cov_opts>', compile_spec['cov_opts'].rstrip(), compile_cmd[i])
+          else:
+            compile_cmd[i] = re.sub('<cov_opts>', '', compile_cmd[i])
+          if exp:
+            compile_cmd[i] += " +define+EXPERIMENTAL "
       sim_cmd = entry['sim']['cmd']
       if ('cov_opts' in entry['sim']) and cov:
         sim_cmd = re.sub('<cov_opts>', entry['sim']['cov_opts'].rstrip(), sim_cmd)
@@ -108,7 +113,7 @@ def get_generator_cmd(simulator, simulator_yaml, cov, exp, debug_cmd):
                                     compile_cmd[i])
           sim_cmd = re.sub("<"+env_var+">", get_env_var(env_var, debug_cmd = debug_cmd), sim_cmd)
       return compile_cmd, sim_cmd
-  logging.error("Cannot find RTL simulator %0s" % simulator)
+  logging.error("Cannot find simulator %0s" % simulator)
   sys.exit(RET_FAIL)
 
 
@@ -220,13 +225,14 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
     run_cmd(cmd, timeout_s, debug_cmd = debug_cmd)
 
 
-def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_gen, csr_file,
+def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen, csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
                 batch_size, output_dir, verbose, check_return_code, debug_cmd):
   """Run  the instruction generator
 
   Args:
     sim_cmd               : Simulate command for the generator
+    simulator             : simulator used to run instruction generator
     test_list             : List of assembly programs to be compiled
     cwd                   : Filesystem path to RISCV-DV repo
     sim_opts              : Simulation options for the generator
@@ -260,7 +266,7 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_gen, csr_file,
       else:
         batch_cnt = 1
         if batch_size > 0:
-          batch_cnt = int((iterations + batch_size - 1)  / batch_size);
+          batch_cnt = int((iterations + batch_size - 1)  / batch_size)
         logging.info("Running %s with %0d batches" % (test['test'], batch_cnt))
         for i in range(0, batch_cnt):
           test_id = '%0s_%0d' % (test['test'], i)
@@ -268,20 +274,33 @@ def do_simulate(sim_cmd, test_list, cwd, sim_opts, seed_gen, csr_file,
           if i < batch_cnt - 1:
             test_cnt = batch_size
           else:
-            test_cnt = iterations - i * batch_size;
-          cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-                (" +num_of_tests=%i " % test_cnt) + \
-                (" +start_idx=%d " % (i*batch_size)) + \
-                (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-                (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
-          if verbose:
+            test_cnt = iterations - i * batch_size
+          if simulator == "pyflow":
+            sim_cmd = re.sub("<test_name>", test['gen_test'], sim_cmd)
+            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
+                  (" --num_of_tests=%s" % test_cnt) + \
+                  (" --start_idx=%i" % (i * batch_size)) + \
+                  (" --asm_file_name=%s/asm_tests/%s" % (output_dir, test['test'])) + \
+                  (" --log_file_name=%s/sim_%s_%i%s.log " % (output_dir,
+                                                            test['test'], i, log_suffix))
+          else:
+            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
+                  (" +UVM_TESTNAME=%s " % test['gen_test']) + \
+                  (" +num_of_tests=%i " % test_cnt) + \
+                  (" +start_idx=%d " % (i*batch_size)) + \
+                  (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
+                  (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
+          if verbose and simulator != "pyflow":
             cmd += "+UVM_VERBOSITY=UVM_HIGH "
           cmd = re.sub("<seed>", str(rand_seed), cmd)
           cmd = re.sub("<test_id>", test_id, cmd)
           sim_seed[test_id] = str(rand_seed)
           if "gen_opts" in test:
-            cmd += test['gen_opts']
+            if simulator == "pyflow":
+              test['gen_opts'] = re.sub("\+", "--",test['gen_opts'])
+              cmd += test['gen_opts']
+            else:
+              cmd += test['gen_opts']
           if not re.search("c", isa):
             cmd += "+disable_compressed_instr=1 ";
           if lsf_cmd:
@@ -324,15 +343,17 @@ def gen(test_list, argv, output_dir, cwd):
   compile_cmd, sim_cmd = get_generator_cmd(argv.simulator, argv.simulator_yaml, argv.cov,
                                            argv.exp, argv.debug);
   # Compile the instruction generator
+  # No compilation process in pyflow simulator
   if not argv.so:
     do_compile(compile_cmd, test_list, argv.core_setting_dir, cwd, argv.user_extension_dir,
                argv.cmp_opts, output_dir, argv.debug, argv.lsf_cmd)
   # Run the instruction generator
   if not argv.co:
     seed_gen = SeedGen(argv.start_seed, argv.seed, argv.seed_yaml)
-    do_simulate(sim_cmd, test_list, cwd, argv.sim_opts, seed_gen, argv.csr_yaml,
-                argv.isa, argv.end_signature_addr, argv.lsf_cmd, argv.gen_timeout, argv.log_suffix,
-                argv.batch_size, output_dir, argv.verbose, check_return_code, argv.debug)
+    do_simulate(sim_cmd, argv.simulator, test_list, cwd, argv.sim_opts,seed_gen,
+                argv.csr_yaml,argv.isa, argv.end_signature_addr, argv.lsf_cmd,
+                argv.gen_timeout, argv.log_suffix,argv.batch_size, output_dir,
+                argv.verbose, check_return_code, argv.debug)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
@@ -740,7 +761,7 @@ def parse_args(cwd):
   parser.add_argument("--iss_yaml", type=str, default="",
                       help="ISS setting YAML")
   parser.add_argument("--simulator_yaml", type=str, default="",
-                      help="RTL simulator setting YAML")
+                      help="RTL/pyflow simulator setting YAML")
   parser.add_argument("--csr_yaml", type=str, default="",
                       help="CSR description file")
   parser.add_argument("-ct", "--custom_target", type=str, default="",
@@ -842,7 +863,10 @@ def load_config(args, cwd):
   if not args.custom_target:
     if not args.testlist:
       args.testlist = cwd + "/target/"+ args.target +"/testlist.yaml"
-    args.core_setting_dir = cwd + "/target/"+ args.target
+    if args.simulator == "pyflow":
+      args.core_setting_dir = cwd + "/pygen/pygen_src/target/"+ args.target
+    else:
+      args.core_setting_dir = cwd + "/target/"+ args.target
     if args.target == "rv32imc":
       args.mabi = "ilp32"
       args.isa  = "rv32imc"
