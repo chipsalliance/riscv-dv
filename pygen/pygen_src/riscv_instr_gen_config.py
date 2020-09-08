@@ -115,16 +115,16 @@ class riscv_instr_gen_config:
         self.num_of_harts = self.argv.num_of_harts
         self.fix_sp = self.argv.fix_sp
         self.use_push_data_section = self.argv.use_push_data_section
-        self.boot_mode_opts = self.argv.boot_mode_opts
+        self.boot_mode_opts = self.argv.boot_mode
 
-        if(self.boot_mode_opts):
+        if self.boot_mode_opts:
             logging.info("Got boot mode option - %0s", self.boot_mode_opts)
-            if(self.boot_mode_opts == "m"):
-                self.init_privileged_mode = privileged_mode_t.MACHINE_MODE.name
-            elif(self.boot_mode_opts == "s"):
-                self.init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE.name
-            elif(self.boot_mode_opts == "u"):
-                self.init_privileged_mode = privileged_mode_t.USER_MODE.name
+            if self.boot_mode_opts == "m":
+                self.init_privileged_mode = privileged_mode_t.MACHINE_MODE
+            elif self.boot_mode_opts == "s":
+                self.init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE
+            elif self.boot_mode_opts == "u":
+                self.init_privileged_mode = privileged_mode_t.USER_MODE
             else:
                 logging.error("Illegal boot mode option - %0s", self.boot_mode_opts)
 
@@ -294,7 +294,7 @@ class riscv_instr_gen_config:
         for mode in self.init_privileged_mode:
             if mode == "MACHINE_MODE":
                 continue
-            elif mode == 'SUPERVISOR_MODE':
+            if mode == 'SUPERVISOR_MODE':
                 invalid_lvl.append('M')
                 logging.info("supr_mode---")
                 logging.debug(invalid_lvl)
@@ -416,7 +416,7 @@ class riscv_instr_gen_config:
         parse.add_argument('--enable_bitmanip_groups', help = 'enable_bitmanip_groups',
                            default = ['ZBB', 'ZBS', 'ZBP', 'ZBE', 'ZBF',
                                       'ZBC', 'ZBR', 'ZBM', 'ZBT', 'ZB_TMP'], nargs = '*')
-        parse.add_argument('--boot_mode_opts', help = 'boot_mode_opts', default = "")
+        parse.add_argument('--boot_mode', help = 'boot_mode', default = "")
         parse.add_argument('--asm_test_suffix', help = 'asm_test_suffix', default = "")
         parse.add_argument('--march_isa', help = 'march_isa', default = [],
                            choices = [i.name for i in riscv_instr_group_t], nargs = '*')
@@ -427,6 +427,11 @@ class riscv_instr_gen_config:
                                help = 'stream_name_{}'.format(i), default = "")
             parse.add_argument('--stream_freq_{}'.format(i),
                                help = 'stream_freq_{}'.format(i), default = 4)
+        parse.add_argument('--start_idx', help='start index', type=int, default=0)
+        parse.add_argument('--asm_file_name', help='asm file name',
+                          default="riscv_asm_test")
+        parse.add_argument('--log_file_name', help='log file name',
+                          default="")
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin

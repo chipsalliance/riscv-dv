@@ -18,20 +18,20 @@
 // Processor feature configuration
 //-----------------------------------------------------------------------------
 // XLEN
-parameter int XLEN = 64;
+parameter int XLEN = 32;
 
 // Parameter for SATP mode, set to BARE if address translation is not supported
-parameter satp_mode_t SATP_MODE = SV39;
+parameter satp_mode_t SATP_MODE = SV32;
 
 // Supported Privileged mode
-privileged_mode_t supported_privileged_mode[] = {USER_MODE, SUPERVISOR_MODE, MACHINE_MODE};
+privileged_mode_t supported_privileged_mode[] = {MACHINE_MODE, USER_MODE};
 
 // Unsupported instructions
 riscv_instr_name_t unsupported_instr[];
 
 // ISA supported by the processor
-riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C, RV32A, RV64A,
-                                        RV32F, RV64F, RV32D, RV64D, RV32X};
+riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV32C};
+
 // Interrupt mode support
 mtvec_mode_t supported_interrupt_mode[$] = {DIRECT, VECTORED};
 
@@ -49,7 +49,7 @@ bit support_debug_mode = 0;
 bit support_umode_trap = 0;
 
 // Support sfence.vma instruction
-bit support_sfence = 1;
+bit support_sfence = 0;
 
 // Support unaligned load/store
 bit support_unaligned_load_store = 1'b1;
@@ -97,28 +97,6 @@ privileged_reg_t implemented_csr[] = {
 `else
 const privileged_reg_t implemented_csr[] = {
 `endif
-    // User mode CSR
-    USTATUS,    // User status
-    UIE,        // User interrupt-enable register
-    UTVEC,      // User trap-handler base address
-    USCRATCH,   // Scratch register for user trap handlers
-    UEPC,       // User exception program counter
-    UCAUSE,     // User trap cause
-    UTVAL,      // User bad address or instruction
-    UIP,        // User interrupt pending
-    // Supervisor mode CSR
-    SSTATUS,    // Supervisor status
-    SEDELEG,    // Supervisor exception delegation register
-    SIDELEG,    // Supervisor interrupt delegation register
-    SIE,        // Supervisor interrupt-enable register
-    STVEC,      // Supervisor trap-handler base address
-    SCOUNTEREN, // Supervisor counter enable
-    SSCRATCH,   // Scratch register for supervisor trap handlers
-    SEPC,       // Supervisor exception program counter
-    SCAUSE,     // Supervisor trap cause
-    STVAL,      // Supervisor bad address or instruction
-    SIP,        // Supervisor interrupt pending
-    SATP,       // Supervisor address translation and protection
     // Machine mode mode CSR
     MVENDORID,  // Vendor ID
     MARCHID,    // Architecture ID
@@ -126,8 +104,6 @@ const privileged_reg_t implemented_csr[] = {
     MHARTID,    // Hardware thread ID
     MSTATUS,    // Machine status
     MISA,       // ISA and extensions
-    MEDELEG,    // Machine exception delegation register
-    MIDELEG,    // Machine interrupt delegation register
     MIE,        // Machine interrupt-enable register
     MTVEC,      // Machine trap-handler base address
     MCOUNTEREN, // Machine counter enable
@@ -135,9 +111,7 @@ const privileged_reg_t implemented_csr[] = {
     MEPC,       // Machine exception program counter
     MCAUSE,     // Machine trap cause
     MTVAL,      // Machine bad address or instruction
-    MIP,        // Machine interrupt pending
-    // Floating point CSR
-    FCSR        // Floating point control and status
+    MIP         // Machine interrupt pending
 };
 
 // Implementation-specific custom CSRs
@@ -157,14 +131,8 @@ interrupt_cause_t implemented_interrupt[] = {
 `else
 const interrupt_cause_t implemented_interrupt[] = {
 `endif
-    U_SOFTWARE_INTR,
-    S_SOFTWARE_INTR,
     M_SOFTWARE_INTR,
-    U_TIMER_INTR,
-    S_TIMER_INTR,
     M_TIMER_INTR,
-    U_EXTERNAL_INTR,
-    S_EXTERNAL_INTR,
     M_EXTERNAL_INTR
 };
 
@@ -178,12 +146,5 @@ const exception_cause_t implemented_exception[] = {
     BREAKPOINT,
     LOAD_ADDRESS_MISALIGNED,
     LOAD_ACCESS_FAULT,
-    STORE_AMO_ADDRESS_MISALIGNED,
-    STORE_AMO_ACCESS_FAULT,
-    ECALL_UMODE,
-    ECALL_SMODE,
-    ECALL_MMODE,
-    INSTRUCTION_PAGE_FAULT,
-    LOAD_PAGE_FAULT,
-    STORE_AMO_PAGE_FAULT
+    ECALL_MMODE
 };

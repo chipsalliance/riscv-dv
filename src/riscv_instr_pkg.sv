@@ -599,48 +599,32 @@ package riscv_instr_pkg;
     // Vector load/store instruction
     VLE_V,
     VSE_V,
-    VLB_V,
-    VSB_V,
-    VLH_V,
-    VSH_V,
-    VLW_V,
-    VSW_V,
-    VLBU_V,
-    VLHU_V,
-    VLWU_V,
-    VLSB_V,
-    VLSH_V,
-    VLSW_V,
-    VLSBU_V,
-    VLSHU_V,
-    VLSWU_V,
     VLSE_V,
-    VSSB_V,
-    VSSH_V,
-    VSSW_V,
     VSSE_V,
-    VLXB_V,
-    VLXH_V,
-    VLXW_V,
-    VLXBU_V,
-    VLXHU_V,
-    VLXWU_V,
-    VLXE_V,
-    VSXB_V,
-    VSXH_V,
-    VSXW_V,
-    VSXE_V,
-    VSUXB_V,
-    VSUXH_V,
-    VSUXW_V,
-    VSUXE_V,
-    VLBFF_V,
-    VLHFF_V,
-    VLWFF_V,
-    VLBUFF_V,
-    VLHUFF_V,
-    VLWUFF_V,
+    VLXEI_V,
+    VSXEI_V,
+    VSUXEI_V,
     VLEFF_V,
+    // Segmented load/store instruction
+    VLSEGE_V,
+    VSSEGE_V,
+    VLSEGEFF_V,
+    VLSSEGE_V,
+    VSSSEGE_V,
+    VLXSEGEI_V,
+    VSXSEGEI_V,
+    VSUXSEGEI_V,
+    // Vector AMO instruction
+    // EEW vector AMOs
+    VAMOSWAPE_V,
+    VAMOADDE_V,
+    VAMOXORE_V,
+    VAMOANDE_V,
+    VAMOORE_V,
+    VAMOMINE_V,
+    VAMOMAXE_V,
+    VAMOMINUE_V,
+    VAMOMAXUE_V,
     // Supervisor instruction
     DRET,
     MRET,
@@ -700,10 +684,11 @@ package riscv_instr_pkg;
     VS2_FORMAT, // op vd,vs2
     VL_FORMAT,
     VS_FORMAT,
-    VLV_FORMAT,
-    VSV_FORMAT,
+    VLX_FORMAT,
+    VSX_FORMAT,
     VLS_FORMAT,
-    VSS_FORMAT
+    VSS_FORMAT,
+    VAMO_FORMAT
   } riscv_instr_format_t;
 
 
@@ -969,6 +954,10 @@ package riscv_instr_pkg;
     TDATA1          = 'h7A1,  // First Debug/Trace trigger data register
     TDATA2          = 'h7A2,  // Second Debug/Trace trigger data register
     TDATA3          = 'h7A3,  // Third Debug/Trace trigger data register
+    TINFO           = 'h7A4,  // Debug trigger info register
+    TCONTROL        = 'h7A5,  // Debug trigger control register
+    MCONTEXT        = 'h7A8,  // Machine mode trigger context register
+    SCONTEXT        = 'h7AA,  // Supervisor mode trigger context register
     DCSR            = 'h7B0,  // Debug control and status register
     DPC             = 'h7B1,  // Debug PC
     DSCRATCH0       = 'h7B2,  // Debug scratch register
@@ -1147,6 +1136,7 @@ package riscv_instr_pkg;
 
   typedef struct packed {
     bit ill;
+    bit fractional_lmul;
     bit [XLEN-2:7] reserved;
     int vediv;
     int vsew;
