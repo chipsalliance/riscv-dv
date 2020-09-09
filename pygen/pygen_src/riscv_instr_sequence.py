@@ -56,7 +56,8 @@ class riscv_instr_sequence:
     # Advance the stack pointer(SP) to release the allocated stack space.
     def gen_stack_exit_instr(self):
         self.instr_stack_exit.cfg = cfg
-        self.instr_stack_exit.gen_pop_stack_instr(self.program_stack_len, self.instr_stack_enter.saved_regs)
+        self.instr_stack_exit.gen_pop_stack_instr(self.program_stack_len,
+                                                  self.instr_stack_enter.saved_regs)
 
     '''
     ----------------------------------------------------------------------------------------------

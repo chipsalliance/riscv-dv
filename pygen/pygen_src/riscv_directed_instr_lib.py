@@ -11,14 +11,16 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
+import sys
 import random
+import logging
 import vsc
 from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.riscv_instr_pkg import (riscv_reg_t, 
-        riscv_pseudo_instr_name_t, riscv_instr_name_t, pkg_ins)
+from pygen_src.riscv_instr_pkg import (riscv_reg_t,
+                                       riscv_pseudo_instr_name_t, riscv_instr_name_t, pkg_ins)
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 
@@ -171,7 +173,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         super().__init__()
         self.stack_len = 0
         self.num_of_reg_to_save = 0
-        self.num_of_redudant_instr = 0
+        self.num_of_redundant_instr = 0
         self.push_stack_instr = []
         self.saved_regs = []
         self.branch_instr = riscv_instr()
@@ -183,10 +185,11 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         self.saved_regs = [cfg.ra]
         self.num_of_reg_to_save = len(self.saved_regs)
         if self.num_of_reg_to_save * (rcs.XLEN / 8) > self.stack_len:
-            logging.error('stack len [%0d] is not enough to store %d regs'
-                          , self.stack_len, self.num_of_reg_to_save)
-        self.num_of_redudant_instr = random.randrange(3, 10)
-        self.initialize_instr_list(self.num_of_redudant_instr)
+            logging.error('stack len [%0d] is not enough to store %d regs',
+                          self.stack_len, self.num_of_reg_to_save)
+            sys.exit(1)
+        self.num_of_redundant_instr = random.randrange(3, 10)
+        self.initialize_instr_list(self.num_of_redundant_instr)
 
     def gen_push_stack_instr(self, stack_len, allow_branch=1):
         self.stack_len = stack_len
@@ -199,7 +202,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         with self.push_stack_instr[0].randomize_with() as it:
             self.push_stack_instr[0].rd == cfg.sp
             self.push_stack_instr[0].rs1 == cfg.sp
-            self.push_stack_instr[0].imm == cfg.stack_len + 1
+            self.push_stack_instr[0].imm == (~cfg.stack_len) + 1
 
         self.push_stack_instr[0].imm_str = '-{}'.format(self.stack_len)
         for i in range(len(self.saved_regs)):
@@ -217,14 +220,15 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
                     self.push_stack_instr[i + 1].imm == 8 * (i + 1)
 
             self.push_stack_instr[i + 1].process_load_store = 0
-        '''if allow_branch:
-           `DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
+        if allow_branch:
+            # TODO `DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
+            pass
         else:
-            self.enable_branch = 0'''
+            self.enable_branch = 0
         if self.enable_branch:
             self.branch_instr = \
                 riscv_instr_ins.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
-            # `DV_CHECK_STD_RANDOMIZE_FATAL(branch_instr)
+            # TODO `DV_CHECK_STD_RANDOMIZE_FATAL(branch_instr)
             self.branch_instr.imm_str = self.push_start_label
             self.branch_instr.brach_assigned = 1
             self.push_stack_instr[0].label = self.push_start_label
@@ -238,27 +242,25 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
 
 
 # Pop stack instruction stream
-
 class riscv_pop_stack_instr(riscv_rand_instr_stream):
 
     def __init__(self):
         super().__init__()
         self.stack_len = 0
         self.num_of_reg_to_save = 0
-        self.num_of_redudant_instr = 0
+        self.num_of_redundant_instr = 0
         self.pop_stack_instr = []
         self.saved_regs = []
-
-    # `uvm_object_utils(riscv_pop_stack_instr)
 
     def init(self):
         self.reserved_rd = [cfg.ra]
         self.num_of_reg_to_save = len(self.saved_regs)
         if self.num_of_reg_to_save * 4 > self.stack_len:
-            logging.critical('stack len [%0d] is not enough to store %d regs'
-                             , self.stack_len, self.num_of_reg_to_save)
-        self.num_of_redudant_instr = random.randrange(3, 10)
-        self.initialize_instr_list(self.num_of_redudant_instr)
+            logging.error('stack len [%0d] is not enough to store %d regs',
+                          self.stack_len, self.num_of_reg_to_save)
+            sys.exit(1)
+        self.num_of_redundant_instr = random.randrange(3, 10)
+        self.initialize_instr_list(self.num_of_redundant_instr)
 
     def gen_pop_stack_instr(self, stack_len, saved_regs):
         self.stack_len = stack_len
@@ -268,7 +270,6 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
         self.pop_stack_instr = [None] * (self.num_of_reg_to_save + 1)
         for i in range(len(self.pop_stack_instr)):
             self.pop_stack_instr[i] = riscv_instr()
-
         for i in range(len(self.saved_regs)):
             if rcs.XLEN == 32:
                 self.pop_stack_instr[i] = riscv_instr_ins.get_instr(riscv_instr_name_t.LW.name)
@@ -282,12 +283,14 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
                     self.rd == self.saved_regs[i]
                     self.rs1 == cfg.sp
                     self.imm == 8 * (i + 1)
-
             self.pop_stack_instr[i].process_load_store = 0
-
         # addi sp,sp,imm
-        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr_ins.get_instr(riscv_instr_name_t.ADDI.name)
-        self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string('{}', self.stack_len)
+        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr_ins.get_instr(
+            riscv_instr_name_t.ADDI.name)
+        ''' TODO `DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[num_of_reg_to_save],
+                                   rd == cfg.sp; rs1 == cfg.sp; imm == stack_len;) '''
+        self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string(
+            '{}', self.stack_len)
         self.mix_instr_stream(self.pop_stack_instr)
         for i in range(len(self.instr_list)):
             self.instr_list[i].atomic = 1
