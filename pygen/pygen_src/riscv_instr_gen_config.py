@@ -148,7 +148,7 @@ class riscv_instr_gen_config:
         self.disable_compressed_instr = self.argv.disable_compressed_instr
         self.require_signature_addr = self.argv.require_signature_addr
 
-        if(self.require_signature_addr):
+        if self.require_signature_addr:
             self.signature_addr = int(self.argv.signature_addr, 16)
         else:
             self.signature_addr = 0xdeadbeef
@@ -173,10 +173,10 @@ class riscv_instr_gen_config:
         self.category_dist = {}
         self.march_isa = self.argv.march_isa
 
-        if(len(self.march_isa) != 0):
+        if len(self.march_isa) != 0:
             rcs.supported_isa = self.march_isa
 
-        if(rcs.supported_isa != 'RV32C'):
+        if rcs.supported_isa != riscv_instr_group_t.RV32C:
             self.disable_compressed_instr = 1
 
     @vsc.constraint
@@ -260,7 +260,7 @@ class riscv_instr_gen_config:
         # As it is being extended in post_randomize function.
         self.gpr.clear()
         for x in rcs.supported_privileged_mode:
-            if(x == "SUPERVISOR_MODE"):
+            if x == privileged_mode_t.SUPERVISOR_MODE:
                 self.support_supervisor_mode = 1
 
     def get_non_reserved_gpr(self):
@@ -277,10 +277,9 @@ class riscv_instr_gen_config:
         self.min_stack_len_per_program = 2 * (rcs.XLEN / 8)
         logging.info("min_stack_len_per_program value = %d"
                      % self.min_stack_len_per_program)
-        self.check_setting()  # to check the setting is legal
+        self.check_setting()  # check if the setting is legal
 
-        # TODO, Need to change the logic once the constraints are up.
-        if "USER_MODE" == self.init_privileged_mode:
+        if self.init_privileged_mode == privileged_mode_t.USER_MODE:
             logging.info("mode=%s" % "USER_MODE")
             self.no_wfi = 1
 
@@ -292,13 +291,13 @@ class riscv_instr_gen_config:
 
         # TODO Need to change the logic once the constraints are up.
         for mode in self.init_privileged_mode:
-            if mode == "MACHINE_MODE":
+            if mode == privileged_mode_t.MACHINE_MODE:
                 continue
-            if mode == 'SUPERVISOR_MODE':
+            if mode == privileged_mode_t.SUPERVISOR_MODE:
                 invalid_lvl.append('M')
                 logging.info("supr_mode---")
                 logging.debug(invalid_lvl)
-            elif mode == 'USER_MODE':
+            elif mode == privileged_mode_t.USER_MODE:
                 invalid_lvl.append('S')
                 invalid_lvl.append('M')
                 logging.info("usr_mode---")
@@ -447,6 +446,5 @@ class riscv_instr_gen_config:
         '''
         args = parse.parse_args()
         return args
-
 
 cfg = riscv_instr_gen_config()

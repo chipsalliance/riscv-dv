@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 import sys
 sys.path.append("pygen/")
-from pygen_src.riscv_instr_gen_config import cfg, args  # NOQA
+from pygen_src.riscv_instr_gen_config import cfg  # NOQA
 from pygen_src.isa.rv32i_instr import *  # NOQA
 from pygen_src.isa.riscv_instr import riscv_instr_ins  # NOQA
 from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
@@ -21,8 +21,8 @@ from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
 
 class riscv_instr_base_test:
     def __init__(self):
-        self.start_idx = args.start_idx
-        self.asm_file_name = args.asm_file_name
+        self.start_idx = cfg.argv.start_idx
+        self.asm_file_name = cfg.argv.asm_file_name
 
     def run_phase(self):
         for _ in range(cfg.num_of_tests):
