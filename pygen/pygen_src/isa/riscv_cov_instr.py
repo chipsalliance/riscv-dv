@@ -19,8 +19,8 @@ import vsc
 import logging
 from enum import Enum, IntEnum, auto
 from bitstring import BitArray
-from pygen.pygen_src.target.rv32i import riscv_core_setting as rcs
-from pygen.pygen_src.riscv_instr_pkg import *
+from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.riscv_instr_pkg import *
 
 
 class operand_sign_e(IntEnum):
