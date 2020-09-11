@@ -18,13 +18,15 @@ import random
 import os
 import vsc
 from collections import defaultdict
+from imp import reload
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t
+from pygen_src.riscv_instr_pkg import pkg_ins, privileged_mode_t, riscv_reg_t, riscv_instr_name_t
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.isa import rv32i_instr  # NOQA
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 
-logging.basicConfig(filename='../{}'.format(cfg.argv.log_file_name),
+reload(logging)
+logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
                     format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
                     level=logging.DEBUG)
@@ -142,7 +144,7 @@ class riscv_instr:
             self.basic_instr.append("DRET")
         if cfg.no_fence == 0:
             self.basic_instr.append(self.instr_category["SYNCH"])
-        if(cfg.no_csr_instr == 0 and cfg.init_privileged_mode == "MACHINE_MODE"):
+        if cfg.no_csr_instr == 0 and cfg.init_privileged_mode == privileged_mode_t.MACHINE_MODE:
             self.basic_instr.append(self.instr_category["CSR"])
         if cfg.no_wfi == 0:
             self.basic_instr.append("WFI")
@@ -156,9 +158,9 @@ class riscv_instr:
         elif cfg.enable_access_invalid_csr_level:
             self.include_reg = cfg.invalid_priv_mode_csrs
         else:
-            if cfg.init_privileged_mode == "MACHINE_MODE":      # Machine Mode
+            if cfg.init_privileged_mode == privileged_mode_t.MACHINE_MODE:      # Machine Mode
                 self.include_reg.append("MSCRATCH")
-            elif cfg.init_privileged_mode == "SUPERVISOR_MODE":  # Supervisor Mode
+            elif cfg.init_privileged_mode == privileged_mode_t.SUPERVISOR_MODE:  # Supervisor Mode
                 self.include_reg.append("SSCRATCH")
             else:                                               # User Mode
                 self.include_reg.append("USCRATCH")

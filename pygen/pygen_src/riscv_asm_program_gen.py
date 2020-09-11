@@ -325,7 +325,7 @@ class riscv_asm_program_gen:
         string.append("la x{}, {}kernel_stack_end".format(cfg.tp.value, pkg_ins.hart_prefix(hart)))
         self.gen_section(pkg_ins.get_label("kernel_sp", hart), string)
 
-        if(not cfg.no_delegation and (cfg.init_privileged_mode != "MACHINE_MODE")):
+        if not cfg.no_delegation and (cfg.init_privileged_mode != privileged_mode_t.MACHINE_MODE):
             self.gen_delegation(hart)
         self.trap_vector_init(hart)
         self.setup_pmp(hart)
@@ -595,15 +595,16 @@ class riscv_asm_program_gen:
             arg = "directed_instr_{}".format(i)
             stream_name_opts = "stream_name_{}".format(i)
             stream_freq_opts = "stream_freq_{}".format(i)
-            if(arg in cfg.args_dict):
+            if cfg.args_dict[arg]:
                 val = cfg.args_dict[arg]
                 opts = val.split(",")
-                if(len(opts) != 2):
+                if len(opts) != 2:
                     logging.critical(
                         "Incorrect directed instruction format : %0s, expect: name,ratio", val)
+                    sys.exit(1)
                 else:
                     self.add_directed_instr_stream(opts[0], int(opts[1]))
-            elif(stream_name_opts in cfg.args_dict and stream_freq_opts in cfg.args_dict):
+            elif cfg.args_dict[stream_name_opts] and cfg.args_dict[stream_freq_opts]:
                 stream_name = cfg.args_dict[stream_name_opts]
                 stream_freq = cfg.args_dict[stream_freq_opts]
                 self.add_directed_instr_stream(stream_name, stream_freq)
