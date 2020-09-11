@@ -15,34 +15,37 @@ limitations under the License.
 
 import sys
 import vsc
+import argparse
 import csv
 from tabulate import *
-from pygen.pygen_src.isa.riscv_cov_instr import riscv_cov_instr
-from pygen.pygen_src.riscv_instr_cover_group import *
-from pygen.pygen_src.riscv_instr_pkg import *
-
-logging.basicConfig(filename='logging_two_files_new.log', filemode='w',
-                    format="%(filename)s %(lineno)s %(levelname)s %(message)s",
-                    level=logging.ERROR)
+sys.path.append("pygen/")
+from pygen_src.isa.riscv_cov_instr import riscv_cov_instr
+from pygen_src.riscv_instr_cover_group import *
+from pygen_src.riscv_instr_pkg import *
 
 
 class riscv_instr_cov_test:
     """ Main class for applying the functional coverage test """
 
-    def __init__(self, argv):
+    def __init__(self):
         self.instr_cg = riscv_instr_cover_group()
         self.trace = {}
-        self.csv_trace = argv
+        self.csv_trace = []
         self.entry_cnt, self.total_entry_cnt, self.skipped_cnt, \
         self.unexpected_illegal_instr_cnt = 0, 0, 0, 0
+        self.argv = self.parse_args()
+        logging.basicConfig(filename='{}'.format(self.argv.log_file_name),
+                            filemode='w',
+                            format="%(filename)s %(lineno)s %(levelname)s %(message)s",
+                            level=logging.DEBUG)
 
     def run_phase(self):
+        self.csv_trace = self.argv.trace_csv.split(",")
         if not self.csv_trace:
             sys.exit("No CSV file found!")
         logging.info("{} CSV trace files to be "
                      "processed...\n".format(len(self.csv_trace)))
         expect_illegal_instr = False
-        # Assuming we get list of csv files pathname from cov.py in argv
         for csv_file in self.csv_trace:
             with open("{}".format(csv_file)) as trace_file:
                 self.entry_cnt = 0
@@ -102,10 +105,10 @@ class riscv_instr_cov_test:
                                                 self.unexpected_illegal_instr_cnt))
         self.get_coverage_report()
 
-    @staticmethod
-    def get_coverage_report():
+    def get_coverage_report(self):
         model = vsc.get_coverage_report_model()
-        file = open('CoverageReport.txt', 'w')
+        cov_dir = self.argv.log_file_name.split("/")[0]
+        file = open('{}/CoverageReport.txt'.format(cov_dir), 'w')
         file.write("Groups Coverage Summary\n")
         file.write("Total groups in report: {}\n".format(
             len(model.covergroups)))
@@ -116,8 +119,9 @@ class riscv_instr_cov_test:
         file.write(tabulate(table, headers, tablefmt="grid",
                             numalign="center", stralign="center"))
         file.close()
-        # Write in xml format to be read by pyucis-viewer (visualization)
-        vsc.write_coverage_db("cov_db.xml")
+        # If enabled, write in xml format to be read by pyucis-viewer (visualization)
+        if self.argv.enable_visualization:
+            vsc.write_coverage_db("{}/cov_db.xml".format(cov_dir))
 
     def post_process_trace(self):
         pass
@@ -199,11 +203,18 @@ class riscv_instr_cov_test:
         instruction = switcher.get(instruction, instruction)
         return instruction
 
+    def parse_args(self):
+        parse = argparse.ArgumentParser()
+        parse.add_argument("--enable_visualization", action="store_true", default=False,
+                      help="Enabling coverage report visualization for pyflow") 
+        parse.add_argument('--trace_csv', help='List of csv traces',
+                           default="")
+        parse.add_argument('--log_file_name', help='log file name',
+                           default="")
+        args, unknown = parse.parse_known_args()
+        return args
 
-def main(argv):
-    cov_test = riscv_instr_cov_test(argv)
-    cov_test.run_phase()
 
+cov_test = riscv_instr_cov_test()
+cov_test.run_phase()
 
-if __name__ == "__main__":
-    main(sys.argv)

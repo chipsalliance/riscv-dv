@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from pygen.pygen_src.isa.riscv_cov_instr import *
+from pygen_src.isa.riscv_cov_instr import *
 
 
 class riscv_instr_cover_group:

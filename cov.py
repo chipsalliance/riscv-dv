@@ -76,31 +76,39 @@ def sim_cov(out, cfg, cwd, opts_vec, opts_cov, csv_list):
   test_name = "riscv_instr_cov_test"
   base_sim_cmd = ("python3 %s/run.py --simulator %s --simulator_yaml %s --noclean "
                   "--so -o %s --cov -tl %s %s "
-                  "-tn %s --steps gen --sim_opts \"<trace_csv_opts> %s %s\" " %
+                  "-tn %s --steps gen --sim_opts \"<trace_csv_opts> %s %s <visualization>\" " %
                   (cwd, argv.simulator, argv.simulator_yaml, out, argv.testlist,
                    argv.opts, test_name, opts_vec, opts_cov))
+  if argv.simulator == "pyflow" and argv.enable_visualization: 
+    base_sim_cmd = re.sub("<visualization>", "--enable_visualization", base_sim_cmd)
+  else:
+    base_sim_cmd = re.sub("<visualization>", "", base_sim_cmd)
   if argv.target:
     base_sim_cmd += (" --target %s" % argv.target)
   if argv.custom_target:
     base_sim_cmd += (" --custom_target %s" % argv.custom_target)
   if argv.stop_on_first_error:
     base_sim_cmd += (" --stop_on_first_error")
-  file_idx = 0
-  trace_idx = 0
   trace_csv_opts = ""
   batch_cnt = 1
   sim_cmd_list = []
   if argv.batch_size > 0:
-    batch_cnt = (len(csv_list) + argv.batch_size - 1)/ argv.batch_size;
+    batch_cnt = (len(csv_list) + argv.batch_size - 1) / argv.batch_size
     logging.info("Batch size: %0d, Batch cnt:%0d" % (argv.batch_size, batch_cnt))
   for i in range(len(csv_list)):
     file_idx = 0
     trace_idx = i
     if argv.batch_size > 0:
-      file_idx = i / argv.batch_size;
-      trace_idx = i % argv.batch_size;
-    trace_csv_opts += (" +trace_csv_%0d=%s" % (trace_idx, csv_list[i]))
-    if ((i == len(csv_list)-1) or ((argv.batch_size > 0) and (trace_idx == argv.batch_size-1))):
+      file_idx = i / argv.batch_size
+      trace_idx = i % argv.batch_size
+    if argv.simulator == "pyflow":
+      if i == 0:
+        trace_csv_opts += (" --trace_csv=%s" % csv_list[i])
+      else:
+        trace_csv_opts += (",%s" % csv_list[i])
+    else:
+      trace_csv_opts += (" +trace_csv_%0d=%s" % (trace_idx, csv_list[i]))
+    if (i == len(csv_list)-1) or ((argv.batch_size > 0) and (trace_idx == argv.batch_size-1)):
       sim_cmd = base_sim_cmd.replace("<trace_csv_opts>", trace_csv_opts)
       sim_cmd += ("  --log_suffix _%d" % file_idx)
       if argv.lsf_cmd == "":
@@ -178,7 +186,8 @@ def collect_cov(out, cfg, cwd):
     if argv.compliance_mode:
       opts_cov += " +define+COMPLIANCE_MODE"
     # Building the coverage collection framework
-    build_cov(out, cfg, cwd, opts_vec, opts_cov)
+    if argv.simulator != "pyflow":
+      build_cov(out, cfg, cwd, opts_vec, opts_cov)
     # Simulation the coverage collection
     sim_cov(out, cfg, cwd, opts_vec, opts_cov, csv_list)
 
@@ -246,6 +255,8 @@ def setup_parser():
                       help="Run generator with experimental features")
   parser.add_argument("-d", "--debug", type=str, default="",
                       help="Generate debug command log file")
+  parser.add_argument("--enable_visualization", action="store_true", default=False,
+                      help="Enabling coverage report visualization for pyflow")
   return parser
 
 def load_config(args, cwd):
