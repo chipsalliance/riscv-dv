@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import sys
 sys.path.append("pygen/")
 from pygen_src.riscv_instr_gen_config import cfg  # NOQA
-from pygen_src.isa.rv32i_instr import *  # NOQA
+from pygen_src.isa.rv32c_instr import * # NOQA
 from pygen_src.isa.riscv_instr import riscv_instr_ins  # NOQA
 from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
 
@@ -34,7 +34,7 @@ class riscv_instr_base_test:
                                                     cfg.asm_test_suffix)
             test_name = "{}_{}.S".format(self.asm_file_name,
                                          _ + self.start_idx)
-            asm.get_directed_instr_stream()
+            #asm.get_directed_instr_stream()
             asm.gen_program()
             asm.gen_test_file(test_name)
 

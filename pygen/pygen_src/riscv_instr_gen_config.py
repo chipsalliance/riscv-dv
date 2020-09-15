@@ -116,6 +116,7 @@ class riscv_instr_gen_config:
         self.fix_sp = self.argv.fix_sp
         self.use_push_data_section = self.argv.use_push_data_section
         self.boot_mode_opts = self.argv.boot_mode
+        self.isa = self.argv.isa
 
         if self.boot_mode_opts:
             logging.info("Got boot mode option - %0s", self.boot_mode_opts)
@@ -175,8 +176,8 @@ class riscv_instr_gen_config:
 
         if len(self.march_isa) != 0:
             rcs.supported_isa = self.march_isa
-
-        if rcs.supported_isa != riscv_instr_group_t.RV32C:
+        logging.info("supported isa{}".format(rcs.supported_isa))
+        if "RV32C" not in rcs.supported_isa:
             self.disable_compressed_instr = 1
 
     @vsc.constraint
@@ -190,6 +191,7 @@ class riscv_instr_gen_config:
         self.gpr3.not_inside(vsc.rangelist(self.sp, self.tp, self.scratch_reg, self.pmp_reg,
                                            riscv_reg_t.ZERO, riscv_reg_t.RA, riscv_reg_t.GP))
         vsc.unique(self.gpr0, self.gpr1, self.gpr2, self.gpr3)
+
 
     def check_setting(self):
         support_64b = 0
@@ -267,6 +269,7 @@ class riscv_instr_gen_config:
         pass
 
     def post_randomize(self):
+        logging.info("gpr {}".format(self.gpr0))
         self.reserved_regs = []
         # Temporary fix for gpr_c constraint.
         self.gpr.extend((self.gpr0, self.gpr1, self.gpr2, self.gpr3))
@@ -431,6 +434,7 @@ class riscv_instr_gen_config:
                           default="riscv_asm_test")
         parse.add_argument('--log_file_name', help='log file name',
                           default="")
+        parse.add_argument('--isa', help='isa', choices=['rv32i', 'rv32m', 'rv32c', 'rv32imc'])
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin

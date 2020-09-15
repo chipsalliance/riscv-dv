@@ -32,4 +32,4 @@ DEFINE_INSTR(riscv_instr_name_t.DIVU, riscv_instr_format_t.R_FORMAT,
 DEFINE_INSTR(riscv_instr_name_t.REM, riscv_instr_format_t.R_FORMAT,
              riscv_instr_category_t.ARITHMETIC, riscv_instr_group_t.RV32M, g=globals())
 DEFINE_INSTR(riscv_instr_name_t.REMU, riscv_instr_format_t.R_FORMAT,
-             riscv_instr_category_t.LOAD, riscv_instr_group_t.RV32M, g=globals()
+             riscv_instr_category_t.LOAD, riscv_instr_group_t.RV32M, g=globals())
