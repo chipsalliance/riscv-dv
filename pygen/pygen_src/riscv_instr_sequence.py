@@ -17,6 +17,7 @@ from collections import defaultdict
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import pkg_ins, riscv_instr_category_t
+from pygen_src.riscv_directed_instr_lib import riscv_pop_stack_instr, riscv_push_stack_instr
 
 
 class riscv_instr_sequence:
@@ -33,6 +34,8 @@ class riscv_instr_sequence:
         self.illegal_instr_pct = 0  # Percentage of illegal instructions
         self.hint_instr_pct = 0     # Percentage of hint instructions
         self.branch_idx = [None] * 30
+        self.instr_stack_enter = riscv_push_stack_instr()
+        self.instr_stack_exit = riscv_pop_stack_instr()
 
     def gen_instr(self, is_main_program, no_branch = 1):
         self.is_main_program = is_main_program
@@ -49,9 +52,12 @@ class riscv_instr_sequence:
     def gen_stack_enter_instr(self):
         pass
 
-    # TODO
+    # Recover the saved GPR from the stack
+    # Advance the stack pointer(SP) to release the allocated stack space.
     def gen_stack_exit_instr(self):
-        pass
+        self.instr_stack_exit.cfg = cfg
+        self.instr_stack_exit.gen_pop_stack_instr(self.program_stack_len,
+                                                  self.instr_stack_enter.saved_regs)
 
     '''
     ----------------------------------------------------------------------------------------------

@@ -15,7 +15,6 @@ import logging
 import copy
 import sys
 import random
-import os
 import vsc
 from collections import defaultdict
 from imp import reload
@@ -30,6 +29,7 @@ logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
                     format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
                     level=logging.DEBUG)
+
 
 @vsc.randobj
 class riscv_instr:

@@ -17,9 +17,9 @@ import logging
 import sys
 import vsc
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import mtvec_mode_t, f_rounding_mode_t, \
-    riscv_reg_t, privileged_mode_t, \
-    riscv_instr_group_t
+from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
+                                       riscv_reg_t, privileged_mode_t,
+                                       riscv_instr_group_t, data_pattern_t)
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
@@ -32,10 +32,7 @@ class riscv_instr_gen_config:
         self.debug_program_instr_cnt = 0  # count of debug_rom
         self.debug_sub_program_instr_cnt = []  # count of debug sub_progrms
         self.max_directed_instr_stream_seq = 20
-        # Commenting out for now
-        # self.data_page_pattern = list(
-        # map(lambda dta_pg: dta_pg.name, data_pattern_t))
-        # dicts for exception_cause_t & interrupt_cause_t Enum classes
+        self.data_page_pattern = vsc.rand_enum_t(data_pattern_t)
 
         self.m_mode_exception_delegation = {}
         self.s_mode_exception_delegation = {}
@@ -87,12 +84,18 @@ class riscv_instr_gen_config:
         # Commenting out for now
         # vector_cfg = riscv_vector_cfg # TODO
         # pmp_cfg = riscv_pmp_cfg  # TODO
-        # self.mem_region = [] # TODO
-        # Self.amo_region = [] # TODO
-
+        self.mem_region = {
+            0: {'name': "region_0", 'size_in_bytes': 4096, 'xwr': 8},
+            1: {'name': "region_1", 'size_in_bytes': 4096 * 16, 'xwr': 8}
+        }
+        self.amo_region = {
+            0: {'name': "amo_0", 'size_in_bytes': 64, 'xwr': 8}
+        }
         self.stack_len = 5000
-
-        # Self.s_mem_region = [] # TODO
+        self.s_mem_region = {
+            0: {'name': "s_region_0", 'size_in_bytes': 4096, 'xwr': 8},
+            1: {'name': "s_region_1", 'size_in_bytes': 4096, 'xwr': 8}
+        }
 
         self.kernel_stack_len = 4000
         self.kernel_program_instr_cnt = 400
@@ -428,9 +431,9 @@ class riscv_instr_gen_config:
                                help = 'stream_freq_{}'.format(i), default = 4)
         parse.add_argument('--start_idx', help='start index', type=int, default=0)
         parse.add_argument('--asm_file_name', help='asm file name',
-                          default="riscv_asm_test")
+                           default="riscv_asm_test")
         parse.add_argument('--log_file_name', help='log file name',
-                          default="")
+                           default="")
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
@@ -446,5 +449,6 @@ class riscv_instr_gen_config:
         '''
         args = parse.parse_args()
         return args
+
 
 cfg = riscv_instr_gen_config()
