@@ -20,7 +20,8 @@ from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import mtvec_mode_t, f_rounding_mode_t, \
     riscv_reg_t, privileged_mode_t, \
     riscv_instr_group_t
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+#from pygen_src.target.rv32i import riscv_core_setting as rcs
+
 
 
 @vsc.randobj
@@ -32,6 +33,13 @@ class riscv_instr_gen_config:
         self.debug_program_instr_cnt = 0  # count of debug_rom
         self.debug_sub_program_instr_cnt = []  # count of debug sub_progrms
         self.max_directed_instr_stream_seq = 20
+        self.argv = self.parse_args()
+        self.args_dict = vars(self.argv)
+        
+        if self.argv.target == "rv32i":
+            print(self.argv.target)
+            from pygen_src.target.rv32i import riscv_core_setting as rcs
+
         # Commenting out for now
         # self.data_page_pattern = list(
         # map(lambda dta_pg: dta_pg.name, data_pattern_t))
@@ -59,9 +67,6 @@ class riscv_instr_gen_config:
         self.mstatus_fs = BitArray(bin(0b0), length=2)
         self.mstatus_vs = BitArray(bin(0b0), length=2)
         self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
-
-        self.argv = self.parse_args()
-        self.args_dict = vars(self.argv)
 
         self.tvec_alignment = self.argv.tvec_alignment
 
@@ -317,7 +322,7 @@ class riscv_instr_gen_config:
         self.init_delegation()
         # self.setup_instr_distribution()  # TODO
         self.get_invalid_priv_lvl_csr()
-
+    
     def parse_args(self):
         parse = argparse.ArgumentParser()
         parse.add_argument('--num_of_tests', help = 'num_of_tests', type = int, default = 1)
@@ -372,7 +377,7 @@ class riscv_instr_gen_config:
                            help = 'illegal_instr_ratio', type = int, default = 0)
         parse.add_argument('--hint_instr_ratio', help = 'hint_instr_ratio', type = int, default = 0)
         parse.add_argument('--num_of_harts', help = 'num_of_harts',
-                           type = int, default = rcs.NUM_HARTS)
+                           type = int, default = 1)
         parse.add_argument('--enable_unaligned_load_store',
                            help = 'enable_unaligned_load_store', choices = [0, 1],
                            type = int, default = 0)
@@ -431,6 +436,7 @@ class riscv_instr_gen_config:
                           default="riscv_asm_test")
         parse.add_argument('--log_file_name', help='log file name',
                           default="")
+        parse.add_argument('--target', help='target', default="rv32i")
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
@@ -445,6 +451,8 @@ class riscv_instr_gen_config:
         get_invalid_priv_lvl_csr();
         '''
         args = parse.parse_args()
+        
         return args
+
 
 cfg = riscv_instr_gen_config()

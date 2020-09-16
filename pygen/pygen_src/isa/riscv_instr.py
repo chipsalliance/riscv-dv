@@ -21,8 +21,11 @@ from collections import defaultdict
 from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.isa import rv32i_instr  # NOQA
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+#from pygen_src.isa import rv32i_instr  # NOQA
+#from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32i":
+    from pygen_src.isa import rv32i_instr
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
 
 logging.basicConfig(filename='../{}'.format(cfg.argv.log_file_name),
                     filemode='w',

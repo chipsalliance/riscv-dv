@@ -227,7 +227,7 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
 
 def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen, csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-                batch_size, output_dir, verbose, check_return_code, debug_cmd):
+                batch_size, output_dir, verbose, check_return_code, debug_cmd, target):
   """Run  the instruction generator
 
   Args:
@@ -281,8 +281,9 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen, csr_file
                   (" --num_of_tests=%s" % test_cnt) + \
                   (" --start_idx=%i" % (i * batch_size)) + \
                   (" --asm_file_name=%s/asm_tests/%s" % (output_dir, test['test'])) + \
-                  (" --log_file_name=%s/sim_%s_%i%s.log " % (output_dir,
-                                                            test['test'], i, log_suffix))
+                  (" --log_file_name=%s/sim_%s_%i%s.log" % (output_dir,
+                                                            test['test'], i, log_suffix)) + \
+                  (" --target=%s " % (target)) 
           else:
             cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
                   (" +UVM_TESTNAME=%s " % test['gen_test']) + \
@@ -353,7 +354,7 @@ def gen(test_list, argv, output_dir, cwd):
     do_simulate(sim_cmd, argv.simulator, test_list, cwd, argv.sim_opts,seed_gen,
                 argv.csr_yaml,argv.isa, argv.end_signature_addr, argv.lsf_cmd,
                 argv.gen_timeout, argv.log_suffix,argv.batch_size, output_dir,
-                argv.verbose, check_return_code, argv.debug)
+                argv.verbose, check_return_code, argv.debug, argv.target)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
