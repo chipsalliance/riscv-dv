@@ -11,20 +11,26 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
+#import argparse
+#parser = ...
+#parser.add_argument('--isa', choices=['rv32i', 'rv32m'])
+#args = parser.parse_args()
+
 import logging
 import copy
 import sys
 import random
 import vsc
-from collections import defaultdict
+from enum import Enum
 from imp import reload
+from collections import defaultdict
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import pkg_ins, privileged_mode_t, riscv_reg_t, riscv_instr_name_t
+from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.isa import rv32i_instr  # NOQA
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.isa import rv32c_instr  # NOQA
 
 reload(logging)
+from pygen_src.target.rv32i import riscv_core_setting as rcs
 logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
                     format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
@@ -45,12 +51,12 @@ class riscv_instr:
         self.exclude_reg = []
         self.include_reg = []
 
-        self.group = None
-        self.format = None
+        self.group = None #vsc.enum_t(riscv_instr_name_t)
+        self.format = None #vsc.enum_t(riscv_instr_format_t)
         self.category = None
-        self.instr_name = None
+        self.instr_name = None #vsc.enum_t(riscv_instr_name_t)
         self.imm_type = None
-        self.imm_len = 0
+        self.imm_len = vsc.bit_t(5)
 
         self.csr = vsc.rand_bit_t(12)
         self.rs2 = vsc.rand_enum_t(riscv_reg_t)
@@ -112,17 +118,29 @@ class riscv_instr:
                         instr_inst.group in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
                     not(not(cfg.enable_floating_point) and instr_inst.group in
                         ["RV32F", "RV64F", "RV32D", "RV64D"])):
+                logging.info("IF create_instr_list")
                 self.instr_category[instr_inst.category.name].append(instr_name)
                 self.instr_group[instr_inst.group.name].append(instr_name)
                 self.instr_names.append(instr_name)
+        logging.info("IF create_instr_list outside")
         self.build_basic_instruction_list(cfg)
         self.create_csr_filter(cfg)
 
     def create_instr(self, instr_name):
         """TODO This method is specific to RV32I instruction only.
         It must be scaled to all instruction extensions."""
+        # instr_name = instr_name.get_val().name
         try:
-            instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+            #if cfg.argv.isa == "rv32i":
+
+            instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
+            '''elif cfg.argv.isa == "rv32m":
+                instr_inst = eval("rv32m_instr.riscv_" + instr_name + "_instr()")
+            elif cfg.argv.isa == "rv32c":
+                instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
+            else: #cfg.argv.isa == "rv32i":
+                instr_inst = eval("rv32i.riscv_" + instr_name + "_instr()")'''
+
         except Exception:
             logging.critical("Failed to create instr: %0s", instr_name)
             sys.exit(1)
@@ -173,7 +191,7 @@ class riscv_instr:
         allowed_instr = []
         disallowed_instr = []
         # allowed_categories = []
-
+        logging.info("Instruction %s", self)
         for items in include_category:
             allowed_instr.extend(self.instr_category[items])
         for items in exclude_category:
@@ -191,17 +209,23 @@ class riscv_instr:
         if len(disallowed_instr) == 0:
             try:
                 if len(include_instr) > 0:
+                    print("IF")
                     if len(include_instr) == 1:
+                        print("IF IF")
                         idx = 0
                     else:
+                        print("ELSE")
                         idx = random.randrange(0, len(include_instr) - 1)
                     name = include_instr[idx]
                 elif len(allowed_instr) > 0:
+                    print("ELSE IF")
                     idx = random.randrange(0, len(allowed_instr) - 1)
                     name = allowed_instr[idx]
                 else:
+                    print("Else")
                     idx = random.randrange(0, len(self.instr_names) - 1)
                     name = self.instr_names[idx]
+                    print("Name",name)
             except Exception:
                 logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
@@ -218,6 +242,7 @@ class riscv_instr:
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
+        logging.info("Instructions %s", self.instr_template)
         instr_h = copy.deepcopy(self.instr_template[name])
         return instr_h
 
@@ -458,9 +483,12 @@ class riscv_instr:
 
     def get_instr_name(self):
         get_instr_name = self.instr_name
-        for i in get_instr_name:
-            if i == "_":
-                get_instr_name = get_instr_name.replace(i, ".")
+        get_instr_name = get_instr_name.replace("_", ".")
+        '''
+        for i in range(len(get_instr_name)):
+            if get_instr_name[i] == "_":
+                get_instr_name[i] = get_instr_name.replace(i, ".")
+        '''
         return get_instr_name
 
     def get_c_gpr(self, gpr):
