@@ -14,7 +14,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import vsc
 from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_pkg import riscv_instr_name_t, riscv_instr_format_t, riscv_instr_category_t, riscv_reg_t,imm_t, pkg_ins
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.riscv_instr_gen_config import cfg
+if cfg.argv.target == "rv32i":
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
 import logging
 from enum import Enum
 

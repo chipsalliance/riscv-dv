@@ -15,7 +15,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import logging
 from enum import Enum, IntEnum, auto
 from bitstring import BitArray
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+from pygen_src.riscv_instr_gen_config import cfg
+if cfg.argv.target == "rv32i":
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+# from pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
 class mem_region_t:

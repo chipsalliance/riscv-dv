@@ -239,8 +239,7 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
 def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                 csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-<<<<<<< HEAD
-                batch_size, output_dir, verbose, check_return_code, debug_cmd):
+                batch_size, output_dir, verbose, check_return_code, debug_cmd, target):
     """Run  the instruction generator
 
     Args:
@@ -278,154 +277,6 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                 run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
                              end_signature_addr, timeout_s, output_dir,
                              debug_cmd)
-||||||| merged common ancestors
-                batch_size, output_dir, verbose, check_return_code, debug_cmd):
-  """Run  the instruction generator
-
-  Args:
-    sim_cmd               : Simulate command for the generator
-    simulator             : simulator used to run instruction generator
-    test_list             : List of assembly programs to be compiled
-    cwd                   : Filesystem path to RISCV-DV repo
-    sim_opts              : Simulation options for the generator
-    seed_gen              : A SeedGen seed generator
-    csr_file              : YAML file containing description of all CSRs
-    isa                   : Processor supported ISA subset
-    end_signature_addr    : Address that tests will write pass/fail signature to at end of test
-    lsf_cmd               : LSF command used to run the instruction generator
-    timeout_s             : Timeout limit in seconds
-    log_suffix            : Simulation log file name suffix
-    batch_size            : Number of tests to generate per run
-    output_dir            : Output directory of the ELF files
-    check_return_code     : Check return code of the command
-    debug_cmd             : Produce the debug cmd log without running
-  """
-  cmd_list = []
-  sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
-  sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
-  sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
-
-  logging.info("Running RISC-V instruction generator")
-  sim_seed = {}
-  for test in test_list:
-    iterations = test['iterations']
-    logging.info("Generating %d %s" % (iterations, test['test']))
-    if iterations > 0:
-      # Running a CSR test
-      if test['test'] == 'riscv_csr_test':
-        run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
-                     end_signature_addr, timeout_s, output_dir, debug_cmd)
-      else:
-        batch_cnt = 1
-        if batch_size > 0:
-          batch_cnt = int((iterations + batch_size - 1)  / batch_size)
-        logging.info("Running %s with %0d batches" % (test['test'], batch_cnt))
-        for i in range(0, batch_cnt):
-          test_id = '%0s_%0d' % (test['test'], i)
-          rand_seed = seed_gen.get(test_id, i * batch_cnt)
-          if i < batch_cnt - 1:
-            test_cnt = batch_size
-          else:
-            test_cnt = iterations - i * batch_size
-          if simulator == "pyflow":
-            sim_cmd = re.sub("<test_name>", test['gen_test'], sim_cmd)
-            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                  (" --num_of_tests=%s" % test_cnt) + \
-                  (" --start_idx=%i" % (i * batch_size)) + \
-                  (" --asm_file_name=%s/asm_tests/%s" % (output_dir, test['test'])) + \
-                  (" --log_file_name=%s/sim_%s_%i%s.log " % (output_dir,
-                                                            test['test'], i, log_suffix))
-          else:
-            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                  (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-                  (" +num_of_tests=%i " % test_cnt) + \
-                  (" +start_idx=%d " % (i*batch_size)) + \
-                  (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-                  (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
-          if verbose and simulator != "pyflow":
-            cmd += "+UVM_VERBOSITY=UVM_HIGH "
-          cmd = re.sub("<seed>", str(rand_seed), cmd)
-          cmd = re.sub("<test_id>", test_id, cmd)
-          sim_seed[test_id] = str(rand_seed)
-          if "gen_opts" in test:
-            if simulator == "pyflow":
-              test['gen_opts'] = re.sub("\+", "--",test['gen_opts'])
-              cmd += test['gen_opts']
-=======
-                batch_size, output_dir, verbose, check_return_code, debug_cmd, target):
-  """Run  the instruction generator
-
-  Args:
-    sim_cmd               : Simulate command for the generator
-    simulator             : simulator used to run instruction generator
-    test_list             : List of assembly programs to be compiled
-    cwd                   : Filesystem path to RISCV-DV repo
-    sim_opts              : Simulation options for the generator
-    seed_gen              : A SeedGen seed generator
-    csr_file              : YAML file containing description of all CSRs
-    isa                   : Processor supported ISA subset
-    end_signature_addr    : Address that tests will write pass/fail signature to at end of test
-    lsf_cmd               : LSF command used to run the instruction generator
-    timeout_s             : Timeout limit in seconds
-    log_suffix            : Simulation log file name suffix
-    batch_size            : Number of tests to generate per run
-    output_dir            : Output directory of the ELF files
-    check_return_code     : Check return code of the command
-    debug_cmd             : Produce the debug cmd log without running
-  """
-  cmd_list = []
-  sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
-  sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
-  sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
-
-  logging.info("Running RISC-V instruction generator")
-  sim_seed = {}
-  for test in test_list:
-    iterations = test['iterations']
-    logging.info("Generating %d %s" % (iterations, test['test']))
-    if iterations > 0:
-      # Running a CSR test
-      if test['test'] == 'riscv_csr_test':
-        run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
-                     end_signature_addr, timeout_s, output_dir, debug_cmd)
-      else:
-        batch_cnt = 1
-        if batch_size > 0:
-          batch_cnt = int((iterations + batch_size - 1)  / batch_size)
-        logging.info("Running %s with %0d batches" % (test['test'], batch_cnt))
-        for i in range(0, batch_cnt):
-          test_id = '%0s_%0d' % (test['test'], i)
-          rand_seed = seed_gen.get(test_id, i * batch_cnt)
-          if i < batch_cnt - 1:
-            test_cnt = batch_size
-          else:
-            test_cnt = iterations - i * batch_size
-          if simulator == "pyflow":
-            sim_cmd = re.sub("<test_name>", test['gen_test'], sim_cmd)
-            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                  (" --num_of_tests=%s" % test_cnt) + \
-                  (" --start_idx=%i" % (i * batch_size)) + \
-                  (" --asm_file_name=%s/asm_tests/%s" % (output_dir, test['test'])) + \
-                  (" --log_file_name=%s/sim_%s_%i%s.log" % (output_dir,
-                                                            test['test'], i, log_suffix)) + \
-                  (" --target=%s " % (target)) 
-          else:
-            cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
-                  (" +UVM_TESTNAME=%s " % test['gen_test']) + \
-                  (" +num_of_tests=%i " % test_cnt) + \
-                  (" +start_idx=%d " % (i*batch_size)) + \
-                  (" +asm_file_name=%s/asm_tests/%s " % (output_dir, test['test'])) + \
-                  (" -l %s/sim_%s_%d%s.log " % (output_dir, test['test'], i, log_suffix))
-          if verbose and simulator != "pyflow":
-            cmd += "+UVM_VERBOSITY=UVM_HIGH "
-          cmd = re.sub("<seed>", str(rand_seed), cmd)
-          cmd = re.sub("<test_id>", test_id, cmd)
-          sim_seed[test_id] = str(rand_seed)
-          if "gen_opts" in test:
-            if simulator == "pyflow":
-              test['gen_opts'] = re.sub("\+", "--",test['gen_opts'])
-              cmd += test['gen_opts']
->>>>>>> 1080c9ec64692cc8a75aecb1327071bbf7a81003
             else:
                 batch_cnt = 1
                 if batch_size > 0:
@@ -450,7 +301,8 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                                   output_dir, test['test'])) + \
                               (" --log_file_name={}/sim_{}_{}{}.log ".format(
                                   output_dir,
-                                  test['test'], i, log_suffix))
+                                  test['test'], i, log_suffix)) + \
+                              (" --target=%s" % (target))
                     else:
                         cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
                               (" +UVM_TESTNAME={} ".format(test['gen_test'])) + \
@@ -494,7 +346,6 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
 
 
 def gen(test_list, argv, output_dir, cwd):
-<<<<<<< HEAD
     """Run the instruction generator
 
     Args:
@@ -534,82 +385,7 @@ def gen(test_list, argv, output_dir, cwd):
                     argv.lsf_cmd,
                     argv.gen_timeout, argv.log_suffix, argv.batch_size,
                     output_dir,
-                    argv.verbose, check_return_code, argv.debug)
-||||||| merged common ancestors
-  """Run the instruction generator
-
-  Args:
-    test_list             : List of assembly programs to be compiled
-    argv                  : Configuration arguments
-    output_dir            : Output directory of the ELF files
-    cwd                   : Filesystem path to RISCV-DV repo
-  """
-  check_return_code = True
-  if argv.simulator == "ius":
-    # Incisive return non-zero return code even test passes
-    check_return_code = False
-    logging.debug("Disable return_code checking for %s" % argv.simulator)
-  # Mutually exclusive options between compile_only and sim_only
-  if argv.co and argv.so:
-    logging.error("argument -co is not allowed with argument -so")
-    return
-  if ((argv.co == 0) and (len(test_list) == 0)):
-    return
-  # Setup the compile and simulation command for the generator
-  compile_cmd = []
-  sim_cmd = ""
-  compile_cmd, sim_cmd = get_generator_cmd(argv.simulator, argv.simulator_yaml, argv.cov,
-                                           argv.exp, argv.debug);
-  # Compile the instruction generator
-  # No compilation process in pyflow simulator
-  if not argv.so:
-    do_compile(compile_cmd, test_list, argv.core_setting_dir, cwd, argv.user_extension_dir,
-               argv.cmp_opts, output_dir, argv.debug, argv.lsf_cmd)
-  # Run the instruction generator
-  if not argv.co:
-    seed_gen = SeedGen(argv.start_seed, argv.seed, argv.seed_yaml)
-    do_simulate(sim_cmd, argv.simulator, test_list, cwd, argv.sim_opts,seed_gen,
-                argv.csr_yaml,argv.isa, argv.end_signature_addr, argv.lsf_cmd,
-                argv.gen_timeout, argv.log_suffix,argv.batch_size, output_dir,
-                argv.verbose, check_return_code, argv.debug)
-=======
-  """Run the instruction generator
-
-  Args:
-    test_list             : List of assembly programs to be compiled
-    argv                  : Configuration arguments
-    output_dir            : Output directory of the ELF files
-    cwd                   : Filesystem path to RISCV-DV repo
-  """
-  check_return_code = True
-  if argv.simulator == "ius":
-    # Incisive return non-zero return code even test passes
-    check_return_code = False
-    logging.debug("Disable return_code checking for %s" % argv.simulator)
-  # Mutually exclusive options between compile_only and sim_only
-  if argv.co and argv.so:
-    logging.error("argument -co is not allowed with argument -so")
-    return
-  if ((argv.co == 0) and (len(test_list) == 0)):
-    return
-  # Setup the compile and simulation command for the generator
-  compile_cmd = []
-  sim_cmd = ""
-  compile_cmd, sim_cmd = get_generator_cmd(argv.simulator, argv.simulator_yaml, argv.cov,
-                                           argv.exp, argv.debug);
-  # Compile the instruction generator
-  # No compilation process in pyflow simulator
-  if not argv.so:
-    do_compile(compile_cmd, test_list, argv.core_setting_dir, cwd, argv.user_extension_dir,
-               argv.cmp_opts, output_dir, argv.debug, argv.lsf_cmd)
-  # Run the instruction generator
-  if not argv.co:
-    seed_gen = SeedGen(argv.start_seed, argv.seed, argv.seed_yaml)
-    do_simulate(sim_cmd, argv.simulator, test_list, cwd, argv.sim_opts,seed_gen,
-                argv.csr_yaml,argv.isa, argv.end_signature_addr, argv.lsf_cmd,
-                argv.gen_timeout, argv.log_suffix,argv.batch_size, output_dir,
-                argv.verbose, check_return_code, argv.debug, argv.target)
->>>>>>> 1080c9ec64692cc8a75aecb1327071bbf7a81003
+                    argv.verbose, check_return_code, argv.debug, argv.target)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):

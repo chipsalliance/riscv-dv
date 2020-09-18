@@ -126,7 +126,7 @@ class riscv_instr_gen_config:
         self.fix_sp = self.argv.fix_sp
         self.use_push_data_section = self.argv.use_push_data_section
         self.boot_mode_opts = self.argv.boot_mode
-        self.isa = self.argv.isa
+        # self.isa = self.argv.isa
 
         if self.boot_mode_opts:
             logging.info("Got boot mode option - %0s", self.boot_mode_opts)
