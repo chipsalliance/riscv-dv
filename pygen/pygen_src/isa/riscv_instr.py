@@ -11,10 +11,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
-#import argparse
-#parser = ...
-#parser.add_argument('--isa', choices=['rv32i', 'rv32m'])
-#args = parser.parse_args()
 
 import logging
 import copy
@@ -28,6 +24,12 @@ from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.isa import rv32c_instr  # NOQA
+from pygen_src.isa import rv32i_instr  # NOQA
+#from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32i":
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
 
 reload(logging)
 from pygen_src.target.rv32i import riscv_core_setting as rcs
@@ -118,11 +120,9 @@ class riscv_instr:
                         instr_inst.group in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
                     not(not(cfg.enable_floating_point) and instr_inst.group in
                         ["RV32F", "RV64F", "RV32D", "RV64D"])):
-                logging.info("IF create_instr_list")
                 self.instr_category[instr_inst.category.name].append(instr_name)
                 self.instr_group[instr_inst.group.name].append(instr_name)
                 self.instr_names.append(instr_name)
-        logging.info("IF create_instr_list outside")
         self.build_basic_instruction_list(cfg)
         self.create_csr_filter(cfg)
 
@@ -191,7 +191,6 @@ class riscv_instr:
         allowed_instr = []
         disallowed_instr = []
         # allowed_categories = []
-        logging.info("Instruction %s", self)
         for items in include_category:
             allowed_instr.extend(self.instr_category[items])
         for items in exclude_category:
@@ -209,23 +208,17 @@ class riscv_instr:
         if len(disallowed_instr) == 0:
             try:
                 if len(include_instr) > 0:
-                    print("IF")
                     if len(include_instr) == 1:
-                        print("IF IF")
                         idx = 0
                     else:
-                        print("ELSE")
                         idx = random.randrange(0, len(include_instr) - 1)
                     name = include_instr[idx]
                 elif len(allowed_instr) > 0:
-                    print("ELSE IF")
                     idx = random.randrange(0, len(allowed_instr) - 1)
                     name = allowed_instr[idx]
                 else:
-                    print("Else")
                     idx = random.randrange(0, len(self.instr_names) - 1)
                     name = self.instr_names[idx]
-                    print("Name",name)
             except Exception:
                 logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
@@ -242,7 +235,6 @@ class riscv_instr:
         # rs1 rs2 values are overwriting and the last generated values are
         # getting assigned for a particular instruction hence creating different
         # object address and id to ratain the randomly generated values.
-        logging.info("Instructions %s", self.instr_template)
         instr_h = copy.deepcopy(self.instr_template[name])
         return instr_h
 

@@ -21,9 +21,12 @@ from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import (riscv_reg_t,
                                        riscv_pseudo_instr_name_t, riscv_instr_name_t, pkg_ins)
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+#from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
-
+if cfg.argv.target == "rv32i":
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
 
 class riscv_directed_instr_stream(riscv_rand_instr_stream):
 

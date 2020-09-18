@@ -20,9 +20,15 @@ from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
+from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
+#from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_utils import factory
+if cfg.argv.target == "rv32i":
+    from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+
 '''
     RISC-V assembly program generator
 
