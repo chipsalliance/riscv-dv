@@ -26,6 +26,8 @@ from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_utils import factory
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
 
 '''
     RISC-V assembly program generator

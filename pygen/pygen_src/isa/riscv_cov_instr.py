@@ -23,6 +23,9 @@ from bitstring import BitArray
 from pygen.pygen_src.riscv_instr_pkg import *
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
+if cfg.argv.target == "rv32imc":
+    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+
 
 class operand_sign_e(IntEnum):
     POSITIVE = 0

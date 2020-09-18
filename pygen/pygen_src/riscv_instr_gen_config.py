@@ -35,11 +35,12 @@ class riscv_instr_gen_config:
         self.max_directed_instr_stream_seq = 20
         self.argv = self.parse_args()
         self.args_dict = vars(self.argv)
-        
+        global rcs
+        print(self.argv.target)
         if self.argv.target == "rv32i":
-            print(self.argv.target)
             from pygen_src.target.rv32i import riscv_core_setting as rcs
-
+        if self.argv.target == "rv32imc":
+            from pygen_src.target.rv32imc import riscv_core_setting as rcs
         # Commenting out for now
         # self.data_page_pattern = list(
         # map(lambda dta_pg: dta_pg.name, data_pattern_t))
