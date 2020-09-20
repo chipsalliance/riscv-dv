@@ -89,7 +89,9 @@ class riscv_asm_program_gen extends uvm_object;
         gen_load_fault_handler(hart);
         // Store fault handler
         gen_store_fault_handler(hart);
-        gen_test_done();
+        if (hart == 0) begin
+          gen_test_done();
+        end
       end
       // Generate sub program
       gen_sub_program(hart, sub_program[hart], sub_program_name, cfg.num_of_sub_program);
