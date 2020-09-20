@@ -52,7 +52,9 @@ class riscv_instr_stream extends uvm_object;
   // When index is -1, the instruction is injected at a random location
   function void insert_instr(riscv_instr instr, int idx = -1);
     int current_instr_cnt = instr_list.size();
-    if(idx == -1) begin
+    if (current_instr_cnt == 0) begin
+      idx = 0;
+    end else if (idx == -1) begin
       idx = $urandom_range(0, current_instr_cnt-1);
       while(instr_list[idx].atomic) begin
        idx += 1;
