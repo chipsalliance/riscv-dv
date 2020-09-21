@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 import sys
 sys.path.append("pygen/")
+from pygen_src.riscv_instr_pkg import *
 from pygen_src.riscv_instr_gen_config import cfg  # NOQA
 if cfg.argv.target == "rv32i":
     from pygen_src.isa.rv32i_instr import * # NOQA

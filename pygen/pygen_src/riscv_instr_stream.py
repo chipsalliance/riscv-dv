@@ -198,6 +198,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
     def gen_instr(self, no_branch = 0, no_load_store = 1, is_debug_program = 0):
         self.setup_allowed_instr(no_branch, no_load_store)
         for i in range(len(self.instr_list)):
+            logging.info("stram {}".format(self.instr_list[i]))
             self.instr_list[i] = self.randomize_instr(self.instr_list[i], is_debug_program)
         while self.instr_list[-1].category == riscv_instr_category_t.BRANCH:
             self.instr_list.pop()

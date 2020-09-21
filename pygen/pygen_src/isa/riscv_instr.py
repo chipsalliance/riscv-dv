@@ -21,7 +21,7 @@ from enum import Enum
 from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t
+from pygen_src.riscv_instr_pkg import pkg_ins, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t, privileged_mode_t, riscv_reg_t
 from pygen_src.riscv_instr_gen_config import cfg
 
 #from pygen_src.isa import rv32c_instr  # NOQA
@@ -37,7 +37,6 @@ if cfg.argv.target == "rv32imc":
     from pygen_src.target.rv32imc import riscv_core_setting as rcs
 
 reload(logging)
-from pygen_src.target.rv32i import riscv_core_setting as rcs
 logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
                     format="%(asctime)s %(filename)s %(lineno)s %(levelname)s %(message)s",
@@ -122,8 +121,8 @@ class riscv_instr:
                 continue
             if (instr_inst.group.name in rcs.supported_isa and
                     not(cfg.disable_compressed_instr and
-                        instr_inst.group in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
-                    not(not(cfg.enable_floating_point) and instr_inst.group in
+                        instr_inst.group.name in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
+                    not(not(cfg.enable_floating_point) and instr_inst.group.name in
                         ["RV32F", "RV64F", "RV32D", "RV64D"])):
                 self.instr_category[instr_inst.category.name].append(instr_name)
                 self.instr_group[instr_inst.group.name].append(instr_name)
@@ -134,18 +133,24 @@ class riscv_instr:
     def create_instr(self, instr_name):
         """TODO This method is specific to RV32I instruction only.
         It must be scaled to all instruction extensions."""
-        # instr_name = instr_name.get_val().name
         try:
-            #if cfg.argv.isa == "rv32i":
-
-            instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
-            '''elif cfg.argv.isa == "rv32m":
-                instr_inst = eval("rv32m_instr.riscv_" + instr_name + "_instr()")
-            elif cfg.argv.isa == "rv32c":
-                instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
-            else: #cfg.argv.isa == "rv32i":
-                instr_inst = eval("rv32i.riscv_" + instr_name + "_instr()")'''
-
+            instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+            if cfg.argv.target == "rv32i":
+                logging.info("if")
+                instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+            elif cfg.argv.target == "rv32imc":
+                logging.info("eliff")
+                try:
+                    instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+                except Exception:
+                    try:
+                        instr_inst = eval("rv32m_instr.riscv_" + instr_name + "_instr()")
+                    except Exception:
+                        try:
+                            instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
+                        except Exception: 
+                            logging.critical("Failed to create instr: %0s", instr_name)
+                            sys.exit(1)
         except Exception:
             logging.critical("Failed to create instr: %0s", instr_name)
             sys.exit(1)
