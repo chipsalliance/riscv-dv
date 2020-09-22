@@ -28,7 +28,7 @@ from collections import defaultdict
 from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import pkg_ins, riscv_instr_category_t, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t, riscv_instr_group_t, imm_t
 from pygen_src.riscv_instr_gen_config import cfg
-from pygen_src.isa import rv32i_instr  # NOQA
+from pygen_src.isa import rv32c_instr  # NOQA
 
 from pygen_src.target.rv32i import riscv_core_setting as rcs
 reload(logging)
@@ -80,10 +80,10 @@ class riscv_instr:
         self.label = ""
         self.is_local_numeric_label = None
         self.idx = -1
-        self.has_rs1 = 1
-        self.has_rs2 = 1
-        self.has_rd = 1
-        self.has_imm = 1
+        self.has_rs1 = vsc.uint32_t(1)
+        self.has_rs2 = vsc.uint32_t(1)
+        self.has_rd = vsc.uint32_t(1)
+        self.has_imm = vsc.uint32_t(1)
         self.shift_t = vsc.uint32_t(0xffffffff)
         self.XLEN = vsc.uint32_t(32)
     
@@ -152,7 +152,7 @@ class riscv_instr:
         try:
             #if cfg.argv.isa == "rv32i":
 
-            instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
+            instr_inst = eval("rv32c_instr.riscv_" + instr_name.name + "_instr()")
             '''elif cfg.argv.isa == "rv32m":
                 instr_inst = eval("rv32m_instr.riscv_" + instr_name + "_instr()")
             elif cfg.argv.isa == "rv32c":

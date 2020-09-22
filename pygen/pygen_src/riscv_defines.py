@@ -42,13 +42,13 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=im
     logging.info("class name {}".format(class_name))
     def __init__(self):
         riscv_compressed_instr.__init__(self)
-        riscv_compressed_instr.instr_name = instr_n
-        riscv_compressed_instr.format = instr_format
-        riscv_compressed_instr.category = instr_category
-        riscv_compressed_instr.group = instr_group
-        riscv_compressed_instr.imm_type = imm_tp
-        riscv_compressed_instr.set_imm_len()
-        riscv_compressed_instr.set_rand_mode()
+        self.instr_name = instr_n
+        self.format = instr_format
+        self.category = instr_category
+        self.group = instr_group
+        self.imm_type = imm_tp
+        self.set_imm_len()
+        self.set_rand_mode()
     NewClass = type(class_name, (riscv_compressed_instr,), {
         "__init__": __init__,
         "valid": riscv_compressed_instr.register(instr_n)

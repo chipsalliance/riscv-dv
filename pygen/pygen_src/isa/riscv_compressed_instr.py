@@ -27,69 +27,58 @@ class riscv_compressed_instr(riscv_instr):
         self.rs2 = riscv_reg_t.S0
         self.rd = riscv_reg_t.S0
         self.is_compressed = 1
-        self.a = vsc.rand_enum_t(riscv_reg_t)
-    
-    '''@vsc.constraint
+
+    @vsc.constraint
     def rvc_csr_c(self):
-        # self.a.inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,riscv_reg_t.A5)))
         # Registers specified by the three-bit rs1’, rs2’, and rd’
         
-        logging.info("format {}".format(self.format))
-        
-        if self.format in [riscv_instr_format_t.CIW_FORMAT,riscv_instr_format_t.CL_FORMAT,
-                           riscv_instr_format_t.CS_FORMAT, riscv_instr_format_t.CB_FORMAT,riscv_instr_format_t.CA_FORMAT]:
+        with vsc.implies(self.format.inside(vsc.rangelist(riscv_instr_format_t.CIW_FORMAT,riscv_instr_format_t.CL_FORMAT,
+                           riscv_instr_format_t.CS_FORMAT, riscv_instr_format_t.CB_FORMAT,riscv_instr_format_t.CA_FORMAT))):
             logging.info("Inside rvc_csr_c")
-            self.a.inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,riscv_reg_t.A5)))
-            if self.has_rs1:
-                self.rs1.inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,riscv_reg_t.A5)))
-            if self.has_rs2:
-                self.rs2.inside(vsc.rangelist(vsc.rng(riscv_reg_t.A4,riscv_reg_t.A5)))
-            if self.has_rd:
-                self.rd.inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,riscv_reg_t.A5)))
-        #with vssc.else:
-            #logging.info("Inside Else of rvc_csr_c")
+            with vsc.implies(self.has_rs1 == 1):
+                self.rs1.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
+            with vsc.implies(self.has_rs2 == 1):
+                self.rs2.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
+            with vsc.implies(self.has_rd == 1):
+                self.rd.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
             
         #_ADDI16SP is only valid when rd == SP
-        if self.instr_name == riscv_instr_name_t.C_ADDI16SP:
-            logging.info("Inside ADDD")
+        with vsc.implies(self.instr_name == riscv_instr_name_t.C_ADDI16SP):
             self.rd == riscv_reg_t.SP
-        if self.instr_name in [riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR]:
+        with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR))):
             self.rs1 != riscv_reg_t.ZERO
-            self.rs2 == riscv_reg_t.ZERO'''
+            self.rs2 == riscv_reg_t.ZERO
 
-    '''@vsc.constraint
+    
+    @vsc.constraint
     def imm_val_c(self):
-        logging.info("imm_val_C instr {}".format(self.instr_name))
-        if self.imm_type in [imm_t.NZIMM, imm_t.NZUIMM]:
-            logging.info("Inside imm_val_c")
+        with vsc.implies(self.imm_type.inside(vsc.rangelist(imm_t.NZIMM, imm_t.NZUIMM))):
             self.imm[5:0] != 0
-            if self.instr_name == riscv_instr_name_t.C_LUI:
+            with vsc.implies(self.instr_name == riscv_instr_name_t.C_LUI):
                 self.imm[31:5] == 0
-            if self.instr_name in [riscv_instr_name_t.C_SRAI, riscv_instr_name_t.C_SRLI, riscv_instr_name_t.C_SLLI]:
+            with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.C_SRAI, riscv_instr_name_t.C_SRLI, riscv_instr_name_t.C_SLLI))):
                 self.imm[31:5] == 0
-            if self.instr_name == riscv_instr_name_t.C_ADDI4SPN:
+            with vsc.implies(self.instr_name == riscv_instr_name_t.C_ADDI4SPN):
                 self.imm[1:0] == 0
     
     # C_JAL is RV32C only instruction
     @vsc.constraint
     def jal_c(self):
         logging.info("Inside jal_c")
-        if rcs.XLEN != 32:
-            self.instr_name != riscv_instr_name_t.C_JAL.name
+        with vsc.implies(self.XLEN != 32):
+            self.instr_name != riscv_instr_name_t.C_JAL
     
     # Avoid generating HINT or illegal instruction by default as it's not supported by the compiler
     @vsc.constraint
     def no_hint_illegal_instr_c(self):
-        logging.info("no_hint_illegal_instr_c {}".format(self.instr_name))
-        #pass
-        if self.instr_name in [riscv_instr_name_t.C_ADDI,riscv_instr_name_t.C_ADDIW,riscv_instr_name_t.C_LI,riscv_instr_name_t.C_LUI,riscv_instr_name_t.C_SLLI,riscv_instr_name_t.C_SLLI64,riscv_instr_name_t.C_LQSP,riscv_instr_name_t.C_LDSP,riscv_instr_name_t.C_MV,riscv_instr_name_t.C_ADD,riscv_instr_name_t.C_LWSP]:
+        with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.C_ADDI,riscv_instr_name_t.C_ADDIW,riscv_instr_name_t.C_LI,riscv_instr_name_t.C_LUI,riscv_instr_name_t.C_SLLI,riscv_instr_name_t.C_SLLI64,riscv_instr_name_t.C_LQSP,riscv_instr_name_t.C_LDSP,riscv_instr_name_t.C_MV,riscv_instr_name_t.C_ADD,riscv_instr_name_t.C_LWSP))):
             self.rd != riscv_reg_t.ZERO
-        if self.instr_name == riscv_instr_name_t.C_JR:
+        with vsc.implies(self.instr_name == riscv_instr_name_t.C_JR):
             self.rs1 != riscv_reg_t.ZERO
-        if self.instr_name in [riscv_instr_name_t.C_ADD, riscv_instr_name_t.C_MV]:
+        with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.C_ADD, riscv_instr_name_t.C_MV))):
             self.rs2 != riscv_reg_t.ZERO
-        if self.instr_name == riscv_instr_name_t.C_LUI:
-            self.rd != riscv_reg_t.SP'''
+        with vsc.implies(self.instr_name == riscv_instr_name_t.C_LUI):
+            self.rd != riscv_reg_t.SP
         
     def set_imm_len(self):
         if self.format in [riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CSS_FORMAT]:
@@ -121,43 +110,6 @@ class riscv_compressed_instr(riscv_instr):
             super().extend_imm()
             self.imm = self.imm << self.imm_align
 
-    '''def set_rand_mode(self):
-        if self.format in [riscv_instr_format_t.CR_FORMAT]:
-            if self.category in [riscv_instr_category_t.JUMP]:
-               with vsc.raw_mode():
-                    self.has_rd.rand_mode = False
-            else:
-                with vsc.raw_mode():
-                    self.has_rs1.rand_mode = False
-                    self.has_imm.rand_mode = False
-        elif self.format in [riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CIW_FORMAT]:
-            with vsc.raw_mode():
-                self.has_rs2.rand_mode = False
-                self.has_rs1.rand_mode = False
-        elif self.format in [riscv_instr_format_t.CSS_FORMAT]:
-            with vsc.raw_mode():
-                self.has_rs1.rand_mode = False
-                self.has_rd.rand_mode = False
-        elif self.format in [riscv_instr_format_t.CL_FORMAT]:
-            with vsc.raw_mode():
-                self.has_rs2.rand_mode = False
-        elif self.format in [riscv_instr_format_t.CS_FORMAT]:
-            with vsc.raw_mode():
-                self.has_rd.rand_mode = False
-        elif self.format in [riscv_instr_format_t.CA_FORMAT]:
-            with vsc.raw_mode():
-                self.has_rs1.rand_mode = False
-                self.has_imm.rand_mode = False
-        elif self.format == riscv_instr_format_t.CJ_FORMAT:
-            with vsc.raw_mode():
-                self.has_rs1.rand_mode = False
-                self.has_rs2.rand_mode = False
-                self.has_rd.rand_mode = False
-        elif self.format == riscv_instr_format_t.CB_FORMAT:
-            if self.instr_name != riscv_instr_name_t.C_ANDI.name:
-                with vsc.raw_mode():
-                    self.has_rd.rand_mode = False
-                    self.has_rs2.rand_mode = False'''
     def set_rand_mode(self):
         if self.format in [riscv_instr_format_t.CR_FORMAT]:
             if self.category in [riscv_instr_category_t.JUMP]:
@@ -188,9 +140,7 @@ class riscv_compressed_instr(riscv_instr):
                 self.has_rs2 = 0
 
     def convert2asm(self, prefix=""):
-        logging.info("self.a {}".format(self.a.name))
         asm_str = pkg_ins.format_string(string=self.get_instr_name(), length=pkg_ins.MAX_INSTR_STR_LEN)
-        logging.info("asm_str {}".format(asm_str))
         if self.category != riscv_instr_category_t.SYSTEM:
             logging.info("Instr name {} self.rd {} self.rs1 {} self.has_rs1 {} self.has_rs2 {} self.has_rd {} self.imm {} format {}".format(self.instr_name, self.rd.name, self.rs1.name, self.has_rs1, self.has_rs2, self.has_rd,self.imm, self.format.name))
             if self.format in [riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CIW_FORMAT]:
