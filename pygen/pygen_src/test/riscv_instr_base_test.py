@@ -14,8 +14,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import sys
 sys.path.append("pygen/")
 from pygen_src.riscv_instr_gen_config import cfg  # NOQA
-from pygen_src.isa.rv32c_instr import * # NOQA
-from pygen_src.isa.riscv_instr import riscv_instr_ins  # NOQA
+from pygen_src.isa.rv32i_instr import * # NOQA
+from pygen_src.isa.riscv_instr import riscv_instr  # NOQA
 from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
 
 
@@ -28,7 +28,7 @@ class riscv_instr_base_test:
         for _ in range(cfg.num_of_tests):
             cfg.randomize()
             asm = riscv_asm_program_gen()
-            riscv_instr_ins.create_instr_list(cfg)
+            riscv_instr.create_instr_list(cfg)
             if cfg.asm_test_suffix != "":
                 self.asm_file_name = "{}.{}".format(self.asm_file_name,
                                                     cfg.asm_test_suffix)

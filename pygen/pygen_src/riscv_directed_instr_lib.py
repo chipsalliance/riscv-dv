@@ -15,7 +15,7 @@ import random
 import vsc
 from enum import IntEnum, auto
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
-from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
+from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import (riscv_reg_t, 
         riscv_pseudo_instr_name_t, riscv_instr_name_t, pkg_ins)
@@ -70,7 +70,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             jal.append(riscv_instr_name_t.C_J)
             if rcs.XLEN == 32:
                 jal.append(riscv_instr_name_t.C_JAL)
-        self.jump_start = riscv_instr_ins.get_instr(riscv_instr_name_t.JAL.name)
+        self.jump_start = riscv_instr.get_instr(riscv_instr_name_t.JAL.name)
         with self.jump_start.randomize_with() as it:
             self.jump_start.rd == RA
         self.jump_start.imm_str = "{}f".format(order[0])
@@ -80,7 +80,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         self.jump_end = self.randomize_instr(self.jump_end)
         self.jump_end.label = "{}".format(self.num_of_jump_instr)
         for i in range(self.num_of_jump_instr):
-            self.jump[i] = riscv_instr_ins.get_rand_instr(include_instr = [jal[0].name])
+            self.jump[i] = riscv_instr.get_rand_instr(include_instr = [jal[0].name])
             with self.jump[i].randomize_with() as it:
                 if self.jump[i].has_rd:
                     vsc.dist(self.jump[i].rd, [vsc.weight(riscv_reg_t.RA, 5), vsc.weight(
@@ -156,7 +156,7 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
             self.init_instr[i].imm_str = "0x%0x" % (self.init_val[i])
             self.instr_list.append(self.init_instr[i])
         for i in range(self.num_of_instr):
-            instr = riscv_instr_ins.get_rand_instr(
+            instr = riscv_instr.get_rand_instr(
                 include_category = ['ARITHMETIC'],
                 exclude_group = ['RV32C', 'RV64C', 'RV32F', 'RV64F', 'RV32D', 'RV64D'])
             instr = self.randomize_gpr(instr)
@@ -195,7 +195,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         for i in range(len(self.push_stack_instr)):
             self.push_stack_instr[i] = riscv_instr()
         self.push_stack_instr[0] = \
-            riscv_instr_ins.get_instr(riscv_instr_name_t.ADDI.name)
+            riscv_instr.get_instr(riscv_instr_name_t.ADDI.name)
         with self.push_stack_instr[0].randomize_with() as it:
             self.push_stack_instr[0].rd == cfg.sp
             self.push_stack_instr[0].rs1 == cfg.sp
@@ -204,13 +204,13 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         self.push_stack_instr[0].imm_str = '-{}'.format(self.stack_len)
         for i in range(len(self.saved_regs)):
             if rcs.XLEN == 32:
-                self.push_stack_instr[i + 1] = riscv_instr_ins.get_instr(riscv_instr_name_t.SW.name)
+                self.push_stack_instr[i + 1] = riscv_instr.get_instr(riscv_instr_name_t.SW.name)
                 with self.push_stack_instr[i + 1].randomize_with() as it:
                     self.push_stack_instr[i + 1].rs2 == self.saved_regs[i]
                     self.push_stack_instr[i + 1].rs1 == cfg.sp
                     self.push_stack_instr[i + 1].imm == 4 * (i + 1)
             else:
-                self.push_stack_instr[i + 1] = riscv_instr_ins.get_instr(riscv_instr_name_t.SD.name)
+                self.push_stack_instr[i + 1] = riscv_instr.get_instr(riscv_instr_name_t.SD.name)
                 with self.push_stack_instr[i + 1].randomize_with() as it:
                     self.push_stack_instr[i + 1].rs2 == self.saved_regs[i]
                     self.push_stack_instr[i + 1].rs1 == cfg.sp
@@ -223,7 +223,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
             self.enable_branch = 0'''
         if self.enable_branch:
             self.branch_instr = \
-                riscv_instr_ins.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
+                riscv_instr.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
             # `DV_CHECK_STD_RANDOMIZE_FATAL(branch_instr)
             self.branch_instr.imm_str = self.push_start_label
             self.branch_instr.brach_assigned = 1
@@ -271,13 +271,13 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
 
         for i in range(len(self.saved_regs)):
             if rcs.XLEN == 32:
-                self.pop_stack_instr[i] = riscv_instr_ins.get_instr(riscv_instr_name_t.LW.name)
+                self.pop_stack_instr[i] = riscv_instr.get_instr(riscv_instr_name_t.LW.name)
                 with self.pop_stack_instr[i].randomize_with() as it:
                     self.rd == self.saved_regs[i]
                     self.rs1 == cfg.sp
                     self.imm == 4 * (i + 1)
             else:
-                self.pop_stack_instr[i] = riscv_instr_ins.get_instr(riscv_instr_name_t.LD.name)
+                self.pop_stack_instr[i] = riscv_instr.get_instr(riscv_instr_name_t.LD.name)
                 with self.pop_stack_instr[i].randomize_with() as it:
                     self.rd == self.saved_regs[i]
                     self.rs1 == cfg.sp
@@ -286,7 +286,7 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
             self.pop_stack_instr[i].process_load_store = 0
 
         # addi sp,sp,imm
-        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr_ins.get_instr(riscv_instr_name_t.ADDI.name)
+        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr.get_instr(riscv_instr_name_t.ADDI.name)
         self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string('{}', self.stack_len)
         self.mix_instr_stream(self.pop_stack_instr)
         for i in range(len(self.instr_list)):

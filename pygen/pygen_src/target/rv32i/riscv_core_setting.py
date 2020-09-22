@@ -18,7 +18,7 @@ implemented_csr = ['MVENDORID', 'MARCHID', 'MIMPID', 'MHARTID', 'MSTATUS', 'MISA
 
 SATP_MODE = 'BARE'
 
-supported_isa = ['RV32C']
+supported_isa = ['RV32I']
 
 supported_privileged_mode = ['MACHINE_MODE']
 

@@ -16,7 +16,7 @@ import sys
 import vsc
 from pygen_src.riscv_instr_pkg import riscv_instr_name_t,\
     riscv_instr_category_t, riscv_reg_t
-from pygen_src.isa.riscv_instr import riscv_instr, riscv_instr_ins
+from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_gen_config import cfg
 
 
@@ -170,15 +170,15 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             self.instr_list.append(None)
 
     def setup_allowed_instr(self, no_branch = 0, no_load_store = 1):
-        self.allowed_instr = riscv_instr_ins.basic_instr
+        self.allowed_instr = riscv_instr.basic_instr
         if no_branch == 0:
             self.allowed_instr.extend(
-                riscv_instr_ins.instr_category[riscv_instr_category_t.BRANCH.name])
+                riscv_instr.instr_category[riscv_instr_category_t.BRANCH.name])
         if no_load_store == 0:
             self.allowed_instr.extend(
-                riscv_instr_ins.instr_category[riscv_instr_category_t.LOAD.name])
+                riscv_instr.instr_category[riscv_instr_category_t.LOAD.name])
             self.allowed_instr.extend(
-                riscv_instr_ins.instr_category[riscv_instr_category_t.STORE.name])
+                riscv_instr.instr_category[riscv_instr_category_t.STORE.name])
         self.setup_instruction_dist(no_branch, no_load_store)
 
     # TODO
@@ -224,7 +224,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             elif (not cfg.no_ebreak and not cfg.enable_ebreak_in_debug_rom):
                 exclude_instr.extend([riscv_instr_name_t.EBREAK.name,
                                       riscv_instr_name_t.C_EBREAK.name])
-        instr = riscv_instr_ins.get_rand_instr(
+        instr = riscv_instr.get_rand_instr(
             include_instr = self.allowed_instr, exclude_instr = exclude_instr)
         instr = self.randomize_gpr(instr)
         return instr
@@ -235,6 +235,27 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         PyVSC library doesn't support inline randomization for list of enum types.
         The randomization is done directly here.
         it will be updated once randomization for list of enum types supports in PyVSC.
-        """
+        
+        avail_regs_size = 0
+        avail_regs_size = len(self.avail_regs)
+        with instr.randomize_with() as it:
+            if avail_regs_size > 0:
+                if instr.has_rs1:
+                    instr.rs1.inside(vsc.rangelist(self.avail_regs))
+                if instr.has_rs2:
+                    instr.rs2.inside(vsc.rangelist(self.avail_regs))
+                if instr.has_rd:
+                    instr.rd.inside(vsc.rangelist(self.avail_regs))     
+            with vsc.foreach(self.reserved_rd, idx = True) as i:
+                if instr.has_rd:
+                    instr.rd != self.reserved_rd[i]
+                if instr.format == riscv_instr_format_t.CB_FORMAT:
+                    instr.rs1 != self.reserved_rd[i]
+            if instr.has_rd:
+                instr.rd.not_inside(vsc.rangelist(cfg.reserved_regs))
+            if instr.format == riscv_instr_format_t.CB_FORMAT:
+                instr.rs1.not_inside(vsc.rangelist(cfg.reserved_regs))
+        # TODO: Add constraint for CSR, floating point register
+        return instr"""
         instr.randomize()
         return instr
