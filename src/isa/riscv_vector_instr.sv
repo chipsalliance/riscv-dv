@@ -272,12 +272,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   }
 
   // load/store EEW/EMUL and corresponding register grouping constraints
-  constraint load_store_eew_emul_c {
+  constraint load_store_solve_order_c {
     solve eew before emul;
     solve emul before vd;
     solve emul before vs1;
     solve emul before vs2;
     solve emul before vs3;
+  }
+
+  constraint load_store_eew_emul_c {
     if (category inside {LOAD, STORE, AMO}) {
       eew inside {m_cfg.vector_cfg.legal_eew};
       if (eew > m_cfg.vector_cfg.vtype.vsew) {
@@ -496,6 +499,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     vs2.rand_mode(has_vs2);
     vs3.rand_mode(has_vs3);
     vd.rand_mode(has_vd);
+    if (!(category inside {LOAD, STORE, AMO})) begin
+      load_store_solve_order_c.constraint_mode(0);
+    end
   endfunction : pre_randomize
 
   virtual function void set_rand_mode();
