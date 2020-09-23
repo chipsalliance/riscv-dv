@@ -22,7 +22,7 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_
 
     def __init__(self):
         riscv_instr.__init__(self)
-        self.instr_name = instr_n.name
+        self.instr_name = instr_n
         self.format = instr_format
         self.category = instr_category
         self.group = instr_group
@@ -42,7 +42,7 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=im
     logging.info("class name {}".format(class_name))
     def __init__(self):
         riscv_compressed_instr.__init__(self)
-        self.instr_name = instr_n.name
+        self.instr_name = instr_n
         self.format = instr_format
         self.category = instr_category
         self.group = instr_group
