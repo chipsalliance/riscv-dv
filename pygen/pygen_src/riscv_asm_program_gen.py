@@ -554,7 +554,7 @@ class riscv_asm_program_gen:
                                                                                  ip.name)]
         interrupt_handler_instr.extend(to_extend_interrupt_hanlder_instr)
         self.gen_plic_section(interrupt_handler_instr)
-        pkg_ins.pop_gpr_from_kernel_stack(status.name, scratch.name, cfg.mstatus_mprv,
+        pkg_ins.pop_gpr_from_kernel_stack(status, scratch, cfg.mstatus_mprv,
                                           cfg.sp, cfg.tp, interrupt_handler_instr)
         interrupt_handler_instr.append("%0sret;" % (mode_prefix))
 
