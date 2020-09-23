@@ -21,12 +21,12 @@ from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import (riscv_reg_t,
                                        riscv_pseudo_instr_name_t, riscv_instr_name_t, pkg_ins)
-#from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
 if cfg.argv.target == "rv32imc":
     from pygen_src.target.rv32imc import riscv_core_setting as rcs
+
 
 class riscv_directed_instr_stream(riscv_rand_instr_stream):
 
@@ -230,7 +230,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
             self.enable_branch = 0
         if self.enable_branch:
             self.branch_instr = \
-            riscv_instr.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
+                riscv_instr.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
             # `DV_CHECK_STD_RANDOMIZE_FATAL(branch_instr)
             self.branch_instr.imm_str = self.push_start_label
             self.branch_instr.brach_assigned = 1
@@ -290,8 +290,10 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
         # addi sp,sp,imm
         ''' TODO `DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[num_of_reg_to_save],
                                    rd == cfg.sp; rs1 == cfg.sp; imm == stack_len;) '''
-        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr.get_instr(riscv_instr_name_t.ADDI.name)
-        self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string('{}', self.stack_len)
+        self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr.get_instr(
+            riscv_instr_name_t.ADDI.name)
+        self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string(
+            '{}', self.stack_len)
         self.mix_instr_stream(self.pop_stack_instr)
         for i in range(len(self.instr_list)):
             self.instr_list[i].atomic = 1

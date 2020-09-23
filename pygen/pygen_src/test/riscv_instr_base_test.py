@@ -44,5 +44,6 @@ class riscv_instr_base_test:
             asm.gen_program()
             asm.gen_test_file(test_name)
 
+
 riscv_instr_base_test = riscv_instr_base_test()
 riscv_instr_base_test.run_phase()

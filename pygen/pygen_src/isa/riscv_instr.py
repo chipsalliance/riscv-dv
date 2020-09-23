@@ -12,20 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
+from pygen_src.riscv_instr_gen_config import cfg
 import logging
 import copy
 import sys
 import random
 import vsc
-from enum import Enum
 from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
-from pygen_src.riscv_instr_pkg import pkg_ins, riscv_instr_category_t, riscv_reg_t, riscv_instr_name_t, riscv_instr_format_t, riscv_instr_group_t, imm_t
-from pygen_src.riscv_instr_gen_config import cfg
+from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_instr_category_t, riscv_reg_t,
+                                       riscv_instr_name_t, riscv_instr_format_t, riscv_instr_group_t, imm_t)
 
 if cfg.argv.target == "rv32i":
-    from pygen_src.isa import rv32i_instr
     from pygen_src.target.rv32i import riscv_core_setting as rcs
 if cfg.argv.target == "rv32imc":
     from pygen_src.target.rv32imc import riscv_core_setting as rcs
@@ -49,6 +48,7 @@ class riscv_instr:
 
     exclude_reg = []
     include_reg = []
+
     def __init__(self):
         self.group = vsc.enum_t(riscv_instr_group_t)
         self.format = vsc.enum_t(riscv_instr_format_t)
@@ -83,17 +83,17 @@ class riscv_instr:
         self.has_rd = vsc.uint32_t(1)
         self.has_imm = vsc.uint32_t(1)
         self.shift_t = vsc.uint32_t(0xffffffff)
-        self.XLEN = vsc.uint32_t() # XLEN is used in constraint throughout the generator.
-                                   # Hence, XLEN should be of PyVSC type in order to use it in a constraint block
+        self.XLEN = vsc.uint32_t(32)  # XLEN is used in constraint throughout the generator.
+        # Hence, XLEN should be of PyVSC type in order to use it in a constraint block
         self.XLEN = rcs.XLEN
-    
+
     @vsc.constraint
     def imm_c(self):
         with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.SLLIW,
-                              riscv_instr_name_t.SRLIW, riscv_instr_name_t.SRAIW))):
+                                                              riscv_instr_name_t.SRLIW, riscv_instr_name_t.SRAIW))):
             self.imm[11:5] == 0
         with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.SLLI,
-                              riscv_instr_name_t.SRLI, riscv_instr_name_t.SRAI))):
+                                                              riscv_instr_name_t.SRLI, riscv_instr_name_t.SRAI))):
             with vsc.implies(self.XLEN == 32):
                 self.imm[11:5] == 0
             with vsc.implies(self.XLEN != 32):
@@ -138,27 +138,27 @@ class riscv_instr:
                 cls.instr_names.append(instr_name)
         cls.build_basic_instruction_list(cfg)
         cls.create_csr_filter(cfg)
-    
+
     @classmethod
     def create_instr(cls, instr_name):
         try:
             if cfg.argv.target == "rv32i":
                 from pygen_src.isa import rv32i_instr
-                instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+                instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
             elif cfg.argv.target == "rv32imc":
                 try:
                     from pygen_src.isa import rv32i_instr
-                    instr_inst = eval("rv32i_instr.riscv_" + instr_name + "_instr()")
+                    instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
                 except Exception:
                     try:
                         from pygen_src.isa import rv32m_instr
-                        instr_inst = eval("rv32m_instr.riscv_" + instr_name + "_instr()")
+                        instr_inst = eval("rv32m_instr.riscv_" + instr_name.name + "_instr()")
                     except Exception:
                         try:
                             from pygen_src.isa import rv32c_instr
-                            instr_inst = eval("rv32c_instr.riscv_" + instr_name + "_instr()")
-                        except Exception: 
-                            logging.critical("Failed to create instr: %0s", instr_name)
+                            instr_inst = eval("rv32c_instr.riscv_" + instr_name.name + "_instr()")
+                        except Exception:
+                            logging.critical("Failed to create instr: %0s", instr_name.name)
                             sys.exit(1)
         except Exception:
             logging.critical("Failed to create instr: %0s", instr_name.name)
@@ -171,7 +171,7 @@ class riscv_instr:
     @classmethod
     def build_basic_instruction_list(cls, cfg):
         cls.basic_instr = (cls.instr_category["SHIFT"] + cls.instr_category["ARITHMETIC"] +
-                            cls.instr_category["LOGICAL"] + cls.instr_category["COMPARE"])
+                           cls.instr_category["LOGICAL"] + cls.instr_category["COMPARE"])
         if cfg.no_ebreak == 0:
             cls.basic_instr.append("EBREAK")
             for items in rcs.supported_isa:
@@ -208,7 +208,6 @@ class riscv_instr:
     def get_rand_instr(cls, include_instr=[], exclude_instr=[],
                        include_category=[], exclude_category=[],
                        include_group=[], exclude_group=[]):
-        logging.info("Instr templates", cls.instr_template)
         idx = BitArray(uint = 0, length = 32)
         name = ""
         allowed_instr = []
@@ -217,12 +216,12 @@ class riscv_instr:
         for items in include_category:
             allowed_instr.extend(cls.instr_category[items])
         for items in exclude_category:
-            if items in instr_category:
+            if items in cls.instr_category:
                 disallowed_instr.extend(cls.instr_category[items])
         for items in include_group:
             allowed_instr.extend(cls.instr_group[items])
         for items in exclude_group:
-            if items in instr_group:
+            if items in cls.instr_group:
                 disallowed_instr.extend(cls.instr_group[items])
 
         disallowed_instr.extend(exclude_instr)
@@ -241,7 +240,7 @@ class riscv_instr:
                     name = allowed_instr[idx]
                 else:
                     idx = random.randrange(0, len(cls.instr_names) - 1)
-                    name = self.instr_names[idx]
+                    name = cls.instr_names[idx]
             except Exception:
                 logging.critical("[%s] Cannot generate random instruction", riscv_instr.__name__)
                 sys.exit(1)
@@ -515,4 +514,3 @@ class riscv_instr:
         else:
             signed_x = x - 2 ** rcs.XLEN
         return signed_x
-

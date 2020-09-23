@@ -13,7 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 import vsc
 from pygen_src.isa.riscv_instr import riscv_instr
-from pygen_src.riscv_instr_pkg import riscv_instr_name_t, riscv_instr_format_t, riscv_instr_category_t, riscv_reg_t,imm_t, pkg_ins
+from pygen_src.riscv_instr_pkg import (riscv_instr_name_t, riscv_instr_format_t,
+riscv_instr_category_t, riscv_reg_t,imm_t, pkg_ins)
 from pygen_src.riscv_instr_gen_config import cfg
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
@@ -35,17 +36,14 @@ class riscv_compressed_instr(riscv_instr):
     @vsc.constraint
     def rvc_csr_c(self):
         # Registers specified by the three-bit rs1’, rs2’, and rd’
-        
         with vsc.implies(self.format.inside(vsc.rangelist(riscv_instr_format_t.CIW_FORMAT,riscv_instr_format_t.CL_FORMAT,
                            riscv_instr_format_t.CS_FORMAT, riscv_instr_format_t.CB_FORMAT,riscv_instr_format_t.CA_FORMAT))):
-            logging.info("Inside rvc_csr_c")
             with vsc.implies(self.has_rs1 == 1):
                 self.rs1.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
             with vsc.implies(self.has_rs2 == 1):
                 self.rs2.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
             with vsc.implies(self.has_rd == 1):
                 self.rd.inside(vsc.rangelist(riscv_reg_t.S0,riscv_reg_t.S1,riscv_reg_t.A0,riscv_reg_t.A1,riscv_reg_t.A2,riscv_reg_t.A3,riscv_reg_t.A4,riscv_reg_t.A5))
-            
         #_ADDI16SP is only valid when rd == SP
         with vsc.implies(self.instr_name == riscv_instr_name_t.C_ADDI16SP):
             self.rd == riscv_reg_t.SP
@@ -68,7 +66,6 @@ class riscv_compressed_instr(riscv_instr):
     # C_JAL is RV32C only instruction
     @vsc.constraint
     def jal_c(self):
-        logging.info("Inside jal_c")
         with vsc.implies(self.XLEN != 32):
             self.instr_name != riscv_instr_name_t.C_JAL
     
@@ -146,7 +143,6 @@ class riscv_compressed_instr(riscv_instr):
     def convert2asm(self, prefix=""):
         asm_str = pkg_ins.format_string(string=self.get_instr_name(), length=pkg_ins.MAX_INSTR_STR_LEN)
         if self.category != riscv_instr_category_t.SYSTEM:
-            logging.info("Instr name {} self.rd {} self.rs1 {} self.has_rs1 {} self.has_rs2 {} self.has_rd {} self.imm {} format {}".format(self.instr_name, self.rd.name, self.rs1.name, self.has_rs1, self.has_rs2, self.has_rd,self.imm, self.format.name))
             if self.format in [riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CIW_FORMAT]:
                 if self.instr_name is riscv_instr_name_t.C_NOP:
                     asm_str = "c.nop"
