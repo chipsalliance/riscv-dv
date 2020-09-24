@@ -67,7 +67,7 @@ class riscv_instr_gen_config:
         self.mstatus_vs = BitArray(bin(0b0), length=2)
         self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
 
-        self.tvec_alignment = self.argv.tvec_alignment
+        self.tvec_alignment = vsc.rand_uint8_t(self.argv.tvec_alignment)
 
         self.fcsr_rm = list(map(lambda csr_rm: csr_rm.name, f_rounding_mode_t))
         self.enable_sfence = 0
@@ -201,6 +201,13 @@ class riscv_instr_gen_config:
                                            riscv_reg_t.ZERO, riscv_reg_t.RA, riscv_reg_t.GP))
         vsc.unique(self.gpr0, self.gpr1, self.gpr2, self.gpr3)
 
+    @vsc.constraint
+    def mtvec_c(self):
+        self.mtvec_mode.inside(vsc.rangelist(mtvec_mode_t.DIRECT, mtvec_mode_t.VECTORED))
+        if(self.mtvec_mode == mtvec_mode_t.DIRECT):
+            vsc.soft(self.tvec_alignment == 2)
+        else:
+            vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) / 8)
 
     def check_setting(self):
         support_64b = 0
@@ -328,7 +335,7 @@ class riscv_instr_gen_config:
         self.init_delegation()
         # self.setup_instr_distribution()  # TODO
         self.get_invalid_priv_lvl_csr()
-    
+
     def parse_args(self):
         parse = argparse.ArgumentParser()
         parse.add_argument('--num_of_tests', help = 'num_of_tests', type = int, default = 1)
@@ -457,7 +464,7 @@ class riscv_instr_gen_config:
         get_invalid_priv_lvl_csr();
         '''
         args = parse.parse_args()
-        
+
         return args
 
 
