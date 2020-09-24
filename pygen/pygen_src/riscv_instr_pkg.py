@@ -1487,13 +1487,13 @@ class riscv_instr_pkg:
             store_instr = "sw" 
         else:
             store_instr = "sd"
-        if (scratch in rcs.implemented_csr):
+        if (scratch.name in rcs.implemented_csr):
             #Use kernal stack for handling exceptions. Save the user mode stack pointer to the scratch register
-            instr.append(pkg_ins.format_string("csrrw x{}, 0x{}, x{}".format(sp,scratch.value,sp)))
+            instr.append(pkg_ins.format_string("csrrw x{}, {}, x{}".format(sp,hex(scratch.value),sp)))
             #Move TP to SP
             instr.append(pkg_ins.format_string("add x{}, x{}, zero".format(sp,tp)))
         # If MPRV is set and MPP is S/U mode, it means the address translation and memory protection for load/store instruction is the same as the mode indicated by MPP. In this case, we need to use the virtual address to access the kernel stack.
-        if((status == "MSTATUS") and (rcs.SATP_MODE != "BARE")):
+        if((status.name == "MSTATUS") and (rcs.SATP_MODE != "BARE")):
            # We temporarily use tp to check mstatus to avoid changing other GPR. The value of sp has been saved to xScratch and can be restored later.
            if(mprv):
                 instr.append(pkg_ins.format_string("csrr x{}, 0x{} // MSTATUS".format(tp, status.value)))
