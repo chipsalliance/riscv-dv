@@ -1509,8 +1509,7 @@ class riscv_instr_pkg:
         instr.append(pkg_ins.format_string("1: addi x{}, x{}, -{}".format(sp,sp,int(31 * (rcs.XLEN/8)))))
        # Push all GPRs to kernel stack 
         for i in range(1,32):
-            instr.append(pkg_ins.format_string("{} x{}, {}(x{})".format(store_instr,i,int(i * (rcs.XLEN/8)),sp)))	
-        pass
+            instr.append(pkg_ins.format_string("{} x{}, {}(x{})".format(store_instr,i,int(i * (rcs.XLEN/8)),sp)))
         
     def pop_gpr_from_kernel_stack(self, status, scratch, mprv, sp, tp, instr):
         load_instr = ''
@@ -1528,6 +1527,5 @@ class riscv_instr_pkg:
             instr.append(pkg_ins.format_string("add x{}, x{}, zero".format(tp,sp)))
             #Restore user mode stack pointer
             instr.append(pkg_ins.format_string("csrrw x{}, 0x{}, x{}".format(sp,scratch.value,sp)))
-        pass
     
 pkg_ins = riscv_instr_pkg()

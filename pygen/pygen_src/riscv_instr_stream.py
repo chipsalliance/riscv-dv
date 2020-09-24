@@ -198,7 +198,6 @@ class riscv_rand_instr_stream(riscv_instr_stream):
     def gen_instr(self, no_branch = 0, no_load_store = 1, is_debug_program = 0):
         self.setup_allowed_instr(no_branch, no_load_store)
         for i in range(len(self.instr_list)):
-            logging.info("stram {}".format(self.instr_list[i]))
             self.instr_list[i] = self.randomize_instr(self.instr_list[i], is_debug_program)
         while self.instr_list[-1].category == riscv_instr_category_t.BRANCH:
             self.instr_list.pop()
@@ -236,27 +235,6 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         PyVSC library doesn't support inline randomization for list of enum types.
         The randomization is done directly here.
         it will be updated once randomization for list of enum types supports in PyVSC.
-        
-        avail_regs_size = 0
-        avail_regs_size = len(self.avail_regs)
-        with instr.randomize_with() as it:
-            if avail_regs_size > 0:
-                if instr.has_rs1:
-                    instr.rs1.inside(vsc.rangelist(self.avail_regs))
-                if instr.has_rs2:
-                    instr.rs2.inside(vsc.rangelist(self.avail_regs))
-                if instr.has_rd:
-                    instr.rd.inside(vsc.rangelist(self.avail_regs))     
-            with vsc.foreach(self.reserved_rd, idx = True) as i:
-                if instr.has_rd:
-                    instr.rd != self.reserved_rd[i]
-                if instr.format == riscv_instr_format_t.CB_FORMAT:
-                    instr.rs1 != self.reserved_rd[i]
-            if instr.has_rd:
-                instr.rd.not_inside(vsc.rangelist(cfg.reserved_regs))
-            if instr.format == riscv_instr_format_t.CB_FORMAT:
-                instr.rs1.not_inside(vsc.rangelist(cfg.reserved_regs))
-        # TODO: Add constraint for CSR, floating point register
-        return instr"""
+        """
         instr.randomize()
         return instr
