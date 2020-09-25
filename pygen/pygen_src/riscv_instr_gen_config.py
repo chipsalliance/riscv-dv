@@ -190,6 +190,16 @@ class riscv_instr_gen_config:
             self.disable_compressed_instr = 1
 
     @vsc.constraint
+    def sp_tp_c(self):
+        if self.fix_sp:
+            self.sp == riscv_reg_t.SP
+        self.sp != self.tp
+        self.sp.not_inside(vsc.rangelist(riscv_reg_t.GP,
+                           riscv_reg_t.RA, riscv_reg_t.ZERO))
+        self.tp.not_inside(vsc.rangelist(riscv_reg_t.GP,
+                           riscv_reg_t.RA, riscv_reg_t.ZERO))
+
+    @vsc.constraint
     def gpr_c(self):
         self.gpr0.not_inside(vsc.rangelist(self.sp, self.tp, self.scratch_reg, self.pmp_reg,
                                            riscv_reg_t.ZERO, riscv_reg_t.RA, riscv_reg_t.GP))
@@ -200,6 +210,18 @@ class riscv_instr_gen_config:
         self.gpr3.not_inside(vsc.rangelist(self.sp, self.tp, self.scratch_reg, self.pmp_reg,
                                            riscv_reg_t.ZERO, riscv_reg_t.RA, riscv_reg_t.GP))
         vsc.unique(self.gpr0, self.gpr1, self.gpr2, self.gpr3)
+
+    @vsc.constraint
+    def ra_c(self):
+        self.ra != riscv_reg_t.SP
+        self.ra != riscv_reg_t.TP
+        self.ra != riscv_reg_t.ZERO
+
+    @vsc.constraint
+    def reserve_scratch_reg_c(self):
+        self.scratch_reg != riscv_reg_t.ZERO
+        self.scratch_reg != riscv_reg_t.TP
+        self.scratch_reg != riscv_reg_t.SP
 
     @vsc.constraint
     def mtvec_c(self):
