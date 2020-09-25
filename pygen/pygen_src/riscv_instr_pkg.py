@@ -83,6 +83,7 @@ class riscv_instr_group_t(IntEnum):
     RV64B = auto()
     RV32X = auto()
     RV64X = auto()
+    RVV = auto()
 
 
 class riscv_instr_name_t(IntEnum):
