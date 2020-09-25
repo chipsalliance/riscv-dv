@@ -18,7 +18,7 @@ import copy
 import sys
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
-from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t
+from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t, privileged_mode_t, mtvec_mode_t, exception_cause_t
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
@@ -142,8 +142,9 @@ class riscv_asm_program_gen:
 
         self.gen_all_trap_handler(hart)
         for mode in rcs.supported_privileged_mode:
+            logging.info("mode {}".format(mode))
             self.gen_interrupt_handler_section(mode, hart)
-
+        self.instr_stream.append(pkg_ins.get_label("kernel_instr_end: nop", hart))
         self.gen_kernel_stack_section(hart)
 
     def gen_kernel_program(self, hart, seq):
@@ -209,7 +210,7 @@ class riscv_asm_program_gen:
             self.instr_stream.append(".align 2")
 
         self.instr_stream.append(pkg_ins.get_label("user_stack_start:", hart))
-        self.instr_stream.append(".rept {}".format(cfg.kernel_stack_len - 1))
+        self.instr_stream.append(".rept {}".format(cfg.stack_len - 1))
         self.instr_stream.append(".{}byte 0x0".format(rcs.XLEN // 8))
         self.instr_stream.append(".endr")
         self.instr_stream.append(pkg_ins.get_label("user_stack_end:", hart))
@@ -444,6 +445,11 @@ class riscv_asm_program_gen:
             # TODO
             pkg_ins.push_gpr_to_kernel_stack(
                 status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
+            # Checking xStatus can be optional if ISS (like spike) has different implementation of
+            # certain fields compared with the RTL processor.
+            if cfg.check_xstatus:
+                instr.append("csrr x{}, 0x{} # {}".format(cfg.gpr[0].value, status.value, status.name))
+            instr.append("csrr x{}, 0x{} # {}\n".format(cfg.gpr[0].value, cause.value, cause.name) + "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[0].value, rcs.XLEN-1) + "{}bne x{}, x0, {}{}mode_instr_handler".format(pkg_ins.indent, cfg.gpr[0].value, pkg_ins.hart_prefix(hart), mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
         # the page table with a specific privileged mode.
 
@@ -456,6 +462,46 @@ class riscv_asm_program_gen:
         self.gen_section(pkg_ins.get_label("{}_handler".format(tvec_name.lower()), hart), instr)
 
         # TODO Exception handler
+        instr = []
+        if cfg.mtvec_mode == mtvec_mode_t.VECTORED:
+            pkg_ins.push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
+        self.gen_signature_handshake(instr, "CORE_STATUS", "HANDLING_EXCEPTION")
+        '''instr.append( "csrr x{}, 0x{} # {}\n".format(cfg.gpr[0].value, epc.value, epc.name) +
+                 "{}csrr x{}, 0x{} # {}\n".format(pkg_ins.indent, cfg.gpr[0].value, cause.value, cause.name) +
+                 # Breakpoint
+                 "{}li x{}, 0x{} # BREAKPOINT\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.BREAKPOINT.value) +
+                 "{}beq x{}, x{}, {}ebreak_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+
+                 # Check if it's an ECALL exception. Jump to ECALL exception handler
+                 "{}li x{}, 0x{} # ECALL_UMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_UMODE.value) +
+                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{} # ECALL_SMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_SMODE.value) +
+                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{} # ECALL_MMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_MMODE.value) +
+                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+
+                 # Page table fault or access fault conditions
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.INSTRUCTION_ACCESS_FAULT.value) +
+                 "{}beq x{}, x{}, {}instr_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.LOAD_ACCESS_FAULT.value) +
+                 "{}beq x{}, x{}, {}load_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.STORE_AMO_ACCESS_FAULT.value) +
+                 "{}beq x{}, x{}, {}store_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.INSTRUCTION_PAGE_FAULT.value) +
+                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.LOAD_PAGE_FAULT.value) +
+                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.STORE_AMO_ACCESS_FAULT.value) +
+                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+
+                 # Illegal instruction exception
+                 "{}li x{}, 0x{} # ILLEGAL_INSTRUCTION\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ILLEGAL_INSTRUCTION.value) +
+                 "{}beq x{}, x{}, {}illegal_instruction_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
+
+                 # Skip checking tval for illegal instruction as it's implementation specific
+                 "{}csrr x{}, 0x{} # {}\n".format(pkg_ins.indent, cfg.gpr[0].value, tval.value, tval.name) +
+                 "{}1: jal x1, test_done ".format(pkg_ins.indent))
+        self.gen_section(pkg_ins.get_label("{}mode_exception_handler".format(mode), hart), instr)'''
 
     def gen_interrupt_vector_table(self, hart, mode, status, cause, ie,
                                    ip, scratch, instr):
@@ -563,7 +609,7 @@ class riscv_asm_program_gen:
         else:
             self.instr_stream.append(".align 2")
 
-        self.gen_section(pkg_ins.get_label("%0smode_intr_handler" %
+        self.gen_section(pkg_ins.get_label("%0smode_instr_handler" %
                                            (mode_prefix), hart), interrupt_handler_instr)
 
     def format_section(self, instr):
