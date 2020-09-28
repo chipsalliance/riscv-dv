@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 from pygen_src.riscv_instr_pkg import imm_t
 from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.isa.riscv_compressed_instr import riscv_compressed_instr
-import logging
+
 
 def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
@@ -39,7 +39,7 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_
 
 def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
-    logging.info("class name {}".format(class_name))
+
     def __init__(self):
         riscv_compressed_instr.__init__(self)
         self.instr_name = instr_n
@@ -54,6 +54,7 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=im
         "valid": riscv_compressed_instr.register(instr_n)
     })
     g[class_name] = NewClass
+
 
 '''
 TODO

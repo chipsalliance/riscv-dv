@@ -219,8 +219,8 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         # adding ebreak instructions into the debug ROM.
         if is_in_debug:
             if (cfg.no_ebreak and cfg.enable_ebreak_in_debug_rom):
-                allowed_instr.extend([riscv_instr_name_t.EBREAK.name,
-                                      riscv_instr_name_t.C_EBREAK.name])
+                self.allowed_instr.extend([riscv_instr_name_t.EBREAK.name,
+                                           riscv_instr_name_t.C_EBREAK.name])
             elif (not cfg.no_ebreak and not cfg.enable_ebreak_in_debug_rom):
                 exclude_instr.extend([riscv_instr_name_t.EBREAK.name,
                                       riscv_instr_name_t.C_EBREAK.name])

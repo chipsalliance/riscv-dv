@@ -20,7 +20,6 @@ from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t)
-#from pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
 @vsc.randobj
@@ -33,10 +32,6 @@ class riscv_instr_gen_config:
         self.debug_sub_program_instr_cnt = []  # count of debug sub_progrms
         self.max_directed_instr_stream_seq = 20
         self.data_page_pattern = vsc.rand_enum_t(data_pattern_t)
-        # Commenting out for now
-        # self.data_page_pattern = list(
-        # map(lambda dta_pg: dta_pg.name, data_pattern_t))
-        # dicts for exception_cause_t & interrupt_cause_t Enum classes
         self.argv = self.parse_args()
         self.args_dict = vars(self.argv)
         global rcs
@@ -411,6 +406,8 @@ class riscv_instr_gen_config:
         parse.add_argument('--illegal_instr_ratio',
                            help = 'illegal_instr_ratio', type = int, default = 0)
         parse.add_argument('--hint_instr_ratio', help = 'hint_instr_ratio', type = int, default = 0)
+        # TODO map it with rcs NUM_HARTS. After solving the cyclic issue for core setting.
+        # rcs is out of scope while using in the default value of num_of_harts
         parse.add_argument('--num_of_harts', help = 'num_of_harts',
                            type = int, default = 1)
         parse.add_argument('--enable_unaligned_load_store',
@@ -471,7 +468,7 @@ class riscv_instr_gen_config:
                            default="riscv_asm_test")
         parse.add_argument('--log_file_name', help='log file name',
                            default="")
-        parse.add_argument('--target', help='target', default="rv32i")
+        parse.add_argument('--target', help='target', default="rv32imc")
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin

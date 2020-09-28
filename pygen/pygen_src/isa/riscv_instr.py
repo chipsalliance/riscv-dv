@@ -12,7 +12,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
-from pygen_src.riscv_instr_gen_config import cfg
 import logging
 import copy
 import sys
@@ -22,13 +21,13 @@ from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_instr_category_t, riscv_reg_t,
-                                       riscv_instr_name_t, riscv_instr_format_t, riscv_instr_group_t, imm_t)
-
+                                       riscv_instr_name_t, riscv_instr_format_t,
+                                       riscv_instr_group_t, imm_t)
+from pygen_src.riscv_instr_gen_config import cfg
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
 if cfg.argv.target == "rv32imc":
     from pygen_src.target.rv32imc import riscv_core_setting as rcs
-
 reload(logging)
 logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
@@ -38,31 +37,39 @@ logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
 
 @vsc.randobj
 class riscv_instr:
+    # All derived instructions
     instr_registry = {}
 
+    # Instruction list
     instr_names = []
+
+    # Categorized instruction list
     instr_group = defaultdict(list)
     instr_category = defaultdict(list)
     basic_instr = []
     instr_template = {}
 
+    # Privileged CSR filter
     exclude_reg = []
     include_reg = []
 
     def __init__(self):
+        # Instruction attributes
         self.group = vsc.enum_t(riscv_instr_group_t)
         self.format = vsc.enum_t(riscv_instr_format_t)
         self.category = vsc.enum_t(riscv_instr_category_t)
         self.instr_name = vsc.enum_t(riscv_instr_name_t)
         self.imm_type = vsc.enum_t(imm_t)
-        self.imm_len = 0
+        self.imm_len = vsc.bit_t(5)
 
+        # Operands
         self.csr = vsc.rand_bit_t(12)
         self.rs2 = vsc.rand_enum_t(riscv_reg_t)
         self.rs1 = vsc.rand_enum_t(riscv_reg_t)
         self.rd = vsc.rand_enum_t(riscv_reg_t)
         self.imm = vsc.rand_bit_t(32)
 
+        # Helper Fields
         self.imm_mask = vsc.uint32_t(0xffffffff)
         self.is_branch_target = None
         self.has_label = 1
@@ -90,10 +97,12 @@ class riscv_instr:
     @vsc.constraint
     def imm_c(self):
         with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.SLLIW,
-                                                              riscv_instr_name_t.SRLIW, riscv_instr_name_t.SRAIW))):
+                                                              riscv_instr_name_t.SRLIW,
+                                                              riscv_instr_name_t.SRAIW))):
             self.imm[11:5] == 0
         with vsc.implies(self.instr_name.inside(vsc.rangelist(riscv_instr_name_t.SLLI,
-                                                              riscv_instr_name_t.SRLI, riscv_instr_name_t.SRAI))):
+                                                              riscv_instr_name_t.SRLI,
+                                                              riscv_instr_name_t.SRAI))):
             with vsc.implies(self.XLEN == 32):
                 self.imm[11:5] == 0
             with vsc.implies(self.XLEN != 32):
@@ -122,17 +131,20 @@ class riscv_instr:
                 continue
             if ((rcs.XLEN != 32) and (instr_name == riscv_instr_name_t.C_JAL)):
                 continue
-            if ((riscv_reg_t.SP in cfg.reserved_regs) and (instr_name == riscv_instr_name_t.C_ADDI16SP)):
+            if ((riscv_reg_t.SP in cfg.reserved_regs) and
+                    (instr_name == riscv_instr_name_t.C_ADDI16SP)):
                 continue
             if (cfg.enable_sfence and instr_name == riscv_instr_name_t.SFENCE_VMA):
                 continue
-            if instr_name in [riscv_instr_name_t.FENCE, riscv_instr_name_t.FENCE_I, riscv_instr_name_t.SFENCE_VMA]:
+            if instr_name in [riscv_instr_name_t.FENCE, riscv_instr_name_t.FENCE_I,
+                              riscv_instr_name_t.SFENCE_VMA]:
                 continue
             if (instr_inst.group.name in rcs.supported_isa and
-                    not(cfg.disable_compressed_instr and
-                        instr_inst.group.name in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
-                    not(not(cfg.enable_floating_point) and instr_inst.group.name in
-                        ["RV32F", "RV64F", "RV32D", "RV64D"])):
+               not(cfg.disable_compressed_instr and instr_inst.group in [riscv_instr_group_t.RV32C,
+               riscv_instr_group_t.RV64C, riscv_instr_group_t.RV32DC, riscv_instr_group_t.RV32FC,
+               riscv_instr_group_t.RV128C] and not(not(cfg.enable_floating_point) and
+               instr_inst.group in [riscv_instr_group_t.RV32F, riscv_instr_group_t.RV64F,
+               riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D]))):
                 cls.instr_category[instr_inst.category.name].append(instr_name)
                 cls.instr_group[instr_inst.group.name].append(instr_name)
                 cls.instr_names.append(instr_name)
@@ -334,50 +346,50 @@ class riscv_instr:
     def convert2asm(self, prefix = " "):
         asm_str = pkg_ins.format_string(string = self.get_instr_name(),
                                         length = pkg_ins.MAX_INSTR_STR_LEN)
-        if self.category.name != "SYSTEM":
-            if self.format.name == "J_FORMAT":
+        if self.category != riscv_instr_category_t.SYSTEM:
+            if self.format == riscv_instr_format_t.J_FORMAT:
                 asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
-            elif self.format.name == "U_FORMAT":
+            elif self.format == riscv_instr_format_t.U_FORMAT:
                 asm_str = '{} {}, {}'.format(asm_str, self.rd.name, self.get_imm())
-            elif self.format.name == "I_FORMAT":
-                if self.instr_name.name == "NOP":
+            elif self.format == riscv_instr_format_t.I_FORMAT:
+                if self.instr_name == riscv_instr_name_t.NOP:
                     asm_str = "nop"
-                elif self.instr_name.name == "WFI":
+                elif self.instr_name == riscv_instr_name_t.WFI:
                     asm_str = "wfi"
-                elif self.instr_name.name == "FENCE":
+                elif self.instr_name == riscv_instr_name_t.FENCE:
                     asm_str = "fence"
-                elif self.instr_name.name == "FENCE_I":
+                elif self.instr_name == riscv_instr_name_t.FENCE_I:
                     asm_str = "fence.i"
-                elif self.category.name == "LOAD":
+                elif self.category == riscv_instr_category_t.LOAD:
                     asm_str = '{} {}, {} ({})'.format(
                         asm_str, self.rd.name, self.get_imm(), self.rs1.name)
-                elif self.category.name == "CSR":
+                elif self.category == riscv_instr_category_t.CSR:
                     asm_str = '{} {}, 0x{}, {}'.format(
                         asm_str, self.rd.name, self.csr, self.get_imm())
                 else:
                     asm_str = '{} {}, {}, {}'.format(
                         asm_str, self.rd.name, self.rs1.name, self.get_imm())
-            elif self.format.name == "S_FORMAT":
-                if self.category.name == "STORE":
+            elif self.format == riscv_instr_format_t.S_FORMAT:
+                if self.category == riscv_instr_category_t.STORE:
                     asm_str = '{} {}, {} ({})'.format(
                         asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
                 else:
                     asm_str = '{} {}, {}, {}'.format(
                         asm_str, self.rs1.name, self.rs2.name, self.get_imm())
 
-            elif self.format.name == "B_FORMAT":
-                if self.category.name == "STORE":
+            elif self.format == riscv_instr_format_t.B_FORMAT:
+                if self.category == riscv_instr_category_t.STORE:
                     asm_str = '{} {}, {} ({})'.format(
                         asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
                 else:
                     asm_str = '{} {}, {}, {}'.format(
                         asm_str, self.rs1.name, self.rs2.name, self.get_imm())
 
-            elif self.format.name == "R_FORMAT":
-                if self.category.name == "CSR":
+            elif self.format == riscv_instr_format_t.R_FORMAT:
+                if self.category == riscv_instr_category_t.CSR:
                     asm_str = '{} {}, 0x{}, {}'.format(
                         asm_str, self.rd.name, self.csr, self.rs1.name)
-                elif self.instr_name.name == "SFENCE_VMA":
+                elif self.instr_name == riscv_instr_name_t.SFENCE_VMA:
                     asm_str = "sfence.vma x0, x0"
                 else:
                     asm_str = '{} {}, {}, {}'.format(
@@ -387,7 +399,7 @@ class riscv_instr:
                     self.format.name, self.instr_name.name)
 
         else:
-            if self.instr_name.name == "EBREAK":
+            if self.instr_name == riscv_instr_name_t.EBREAK:
                 asm_str = ".4byte 0x00100073 # ebreak"
 
         if self.comment != "":

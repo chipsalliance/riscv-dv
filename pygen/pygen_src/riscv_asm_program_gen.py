@@ -18,13 +18,11 @@ import copy
 import sys
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
-from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t, 
-    privileged_mode_t, mtvec_mode_t, exception_cause_t, misa_ext_t,
-    riscv_instr_group_t)
+from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
+                                       privileged_mode_t, mtvec_mode_t,
+                                       misa_ext_t, riscv_instr_group_t)
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
-from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
-#from pygen_src.target.rv32i import riscv_core_setting as rcs
 from pygen_src.riscv_utils import factory
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
@@ -144,7 +142,6 @@ class riscv_asm_program_gen:
 
         self.gen_all_trap_handler(hart)
         for mode in rcs.supported_privileged_mode:
-            logging.info("mode {}".format(mode))
             self.gen_interrupt_handler_section(mode, hart)
         self.instr_stream.append(pkg_ins.get_label("kernel_instr_end: nop", hart))
         self.gen_kernel_stack_section(hart)
@@ -273,36 +270,40 @@ class riscv_asm_program_gen:
         if cfg.check_misa_init_val:
             self.instr_stream.append("{}csrr x15, 0x{}".format(pkg_ins.indent, misa))
         for i in range(len(rcs.supported_isa)):
-            if rcs.supported_isa[i] in [riscv_instr_group_t.RV32C.name, 
-            riscv_instr_group_t.RV64C.name, riscv_instr_group_t.RV128C.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_C-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32I.name, 
-            riscv_instr_group_t.RV64I.name, riscv_instr_group_t.RV128I.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_I-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32M.name, 
-            riscv_instr_group_t.RV64M.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_M-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32A.name, 
-            riscv_instr_group_t.RV64A.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_A-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32B.name, 
-            riscv_instr_group_t.RV64B.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_B-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32F.name, 
-            riscv_instr_group_t.RV64F.name, riscv_instr_group_t.RV32FC.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_F-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32D.name, 
-            riscv_instr_group_t.RV64D.name, riscv_instr_group_t.RV32DC.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_D-1] = 1
+            if rcs.supported_isa[i] in [riscv_instr_group_t.RV32C.name,
+                                        riscv_instr_group_t.RV64C.name,
+                                        riscv_instr_group_t.RV128C.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_C - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32I.name,
+                                          riscv_instr_group_t.RV64I.name,
+                                          riscv_instr_group_t.RV128I.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_I - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32M.name,
+                                          riscv_instr_group_t.RV64M.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_M - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32A.name,
+                                          riscv_instr_group_t.RV64A.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_A - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32B.name,
+                                          riscv_instr_group_t.RV64B.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_B - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32F.name,
+                                          riscv_instr_group_t.RV64F.name,
+                                          riscv_instr_group_t.RV32FC.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_F - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32D.name,
+                                          riscv_instr_group_t.RV64D.name,
+                                          riscv_instr_group_t.RV32DC.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_D - 1] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RVV.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_V-1] = 1
-            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32X.name, 
-            riscv_instr_group_t.RV64X.name]:
-                misa[rcs.XLEN-misa_ext_t.MISA_EXT_X-1] = 1
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_V - 1] = 1
+            elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32X.name,
+                                          riscv_instr_group_t.RV64X.name]:
+                misa[rcs.XLEN - misa_ext_t.MISA_EXT_X - 1] = 1
             else:
                 logging.error("{} is not yet supported".format(rcs.supported_isa[i]))
         if privileged_mode_t.SUPERVISOR_MODE.name in rcs.supported_privileged_mode:
-            misa[rcs.XLEN-misa_ext_t.MISA_EXT_S] = 1
+            misa[rcs.XLEN - misa_ext_t.MISA_EXT_S] = 1
         self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, misa))
         self.instr_stream.append("{}csrw misa, x{}".format(pkg_ins.indent, cfg.gpr[0].value))
 
@@ -489,8 +490,13 @@ class riscv_asm_program_gen:
             # Checking xStatus can be optional if ISS (like spike) has different implementation of
             # certain fields compared with the RTL processor.
             if cfg.check_xstatus:
-                instr.append("csrr x{}, 0x{} # {}".format(cfg.gpr[0].value, status.value, status.name))
-            instr.append("csrr x{}, 0x{} # {}\n".format(cfg.gpr[0].value, cause.value, cause.name) + "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[0].value, rcs.XLEN-1) + "{}bne x{}, x0, {}{}mode_instr_handler".format(pkg_ins.indent, cfg.gpr[0].value, pkg_ins.hart_prefix(hart), mode))
+                instr.append("csrr x{}, {} # {}".format(
+                    cfg.gpr[0].value, hex(status.value), status.name))
+            instr.append("csrr x{}, {} # {}\n".format(cfg.gpr[0].value, hex(cause.value),
+                         cause.name) +
+                         "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
+                         cfg.gpr[0].value, rcs.XLEN - 1) + "{}bne x{}, x0, {}{}mode_instr_handler"
+                         .format(pkg_ins.indent, cfg.gpr[0].value, pkg_ins.hart_prefix(hart), mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
         # the page table with a specific privileged mode.
 
@@ -505,44 +511,8 @@ class riscv_asm_program_gen:
         # TODO Exception handler
         instr = []
         if cfg.mtvec_mode == mtvec_mode_t.VECTORED:
-            pkg_ins.push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
-        self.gen_signature_handshake(instr, "CORE_STATUS", "HANDLING_EXCEPTION")
-        '''instr.append( "csrr x{}, 0x{} # {}\n".format(cfg.gpr[0].value, epc.value, epc.name) +
-                 "{}csrr x{}, 0x{} # {}\n".format(pkg_ins.indent, cfg.gpr[0].value, cause.value, cause.name) +
-                 # Breakpoint
-                 "{}li x{}, 0x{} # BREAKPOINT\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.BREAKPOINT.value) +
-                 "{}beq x{}, x{}, {}ebreak_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-
-                 # Check if it's an ECALL exception. Jump to ECALL exception handler
-                 "{}li x{}, 0x{} # ECALL_UMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_UMODE.value) +
-                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{} # ECALL_SMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_SMODE.value) +
-                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{} # ECALL_MMODE\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ECALL_MMODE.value) +
-                 "{}beq x{}, x{}, {}ecall_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-
-                 # Page table fault or access fault conditions
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.INSTRUCTION_ACCESS_FAULT.value) +
-                 "{}beq x{}, x{}, {}instr_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.LOAD_ACCESS_FAULT.value) +
-                 "{}beq x{}, x{}, {}load_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.STORE_AMO_ACCESS_FAULT.value) +
-                 "{}beq x{}, x{}, {}store_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.INSTRUCTION_PAGE_FAULT.value) +
-                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.LOAD_PAGE_FAULT.value) +
-                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-                 "{}li x{}, 0x{}\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.STORE_AMO_ACCESS_FAULT.value) +
-                 "{}beq x{}, x{}, {}spt_fault_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-
-                 # Illegal instruction exception
-                 "{}li x{}, 0x{} # ILLEGAL_INSTRUCTION\n".format(pkg_ins.indent, cfg.gpr[1].value, exception_cause_t.ILLEGAL_INSTRUCTION.value) +
-                 "{}beq x{}, x{}, {}illegal_instruction_handler\n".format(pkg_ins.indent, cfg.gpr[0].value, cfg.gpr[1].value, pkg_ins.hart_prefix(hart)) +
-
-                 # Skip checking tval for illegal instruction as it's implementation specific
-                 "{}csrr x{}, 0x{} # {}\n".format(pkg_ins.indent, cfg.gpr[0].value, tval.value, tval.name) +
-                 "{}1: jal x1, test_done ".format(pkg_ins.indent))
-        self.gen_section(pkg_ins.get_label("{}mode_exception_handler".format(mode), hart), instr)'''
+            pkg_ins.push_gpr_to_kernel_stack(
+                status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
 
     def gen_interrupt_vector_table(self, hart, mode, status, cause, ie,
                                    ip, scratch, instr):
