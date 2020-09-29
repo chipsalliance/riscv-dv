@@ -411,16 +411,16 @@ class riscv_instr_gen_config extends uvm_object;
     !(tp inside {GP, RA, ZERO});
   }
 
+  // This reg is used in various places throughout the generator,
+  // so need more conservative constraints on it.
   constraint reserve_scratch_reg_c {
-    scratch_reg != ZERO;
-    scratch_reg != sp;
-    scratch_reg != tp;
+    !(scratch_reg inside {ZERO, sp, tp, ra, GP});
   }
 
+  // This reg is only used inside PMP exception routine,
+  // so we can be a bit looser with constraints.
   constraint reserve_pmp_reg_c {
-    pmp_reg != ZERO;
-    pmp_reg != sp;
-    pmp_reg != tp;
+    !(pmp_reg inside {ZERO, sp, tp});
   }
 
   constraint gpr_c {
