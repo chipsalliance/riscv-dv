@@ -19,7 +19,8 @@ import vsc
 import logging
 from enum import Enum, IntEnum, auto
 from bitstring import BitArray
-from pygen.pygen_src.riscv_instr_pkg import *
+from pygen_src.riscv_instr_pkg import *
+from pygen_src.riscv_instr_gen_config import cfg
 if cfg.argv.target == "rv32i":
     from pygen_src.target.rv32i import riscv_core_setting as rcs
 if cfg.argv.target == "rv32imc":
