@@ -15,7 +15,7 @@ import logging
 import sys
 import vsc
 from pygen_src.riscv_instr_pkg import riscv_instr_name_t,\
-    riscv_instr_category_t, riscv_reg_t
+    riscv_instr_category_t, riscv_instr_format_t, riscv_reg_t
 from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_gen_config import cfg
 
@@ -37,7 +37,7 @@ class riscv_instr_stream:
         self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t), sz = 10)
         # Some additional reserved registers that should not be used as rd register
         # by this instruction stream
-        self.reserved_rd = []
+        self.reserved_rd = vsc.list_t(vsc.enum_t(riscv_reg_t))
         self.hart = 0
 
     def initialize_instr_list(self, instr_cnt):
@@ -230,11 +230,24 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         return instr
 
     def randomize_gpr(self, instr):
-        # TODO
-        """
-        PyVSC library doesn't support inline randomization for list of enum types.
-        The randomization is done directly here.
-        it will be updated once randomization for list of enum types supports in PyVSC.
-        """
-        instr.randomize()
+        with instr.randomize_with() as it:
+            if self.avail_regs.size > 0:
+                if instr.has_rs1:
+                    instr.rs1.inside(vsc.rangelist(self.avail_regs))
+                if instr.has_rs2:
+                    instr.rs2.inside(vsc.rangelist(self.avail_regs))
+                if instr.has_rd:
+                    instr.rd.inside(vsc.rangelist(self.avail_regs))
+            with vsc.foreach(self.reserved_rd, idx = True) as i:
+                if instr.has_rd == 1:
+                    instr.rd != self.reserved_rd[i]
+                if instr.format == riscv_instr_format_t.CB_FORMAT:
+                    instr.rs1 != self.reserved_rd[i]
+
+            with vsc.foreach(cfg.reserved_regs, idx = True) as i:
+                with vsc.if_then(instr.has_rd == 1):
+                    instr.rd != cfg.reserved_regs[i]
+                with vsc.if_then(instr.format == riscv_instr_format_t.CB_FORMAT):
+                    instr.rs1 != cfg.reserved_regs[i]
+        # TODO: Add constraint for CSR, floating point register
         return instr

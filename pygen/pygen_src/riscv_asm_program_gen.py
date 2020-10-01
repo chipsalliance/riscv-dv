@@ -315,26 +315,24 @@ class riscv_asm_program_gen:
 
     def init_gpr(self):
         reg_val = BitArray(uint = 0, length = pkg_ins.DATA_WIDTH)
-        dist_lst = []
-
-        for dist_val in range(5):
-            if dist_val == 0:
+        # TODO Map the function with PyVSC std::randomize()
+        for i in range(rcs.NUM_GPR):
+            if i in [cfg.sp.value, cfg.tp.value]:
+                continue
+            if i == 0:
                 reg_val = BitArray(hex='0x0')
-            elif dist_val == 1:
+            elif i == 1:
                 reg_val = BitArray(hex='0x80000000')
-            elif dist_val == 2:
+            elif i == 2:
                 temp = random.randrange(0x1, 0xf)
                 reg_val = BitArray(hex(temp), length=32)
-            elif dist_val == 3:
+            elif i == 3:
                 temp = random.randrange(0x10, 0xefffffff)
                 reg_val = BitArray(hex(temp), length=32)
             else:
                 temp = random.randrange(0xf0000000, 0xffffffff)
                 reg_val = BitArray(hex(temp), length=32)
-            dist_lst.append(reg_val)
-
-        for i in range(32):
-            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, random.choice(dist_lst))
+            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, reg_val)
             self.instr_stream.append(init_string)
 
     def init_floating_point_gpr(self):
