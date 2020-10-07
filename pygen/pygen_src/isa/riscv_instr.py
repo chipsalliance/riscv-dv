@@ -85,10 +85,14 @@ class riscv_instr:
         self.label = ""
         self.is_local_numeric_label = None
         self.idx = -1
-        self.has_rs1 = vsc.uint32_t(1)
-        self.has_rs2 = vsc.uint32_t(1)
-        self.has_rd = vsc.uint32_t(1)
-        self.has_imm = vsc.uint32_t(1)
+        self.has_rs1 = vsc.bit_t(1)
+        self.has_rs2 = vsc.bit_t(1)
+        self.has_rd = vsc.bit_t(1)
+        self.has_imm = vsc.bit_t(1)
+        self.has_rs1 = 1
+        self.has_rs2 = 1
+        self.has_rd = 1
+        self.has_imm = 1
         self.shift_t = vsc.uint32_t(0xffffffff)
         self.XLEN = vsc.uint32_t(32)  # XLEN is used in constraint throughout the generator.
         # Hence, XLEN should be of PyVSC type in order to use it in a constraint block
@@ -140,11 +144,10 @@ class riscv_instr:
                               riscv_instr_name_t.SFENCE_VMA]:
                 continue
             if (instr_inst.group.name in rcs.supported_isa and
-               not(cfg.disable_compressed_instr and instr_inst.group in [riscv_instr_group_t.RV32C,
-               riscv_instr_group_t.RV64C, riscv_instr_group_t.RV32DC, riscv_instr_group_t.RV32FC,
-               riscv_instr_group_t.RV128C] and not(not(cfg.enable_floating_point) and
-               instr_inst.group in [riscv_instr_group_t.RV32F, riscv_instr_group_t.RV64F,
-               riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D]))):
+                    not(cfg.disable_compressed_instr and
+                    instr_inst.group.name in ["RV32C", "RV64C", "RV32DC", "RV32FC", "RV128C"]) and
+                    not(not(cfg.enable_floating_point) and instr_inst.group.name in
+                    ["RV32F", "RV64F", "RV32D", "RV64D"])):
                 cls.instr_category[instr_inst.category.name].append(instr_name)
                 cls.instr_group[instr_inst.group.name].append(instr_name)
                 cls.instr_names.append(instr_name)

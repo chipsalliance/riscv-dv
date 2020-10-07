@@ -214,9 +214,8 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def reserve_scratch_reg_c(self):
-        self.scratch_reg != riscv_reg_t.ZERO
-        self.scratch_reg != riscv_reg_t.TP
-        self.scratch_reg != riscv_reg_t.SP
+        self.scratch_reg.not_inside(vsc.rangelist(riscv_reg_t.ZERO, self.sp,
+                                    self.tp, self.ra, riscv_reg_t.GP))
 
     @vsc.constraint
     def mtvec_c(self):

@@ -16,6 +16,7 @@ import logging
 import random
 import copy
 import sys
+import vsc
 from bitstring import BitArray
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
@@ -260,52 +261,55 @@ class riscv_asm_program_gen:
 
     # Setup MISA based on supported extensions
     def setup_misa(self):
-        misa = BitArray(rcs.XLEN)
+        misa = vsc.bit_t(rcs.XLEN)
         if rcs.XLEN == 32:
-            misa = BitArray(hex='0x40000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 1
         elif rcs.XLEN == 64:
-            misa = BitArray(hex='0x80000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 2
         else:
-            misa = BitArray(hex='0xc0000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 3
         if cfg.check_misa_init_val:
-            self.instr_stream.append("{}csrr x15, 0x{}".format(pkg_ins.indent, misa))
+            self.instr_stream.append("{}csrr x15, {}".format(pkg_ins.indent,
+                                      hex(privileged_reg_t.MISA)))
         for i in range(len(rcs.supported_isa)):
             if rcs.supported_isa[i] in [riscv_instr_group_t.RV32C.name,
                                         riscv_instr_group_t.RV64C.name,
                                         riscv_instr_group_t.RV128C.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_C - 1] = 1
+                misa[misa_ext_t.MISA_EXT_C] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32I.name,
                                           riscv_instr_group_t.RV64I.name,
                                           riscv_instr_group_t.RV128I.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_I - 1] = 1
+                misa[misa_ext_t.MISA_EXT_I] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32M.name,
                                           riscv_instr_group_t.RV64M.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_M - 1] = 1
+                misa[misa_ext_t.MISA_EXT_M] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32A.name,
                                           riscv_instr_group_t.RV64A.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_A - 1] = 1
+                misa[misa_ext_t.MISA_EXT_A] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32B.name,
                                           riscv_instr_group_t.RV64B.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_B - 1] = 1
+                misa[misa_ext_t.MISA_EXT_B] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32F.name,
                                           riscv_instr_group_t.RV64F.name,
                                           riscv_instr_group_t.RV32FC.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_F - 1] = 1
+                misa[misa_ext_t.MISA_EXT_F] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32D.name,
                                           riscv_instr_group_t.RV64D.name,
                                           riscv_instr_group_t.RV32DC.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_D - 1] = 1
+                misa[misa_ext_t.MISA_EXT_D] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RVV.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_V - 1] = 1
+                misa[misa_ext_t.MISA_EXT_V] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32X.name,
                                           riscv_instr_group_t.RV64X.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_X - 1] = 1
+                misa[misa_ext_t.MISA_EXT_X] = 1
             else:
                 logging.error("{} is not yet supported".format(rcs.supported_isa[i]))
         if privileged_mode_t.SUPERVISOR_MODE.name in rcs.supported_privileged_mode:
-            misa[rcs.XLEN - misa_ext_t.MISA_EXT_S] = 1
-        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, misa))
-        self.instr_stream.append("{}csrw misa, x{}".format(pkg_ins.indent, cfg.gpr[0].value))
+            misa[misa_ext_t.MISA_EXT_S] = 1
+        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value,
+                                hex(misa.get_val())))
+        self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent,
+                                hex(privileged_reg_t.MISA), cfg.gpr[0].value))
 
     def core_is_initialized(self):
         pass

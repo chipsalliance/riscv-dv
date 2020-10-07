@@ -140,7 +140,7 @@ class riscv_compressed_instr(riscv_instr):
                 self.has_rd = 0
             else:
                 self.has_rs1 = 0
-                self.has_imm = 0
+            self.has_imm = 0
         elif self.format in [riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CIW_FORMAT]:
             self.has_rs2 = 0
             self.has_rs1 = 0
@@ -161,7 +161,7 @@ class riscv_compressed_instr(riscv_instr):
         elif self.format == riscv_instr_format_t.CB_FORMAT:
             if self.instr_name != riscv_instr_name_t.C_ANDI:
                 self.has_rd = 0
-                self.has_rs2 = 0
+            self.has_rs2 = 0
 
     def convert2asm(self, prefix=""):
         asm_str = pkg_ins.format_string(string=self.get_instr_name(),
@@ -180,11 +180,11 @@ class riscv_compressed_instr(riscv_instr):
                 else:
                     asm_str = "{} {}, {}".format(asm_str, self.rd.name, self.get_imm())
             elif self.format is riscv_instr_format_t.CL_FORMAT:
-                asm_str = "{} {}, {} ({})".format(
+                asm_str = "{} {}, {}({})".format(
                     asm_str, self.rd.name, self.get_imm(), self.rs1.name)
             elif self.format is riscv_instr_format_t.CS_FORMAT:
                 if self.category is riscv_instr_category_t.STORE:
-                    asm_str = "{} {}, {} ({})".format(
+                    asm_str = "{} {}, {}({})".format(
                         asm_str, self.rs2.name, self.get_imm(), self.rs1.name)
                 else:
                     asm_str = "{} {}, {}".format(asm_str, self.rs1.name, self.rs2.name)
@@ -194,7 +194,7 @@ class riscv_compressed_instr(riscv_instr):
                 asm_str = "{} {}, {}".format(asm_str, self.rs1.name, self.get_imm())
             elif self.format is riscv_instr_format_t.CSS_FORMAT:
                 if self.category is riscv_instr_category_t.STORE:
-                    asm_str = "{} {}, {} (sp)".format(asm_str, self.rs2.name, self.get_imm())
+                    asm_str = "{} {}, {}(sp)".format(asm_str, self.rs2.name, self.get_imm())
                 else:
                     asm_str = "{} {}, {}".format(asm_str, self.rs2.name, self.get_imm())
             elif self.format is riscv_instr_format_t.CR_FORMAT:
