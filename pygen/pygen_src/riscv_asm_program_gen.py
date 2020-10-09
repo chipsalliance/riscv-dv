@@ -18,6 +18,7 @@ import copy
 import sys
 import vsc
 from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
                                        privileged_mode_t, mtvec_mode_t,
@@ -25,10 +26,7 @@ from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
 from pygen_src.riscv_utils import factory
-if cfg.argv.target == "rv32i":
-    from pygen_src.target.rv32i import riscv_core_setting as rcs
-if cfg.argv.target == "rv32imc":
-    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
 '''
     RISC-V assembly program generator

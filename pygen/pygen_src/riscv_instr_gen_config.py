@@ -17,6 +17,7 @@ import logging
 import sys
 import vsc
 from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t)
@@ -34,11 +35,10 @@ class riscv_instr_gen_config:
         self.data_page_pattern = vsc.rand_enum_t(data_pattern_t)
         self.argv = self.parse_args()
         self.args_dict = vars(self.argv)
+
         global rcs
-        if self.argv.target == "rv32i":
-            from pygen_src.target.rv32i import riscv_core_setting as rcs
-        if self.argv.target == "rv32imc":
-            from pygen_src.target.rv32imc import riscv_core_setting as rcs
+        rcs = import_module("pygen_src.target." + self.argv.target + ".riscv_core_setting")
+
         self.m_mode_exception_delegation = {}
         self.s_mode_exception_delegation = {}
         self.m_mode_interrupt_delegation = {}

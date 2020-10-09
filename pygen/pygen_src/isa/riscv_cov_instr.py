@@ -17,15 +17,12 @@ import os
 import sys
 import vsc
 import logging
+from importlib import import_module
 from enum import Enum, IntEnum, auto
 from bitstring import BitArray
 from pygen_src.riscv_instr_pkg import *
 from pygen_src.riscv_instr_gen_config import cfg
-if cfg.argv.target == "rv32i":
-    from pygen_src.target.rv32i import riscv_core_setting as rcs
-if cfg.argv.target == "rv32imc":
-    from pygen_src.target.rv32imc import riscv_core_setting as rcs
-
+rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
 class operand_sign_e(IntEnum):
     POSITIVE = 0

@@ -20,14 +20,12 @@ import vsc
 from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_instr_category_t, riscv_reg_t,
                                        riscv_instr_name_t, riscv_instr_format_t,
                                        riscv_instr_group_t, imm_t)
 from pygen_src.riscv_instr_gen_config import cfg
-if cfg.argv.target == "rv32i":
-    from pygen_src.target.rv32i import riscv_core_setting as rcs
-if cfg.argv.target == "rv32imc":
-    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 reload(logging)
 logging.basicConfig(filename='{}'.format(cfg.argv.log_file_name),
                     filemode='w',
@@ -156,28 +154,9 @@ class riscv_instr:
 
     @classmethod
     def create_instr(cls, instr_name):
-        try:
-            if cfg.argv.target == "rv32i":
-                from pygen_src.isa import rv32i_instr
-                instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
-            elif cfg.argv.target == "rv32imc":
-                try:
-                    from pygen_src.isa import rv32i_instr
-                    instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
-                except Exception:
-                    try:
-                        from pygen_src.isa import rv32m_instr
-                        instr_inst = eval("rv32m_instr.riscv_" + instr_name.name + "_instr()")
-                    except Exception:
-                        try:
-                            from pygen_src.isa import rv32c_instr
-                            instr_inst = eval("rv32c_instr.riscv_" + instr_name.name + "_instr()")
-                        except Exception:
-                            logging.critical("Failed to create instr: %0s", instr_name.name)
-                            sys.exit(1)
-        except Exception:
-            logging.critical("Failed to create instr: %0s", instr_name.name)
-            sys.exit(1)
+        # Importing get_object here to eliminate the Cyclic dependency for DEFINE_INSTR
+        from pygen_src.riscv_utils import get_object
+        instr_inst = get_object(instr_name)
         return instr_inst
 
     def is_supported(self, cfg):

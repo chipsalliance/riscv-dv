@@ -15,6 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import logging
 from enum import Enum, IntEnum, auto
 from bitstring import BitArray
+from importlib import import_module
 
 
 class mem_region_t:
@@ -1436,10 +1437,7 @@ def add_functions_as_methods(function):
 class riscv_instr_pkg:
     global rcs
     from pygen_src.riscv_instr_gen_config import cfg
-    if cfg.argv.target == "rv32i":
-        from pygen_src.target.rv32i import riscv_core_setting as rcs
-    if cfg.argv.target == "rv32imc":
-        from pygen_src.target.rv32imc import riscv_core_setting as rcs
+    rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
     MPRV_BIT_MASK = BitArray(uint=0x1 << 0x17, length=rcs.XLEN)
     SUM_BIT_MASK = BitArray(uint=0x1 << 0x18, length=rcs.XLEN)
