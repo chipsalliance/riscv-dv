@@ -17,10 +17,10 @@ import logging
 import sys
 import vsc
 from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t)
-from pygen_src.target.rv32i import riscv_core_setting as rcs
 
 
 @vsc.randobj
@@ -33,6 +33,11 @@ class riscv_instr_gen_config:
         self.debug_sub_program_instr_cnt = []  # count of debug sub_progrms
         self.max_directed_instr_stream_seq = 20
         self.data_page_pattern = vsc.rand_enum_t(data_pattern_t)
+        self.argv = self.parse_args()
+        self.args_dict = vars(self.argv)
+
+        global rcs
+        rcs = import_module("pygen_src.target." + self.argv.target + ".riscv_core_setting")
 
         self.m_mode_exception_delegation = {}
         self.s_mode_exception_delegation = {}
@@ -57,10 +62,7 @@ class riscv_instr_gen_config:
         self.mstatus_vs = BitArray(bin(0b0), length=2)
         self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
 
-        self.argv = self.parse_args()
-        self.args_dict = vars(self.argv)
-
-        self.tvec_alignment = self.argv.tvec_alignment
+        self.tvec_alignment = vsc.rand_uint8_t(self.argv.tvec_alignment)
 
         self.fcsr_rm = list(map(lambda csr_rm: csr_rm.name, f_rounding_mode_t))
         self.enable_sfence = 0
@@ -119,6 +121,7 @@ class riscv_instr_gen_config:
         self.fix_sp = self.argv.fix_sp
         self.use_push_data_section = self.argv.use_push_data_section
         self.boot_mode_opts = self.argv.boot_mode
+        # self.isa = self.argv.isa
 
         if self.boot_mode_opts:
             logging.info("Got boot mode option - %0s", self.boot_mode_opts)
@@ -178,9 +181,18 @@ class riscv_instr_gen_config:
 
         if len(self.march_isa) != 0:
             rcs.supported_isa = self.march_isa
-
-        if rcs.supported_isa != riscv_instr_group_t.RV32C:
+        if "RV32C" not in rcs.supported_isa:
             self.disable_compressed_instr = 1
+
+    @vsc.constraint
+    def sp_tp_c(self):
+        if self.fix_sp:
+            self.sp == riscv_reg_t.SP
+        self.sp != self.tp
+        self.sp.not_inside(vsc.rangelist(riscv_reg_t.GP,
+                           riscv_reg_t.RA, riscv_reg_t.ZERO))
+        self.tp.not_inside(vsc.rangelist(riscv_reg_t.GP,
+                           riscv_reg_t.RA, riscv_reg_t.ZERO))
 
     @vsc.constraint
     def gpr_c(self):
@@ -193,6 +205,25 @@ class riscv_instr_gen_config:
         self.gpr3.not_inside(vsc.rangelist(self.sp, self.tp, self.scratch_reg, self.pmp_reg,
                                            riscv_reg_t.ZERO, riscv_reg_t.RA, riscv_reg_t.GP))
         vsc.unique(self.gpr0, self.gpr1, self.gpr2, self.gpr3)
+
+    @vsc.constraint
+    def ra_c(self):
+        self.ra != riscv_reg_t.SP
+        self.ra != riscv_reg_t.TP
+        self.ra != riscv_reg_t.ZERO
+
+    @vsc.constraint
+    def reserve_scratch_reg_c(self):
+        self.scratch_reg.not_inside(vsc.rangelist(riscv_reg_t.ZERO, self.sp,
+                                    self.tp, self.ra, riscv_reg_t.GP))
+
+    @vsc.constraint
+    def mtvec_c(self):
+        self.mtvec_mode.inside(vsc.rangelist(mtvec_mode_t.DIRECT, mtvec_mode_t.VECTORED))
+        if(self.mtvec_mode == mtvec_mode_t.DIRECT):
+            vsc.soft(self.tvec_alignment == 2)
+        else:
+            vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) / 8)
 
     def check_setting(self):
         support_64b = 0
@@ -374,8 +405,10 @@ class riscv_instr_gen_config:
         parse.add_argument('--illegal_instr_ratio',
                            help = 'illegal_instr_ratio', type = int, default = 0)
         parse.add_argument('--hint_instr_ratio', help = 'hint_instr_ratio', type = int, default = 0)
+        # TODO map it with rcs NUM_HARTS. After solving the cyclic issue for core setting.
+        # rcs is out of scope while using in the default value of num_of_harts
         parse.add_argument('--num_of_harts', help = 'num_of_harts',
-                           type = int, default = rcs.NUM_HARTS)
+                           type = int, default = 1)
         parse.add_argument('--enable_unaligned_load_store',
                            help = 'enable_unaligned_load_store', choices = [0, 1],
                            type = int, default = 0)
@@ -434,6 +467,11 @@ class riscv_instr_gen_config:
                            default="riscv_asm_test")
         parse.add_argument('--log_file_name', help='log file name',
                            default="")
+        parse.add_argument('--target', help='target', default="rv32imc")
+        parse.add_argument("--enable_visualization", action="store_true", default=False,
+                           help="Enabling coverage report visualization for pyflow")
+        parse.add_argument('--trace_csv', help='List of csv traces', default="")
+        args, unknown = parse.parse_known_args()
         # TODO
         '''
         if ($value$plusargs("tvec_alignment=%0d", tvec_alignment)) begin
@@ -448,6 +486,7 @@ class riscv_instr_gen_config:
         get_invalid_priv_lvl_csr();
         '''
         args = parse.parse_args()
+
         return args
 
 
