@@ -17,6 +17,7 @@ from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.isa.riscv_compressed_instr import riscv_compressed_instr
 from pygen_src.isa.riscv_floating_point_instr import riscv_floating_point_instr
 
+
 # Regular integer instruction
 def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)

@@ -16,7 +16,9 @@ import logging
 import random
 import copy
 import sys
+import vsc
 from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
                                        privileged_mode_t, mtvec_mode_t,
@@ -24,10 +26,7 @@ from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
 from pygen_src.riscv_utils import factory
-if cfg.argv.target == "rv32i":
-    from pygen_src.target.rv32i import riscv_core_setting as rcs
-if cfg.argv.target == "rv32imc":
-    from pygen_src.target.rv32imc import riscv_core_setting as rcs
+rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
 '''
     RISC-V assembly program generator
@@ -242,13 +241,15 @@ class riscv_asm_program_gen:
     def gen_init_section(self, hart):
         string = pkg_ins.format_string("init:", pkg_ins.LABEL_STR_LEN)
         self.instr_stream.append(string)
+        if (cfg.enable_floating_point):
+            self.init_floating_point_gpr()
+
         self.init_gpr()
         # Init stack pointer to point to the end of the user stack
         string = "{}la x{}, {}user_stack_end".format(
             pkg_ins.indent, cfg.sp.value, pkg_ins.hart_prefix(hart))
         self.instr_stream.append(string)
-        if (cfg.enable_floating_point):
-            self.init_floating_point_gpr()
+
         if (cfg.enable_vector_extension):
             self.init_vector_engine()
         self.core_is_initialized()
@@ -260,52 +261,55 @@ class riscv_asm_program_gen:
 
     # Setup MISA based on supported extensions
     def setup_misa(self):
-        misa = BitArray(rcs.XLEN)
+        misa = vsc.bit_t(rcs.XLEN)
         if rcs.XLEN == 32:
-            misa = BitArray(hex='0x40000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 1
         elif rcs.XLEN == 64:
-            misa = BitArray(hex='0x80000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 2
         else:
-            misa = BitArray(hex='0xc0000000')
+            misa[rcs.XLEN - 1:rcs.XLEN - 2] = 3
         if cfg.check_misa_init_val:
-            self.instr_stream.append("{}csrr x15, 0x{}".format(pkg_ins.indent, misa))
+            self.instr_stream.append("{}csrr x15, {}".format(pkg_ins.indent,
+                                      hex(privileged_reg_t.MISA)))
         for i in range(len(rcs.supported_isa)):
             if rcs.supported_isa[i] in [riscv_instr_group_t.RV32C.name,
                                         riscv_instr_group_t.RV64C.name,
                                         riscv_instr_group_t.RV128C.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_C - 1] = 1
+                misa[misa_ext_t.MISA_EXT_C] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32I.name,
                                           riscv_instr_group_t.RV64I.name,
                                           riscv_instr_group_t.RV128I.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_I - 1] = 1
+                misa[misa_ext_t.MISA_EXT_I] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32M.name,
                                           riscv_instr_group_t.RV64M.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_M - 1] = 1
+                misa[misa_ext_t.MISA_EXT_M] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32A.name,
                                           riscv_instr_group_t.RV64A.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_A - 1] = 1
+                misa[misa_ext_t.MISA_EXT_A] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32B.name,
                                           riscv_instr_group_t.RV64B.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_B - 1] = 1
+                misa[misa_ext_t.MISA_EXT_B] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32F.name,
                                           riscv_instr_group_t.RV64F.name,
                                           riscv_instr_group_t.RV32FC.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_F - 1] = 1
+                misa[misa_ext_t.MISA_EXT_F] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32D.name,
                                           riscv_instr_group_t.RV64D.name,
                                           riscv_instr_group_t.RV32DC.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_D - 1] = 1
+                misa[misa_ext_t.MISA_EXT_D] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RVV.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_V - 1] = 1
+                misa[misa_ext_t.MISA_EXT_V] = 1
             elif rcs.supported_isa[i] in [riscv_instr_group_t.RV32X.name,
                                           riscv_instr_group_t.RV64X.name]:
-                misa[rcs.XLEN - misa_ext_t.MISA_EXT_X - 1] = 1
+                misa[misa_ext_t.MISA_EXT_X] = 1
             else:
                 logging.error("{} is not yet supported".format(rcs.supported_isa[i]))
         if privileged_mode_t.SUPERVISOR_MODE.name in rcs.supported_privileged_mode:
-            misa[rcs.XLEN - misa_ext_t.MISA_EXT_S] = 1
-        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, misa))
-        self.instr_stream.append("{}csrw misa, x{}".format(pkg_ins.indent, cfg.gpr[0].value))
+            misa[misa_ext_t.MISA_EXT_S] = 1
+        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value,
+                                hex(misa.get_val())))
+        self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent,
+                                hex(privileged_reg_t.MISA), cfg.gpr[0].value))
 
     def core_is_initialized(self):
         pass
@@ -336,7 +340,52 @@ class riscv_asm_program_gen:
             self.instr_stream.append(init_string)
 
     def init_floating_point_gpr(self):
-        pass
+        for i in range(rcs.NUM_FLOAT_GPR):
+            # TODO randcase
+            self.init_floating_point_gpr_with_spf(i)
+        # Initialize rounding mode of FCSR
+        string = "{}fsrmi {}".format(pkg_ins.indent, cfg.fcsr_rm)
+        self.instr_stream.append(string)
+
+    def init_floating_point_gpr_with_spf(self, int_floating_gpr):
+        imm = vsc.bit_t(32)
+        imm = self.get_rand_spf_value()
+        string = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, imm.get_val())
+        self.instr_stream.append(string)
+        string = "{}fmv.w.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr,
+                                             cfg.gpr[0].value)
+        self.instr_stream.append(string)
+
+    def init_floating_point_gpr_with_dpf(self, int_floating_gpr):
+        imm = vsc.bit_t(64)
+        imm = self.get_rand_dpf_value()
+        int_gpr1 = cfg.gpr[0].value
+        int_gpr2 = cfg.gpr[1].value
+
+        string = "{}li x{}, {}".format(pkg_ins.indent, int_gpr1, imm[63:32])
+        self.instr_stream.append(string)
+        # shift to upper 32bits
+        for _ in range(2):
+            string = "{}slli x{}, x{}, 16".format(pkg_ins.indent, int_gpr1, int_gpr1)
+            self.instr_stream.append(string)
+        string = "{}li x{}, {}".format(pkg_ins.indent, int_gpr2, imm[31:0])
+        self.instr_stream.append(string)
+        string = "{}or x{}, x{}, x{}".format(pkg_ins.indent, int_gpr2, int_gpr2, int_gpr1)
+        self.instr_stream.append(string)
+        string = "{}fmv.d.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr, int_gpr2)
+        self.instr_stream.append(string)
+
+    # Get a random single precision floating value
+    def get_rand_spf_value(self):
+        value = vsc.bit_t(32)
+        # TODO randcase
+        return value
+
+    # Get a random double precision floating value
+    def get_rand_dpf_value(self):
+        value = vsc.bit_t(64)
+        # TODO randcase
+        return value
 
     def init_vector_engine(self):
         pass

@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import vsc
 import logging
-from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_fpr_t, riscv_instr_format_t)
+import vsc
+from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_fpr_t, riscv_instr_format_t,
+                                      riscv_instr_category_t)
 from pygen_src.isa.riscv_instr import riscv_instr
 
-
+@vsc.randobj
 class riscv_floating_point_instr(riscv_instr):
     def __init__(self):
         super().__init__()
@@ -27,16 +28,21 @@ class riscv_floating_point_instr(riscv_instr):
         self.fs2 = vsc.rand_enum_t(riscv_fpr_t)
         self.fs3 = vsc.rand_enum_t(riscv_fpr_t)
         self.fd = vsc.rand_enum_t(riscv_fpr_t)
+        self.has_fs1 = vsc.bit_t(1)
+        self.has_fs2 = vsc.bit_t(1)
+        self.has_fs3 = vsc.bit_t(1)
+        self.has_fd = vsc.bit_t(1)
         self.has_fs1 = 1
         self.has_fs2 = 1
         self.has_fs3 = 0
         self.has_fd = 1
 
     def convert2asm(self, prefix = " "):
+        logging.info("instr {}".format(self.get_instr_name))
         asm_str = pkg_ins.format_string(string = self.get_instr_name(),
                                         length = pkg_ins.MAX_INSTR_STR_LEN)
         if(self.format == riscv_instr_format_t.I_FORMAT):
-            if(self.category == riscv_instr_format_t.LOAD):
+            if(self.category == riscv_instr_category_t.LOAD):
                 asm_str = "{}{}, {}({})".format(asm_str, self.fd.name,
                                                 self.get_imm(), self.rs1.name)
             elif(self.instr_name.name in ['FMV_X_W', 'FMV_X_D', 'FCVT_W_S', 'FCVT_WU_S',
@@ -52,9 +58,9 @@ class riscv_floating_point_instr(riscv_instr):
         elif(self.format == riscv_instr_format_t.S_FORMAT):
             asm_str = "{}{}, {}({})".format(asm_str, self.fs2.name, self.get_imm(), self.rs1.name)
         elif(self.format == riscv_instr_format_t.R_FORMAT):
-            if(self.category == riscv_instr_format_t.COMPARE):
+            if(self.category == riscv_instr_category_t.COMPARE):
                 asm_str = "{}{}, {}, {}".format(asm_str, self.rd.name, self.fs1.name, self.fs2.name)
-            elif(self.instr_name in ['FCLASS_S', 'FCLASS_D']):
+            elif(self.instr_name.name in ['FCLASS_S', 'FCLASS_D']):
                 asm_str = "{}{}, {}".format(asm_str, self.rd.name, self.fs1.name)
             else:
                 asm_str = "{}{}, {}, {}".format(asm_str, self.fd.name, self.fs1.name, self.fs2.name)
@@ -71,19 +77,7 @@ class riscv_floating_point_instr(riscv_instr):
 
         if(self.comment != ""):
             asm_str = asm_str + " #" + self.comment
-
-    def do_copy(self, rhs):
-        rhs_ = riscv_floating_point_instr()
-        # super.copy(rhs); # TO DO
-        # assert($cast(rhs_, rhs));
-        self.fs3 = rhs_.fs3
-        self.fs2 = rhs_.fs2
-        self.fs1 = rhs_.fs1
-        self.fd = rhs_.fd
-        self.has_fs3 = rhs_.has_fs3
-        self.has_fs2 = rhs_.has_fs2
-        self.has_fs1 = rhs_.has_fs1
-        self.has_fd = rhs_.has_fd
+        return asm_str.lower()
 
     def set_rand_mode(self):
         self.has_rs1 = 0
@@ -92,7 +86,7 @@ class riscv_floating_point_instr(riscv_instr):
         self.has_imm = 0
         if(self.format == riscv_instr_format_t.I_FORMAT):
             self.has_fs2 = 0
-            if(self.category == riscv_instr_format_t.LOAD):
+            if(self.category == riscv_instr_category_t.LOAD):
                 self.has_imm = 1
             elif(self.instr_name.name in ['FMV_X_W', 'FMV_X_D', 'FCVT_W_S', 'FCVT_WU_S',
                                           'FCVT_L_S', 'FCVT_LU_S', 'FCVT_L_D', 'FCVT_LU_D',
@@ -110,7 +104,7 @@ class riscv_floating_point_instr(riscv_instr):
             self.has_fs1 = 0
             self.has_fs3 = 0
         elif(self.format == riscv_instr_format_t.R_FORMAT):
-            if(self.category == riscv_instr_format_t.COMPARE):
+            if(self.category == riscv_instr_category_t.COMPARE):
                 self.has_rd = 1
                 self.has_fd = 0
             elif(self.instr_name.name in ['FCLASS_S', 'FCLASS_D']):
@@ -134,13 +128,11 @@ class riscv_floating_point_instr(riscv_instr):
 
     def pre_randomize(self):
         super().pre_randomize()
-        # TO DO
-        """
-        fs1.rand_mode(has_fs1);
-        fs2.rand_mode(has_fs2);
-        fs3.rand_mode(has_fs3);
-        fd.rand_mode(has_fd);
-        """
+        with vsc.raw_mode():
+            self.fs1.rand_mode = bool(self.has_fs1)
+            self.fs2.rand_mode = bool(self.has_fs2)
+            self.fs3.rand_mode = bool(self.has_fs3)
+            self.fd.rand_mode = bool(self.has_fd)
 
     # coverage related functons
     def update_src_regs(self, operands = []):

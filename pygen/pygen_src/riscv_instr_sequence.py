@@ -16,13 +16,14 @@ import logging
 import random
 import sys
 import vsc
+from importlib import import_module
 from collections import defaultdict
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_instr_pkg import (pkg_ins, riscv_instr_name_t, riscv_reg_t,
                                       riscv_instr_category_t)
 from pygen_src.riscv_directed_instr_lib import riscv_pop_stack_instr, riscv_push_stack_instr
-from pygen_src.target.rv32i import riscv_core_setting as rcs
+rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
 
 class riscv_instr_sequence:

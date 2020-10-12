@@ -16,7 +16,7 @@ import argparse
 import logging
 import sys
 import vsc
-from bitstring import BitArray
+from importlib import import_module
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t)
@@ -34,11 +34,10 @@ class riscv_instr_gen_config:
         self.data_page_pattern = vsc.rand_enum_t(data_pattern_t)
         self.argv = self.parse_args()
         self.args_dict = vars(self.argv)
+
         global rcs
-        if self.argv.target == "rv32i":
-            from pygen_src.target.rv32i import riscv_core_setting as rcs
-        if self.argv.target == "rv32imc":
-            from pygen_src.target.rv32imc import riscv_core_setting as rcs
+        rcs = import_module("pygen_src.target." + self.argv.target + ".riscv_core_setting")
+
         self.m_mode_exception_delegation = {}
         self.s_mode_exception_delegation = {}
         self.m_mode_interrupt_delegation = {}
@@ -47,24 +46,24 @@ class riscv_instr_gen_config:
         # init_privileged_mode default to MACHINE_MODE
         self.init_privileged_mode = privileged_mode_t.MACHINE_MODE
 
-        self.mstatus = BitArray(bin(0b0), length=rcs.XLEN - 1)
-        self.mie = BitArray(bin(0b0), length=rcs.XLEN - 1)
-        self.sstatus = BitArray(bin(0b0), length=rcs.XLEN - 1)
-        self.sie = BitArray(bin(0b0), length=rcs.XLEN - 1)
-        self.ustatus = BitArray(bin(0b0), length=rcs.XLEN - 1)
-        self.uie = BitArray(bin(0b0), length=rcs.XLEN - 1)
+        self.mstatus = vsc.bit_t(rcs.XLEN - 1)
+        self.mie = vsc.bit_t(rcs.XLEN - 1)
+        self.sstatus = vsc.bit_t(rcs.XLEN - 1)
+        self.sie = vsc.bit_t(rcs.XLEN - 1)
+        self.ustatus = vsc.bit_t(rcs.XLEN - 1)
+        self.uie = vsc.bit_t(rcs.XLEN - 1)
 
         self.mstatus_mprv = 0
         self.mstatus_mxr = 0
         self.mstatus_sum = 0
         self.mstatus_tvm = 0
-        self.mstatus_fs = BitArray(bin(0b0), length=2)
-        self.mstatus_vs = BitArray(bin(0b0), length=2)
+        self.mstatus_fs = vsc.bit_t(2)
+        self.mstatus_vs = vsc.bit_t(2)
         self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
 
         self.tvec_alignment = vsc.rand_uint8_t(self.argv.tvec_alignment)
 
-        self.fcsr_rm = list(map(lambda csr_rm: csr_rm.name, f_rounding_mode_t))
+        self.fcsr_rm = vsc.rand_enum_t(f_rounding_mode_t)
         self.enable_sfence = 0
         self.gpr = []
 
@@ -214,9 +213,8 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def reserve_scratch_reg_c(self):
-        self.scratch_reg != riscv_reg_t.ZERO
-        self.scratch_reg != riscv_reg_t.TP
-        self.scratch_reg != riscv_reg_t.SP
+        self.scratch_reg.not_inside(vsc.rangelist(riscv_reg_t.ZERO, self.sp,
+                                    self.tp, self.ra, riscv_reg_t.GP))
 
     @vsc.constraint
     def mtvec_c(self):
@@ -225,6 +223,13 @@ class riscv_instr_gen_config:
             vsc.soft(self.tvec_alignment == 2)
         else:
             vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) / 8)
+
+    @vsc.constraint
+    def floating_point_c(self):
+        if self.enable_vector_extension:
+            self.mstatus_vs == 1
+        else:
+            self.mstatus_vs == 0
 
     def check_setting(self):
         support_64b = 0
