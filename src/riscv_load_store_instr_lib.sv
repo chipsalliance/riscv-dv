@@ -551,7 +551,7 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   constraint index_addr_c {
     solve eew before index_addr;
     // Keep a reasonable index address range to avoid vector memory address overflow
-    index_addr inside {[1 : 128]};
+    index_addr inside {[0 : 128]};
     index_addr % (eew / 8) == 1;
   }
 
