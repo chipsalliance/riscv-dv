@@ -18,7 +18,7 @@ implemented_csr = ['MVENDORID', 'MARCHID', 'MIMPID', 'MHARTID', 'MSTATUS', 'MISA
 
 SATP_MODE = 'BARE'
 
-supported_isa = ['RV32F', 'RV32FC']
+supported_isa = ['RV32I', 'RV32M', 'RV32C', 'RV32F', 'RV32FC']
 
 supported_privileged_mode = ['MACHINE_MODE']
 
@@ -58,4 +58,6 @@ MAX_MUL = 8
 
 implemented_interrupt = ['M_SOFTWARE_INTR', 'M_TIMER_INTR', 'M_EXTERNAL_INTR']
 
-implemented_exception = ['INSTRUCTION_ACCESS_FAULT', 'ILLEGAL_INSTRUCTION', 'BREAKPOINT', 'LOAD_ADDRESS_MISALIGNED', 'LOAD_ACCESS_FAULT', 'ECALL_MMODE']
+implemented_exception = ['INSTRUCTION_ACCESS_FAULT', 'ILLEGAL_INSTRUCTION',
+                         'BREAKPOINT', 'LOAD_ADDRESS_MISALIGNED',
+                         'LOAD_ACCESS_FAULT', 'ECALL_MMODE']

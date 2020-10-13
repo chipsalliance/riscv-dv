@@ -1,39 +1,37 @@
 """
- Copyright 2018 Google LLC
- 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- 
-       http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- """
+Copyright 2020 Google LLC
+Copyright 2020 PerfectVIPs Inc.
 
-# RISC-V privileged register class
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+"""
 
 import logging
+import vsc
 from importlib import import_module
-from pygen_src.riscv_instr_pkg import privileged_reg_t, reg_field_access_t
+from pygen_src.riscv_instr_pkg import privileged_level_t, reg_field_access_t, privileged_reg_t
 from pygen_src.riscv_reg import riscv_reg
-from pygen_src.riscv_instr_gen_config import riscv_instr_gen_config
-
+from pygen_src.riscv_instr_gen_config import cfg
 rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
+
+# RISC-V privileged register class
+@vsc.randobj
 class riscv_privil_reg(riscv_reg):
     def __init__(self):
         super().__init__()
 
     def init_reg(self, reg_name):
         super().init_reg(reg_name)
-        ##############Match mode register################
-        #Machine status Register
+        # ---------------Machine mode register ----------------
+        # Machine status Register
         if(reg_name == privileged_reg_t.MSTATUS):
-            self.privil_level = privileged_reg_t.M_LEVEL
+            self.privil_level = privileged_level_t.M_LEVEL
             self.add_field("UIE", 1, reg_field_access_t.WARL)
             self.add_field("SIE", 1, reg_field_access_t.WARL)
             self.add_field("WPRI0", 1, reg_field_access_t.WPRI)
@@ -63,7 +61,7 @@ class riscv_privil_reg(riscv_reg):
             self.add_field("SD", 1, reg_field_access_t.WARL)
         # Machine interrupt-enable register
         elif(reg_name == privileged_reg_t.MIE):
-            self.privil_level = privileged_reg_t.M_LEVEL
+            self.privil_level = privileged_level_t.M_LEVEL
             self.add_field("USIE", 1, reg_field_access_t.WARL)
             self.add_field("SSIE", 1, reg_field_access_t.WARL)
             self.add_field("WPRI0", 1, reg_field_access_t.WPRI)

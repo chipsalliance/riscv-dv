@@ -46,25 +46,25 @@ class riscv_instr_gen_config:
         # init_privileged_mode default to MACHINE_MODE
         self.init_privileged_mode = privileged_mode_t.MACHINE_MODE
 
-        self.mstatus = vsc.bit_t(rcs.XLEN - 1)
-        self.mie = vsc.bit_t(rcs.XLEN - 1)
-        self.sstatus = vsc.bit_t(rcs.XLEN - 1)
-        self.sie = vsc.bit_t(rcs.XLEN - 1)
-        self.ustatus = vsc.bit_t(rcs.XLEN - 1)
-        self.uie = vsc.bit_t(rcs.XLEN - 1)
+        self.mstatus = vsc.rand_bit_t(rcs.XLEN - 1)
+        self.mie = vsc.rand_bit_t(rcs.XLEN - 1)
+        self.sstatus = vsc.rand_bit_t(rcs.XLEN - 1)
+        self.sie = vsc.rand_bit_t(rcs.XLEN - 1)
+        self.ustatus = vsc.rand_bit_t(rcs.XLEN - 1)
+        self.uie = vsc.rand_bit_t(rcs.XLEN - 1)
 
-        self.mstatus_mprv = 0
-        self.mstatus_mxr = 0
-        self.mstatus_sum = 0
-        self.mstatus_tvm = 0
-        self.mstatus_fs = vsc.bit_t(2)
-        self.mstatus_vs = vsc.bit_t(2)
+        self.mstatus_mprv = vsc.rand_bit_t(1)
+        self.mstatus_mxr = vsc.rand_bit_t(1)
+        self.mstatus_sum = vsc.rand_bit_t(1)
+        self.mstatus_tvm = vsc.rand_bit_t(1)
+        self.mstatus_fs = vsc.rand_bit_t(2)
+        self.mstatus_vs = vsc.rand_bit_t(2)
         self.mtvec_mode = vsc.rand_enum_t(mtvec_mode_t)
 
         self.tvec_alignment = vsc.rand_uint8_t(self.argv.tvec_alignment)
 
         self.fcsr_rm = vsc.rand_enum_t(f_rounding_mode_t)
-        self.enable_sfence = 0
+        self.enable_sfence = vsc.rand_bit_t(1)
         self.gpr = []
 
         # Helper fields for gpr
@@ -230,6 +230,17 @@ class riscv_instr_gen_config:
             self.mstatus_vs == 1
         else:
             self.mstatus_vs == 0
+
+    @vsc.constraint
+    def mstatus_c(self):
+        if self.set_mstatus_mprv:
+            self.mstatus_mprv == 1
+        else:
+            self.mstatus_mprv == 0
+        if rcs.SATP_MODE == "BARE":
+            self.mstatus_mxr == 0
+            self.mstatus_sum == 0
+            self.mstatus_tvm == 0
 
     def check_setting(self):
         support_64b = 0

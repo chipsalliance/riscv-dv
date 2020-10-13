@@ -25,6 +25,7 @@ from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
                                        misa_ext_t, riscv_instr_group_t)
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
+from pygen_src.riscv_privileged_common_seq import riscv_privileged_common_seq
 from pygen_src.riscv_utils import factory
 rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
@@ -348,9 +349,8 @@ class riscv_asm_program_gen:
         self.instr_stream.append(string)
 
     def init_floating_point_gpr_with_spf(self, int_floating_gpr):
-        imm = vsc.bit_t(32)
         imm = self.get_rand_spf_value()
-        string = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, imm.get_val())
+        string = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, hex(imm))
         self.instr_stream.append(string)
         string = "{}fmv.w.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr,
                                              cfg.gpr[0].value)
@@ -377,8 +377,8 @@ class riscv_asm_program_gen:
 
     # Get a random single precision floating value
     def get_rand_spf_value(self):
-        value = vsc.bit_t(32)
         # TODO randcase
+        value = random.randrange(0, 2**32-1)
         return value
 
     # Get a random double precision floating value
@@ -431,26 +431,40 @@ class riscv_asm_program_gen:
         if(cfg.virtual_addr_translation_on):
             self.page_table_list.process_page_table(instr)
             self.gen_section(pkg_ins.get_label("process_pt", hart), instr)
-        # Commenting for now
-        # self.setup_epc(hart)
-
-        if(rcs.support_pmp):
-            self.gen_privileged_mode_switch_routine(hart)
+        self.setup_epc(hart)
+        self.gen_privileged_mode_switch_routine(hart)
 
     def gen_privileged_mode_switch_routine(self, hart):
-        pass
+        privil_seq = riscv_privileged_common_seq()
+        for i in range(len(rcs.supported_privileged_mode)):
+            instr = []
+            csr_handshake = []
+            if(rcs.supported_privileged_mode[i] != cfg.init_privileged_mode.name):
+                continue
+            logging.info("Generating privileged mode routing for {}"
+                         .format(rcs.supported_privileged_mode[i]))
+            # Enter Privileged mode
+            privil_seq.hart = hart
+            privil_seq.randomize()
+            privil_seq.enter_privileged_mode(rcs.supported_privileged_mode[i], instr)
+            # TODO
+            if cfg.require_signature_addr:
+                pass
+        self.instr_stream.extend(instr)
 
     def setup_epc(self, hart):
         instr = []
         instr.append("la x{}, {}init".format(cfg.gpr[0].value, pkg_ins.hart_prefix(hart)))
-        # if(cfg.virtual_addr_translation_on):
-        # instr.append("slli x{}, x{}")
-        # TODO
-        mode_name = cfg.init_privileged_mode
-        instr.append("csrw mepc, x{}".format(cfg.gpr[0].value))
-        if(not rcs.support_pmp):  # TODO
-            instr.append("j {}init_{}".format(pkg_ins.hart_prefix(hart), mode_name.name.lower()))
-
+        if(cfg.virtual_addr_translation_on):
+            # For supervisor and user mode, use virtual address instead of physical address.
+            # Virtual address starts from address 0x0, here only the lower 12 bits are kept
+            # as virtual address offset.
+            instr.append("slli x{}, x{}, {}".format(cfg.gpr[0].value,
+                                                   cfg.gpr[0].value, rcs.XLEN - 12) +
+                        "srli x{}, x{}, {}".format(cfg.gpr[0].value,
+                                                   cfg.gpr[0].value, rcs.XLEN - 12))
+        mode_name = cfg.init_privileged_mode.name
+        instr.append("csrw {}, x{}".format(hex(privileged_reg_t.MEPC), cfg.gpr[0].value))
         self.gen_section(pkg_ins.get_label("mepc_setup", hart), instr)
 
     def setup_pmp(self, hart):

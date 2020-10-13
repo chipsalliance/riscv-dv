@@ -52,17 +52,29 @@ def get_object(instr_name):
                     except Exception:
                         logging.critical("Failed to create instr: %0s", instr_name.name)
                         sys.exit(1)
-        if cfg.argv.target == "rv64gc":
+        if cfg.argv.target == "rv32imfc":
             try:
-                from pygen_src.isa import rv32f_instr
-                instr_inst = eval("rv32f_instr.riscv_" + instr_name.name + "_instr()")
+                from pygen_src.isa import rv32i_instr
+                instr_inst = eval("rv32i_instr.riscv_" + instr_name.name + "_instr()")
             except Exception:
                 try:
-                    from pygen_src.isa import rv32fc_instr
-                    instr_inst = eval("rv32fc_instr.riscv_" + instr_name.name + "_instr()")
+                    from pygen_src.isa import rv32m_instr
+                    instr_inst = eval("rv32m_instr.riscv_" + instr_name.name + "_instr()")
                 except Exception:
-                    logging.critical("Failed to create instr: %0s", instr_name.name)
-                    sys.exit(1)
+                    try:
+                        from pygen_src.isa import rv32c_instr
+                        instr_inst = eval("rv32c_instr.riscv_" + instr_name.name + "_instr()")
+                    except Exception:
+                        try:
+                            from pygen_src.isa import rv32f_instr
+                            instr_inst = eval("rv32f_instr.riscv_" + instr_name.name + "_instr()")
+                        except Exception:
+                            try:
+                                from pygen_src.isa import rv32fc_instr
+                                instr_inst = eval("rv32fc_instr.riscv_" + instr_name.name + "_instr()")
+                            except Exception:
+                                logging.critical("Failed to create instr: %0s", instr_name.name)
+                                sys.exit(1)
     except Exception:
         logging.critical("Failed to create instr: %0s", instr_name.name)
         sys.exit(1)

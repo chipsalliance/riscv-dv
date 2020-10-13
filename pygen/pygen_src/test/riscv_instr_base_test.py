@@ -21,7 +21,10 @@ if cfg.argv.target == "rv32imc":
     from pygen_src.isa.rv32i_instr import * # NOQA
     from pygen_src.isa.rv32m_instr import * # NOQA
     from pygen_src.isa.rv32c_instr import * # NOQA
-if cfg.argv.target == "rv64gc":
+if cfg.argv.target == "rv32imfc":
+    from pygen_src.isa.rv32i_instr import * # NOQA
+    from pygen_src.isa.rv32m_instr import * # NOQA
+    from pygen_src.isa.rv32c_instr import * # NOQA
     from pygen_src.isa.rv32f_instr import * # NOQA
     from pygen_src.isa.rv32fc_instr import * # NOQA
 from pygen_src.isa.riscv_instr import riscv_instr  # NOQA
