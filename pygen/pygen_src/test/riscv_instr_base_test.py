@@ -23,6 +23,7 @@ if cfg.argv.target == "rv32imc":
     from pygen_src.isa.rv32c_instr import * # NOQA
 from pygen_src.isa.riscv_instr import riscv_instr  # NOQA
 from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
+from pygen_src.riscv_utils import gen_config_table
 
 
 class riscv_instr_base_test:
@@ -33,6 +34,7 @@ class riscv_instr_base_test:
     def run_phase(self):
         for _ in range(cfg.num_of_tests):
             cfg.randomize()
+            gen_config_table()
             asm = riscv_asm_program_gen()
             riscv_instr.create_instr_list(cfg)
             if cfg.asm_test_suffix != "":
