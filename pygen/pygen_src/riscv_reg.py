@@ -70,15 +70,15 @@ class riscv_reg:
 
     def get_val(self):
         total_len = 0
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             total_len += self.fld[i].bit_width
         if total_len != rcs.XLEN:
-            for i in range((len(self.fld)-1), -1, -1):
+            for i in range((len(self.fld) - 1), -1, -1):
                 logging.info(self.fld[i].convert2string())
             logging.critical("Total field length {} != XLEN {}".format(total_len, rcs.XLEN))
             sys.exit(1)
         self.val = 0
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             self.val = (self.val << self.fld[i].bit_width) | self.fld[i].val
         return self.val
 
@@ -89,10 +89,10 @@ class riscv_reg:
         new_fld.access_type = access_type
         new_fld.reset_val = reset_val
         new_fld.name = fld_name
-        self.fld.append(new_fld)
+        self.fld.append(new_fld)  # insert(index, value) is not supported in PyVSC
 
     def set_field(self, fld_name, val, hard_wired = 0):
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             if fld_name == self.fld[i].name:
                 self.fld[i].val = val
                 self.fld[i].hard_wired = hard_wired
@@ -103,7 +103,7 @@ class riscv_reg:
         sys.exit(1)
 
     def get_field_by_name(self, fld_name):
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             if fld_name == self.fld[i].name:
                 return self.fld[i]
         logging.critical("Cannot match found field {}".format(fld_name))
@@ -118,11 +118,11 @@ class riscv_reg:
         pass
 
     def reset(self):
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             self.fld[i].val = self.fld[i].reset_val
 
     def set_val(self, val):
-        for i in range((len(self.fld)-1), -1, -1):
+        for i in range((len(self.fld) - 1), -1, -1):
             if not self.fld[i].hard_wired:
                 # Assign the valid msb to the field
                 self.fld[i].val = (val >> (rcs.XLEN - self.fld[i].bit_width))

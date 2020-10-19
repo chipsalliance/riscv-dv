@@ -246,47 +246,37 @@ class riscv_instr_gen_config:
         support_64b = 0
         support_128b = 0
 
-        # list of satp_mode_t from riscv_core_setting.py
-        stp_md_lst = rcs.SATP_MODE
-
-        # list of riscv_instr_group_t with names of riscv_instr_name_t in it.
-        supported_isa_lst = list(map(lambda z: z.name, riscv_instr_group_t))
-
         # check the valid isa support
         for x in rcs.supported_isa:
-            if x == (supported_isa_lst[1] or supported_isa_lst[3] or supported_isa_lst[5] or
-                     supported_isa_lst[8] or supported_isa_lst[11] or supported_isa_lst[13] or
-                     supported_isa_lst[19]):
+            if x in ["RV64I", "RV64M", "RV64A", "RV64F", "RV64D", "RV64C", "RV64B"]:
                 support_64b = 1
-                logging.info("support_64b=%d" % support_64b)
-                logging.debug("Supported ISA=%s" % x)
-            elif x == (supported_isa_lst[14] or supported_isa_lst[15]):
+                logging.info("support_64b = {}".format(support_64b))
+                logging.debug("Supported ISA = {}".format(x))
+            elif x in ["RV128I", "RV128C"]:
                 support_128b = 1
-                logging.info("support_128b=%d" % support_128b)
-                logging.debug("Supported ISA=%s" % x)
+                logging.info("support_128b = {}".format(support_128b))
+                logging.debug("Supported ISA = {}".format(x))
 
-        if (support_128b == 1) and (rcs.XLEN != 128):
+        if support_128b and rcs.XLEN != 128:
             logging.critical("XLEN should be set to 128 based on \
                               riscv_core_setting.supported_isa setting")
-            logging.info("XLEN Value=%d" % rcs.XLEN)
+            logging.info("XLEN Value = {}".format(rcs.XLEN))
             sys.exit("XLEN is not equal to 128, set it Accordingly!")
 
-        if (support_128b == 0) and (support_64b == 1) and (rcs.XLEN != 64):
+        if not(support_128b) and support_64b and rcs.XLEN != 64:
             logging.critical("XLEN should be set to 64 based on \
                               riscv_core_setting.supported_isa setting")
-            logging.info("XLEN Value=%d" % rcs.XLEN)
+            logging.info("XLEN Value = {}".format(rcs.XLEN))
             sys.exit("XLEN is not equal to 64, set it Accordingly!")
 
-        if not(support_128b or support_64b) and (rcs.XLEN != 32):
+        if not(support_128b or support_64b) and rcs.XLEN != 32:
             logging.critical("XLEN should be set to 32 based on \
                               riscv_core_setting.supported_isa setting")
-            logging.info("XLEN Value=%d" % rcs.XLEN)
+            logging.info("XLEN Value = {}".format(rcs.XLEN))
             sys.exit("XLEN is not equal to 32, set it Accordingly!")
 
-        if not(support_128b or support_64b) and not(('SV32' in stp_md_lst) or
-                                                    ('BARE' in stp_md_lst)):
-            logging.critical("SATP mode is not supported for RV32G ISA")
-            logging.info(stp_md_lst)
+        if not(support_128b or support_64b) and not(rcs.SATP_MODE in ['SV32', "BARE"]):
+            logging.critical("SATP mode {} is not supported for RV32G ISA".format(rcs.SATP_MODE))
             sys.exit("Supported SATP mode is not provided")
 
     # TODO
@@ -326,12 +316,12 @@ class riscv_instr_gen_config:
         self.reserved_regs.append(self.sp)
         self.reserved_regs.append(self.scratch_reg)
         self.min_stack_len_per_program = 2 * (rcs.XLEN / 8)
-        logging.info("min_stack_len_per_program value = %d"
-                     % self.min_stack_len_per_program)
+        logging.info("min_stack_len_per_program value = {}"
+                     .format(self.min_stack_len_per_program))
         self.check_setting()  # check if the setting is legal
 
         if self.init_privileged_mode == privileged_mode_t.USER_MODE:
-            logging.info("mode=%s" % "USER_MODE")
+            logging.info("mode = USER_MODE")
             self.no_wfi = 1
 
     def get_invalid_priv_lvl_csr(self):

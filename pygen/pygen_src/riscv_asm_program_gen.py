@@ -244,18 +244,15 @@ class riscv_asm_program_gen:
         self.instr_stream.append(string)
         if (cfg.enable_floating_point):
             self.init_floating_point_gpr()
-
         self.init_gpr()
         # Init stack pointer to point to the end of the user stack
         string = "{}la x{}, {}user_stack_end".format(
             pkg_ins.indent, cfg.sp.value, pkg_ins.hart_prefix(hart))
         self.instr_stream.append(string)
-
         if (cfg.enable_vector_extension):
             self.init_vector_engine()
         self.core_is_initialized()
         self.gen_dummy_csr_write()
-
         if (rcs.support_pmp):
             string = pkg_ins.indent + "j main"
             self.instr_stream.append(string)
@@ -378,7 +375,7 @@ class riscv_asm_program_gen:
     # Get a random single precision floating value
     def get_rand_spf_value(self):
         # TODO randcase
-        value = random.randrange(0, 2**32-1)
+        value = random.randrange(0, 2**32 - 1)
         return value
 
     # Get a random double precision floating value
@@ -465,6 +462,8 @@ class riscv_asm_program_gen:
                                                    cfg.gpr[0].value, rcs.XLEN - 12))
         mode_name = cfg.init_privileged_mode.name
         instr.append("csrw {}, x{}".format(hex(privileged_reg_t.MEPC), cfg.gpr[0].value))
+        if not rcs.support_pmp:
+            instr.append("j {}init_{}".format(pkg_ins.hart_prefix(hart), mode_name.lower()))
         self.gen_section(pkg_ins.get_label("mepc_setup", hart), instr)
 
     def setup_pmp(self, hart):

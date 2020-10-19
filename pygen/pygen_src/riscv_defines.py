@@ -19,7 +19,8 @@ from pygen_src.isa.riscv_floating_point_instr import riscv_floating_point_instr
 
 
 # Regular integer instruction
-def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
+def DEFINE_INSTR(instr_n, instr_format, instr_category,
+                 instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -38,8 +39,10 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_
     })
     g[class_name] = NewClass
 
+
 # Compressed instruction
-def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
+def DEFINE_C_INSTR(instr_n, instr_format, instr_category,
+                   instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -57,8 +60,10 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=im
     })
     g[class_name] = NewClass
 
+
 # Floating point instruction
-def DEFINE_FP_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
+def DEFINE_FP_INSTR(instr_n, instr_format, instr_category,
+                    instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -76,8 +81,10 @@ def DEFINE_FP_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=i
     })
     g[class_name] = NewClass
 
+
 # Floating point compressed instruction
-def DEFINE_FC_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp=imm_t.IMM, g=globals()):
+def DEFINE_FC_INSTR(instr_n, instr_format, instr_category,
+                    instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
