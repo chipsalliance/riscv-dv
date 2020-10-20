@@ -226,10 +226,10 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def floating_point_c(self):
-        if self.enable_vector_extension:
-            self.mstatus_vs == 1
+        if self.enable_floating_point:
+            self.mstatus_fs == 1
         else:
-            self.mstatus_vs == 0
+            self.mstatus_fs == 0
 
     @vsc.constraint
     def mstatus_c(self):
