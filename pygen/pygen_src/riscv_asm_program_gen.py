@@ -339,19 +339,22 @@ class riscv_asm_program_gen:
 
     def init_floating_point_gpr(self):
         for i in range(rcs.NUM_FLOAT_GPR):
-            # TODO randcase
+            # TODO randselect
+            '''
+            vsc.randselect([(1, lambda:self.init_floating_point_gpr_with_spf(i)),
+        ('RV64D' in rcs.supported_isa, lambda:self.init_floating_point_gpr_with_dpf(i))])
+            '''
             self.init_floating_point_gpr_with_spf(i)
         # Initialize rounding mode of FCSR
-        string = "{}fsrmi {}".format(pkg_ins.indent, cfg.fcsr_rm)
-        self.instr_stream.append(string)
+        fsrmi_instr = "{}fsrmi {}".format(pkg_ins.indent, cfg.fcsr_rm)
+        self.instr_stream.append(fsrmi_instr)
 
     def init_floating_point_gpr_with_spf(self, int_floating_gpr):
         imm = self.get_rand_spf_value()
-        string = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, hex(imm))
-        self.instr_stream.append(string)
-        string = "{}fmv.w.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr,
+        li_instr = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, hex(imm))
+        fmv_instr = "{}fmv.w.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr,
                                              cfg.gpr[0].value)
-        self.instr_stream.append(string)
+        self.instr_stream.extend((li_instr, fmv_instr))
 
     def init_floating_point_gpr_with_dpf(self, int_floating_gpr):
         imm = vsc.bit_t(64)
@@ -359,18 +362,14 @@ class riscv_asm_program_gen:
         int_gpr1 = cfg.gpr[0].value
         int_gpr2 = cfg.gpr[1].value
 
-        string = "{}li x{}, {}".format(pkg_ins.indent, int_gpr1, imm[63:32])
-        self.instr_stream.append(string)
+        li_instr0 = "{}li x{}, {}".format(pkg_ins.indent, int_gpr1, imm[63:32])
         # shift to upper 32bits
         for _ in range(2):
-            string = "{}slli x{}, x{}, 16".format(pkg_ins.indent, int_gpr1, int_gpr1)
-            self.instr_stream.append(string)
-        string = "{}li x{}, {}".format(pkg_ins.indent, int_gpr2, imm[31:0])
-        self.instr_stream.append(string)
-        string = "{}or x{}, x{}, x{}".format(pkg_ins.indent, int_gpr2, int_gpr2, int_gpr1)
-        self.instr_stream.append(string)
-        string = "{}fmv.d.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr, int_gpr2)
-        self.instr_stream.append(string)
+            slli_instr = "{}slli x{}, x{}, 16".format(pkg_ins.indent, int_gpr1, int_gpr1)
+        li_instr1 = "{}li x{}, {}".format(pkg_ins.indent, int_gpr2, imm[31:0])
+        or_instr = "{}or x{}, x{}, x{}".format(pkg_ins.indent, int_gpr2, int_gpr2, int_gpr1)
+        fmv_instr = "{}fmv.d.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr, int_gpr2)
+        self.instr_stream.extend((li_instr0, slli_instr, li_instr1, or_instr, fmv_instr))
 
     # Get a random single precision floating value
     def get_rand_spf_value(self):

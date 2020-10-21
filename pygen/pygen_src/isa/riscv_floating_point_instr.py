@@ -26,14 +26,10 @@ class riscv_floating_point_instr(riscv_instr):
         self.fs2 = vsc.rand_enum_t(riscv_fpr_t)
         self.fs3 = vsc.rand_enum_t(riscv_fpr_t)
         self.fd = vsc.rand_enum_t(riscv_fpr_t)
-        self.has_fs1 = vsc.bit_t(1)
-        self.has_fs2 = vsc.bit_t(1)
+        self.has_fs1 = vsc.bit_t(1, 1)
+        self.has_fs2 = vsc.bit_t(1, 1)
         self.has_fs3 = vsc.bit_t(1)
-        self.has_fd = vsc.bit_t(1)
-        self.has_fs1 = 1
-        self.has_fs2 = 1
-        self.has_fs3 = 0
-        self.has_fd = 1
+        self.has_fd = vsc.bit_t(1, 1)
 
     def convert2asm(self, prefix = " "):
         asm_str = pkg_ins.format_string(string = self.get_instr_name(),
@@ -93,7 +89,7 @@ class riscv_floating_point_instr(riscv_instr):
                                           'FCVT_S_L', 'FCVT_D_L', 'FCVT_S_LU', 'FCVT_D_W',
                                           'FCVT_D_LU', 'FCVT_D_WU']:
                 self.has_rs1 = 1
-                self.fs1 = 0
+                self.has_fs1 = 0
         elif self.format == riscv_instr_format_t.S_FORMAT:
             self.has_imm = 1
             self.has_rs1 = 1

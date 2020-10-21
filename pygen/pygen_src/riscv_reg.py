@@ -43,13 +43,12 @@ class riscv_reg_field:
         with vsc.implies(self.hard_wired == 1):
             self.val == self.reset_val
 
-    def covert2string(self):
+    def convert2string(self):
         return pkg_ins.format_string("{} bit_width:{} val:{} type:{}".format(
             self, self.bit_width, hex(self.val), self.access_type))
 
     def post_randomize(self):
-        mask = vsc.bit_t(rcs.XLEN)
-        mask = 1
+        mask = vsc.bit_t(rcs.XLEN, 2**rcs.XLEN - 1)
         mask = mask >> (rcs.XLEN - self.bit_width)
         self.val = mask & self.val
 
@@ -83,7 +82,6 @@ class riscv_reg:
         return self.val
 
     def add_field(self, fld_name, bit_width, access_type, reset_val = 0):
-        new_fld = fld_name
         new_fld = riscv_reg_field()
         new_fld.bit_width = bit_width
         new_fld.access_type = access_type

@@ -35,7 +35,7 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category,
         self.set_rand_mode()
     NewClass = type(class_name, (riscv_instr,), {
         "__init__": __init__,
-        "valid": riscv_instr.register(instr_n)
+        "valid": riscv_instr.register(instr_n, instr_group)
     })
     g[class_name] = NewClass
 
@@ -56,7 +56,7 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category,
         self.set_rand_mode()
     NewClass = type(class_name, (riscv_compressed_instr,), {
         "__init__": __init__,
-        "valid": riscv_compressed_instr.register(instr_n)
+        "valid": riscv_compressed_instr.register(instr_n, instr_group)
     })
     g[class_name] = NewClass
 
@@ -77,7 +77,7 @@ def DEFINE_FP_INSTR(instr_n, instr_format, instr_category,
         self.set_rand_mode()
     NewClass = type(class_name, (riscv_floating_point_instr,), {
         "__init__": __init__,
-        "valid": riscv_floating_point_instr.register(instr_n)
+        "valid": riscv_floating_point_instr.register(instr_n, instr_group)
     })
     g[class_name] = NewClass
 
@@ -98,7 +98,7 @@ def DEFINE_FC_INSTR(instr_n, instr_format, instr_category,
         self.set_rand_mode()
     NewClass = type(class_name, (riscv_compressed_instr,), {
         "__init__": __init__,
-        "valid": riscv_compressed_instr.register(instr_n)
+        "valid": riscv_compressed_instr.register(instr_n, instr_group)
     })
     g[class_name] = NewClass
 
