@@ -128,8 +128,12 @@ def process_trace(trace):
         process_jalr(trace)
     trace.instr, trace.operand = convert_pseudo_instr(
         trace.instr, trace.operand, trace.binary)
-    trace.operand = trace.operand.replace(")", "")
-    trace.operand = trace.operand.replace("(", ",")
+    # process any instruction of the form:
+    # <instr> <reg> <imm>(<reg>)
+    m = BASE_RE.search(trace.operand)
+    if m:
+        trace.operand = "{},{},{}".format(
+            m.group("rd"), m.group("rs1"), m.group("imm"))
 
 
 def process_imm(trace):

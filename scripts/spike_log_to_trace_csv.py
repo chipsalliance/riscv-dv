@@ -31,6 +31,8 @@ RD_RE = re.compile(r"(?P<pri>\d) 0x(?P<addr>[a-f0-9]+?) " \
                    "\((?P<bin>.*?)\) (?P<reg>[xf]\s*\d*?) 0x(?P<val>[a-f0-9]+)")
 CORE_RE = re.compile(
     r"core.*0x(?P<addr>[a-f0-9]+?) \(0x(?P<bin>.*?)\) (?P<instr>.*?)$")
+ADDR_RE = re.compile(
+    r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]+?)\((?P<rs1>[a-z0-9]+)\)")
 ILLE_RE = re.compile(r"trap_illegal_instruction")
 
 LOGGER = logging.getLogger()
@@ -46,8 +48,14 @@ def process_instr(trace):
         else:
             imm = str(int(imm, 16))
         trace.operand = trace.operand[0:idx + 1] + imm
-    trace.operand = trace.operand.replace("(", ",")
-    trace.operand = trace.operand.replace(")", "")
+    # Properly format operands of all instructions of the form:
+    # <instr> <reg1> <imm>(<reg2>)
+    # The operands should be converted into CSV as:
+    # "<reg1>,<reg2>,<imm>"
+    m = ADDR_RE.search(trace.operand)
+    if m:
+        trace.operand = "{},{},{}".format(
+            m.group("rd"), m.group("rs1"), m.group("imm"))
 
 
 def read_spike_instr(match, full_trace):

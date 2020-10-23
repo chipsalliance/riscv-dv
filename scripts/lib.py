@@ -427,4 +427,169 @@ def convert_pseudo_instr(instr_name, operands, binary):
         else:
             instr_name = "jalr"
             operands = "zero,ra,0"
+    # RV32B pseudo instructions
+    # TODO: support "rev", "orc", and "zip/unzip" instructions for RV64
+    elif instr_name == "rev.p":
+        instr_name = "grevi"
+        operands += ",1"
+    elif instr_name == "rev2.n":
+        instr_name = "grevi"
+        operands += ",2"
+    elif instr_name == "rev.n":
+        instr_name = "grevi"
+        operands += ",3"
+    elif instr_name == "rev4.b":
+        instr_name = "grevi"
+        operands += ",4"
+    elif instr_name == "rev2.b":
+        instr_name = "grevi"
+        operands += ",6"
+    elif instr_name == "rev.b":
+        instr_name = "grevi"
+        operands += ",7"
+    elif instr_name == "rev8.h":
+        instr_name = "grevi"
+        operands += ",8"
+    elif instr_name == "rev4.h":
+        instr_name = "grevi"
+        operands += ",12"
+    elif instr_name == "rev2.h":
+        instr_name = "grevi"
+        operands += ",14"
+    elif instr_name == "rev.h":
+        instr_name = "grevi"
+        operands += ",15"
+    elif instr_name == "rev16":
+        instr_name = "grevi"
+        operands += ",16"
+    elif instr_name == "rev8":
+        instr_name = "grevi"
+        operands += ",24"
+    elif instr_name == "rev4":
+        instr_name = "grevi"
+        operands += ",28"
+    elif instr_name == "rev2":
+        instr_name = "grevi"
+        operands += ",30"
+    elif instr_name == "rev":
+        instr_name = "grevi"
+        operands += ",31"
+    elif instr_name == "orc.p":
+        instr_name = "gorci"
+        operands += ",1"
+    elif instr_name == "orc2.n":
+        instr_name = "gorci"
+        operands += ",2"
+    elif instr_name == "orc.n":
+        instr_name = "gorci"
+        operands += ",3"
+    elif instr_name == "orc4.b":
+        instr_name = "gorci"
+        operands += ",4"
+    elif instr_name == "orc2.b":
+        instr_name = "gorci"
+        operands += ",6"
+    elif instr_name == "orc.b":
+        instr_name = "gorci"
+        operands += ",7"
+    elif instr_name == "orc8.h":
+        instr_name = "gorci"
+        operands += ",8"
+    elif instr_name == "orc4.h":
+        instr_name = "gorci"
+        operands += ",12"
+    elif instr_name == "orc2.h":
+        instr_name = "gorci"
+        operands += ",14"
+    elif instr_name == "orc.h":
+        instr_name = "gorci"
+        operands += ",15"
+    elif instr_name == "orc16":
+        instr_name = "gorci"
+        operands += ",16"
+    elif instr_name == "orc8":
+        instr_name = "gorci"
+        operands += ",24"
+    elif instr_name == "orc4":
+        instr_name = "gorci"
+        operands += ",28"
+    elif instr_name == "orc2":
+        instr_name = "gorci"
+        operands += ",30"
+    elif instr_name == "orc":
+        instr_name = "gorci"
+        operands += ",31"
+    elif instr_name == "zext.b":
+        instr_name = "andi"
+        operands += ",255"
+    elif instr_name == "zext.h":
+        # TODO: support for RV64B
+        instr_name = "pack"
+        operands += ",zero"
+    elif instr_name == "zext.w":
+        instr_name = "pack"
+        operands += ",zero"
+    elif instr_name == "sext.w":
+        instr_name = "addiw"
+        operands += ",0"
+    elif instr_name == "zip.n":
+        instr_name = "shfli"
+        operands += ",1"
+    elif instr_name == "unzip.n":
+        instr_name = "unshfli"
+        operands += ",1"
+    elif instr_name == "zip2.b":
+        instr_name = "shfli"
+        operands += ",2"
+    elif instr_name == "unzip2.b":
+        instr_name = "unshfli"
+        operands += ",2"
+    elif instr_name == "zip.b":
+        instr_name = "shfli"
+        operands += ",3"
+    elif instr_name == "unzip.b":
+        instr_name = "unshfli"
+        operands += ",3"
+    elif instr_name == "zip4.h":
+        instr_name = "shfli"
+        operands += ",4"
+    elif instr_name == "unzip4.h":
+        instr_name = "unshfli"
+        operands += ",4"
+    elif instr_name == "zip2.h":
+        instr_name = "shfli"
+        operands += ",6"
+    elif instr_name == "unzip2.h":
+        instr_name = "unshfli"
+        operands += ",6"
+    elif instr_name == "zip.h":
+        instr_name = "shfli"
+        operands += ",7"
+    elif instr_name == "unzip.h":
+        instr_name = "unshfli"
+        operands += ",7"
+    elif instr_name == "zip8":
+        instr_name = "shfli"
+        operands += ",8"
+    elif instr_name == "unzip8":
+        instr_name = "unshfli"
+        operands += ",8"
+    elif instr_name == "zip4":
+        instr_name = "shfli"
+        operands += ",12"
+    elif instr_name == "unzip4":
+        instr_name = "unshfli"
+        operands += ",12"
+    elif instr_name == "zip2":
+        instr_name = "shfli"
+        operands += ",14"
+    elif instr_name == "unzip2":
+        instr_name = "unshfli"
+        operands += ",14"
+    elif instr_name == "zip":
+        instr_name = "shfli"
+        operands += ",15"
+    elif instr_name == "unzip":
+        instr_name = "unshfli"
+        operands += ",15"
     return instr_name, operands
