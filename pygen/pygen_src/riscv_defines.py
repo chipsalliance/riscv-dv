@@ -9,13 +9,13 @@ http://www.apache.org/licenses/LICENSE-2.0
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-
 """
 
 from pygen_src.riscv_instr_pkg import imm_t
 from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.isa.riscv_compressed_instr import riscv_compressed_instr
 from pygen_src.isa.riscv_floating_point_instr import riscv_floating_point_instr
+from pygen_src.isa.riscv_b_instr import riscv_b_instr
 
 
 # Regular integer instruction
@@ -102,29 +102,10 @@ def DEFINE_FC_INSTR(instr_n, instr_format, instr_category,
     })
     g[class_name] = NewClass
 
-# A-extension instruction
-def DEFINE_AMO_INSTR(instr_n, instr_format, instr_category,
-                     instr_group, imm_tp=imm_t.IMM, g=globals()):
-    class_name = "riscv_{}_instr".format(instr_n.name)
 
-    def __init__(self):
-        riscv_amo_instr.__init__(self)
-        self.instr_name = instr_n
-        self.format = instr_format
-        self.category = instr_category
-        self.group = instr_group
-        self.imm_type = imm_tp
-        self.set_imm_len()
-        self.set_rand_mode()
-    NewClass = type(class_name, (riscv_amo_instr,), {
-        "__init__": __init__,
-        "valid": riscv_amo_instr.register(instr_n, instr_group)
-    })
-    g[class_name] = NewClass
-    
-#B-extension instruction
+# B-extension instruction
 def DEFINE_B_INSTR(instr_n, instr_format, instr_category,
-                     instr_group, imm_tp=imm_t.IMM, g=globals()):
+                   instr_group, imm_tp=imm_t.IMM, g=globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -138,10 +119,9 @@ def DEFINE_B_INSTR(instr_n, instr_format, instr_category,
         self.set_rand_mode()
     NewClass = type(class_name, (riscv_b_instr,), {
         "__init__": __init__,
-        "valid": riscv_b_instr.register(instr_n,instr_group)
+        "valid": riscv_b_instr.register(instr_n, instr_group)
     })
     g[class_name] = NewClass
-
 
 
 '''

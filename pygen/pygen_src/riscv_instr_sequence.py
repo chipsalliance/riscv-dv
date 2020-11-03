@@ -151,7 +151,6 @@ class riscv_instr_sequence:
                 logging.info("Processing branch instruction[%0d]:%0s # %0d -> %0d", j,
                              self.instr_stream.instr_list[j].convert2asm(),
                              self.instr_stream.instr_list[j].idx, branch_target_label)
-                logging.info("Branch", branch_target_label)
                 self.instr_stream.instr_list[j].imm_str = "{}f".format(branch_target_label)
                 self.instr_stream.instr_list[j].branch_assigned = 1
                 branch_target[branch_target_label] = 1

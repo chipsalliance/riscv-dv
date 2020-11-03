@@ -119,23 +119,24 @@ class int_numeric_e(IntEnum):
 class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
     def __init__(self):
         super().__init__()
-        self.num_of_avail_regs = 10
+        self.num_of_avail_regs = vsc.uint32_t(10)
         self.num_of_instr = vsc.rand_uint8_t()
-        self.init_val = vsc.rand_list_t(vsc.rand_bit_t(rcs.XLEN - 1), sz = 10)
-        self.init_val_type = vsc.rand_list_t(vsc.enum_t(int_numeric_e), sz =10)
+        self.init_val = vsc.randsz_list_t(vsc.rand_bit_t(rcs.XLEN - 1))
+        self.init_val_type = vsc.randsz_list_t(vsc.enum_t(int_numeric_e))
         self.init_instr = []
 
     @vsc.constraint
     def init_val_c(self):
         # TO DO
-        # solve init_val_type before init_val;
-        self.init_val_type.size == self.num_of_avail_regs
-        self.init_val.size == self.num_of_avail_regs
+        vsc.solve_order(self.init_val_type, self.init_val)
+        self.init_val_type.size == 10  # self.num_of_avail_regs
+        self.init_val.size == 10  # self.num_of_avail_regs
         self.num_of_instr in vsc.rangelist(vsc.rng(15, 30))
 
     @vsc.constraint
     def avail_regs_c(self):
-        self.avail_regs.size == self.num_of_avail_regs
+        # TODO
+        self.avail_regs.size == 10  # self.num_of_avail_regs
         vsc.unique(self.avail_regs)
         with vsc.foreach(self.avail_regs, idx = True) as i:
             self.avail_regs[i].not_inside(cfg.reserved_regs)

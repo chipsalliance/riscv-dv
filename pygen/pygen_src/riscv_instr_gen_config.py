@@ -219,10 +219,10 @@ class riscv_instr_gen_config:
     @vsc.constraint
     def mtvec_c(self):
         self.mtvec_mode.inside(vsc.rangelist(mtvec_mode_t.DIRECT, mtvec_mode_t.VECTORED))
-        if(self.mtvec_mode == mtvec_mode_t.DIRECT):
+        with vsc.if_then(self.mtvec_mode == mtvec_mode_t.DIRECT):
             vsc.soft(self.tvec_alignment == 2)
-        else:
-            vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) / 8)
+        with vsc.else_then():
+            vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) // 8)
 
     @vsc.constraint
     def floating_point_c(self):
@@ -311,7 +311,6 @@ class riscv_instr_gen_config:
         self.reserved_regs = []
         # Temporary fix for gpr_c constraint.
         self.gpr.extend((self.gpr0, self.gpr1, self.gpr2, self.gpr3))
-
         self.reserved_regs.append(self.tp)
         self.reserved_regs.append(self.sp)
         self.reserved_regs.append(self.scratch_reg)
