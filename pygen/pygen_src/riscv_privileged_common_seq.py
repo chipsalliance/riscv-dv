@@ -102,17 +102,77 @@ class riscv_privileged_common_seq():
             self.mie.set_field("UTIE", cfg.enable_interrupt & cfg.enable_timer_irq)
             regs.append(self.mie)
 
-    # TODO
     def setup_smode_reg(self, mode, regs):
-        pass
+        self.sstatus = riscv_privil_reg()
+        self.sstatus.init_reg(privileged_reg_t.SSTATUS)
+        self.sstatus.randomize()
+        if cfg.randomize_csr:
+            self.sstatus.set_val(cfg.sstatus)
+        self.sstatus.set_field("SPIE", cfg.enable_interrupt)
+        self.sstatus.set_field("SIE", cfg.enable_interrupt)
+        self.sstatus.set_field("UPIE", cfg.enable_interrupt)
+        self.sstatus.set_field("UIE", rcs.support_umode_trap)
+        if rcs.XLEN == 64:
+            self.sstatus.set_field("UXL", 2)
+        self.sstatus.set_field("FS", cfg.mstatus_fs)
+        self.sstatus.set_field("XS", 0)
+        self.sstatus.set_field("SD", 0)
+        self.sstatus.set_field("UIE", 0)
+        self.sstatus.set_field("SPP", 0)
+        regs.append(self.sstatus)
+        # Enable external and timer interrupt
+        if "SIE" in rcs.implemeted_csr:
+            self.sie = riscv_privil_reg()
+            self.sie.init_reg(privileged_reg_t.SIE)
+            if cfg.randomize_csr:
+                self.sie.set_val(cfg.sie)
+            self.sie.set_field("UEIE", cfg.enable_interrupt)
+            self.sie.set_field("SEIE", cfg.enable_interrupt)
+            self.sie.set_field("USIE", cfg.enable_interrupt)
+            self.sie.set_field("SSIE", cfg.enable_interrupt)
+            self.sie.set_field("STIE", cfg.enable_interrupt & cfg.enable_timer_irq)
+            self.sie.set_field("UTIE", cfg.enable_interrupt & cfg.enable_timer_irq)
+            regs.append(self.sie)
 
-    # TODO
     def setup_umode_reg(self, mode, regs):
-        pass
+        # For implementations that do not provide any U-mode CSRs, return immediately
+        if not rcs.support_umode_trap:
+            return
+        self.ustatus = riscv_privil_reg()
+        self.ustatus.init_reg(privileged_reg_t.USTATUS)
+        self.ustatus.randomize()
+        if cfg.randomize_csr:
+            self.ustatus.set_val(cfg.ustatus)
+        self.ustatus.set_field("UIE", cfg.enable_interrupt)
+        self.ustatus.set_field("UPIE", cfg.enable_interrupt)
+        regs.append(self.ustatus)
+        if "UIE" in rcs.implemented_csr:
+            self.uie = riscv_privil_reg()
+            self.uie.init_reg(privileged_reg_t.UIE)
+            if cfg.randomize_csr:
+                self.uie.set_val(cfg.uie)
+            self.uie.set_field("UEIE", cfg.enable_interrupt)
+            self.uie.set_field("USIE", cfg.enable_interrupt)
+            self.uie.set_field("UTIE", cfg.enable_interrupt & cfg.enable_timer_irq)
+            regs.append(self.uie)
 
-    # TODO
     def setup_satp(self, instrs):
-        pass
+        if rcs.SATP_MODE == 'BARE':
+            return
+        satp = riscv_privil_reg()
+        satp.init_reg(privileged_reg_t.SATP)
+        satp.set_field("MODE", rcs.SATP_MODE)
+        instrs.append("li x{}, 0x{}".format(cfg.gpr[0], satp.get_val()))
+        instrs.append("csrw 0x{}, x{} // satp".format(privileged_reg_t.SATP, cfg.gpr[0]))
+        satp_ppn_mask = 1 >> (rcs.XLEN - satp.get_field_by_name("PPN").bit_width)
+        # Load the root page table physical address
+        instrs.append("la x{}, page_table_0".format(cfg.gpr[0]))
+        # Right shift to get PPN at 4k granularity
+        instrs.append("srli x{}, x{}, 12".format(cfg.gpr[0], cfg.gpr[0]))
+        instrs.append("li   x{}, 0x{}".format(cfg.gpr[1], satp_ppn_mask))
+        instrs.append("and x{}, x{}, x{}".format(cfg.gpr[0], cfg.gpr[0], cfg.gpr[1]))
+        # Set the PPN field for SATP
+        instrs.append("csrs 0x{}, x{} // satp", privileged_reg_t.SATP, cfg.gpr[0])
 
     def gen_csr_instr(self, regs, instrs):
         for i in range(len(regs)):

@@ -279,9 +279,22 @@ class riscv_instr_gen_config:
             logging.critical("SATP mode {} is not supported for RV32G ISA".format(rcs.SATP_MODE))
             sys.exit("Supported SATP mode is not provided")
 
-    # TODO
     def setup_instr_distribution(self):
-        pass
+        if(self.dist_control_mode == 1):
+            category_iter = iter([x.name for x in riscv_instr_category_t])
+            category = riscv_instr_category_t(0).name
+            while True:
+                opts = "dist_{}".format(category.name)
+                opts = opts.lower()
+                if(self.args_dict[opts]):
+                    val = self.args_dict[opts]
+                    self.category_dist[category] = val
+                else:
+                    self.category_dist[category] = 10
+                logging.info("Set dist[%0s] = %0d", category, category_dist[category])
+                category = next(category_iter)
+                if(category != riscv_instr_category_t(0).name):
+                    break
 
     def init_delegation(self):
         for i in self.mode_exp_lst:
@@ -356,7 +369,7 @@ class riscv_instr_gen_config:
     # called after every instance of the gen_config handle
     def func_call_init(self):
         self.init_delegation()
-        # self.setup_instr_distribution()  # TODO
+        self.setup_instr_distribution()  
         self.get_invalid_priv_lvl_csr()
 
     def parse_args(self):

@@ -127,8 +127,7 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
 
     @vsc.constraint
     def init_val_c(self):
-        # TO DO
-        # solve init_val_type before init_val;
+        vsc.solve_order(self.init_val_type, self.init_val)
         self.init_val_type.size == self.num_of_avail_regs
         self.init_val.size == self.num_of_avail_regs
         self.num_of_instr in vsc.rangelist(vsc.rng(15, 30))
@@ -229,7 +228,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         if self.enable_branch:
             self.branch_instr = \
                 riscv_instr.get_rand_instr(include_category=[riscv_instr_name_t.BRANCH.name])
-            # `DV_CHECK_STD_RANDOMIZE_FATAL(branch_instr)
+            self.branch_instr.randomize()
             self.branch_instr.imm_str = self.push_start_label
             self.branch_instr.brach_assigned = 1
             self.push_stack_instr[0].label = self.push_start_label
@@ -286,8 +285,10 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
                     self.imm == 8 * (i + 1)
             self.pop_stack_instr[i].process_load_store = 0
         # addi sp,sp,imm
-        ''' TODO `DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[num_of_reg_to_save],
-                                   rd == cfg.sp; rs1 == cfg.sp; imm == stack_len;) '''
+        with self.pop_stack_instr[self.num_of_reg_to_save].randomize_with() as it:
+            self.rd == cfg.sp
+            self.rs1 == cfg.sp
+            self.imm == self.stack_len
         self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr.get_instr(
             riscv_instr_name_t.ADDI.name)
         self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string(

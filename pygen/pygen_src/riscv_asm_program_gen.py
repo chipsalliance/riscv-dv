@@ -95,7 +95,8 @@ class riscv_asm_program_gen:
             self.main_program[hart].label_name = label_name
             self.generate_directed_instr_stream(hart=hart,
                                                 label=self.main_program[hart].label_name,
-                                                original_instr_cnt=self.main_program[hart].instr_cnt,
+                                                original_instr_cnt=
+                                                self.main_program[hart].instr_cnt,
                                                 min_insert_cnt=1,
                                                 instr_stream=self.main_program[hart].directed_instr)
             self.main_program[hart].gen_instr(is_main_program=1, no_branch=cfg.no_branch_jump)
@@ -307,7 +308,8 @@ class riscv_asm_program_gen:
         self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value,
                                                        hex(misa.get_val())))
         self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent,
-                                                         hex(privileged_reg_t.MISA), cfg.gpr[0].value))
+                                                         hex(privileged_reg_t.MISA),
+                                                         cfg.gpr[0].value))
 
     def core_is_initialized(self):
         pass
@@ -328,7 +330,7 @@ class riscv_asm_program_gen:
             except:
                 logging.critical("Cannot Randomize reg_val")
                 sys.exit(1)
-            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, reg_val_)
+            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, hex(reg_val_.get_val()))
             self.instr_stream.append(init_string)
 
     def init_floating_point_gpr(self):
@@ -545,7 +547,8 @@ class riscv_asm_program_gen:
             instr.append("csrr x{}, {} # {}\n".format(cfg.gpr[0].value, hex(cause.value),
                                                       cause.name) +
                          "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
-                                                        cfg.gpr[0].value, rcs.XLEN - 1) + "{}bne x{}, x0, {}{}mode_instr_handler"
+                                                        cfg.gpr[0].value, rcs.XLEN - 1) +
+                         "{}bne x{}, x0, {}{}mode_instr_handler"
                          .format(pkg_ins.indent, cfg.gpr[0].value, pkg_ins.hart_prefix(hart), mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
         # the page table with a specific privileged mode.
