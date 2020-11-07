@@ -44,8 +44,8 @@ class riscv_instr_base_test:
 
     def randomize_cfg(self):
         cfg.randomize()
-        logging.info("riscv_instr_gen_config is randomized {}".
-                      format(gen_config_table()))
+        logging.info("riscv_instr_gen_config is randomized")
+        gen_config_table()
 
 
 riscv_base_test_ins = riscv_instr_base_test()

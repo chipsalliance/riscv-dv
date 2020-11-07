@@ -62,7 +62,7 @@ class riscv_b_instr(riscv_instr):
         if self.format == riscv_instr_format_t.I_FORMAT:
             if self.category in [riscv_instr_category_t.SHIFT, riscv_instr_category_t.LOGICAL]:
                 if (self.group.name == riscv_instr_group_t.RV64B and
-                        not(self.instr_name in [riscv_instr_name_t.SLLIU_W])):
+                        self.instr_name != riscv_instr_name_t.SLLIU_W):
                     self.imm_len = math.ceil(math.log2(rcs.XLEN)) - 1
                 else:
                     self.imm_len = math.ceil(math.log2(rcs.XLEN))

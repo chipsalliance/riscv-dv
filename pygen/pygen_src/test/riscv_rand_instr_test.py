@@ -26,8 +26,8 @@ class riscv_rand_instr_test(riscv_instr_base_test):
         cfg.instr_cnt = 10000
         cfg.num_of_sub_program = 5
         cfg.randomize()
-        logging.info("riscv_instr_gen_config is randomized {}".
-                      format(gen_config_table()))
+        logging.info("riscv_instr_gen_config is randomized")
+        gen_config_table()
 
     def apply_directed_instr(self):
         self.asm.add_directed_instr_stream("riscv_load_store_rand_instr_stream", 4)
@@ -37,3 +37,6 @@ class riscv_rand_instr_test(riscv_instr_base_test):
         self.asm.add_directed_instr_stream("riscv_load_store_hazard_instr_stream", 4)
         self.asm.add_directed_instr_stream("riscv_multi_page_load_store_instr_stream", 4)
         self.asm.add_directed_instr_stream("riscv_mem_region_stress_test", 4)
+
+
+riscv_rand_test_ins = riscv_rand_instr_test()
