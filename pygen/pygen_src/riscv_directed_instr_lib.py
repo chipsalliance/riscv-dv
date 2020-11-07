@@ -176,8 +176,8 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         self.num_of_redundant_instr = 0
         self.push_stack_instr = []
         self.saved_regs = []
-        self.branch_instr = riscv_instr()
-        self.enable_branch = vsc.rand_bit_t()
+        self.branch_instr = vsc.attr(riscv_instr())
+        self.enable_branch = vsc.rand_bit_t(1)
         self.push_start_label = ''
 
     def init(self):
@@ -202,7 +202,7 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
         with self.push_stack_instr[0].randomize_with() as it:
             self.push_stack_instr[0].rd == cfg.sp
             self.push_stack_instr[0].rs1 == cfg.sp
-            self.push_stack_instr[0].imm == (~cfg.stack_len) + 1
+            self.push_stack_instr[0].imm == (~cfg.stack_len + 1)
 
         self.push_stack_instr[0].imm_str = '-{}'.format(self.stack_len)
         for i in range(len(self.saved_regs)):
@@ -221,7 +221,8 @@ class riscv_push_stack_instr(riscv_rand_instr_stream):
 
             self.push_stack_instr[i + 1].process_load_store = 0
         if allow_branch:
-            # TODO `DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
+            # TODO
+            # vsc.randomize(self.enable_branch)
             pass
         else:
             self.enable_branch = 0
@@ -249,7 +250,7 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
         self.stack_len = 0
         self.num_of_reg_to_save = 0
         self.num_of_redundant_instr = 0
-        self.pop_stack_instr = []
+        self.pop_stack_instr = vsc.list_t(vsc.attr(riscv_instr()))
         self.saved_regs = []
 
     def init(self):
@@ -292,7 +293,7 @@ class riscv_pop_stack_instr(riscv_rand_instr_stream):
         self.pop_stack_instr[self.num_of_reg_to_save] = riscv_instr.get_instr(
             riscv_instr_name_t.ADDI.name)
         self.pop_stack_instr[self.num_of_reg_to_save].imm_str = pkg_ins.format_string(
-            '{}', self.stack_len)
+            '{}'.format(self.stack_len))
         self.mix_instr_stream(self.pop_stack_instr)
         for i in range(len(self.instr_list)):
             self.instr_list[i].atomic = 1

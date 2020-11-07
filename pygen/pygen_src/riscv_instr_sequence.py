@@ -35,7 +35,7 @@ class riscv_instr_sequence:
         self.is_debug_program = 0
         self.label_name = ""
         self.instr_string_list = []  # Save the instruction list
-        self.program_stack_len = 0  # Stack space allocated for this program
+        self.program_stack_len = vsc.int32_t(0)  # Stack space allocated for this program
         self.directed_instr = []    # List of all directed instruction stream
         self.illegal_instr_pct = 0  # Percentage of illegal instructions
         self.hint_instr_pct = 0     # Percentage of hint instructions
@@ -61,14 +61,15 @@ class riscv_instr_sequence:
             with vsc.randomize_with(self.program_stack_len):
                 self.program_stack_len in vsc.rangelist(vsc.rng(cfg.min_stack_len_per_program,
                                                                 cfg.max_stack_len_per_program))
-                self.program_stack_len % (rcs.XLEN / 8) == 0
+                self.program_stack_len % (rcs.XLEN // 8) == 0
         except Exception:
-            logging.info("Cannot randomize program_stack_len")
-        self.instr_stack_enter.push_start_label = self.label_name + "_strat_p"
+            logging.critical("Cannot randomize program_stack_len")
+            sys.exit(1)
+        self.instr_stack_enter.push_start_label = self.label_name + "_stack_p"
         self.instr_stack_enter.gen_push_stack_instr(self.program_stack_len,
-                                                    allow_branch = [allow_branch])
-        self.instr_stream.instr_list = self.instr_stack_enter.instr_list + \
-            self.instr_stream.instr_list
+                                                    allow_branch = allow_branch)
+        self.instr_stream.instr_list.extend((self.instr_stack_enter.instr_list,
+            self.instr_stream.instr_list))
 
     # Recover the saved GPR from the stack
     # Advance the stack pointer(SP) to release the allocated stack space.
@@ -178,6 +179,7 @@ class riscv_instr_sequence:
         logging.info("Finished post-processing instructions")
 
     def insert_jump_instr(self):
+        # TODO riscv_jump_instr class implementation
         """
         jump_instr = riscv_jump_instr()
         jump_instr.target_program_label = target_label
@@ -188,7 +190,7 @@ class riscv_instr_sequence:
         jump_instr.use_jalr = self.is_main_program
         jump_instr.randomize()
         self.instr_stream.insert_instr_stream(jump_instr.instr_list)
-        logging.info("%0s -> %0s...done", jump_instr.jump.instr_name.name, target_label)
+        logging.info("{} -> {}...done".format(jump_instr.jump.instr_name.name, target_label))
         """
         pass
 
@@ -225,13 +227,14 @@ class riscv_instr_sequence:
         string = ''
         jump_instr = [riscv_instr_name_t.JALR]
         rand_lsb = random.randrange(0, 1)
-        ra = vsc.enum_t(riscv_reg_t)
+        ra = vsc.rand_enum_t(riscv_reg_t)
         try:
             with vsc.randomize_with(ra):
-                ra.not_inside(cfg.reserved_regs)
+                ra.not_inside(vsc.rangelist(cfg.reserved_regs))
                 ra != riscv_reg_t.ZERO
         except Exception:
-            logging.info("Cannot randomize ra")
+            logging.critical("Cannot randomize ra")
+            sys.exit(1)
         string = (prefix + pkg_ins.format_string("{}addi x{} x{} {}".format(ra.name,
                                                                             cfg.ra.name, rand_lsb)))
         self.instr_string_list.append(string)

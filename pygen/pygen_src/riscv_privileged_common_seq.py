@@ -27,6 +27,10 @@ class riscv_privileged_common_seq():
         self.hart = 0
         self.mstatus = vsc.attr(riscv_privil_reg)
         self.mie = vsc.attr(riscv_privil_reg)
+        self.sstatus = vsc.attr(riscv_privil_reg)
+        self.sie = vsc.attr(riscv_privil_reg)
+        self.ustatus = vsc.attr(riscv_privil_reg)
+        self.uie = vsc.attr(riscv_privil_reg)
 
     def enter_privileged_mode(self, mode, instrs):
         label = pkg_ins.format_string("{}init_{}:"
@@ -49,7 +53,6 @@ class riscv_privileged_common_seq():
             instrs[i] = pkg_ins.indent + instrs[i]
         instrs.insert(0, label)
 
-    # TODO
     def setup_mmode_reg(self, mode, regs):
         self.mstatus = riscv_privil_reg()
         self.mstatus.init_reg(privileged_reg_t.MSTATUS)
@@ -156,26 +159,28 @@ class riscv_privileged_common_seq():
             self.uie.set_field("UTIE", cfg.enable_interrupt & cfg.enable_timer_irq)
             regs.append(self.uie)
 
-    def setup_satp(self, instrs):
-        if rcs.SATP_MODE == 'BARE':
-            return
-        satp = riscv_privil_reg()
-        satp.init_reg(privileged_reg_t.SATP)
-        satp.set_field("MODE", rcs.SATP_MODE)
-        instrs.append("li x{}, 0x{}".format(cfg.gpr[0], satp.get_val()))
-        instrs.append("csrw 0x{}, x{} // satp".format(privileged_reg_t.SATP, cfg.gpr[0]))
-        satp_ppn_mask = 1 >> (rcs.XLEN - satp.get_field_by_name("PPN").bit_width)
-        # Load the root page table physical address
-        instrs.append("la x{}, page_table_0".format(cfg.gpr[0]))
-        # Right shift to get PPN at 4k granularity
-        instrs.append("srli x{}, x{}, 12".format(cfg.gpr[0], cfg.gpr[0]))
-        instrs.append("li   x{}, 0x{}".format(cfg.gpr[1], satp_ppn_mask))
-        instrs.append("and x{}, x{}, x{}".format(cfg.gpr[0], cfg.gpr[0], cfg.gpr[1]))
-        # Set the PPN field for SATP
-        instrs.append("csrs 0x{}, x{} // satp", privileged_reg_t.SATP, cfg.gpr[0])
-
     def gen_csr_instr(self, regs, instrs):
         for i in range(len(regs)):
             instrs.append("li x{}, {}".format(cfg.gpr[0].value, hex(regs[i].get_val())))
             instrs.append("csrw {}, x{} # {}".format(hex(regs[i].reg_name.value),
                                                      cfg.gpr[0], regs[i].reg_name.name))
+
+    def setup_satp(self, instrs):
+        satp_ppn_mask = vsc.bit_t(rcs.XLEN)
+        if rcs.SATP_MODE == 'BARE':
+            return
+        satp = riscv_privil_reg()
+        satp.init_reg(privileged_reg_t.SATP)
+        satp.set_field("MODE", rcs.SATP_MODE)
+        instrs.append("li x{}, {}".format(cfg.gpr[0], hex(satp.get_val())))
+        instrs.append("csrw {}, x{} // satp".format(hex(privileged_reg_t.SATP), cfg.gpr[0]))
+        fld_name = satp.get_field_by_name("PPN")
+        satp_ppn_mask = hex((2**rcs.XLEN) - 1) >> (rcs.XLEN - fld_name.bit_width)
+        # Load the root page table physical address
+        instrs.append("la x{}, page_table_0".format(cfg.gpr[0]))
+        # Right shift to get PPN at 4k granularity
+        instrs.append("srli x{}, x{}, 12".format(cfg.gpr[0], cfg.gpr[0]))
+        instrs.append("li   x{}, {}".format(cfg.gpr[1], hex(satp_ppn_mask)))
+        instrs.append("and x{}, x{}, x{}".format(cfg.gpr[0], cfg.gpr[0], cfg.gpr[1]))
+        # Set the PPN field for SATP
+        instrs.append("csrs {}, x{} // satp".format(hex(privileged_reg_t.SATP), cfg.gpr[0]))

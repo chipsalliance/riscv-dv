@@ -113,7 +113,8 @@ class riscv_reg:
 
     def set_field_rand_mode(self, fld_name, rand_on):
         fld_hd = self.get_field_by_name(fld_name)
-        fld_hd.rand_mode = bool(rand_on)
+        with vsc.raw_mode():
+            fld_hd.rand_mode = bool(rand_on)
 
     def reset(self):
         for i in range((len(self.fld) - 1), -1, -1):

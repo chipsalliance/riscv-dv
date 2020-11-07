@@ -186,11 +186,14 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             try:
                 with vsc.randomize_with(self.avail_regs):
                     vsc.unique(self.avail_regs)
-                    self.avail_regs[0] in vsc.rangelist(cfg.reserved_regs, self.reserved_rd)
+                    self.avail_regs[0].inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,
+                                                                    riscv_reg_t.A5)))
                     with vsc.foreach(self.avail_regs, idx=True) as i:
-                        self.avail_regs[i].not_inside(cfg.reserved_regs, self.reserved_rd)
+                        self.avail_regs[i].not_inside(vsc.rangelist(cfg.reserved_regs,
+                                                      self.reserved_rd))
             except Exception:
-                logging.info("Cannot randomize avail_regs")
+                logging.critical("Cannot randomize avail_regs")
+                sys.exit(1)
 
     def setup_instruction_dist(self, no_branch = 0, no_load_store = 1):
         if cfg.dist_control_mode:

@@ -17,7 +17,6 @@ import random
 import copy
 import sys
 import vsc
-from bitstring import BitArray
 from importlib import import_module
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
@@ -307,8 +306,7 @@ class riscv_asm_program_gen:
             misa[misa_ext_t.MISA_EXT_S] = 1
         self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value,
                                                        hex(misa.get_val())))
-        self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent,
-                                                         hex(privileged_reg_t.MISA),
+        self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent, hex(privileged_reg_t.MISA),
                                                          cfg.gpr[0].value))
 
     def core_is_initialized(self):
@@ -318,19 +316,20 @@ class riscv_asm_program_gen:
         pass
 
     def init_gpr(self):
-        reg_val_ = vsc.rand_bit_t(pkg_ins.DATA_WIDTH)
+        reg_val = vsc.rand_bit_t(pkg_ins.DATA_WIDTH)
         for i in range(rcs.NUM_GPR):
-            if i == cfg.sp | i == cfg.tp:
+            if i in [cfg.sp.value, cfg.tp.value]:
                 continue
             try:
-                with vsc.randomize_with(reg_val_) as it:
-                    vsc.dist(reg_val_, [vsc.weight(0, 1), vsc.weight(0x80000000, 1),
-                                        vsc.weight(vsc.rng(0x10, 0xefffffff), 1),
-                                        vsc.weight(vsc.rng(0xf0000000, 0xffffffff), 1)])
-            except:
+                with vsc.randomize_with(reg_val):
+                    vsc.dist(reg_val, [vsc.weight(0, 1), vsc.weight(0x80000000, 1),
+                                       vsc.weight(vsc.rng(0x1, 0xf), 1),
+                                       vsc.weight(vsc.rng(0x10, 0xefffffff), 1),
+                                       vsc.weight(vsc.rng(0xf0000000, 0xffffffff), 1)])
+            except Exception:
                 logging.critical("Cannot Randomize reg_val")
                 sys.exit(1)
-            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, hex(reg_val_.get_val()))
+            init_string = "{}li x{}, {}".format(pkg_ins.indent, i, hex(reg_val.get_val()))
             self.instr_stream.append(init_string)
 
     def init_floating_point_gpr(self):
@@ -548,8 +547,10 @@ class riscv_asm_program_gen:
                                                       cause.name) +
                          "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
                                                         cfg.gpr[0].value, rcs.XLEN - 1) +
-                         "{}bne x{}, x0, {}{}mode_instr_handler"
-                         .format(pkg_ins.indent, cfg.gpr[0].value, pkg_ins.hart_prefix(hart), mode))
+                         "{}bne x{}, x0, {}{}mode_instr_handler".format(pkg_ins.indent,
+                                                                        cfg.gpr[0].value,
+                                                                        pkg_ins.hart_prefix(hart),
+                                                                        mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
         # the page table with a specific privileged mode.
 
@@ -609,9 +610,11 @@ class riscv_asm_program_gen:
     def gen_interrupt_handler_section(self, mode, hart):
         interrupt_handler_instr = []
         ls_unit = "w" if (rcs.XLEN == 32) else "d"
-        # TODO
-        # if(mode.value < cfg.init_privileged_mode):
-        # return
+        # TODO Need to change the supported_privileged_mode of core setting file with enum types
+        '''
+        if(mode < cfg.init_privileged_mode):
+            return
+        '''
         if(mode is privileged_mode_t.USER_MODE.name and not (rcs.support_umode_trap)):
             return
         if(mode == privileged_mode_t.MACHINE_MODE.name):
