@@ -34,7 +34,7 @@ class riscv_instr_stream:
         self.instr_cnt = 0
         self.label = ""
         # User can specify a small group of available registers to generate various hazard condition
-        self.avail_regs = vsc.rand_list_t(vsc.enum_t(riscv_reg_t), sz = 10)
+        self.avail_regs = vsc.randsz_list_t(vsc.enum_t(riscv_reg_t))
         # Some additional reserved registers that should not be used as rd register
         # by this instruction stream
         self.reserved_rd = vsc.list_t(vsc.enum_t(riscv_reg_t))
@@ -181,9 +181,19 @@ class riscv_rand_instr_stream(riscv_instr_stream):
                 riscv_instr.instr_category[riscv_instr_category_t.STORE.name])
         self.setup_instruction_dist(no_branch, no_load_store)
 
-    # TODO
     def randomize_avail_regs(self):
-        pass
+        if self.avail_regs.size > 0:
+            try:
+                with vsc.randomize_with(self.avail_regs):
+                    vsc.unique(self.avail_regs)
+                    self.avail_regs[0].inside(vsc.rangelist(vsc.rng(riscv_reg_t.S0,
+                                                                    riscv_reg_t.A5)))
+                    with vsc.foreach(self.avail_regs, idx = True) as i:
+                        self.avail_regs[i].not_inside(vsc.rangelist(cfg.reserved_regs,
+                                                      self.reserved_rd))
+            except Exception:
+                logging.critical("Cannot randomize avail_regs")
+                sys.exit(1)
 
     def setup_instruction_dist(self, no_branch = 0, no_load_store = 1):
         if cfg.dist_control_mode:
@@ -231,21 +241,21 @@ class riscv_rand_instr_stream(riscv_instr_stream):
 
     def randomize_gpr(self, instr):
         with instr.randomize_with() as it:
-            if self.avail_regs.size > 0:
-                if instr.has_rs1:
+            with vsc.if_then(self.avail_regs.size > 0):
+                with vsc.if_then(instr.has_rs1):
                     instr.rs1.inside(vsc.rangelist(self.avail_regs))
-                if instr.has_rs2:
+                with vsc.if_then(instr.has_rs2):
                     instr.rs2.inside(vsc.rangelist(self.avail_regs))
-                if instr.has_rd:
+                with vsc.if_then(instr.has_rd):
                     instr.rd.inside(vsc.rangelist(self.avail_regs))
             with vsc.foreach(self.reserved_rd, idx = True) as i:
-                if instr.has_rd == 1:
+                with vsc.if_then(instr.has_rd):
                     instr.rd != self.reserved_rd[i]
-                if instr.format == riscv_instr_format_t.CB_FORMAT:
+                with vsc.if_then(instr.format == riscv_instr_format_t.CB_FORMAT):
                     instr.rs1 != self.reserved_rd[i]
 
             with vsc.foreach(cfg.reserved_regs, idx = True) as i:
-                with vsc.if_then(instr.has_rd == 1):
+                with vsc.if_then(instr.has_rd):
                     instr.rd != cfg.reserved_regs[i]
                 with vsc.if_then(instr.format == riscv_instr_format_t.CB_FORMAT):
                     instr.rs1 != cfg.reserved_regs[i]
