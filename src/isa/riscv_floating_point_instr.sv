@@ -174,9 +174,9 @@ class riscv_floating_point_instr extends riscv_instr;
         // FSW rs2 is fp
         fs2 = get_fpr(operands[0]);
         fs2_value = get_gpr_state(operands[0]);
-        rs1 = get_gpr(operands[2]);
-        rs1_value = get_gpr_state(operands[2]);
-        get_val(operands[1], imm);
+        rs1 = get_gpr(operands[1]);
+        rs1_value = get_gpr_state(operands[1]);
+        get_val(operands[2], imm);
       end
       R_FORMAT: begin
         // convert Pseudoinstructions for ovpsim
