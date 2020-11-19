@@ -16,7 +16,7 @@ sys.path.append("pygen/")
 from pygen_src.riscv_instr_pkg import *
 from pygen_src.riscv_instr_gen_config import cfg  # NOQA
 for isa in rcs.supported_isa:
-    import_module("pygen_src.isa." + isa.lower() + "_instr")
+    import_module("pygen_src.isa." + isa.name.lower() + "_instr")
 from pygen_src.isa.riscv_instr import riscv_instr  # NOQA
 from pygen_src.riscv_asm_program_gen import riscv_asm_program_gen  # NOQA
 from pygen_src.riscv_utils import gen_config_table

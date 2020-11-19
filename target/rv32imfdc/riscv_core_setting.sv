@@ -96,8 +96,8 @@ parameter int NUM_HARTS = 1;
 privileged_reg_t implemented_csr[] = {
 `else
 const privileged_reg_t implemented_csr[] = {
-`endif //
-    Machine mode mode CSR
+`endif
+    // Machine mode mode CSR
     MVENDORID, // Vendor ID
     MARCHID, // Architecture ID
     MIMPID, // Implementation ID
@@ -119,8 +119,8 @@ bit[11:0] custom_csr[] = {
 };
 
 // ----------------------------------------------------------------------------
-// Supported interrupt / exception setting, used for functional coverage //
-----------------------------------------------------------------------------
+// Supported interrupt / exception setting, used for functional coverage
+// ----------------------------------------------------------------------------
 
 `ifdef DSIM
 interrupt_cause_t implemented_interrupt[] = {
