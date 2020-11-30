@@ -1,8 +1,7 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
@@ -12,27 +11,29 @@
   
 
   
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
   
   
   
 
   
-  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
@@ -48,7 +49,7 @@
           
 
           
-            <a href="index.html#document-index" class="icon icon-home"> riscv-dv
+            <a href="#" class="icon icon-home" alt="Documentation Home"> riscv-dv
           
 
           
@@ -64,6 +65,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -126,6 +128,7 @@
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -135,7 +138,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html#document-index">riscv-dv</a>
+          <a href="#">riscv-dv</a>
         
       </nav>
 
@@ -164,7 +167,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="index.html#document-index">Docs</a> &raquo;</li>
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
       <li>riscv-dv  documentation</li>
     
@@ -273,7 +276,7 @@ one of below to run ISS simulation.</p>
 <li><ul class="simple">
 <li><p><a class="reference external" href="https://github.com/riscv/riscv-isa-sim">spike</a> setup</p></li>
 <li><p>Follow the instructions to build spike</p></li>
-<li><p>Build spike with &quot;--enable-commitlog&quot;</p></li>
+<li><p>Build spike with “–enable-commitlog”</p></li>
 <li><p>Set environment variable SPIKE_PATH to the directory of the spike binary</p></li>
 </ul>
 </li>
@@ -306,7 +309,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="section" id="running-the-generator">
 <h3>Running the generator<a class="headerlink" href="#running-the-generator" title="Permalink to this headline">¶</a></h3>
 <p>A simple script <cite>run.py</cite> is provided for you to run a single test or a regression.</p>
-<p>You can use --help to get the complete command reference:</p>
+<p>You can use –help to get the complete command reference:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
@@ -314,7 +317,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span><span class="o">=</span><span class="n">riscv_arithmetic_basic_test</span>
 </pre></div>
 </div>
-<p>You can specify the simulator by &quot;-simulator&quot; option:</p>
+<p>You can specify the simulator by “-simulator” option:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">ius</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">vcs</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">simulator</span> <span class="n">questa</span>
@@ -331,7 +334,7 @@ export WHISPER_ISS=&quot;xx/xxx/swerv-ISS/build-Linux/whisper&quot;
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">lsf_cmd</span><span class="o">=</span><span class="s2">&quot;bsub -Is&quot;</span>
 </pre></div>
 </div>
-<p>Here's a few more examples of the run command:</p>
+<p>Here’s a few more examples of the run command:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single test 10 times</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_arithmetic_basic_test</span> <span class="o">--</span><span class="n">iterations</span> <span class="mi">10</span>
 
@@ -394,16 +397,16 @@ real RISC-V processor:</p>
 <p>Sometimes it might be useful to run some hand-coded assembly/C tests to hit some
 corner cases:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run a single/multiple assembly/C test</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span><span class="o">/</span><span class="n">asm_test2</span><span class="o">.</span><span class="n">S</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span><span class="o">/</span><span class="n">c_test2</span><span class="o">.</span><span class="n">c</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_test</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span><span class="o">/</span><span class="n">asm_test2</span><span class="o">.</span><span class="n">S</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_test</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span><span class="o">/</span><span class="n">c_test2</span><span class="o">.</span><span class="n">c</span>
 
-<span class="c1"># Run regression with all assembly tests(*.S)/ C tests(*.c) under a given directory</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="p">,</span><span class="n">asm_test_path2</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="p">,</span><span class="n">c_test_path2</span>
+<span class="c1"># Run regression with all assembly test(*.S)/ C test(*.c) under a given directory</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_test</span> <span class="n">asm_test_path1</span><span class="p">,</span><span class="n">asm_test_path2</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_test</span> <span class="n">c_test_path1</span><span class="p">,</span><span class="n">c_test_path2</span>
 
-<span class="c1"># Run mix between the assembly/C test and assembly/C tests under a directory</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">asm_tests</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span>
-<span class="n">run</span> <span class="o">--</span><span class="n">c_tests</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span>
+<span class="c1"># Run mix between the assembly/C test and assembly/C test under a directory</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">asm_test</span> <span class="n">asm_test_path1</span><span class="o">/</span><span class="n">asm_test1</span><span class="o">.</span><span class="n">S</span><span class="p">,</span><span class="n">asm_test_path2</span>
+<span class="n">run</span> <span class="o">--</span><span class="n">c_test</span> <span class="n">c_test_path1</span><span class="o">/</span><span class="n">c_test1</span><span class="o">.</span><span class="n">c</span><span class="p">,</span><span class="n">c_test_path2</span>
 </pre></div>
 </div>
 <p>You could also use this approach to integrate the assembly/C tests
@@ -415,7 +418,7 @@ from other sources to riscv-dv flow.</p>
 <div class="section" id="configure-the-generator-to-match-your-processor-features">
 <h3>Configure the generator to match your processor features<a class="headerlink" href="#configure-the-generator-to-match-your-processor-features" title="Permalink to this headline">¶</a></h3>
 <p>The default configuration of the instruction generator is <strong>RV32IMC</strong> (machine
-mode only). A few pre-defined configurations can be found under &quot;target&quot; directory,
+mode only). A few pre-defined configurations can be found under “target” directory,
 you can run with these targets if it matches your processor specificationi:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span>                   <span class="c1"># Default target rv32imc</span>
 <span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32i</span>    <span class="c1"># rv32i, machine mode only</span>
@@ -454,7 +457,7 @@ match your processor capability.</p>
 </div>
 <div class="section" id="setup-the-memory-map">
 <h3>Setup the memory map<a class="headerlink" href="#setup-the-memory-map" title="Permalink to this headline">¶</a></h3>
-<p>Here's a few cases that you might want to allocate the instruction and data
+<p>Here’s a few cases that you might want to allocate the instruction and data
 sections to match the actual memory map</p>
 <ol class="arabic simple">
 <li><p>The processor has internal memories, and you want to test load/store from
@@ -741,7 +744,7 @@ another GPR. The reference value will then be compared to the value actually
 stored in the CSR to determine whether to jump to the failure condition or
 continue executing, allowing it to be completely self checking. This script has
 been integrated with run.py. If you want to run it separately, you can get the
-command reference with --help:</p>
+command reference with –help:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="n">scripts</span><span class="o">/</span><span class="n">gen_csr_test</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
 </pre></div>
 </div>
@@ -788,8 +791,8 @@ it with random instructions:</p>
 </ol>
 <blockquote>
 <div><ul class="simple">
-<li><p>Download the repo and add &quot; --enable-commitlog&quot; at the end of line 6 in
-<a class="reference external" href="https://github.com/riscv/riscv-bitmanip/blob/master/tools/riscv-isa-sim-build.sh">build_file</a> as it's not enabled by default</p></li>
+<li><p>Download the repo and add ” –enable-commitlog” at the end of line 6 in
+<a class="reference external" href="https://github.com/riscv/riscv-bitmanip/blob/master/tools/riscv-isa-sim-build.sh">build_file</a> as it’s not enabled by default</p></li>
 <li><p>Follow the <a class="reference external" href="https://github.com/riscv/riscv-bitmanip/tree/master/tools#building-tools-with-draft-b-extension-instructions-support">steps</a> to install GCC and spike</p></li>
 </ul>
 </div></blockquote>
@@ -811,14 +814,14 @@ executable. (example: &lt;install_dir&gt;/bin/riscv64-unknown-elf-objcopy)</p></
 </div>
 <div class="section" id="run-bitmanip-simulation">
 <h3>Run bitmanip simulation<a class="headerlink" href="#run-bitmanip-simulation" title="Permalink to this headline">¶</a></h3>
-<p>Bit manipulation tests are added in target &quot;rv32imcb&quot; or &quot;rv64imcb&quot;. Here is the
+<p>Bit manipulation tests are added in target “rv32imcb” or “rv64imcb”. Here is the
 example to run bitmanip test with both ISS (spike and ovpsim). The instruction
 trace from these ISS will be cross compared:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">run</span> <span class="o">--</span><span class="n">target</span> <span class="n">rv32imcb</span> <span class="o">--</span><span class="n">test</span> <span class="n">riscv_b_ext_test</span> <span class="o">--</span><span class="n">iss</span> <span class="n">spike</span><span class="p">,</span><span class="n">ovpsim</span>
 </pre></div>
 </div>
 <p>In <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imcb/testlist.yaml">bitmanip testlist</a>, there are a few bitmanip tests. Run option
-&quot;+enable_b_extension=1&quot; enables it and &quot;+enable_bitmanip_groups=zbb,zbt&quot;
+“+enable_b_extension=1” enables it and “+enable_bitmanip_groups=zbb,zbt”
 allows user to only enable one or some groups of bit manipulation instructions.</p>
 </div>
 <div class="section" id="functional-coverage-support-for-bitmanip">
@@ -857,7 +860,7 @@ less than XLEN*2, cover all the values:</p>
 </div>
 <span id="document-end_to_end_simulation"></span><div class="section" id="end-to-end-simulation-flow">
 <h2>End to End Simulation Flow<a class="headerlink" href="#end-to-end-simulation-flow" title="Permalink to this headline">¶</a></h2>
-<p>We have collaborated with LowRISC to apply this flow for <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/doc/verification.rst">IBEX RISC-V core verification</a>.
+<p>We have collaborated with lowRISC to apply this flow for <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/doc/03_reference/verification.rst">Ibex RISC-V core verification</a>.
 You can use it as a reference to setup end-to-end co-simulation flow.
 This repo is still under active development, this is the recommended approach to
 customize the instruction generator while keeping the effort of merging
@@ -867,7 +870,7 @@ upstream changes to a minimum.</p>
 the upstream classses and implement your own functionalities.</p></li>
 <li><p>Add your extensions under user_extension directory, and add the files to
 user_extension/user_extension.svh. If you prefer to put your extensions in a
-different directory, you can use &quot;-ext &lt;user_extension_path&gt;&quot; to override the
+different directory, you can use “-ext &lt;user_extension_path&gt;” to override the
 user extension path.</p></li>
 <li><p>Create a new target directory and customize the setting and testlist</p></li>
 <li><p>Run the generator with <code class="docutils literal notranslate"><span class="pre">--custom_target</span> <span class="pre">&lt;target_dir&gt;</span> <span class="pre">--isa</span> <span class="pre">&lt;isa&gt;</span> <span class="pre">--mabi</span> <span class="pre">&lt;mabi&gt;</span></code></p></li>
@@ -878,7 +881,7 @@ line override:
 <code class="docutils literal notranslate"><span class="pre">--sim_opts=&quot;+uvm_set_inst_override=riscv_asm_program_gen,&lt;extended</span>
 <span class="pre">class&gt;,'uvm_test_top.asm_gen'&quot;</span></code></p></li>
 </ol>
-<p>You can refer to <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/Makefile#L68">riscv-dv extension for ibex</a> for a working example.</p>
+<p>You can refer to <a class="reference external" href="https://github.com/lowRISC/ibex/blob/master/dv/uvm/core_ibex/Makefile#L110">riscv-dv extension for Ibex</a> for a working example.</p>
 <p>We have plan to open-source the end-to-end environments of other advanced RISC-V
 processors. Stay tuned!</p>
 </div>
@@ -890,7 +893,7 @@ processors. Stay tuned!</p>
 <div class="section" id="functional-coverage-work-in-progress">
 <h3>Functional coverage (work in progress)<a class="headerlink" href="#functional-coverage-work-in-progress" title="Permalink to this headline">¶</a></h3>
 <p>This flow extracts functional coverage information from the
-instruction trace generated by ISS. It's independent of the instruction generation
+instruction trace generated by ISS. It’s independent of the instruction generation
 flow and does not require a tracer implementation in the RTL. You can use this
 flow as long as your program can be run with an ISS supported in this flow. The
 flow parses the instruction trace log and converts it to a CSV trace format. After
@@ -913,7 +916,7 @@ It includes below major categories:</p>
 </ul>
 <p>The functional covergroup is still under active development. Please feel free to
 add anything you are interested or file a bug for any feature request.</p>
-<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imc/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don't need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
+<p>Before start, please check the you have modified <a class="reference external" href="https://github.com/google/riscv-dv/blob/master/target/rv32imc/riscv_core_setting.sv">riscv_core_setting.sv</a> to reflect your processor capabilities. The covergroup is selectively instantiated based on this setting so that you don’t need to deal with excluding unrelated coverpoints later. You also need to get the Spike ISS or riscvOVPsim ISS (riscv-ovpsim) setup before running this flow:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Process spike simulation log and collect functional coverage</span>
 <span class="n">cov</span> <span class="o">--</span><span class="nb">dir</span> <span class="n">out</span><span class="o">/</span><span class="n">spike_sim</span>
 
@@ -1211,7 +1214,7 @@ library of tests written for the Ibex core, found at
 <h2>Appendix<a class="headerlink" href="#appendix" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="trace-csv-format">
 <h3>Trace CSV format<a class="headerlink" href="#trace-csv-format" title="Permalink to this headline">¶</a></h3>
-<p>A standard CSV format is defined for the instruction execution trace. It's used for co-simulation result comparison and functional coverage collection.</p>
+<p>A standard CSV format is defined for the instruction execution trace. It’s used for co-simulation result comparison and functional coverage collection.</p>
 <img alt="_images/trace_csv.png" src="_images/trace_csv.png" />
 <p><strong>The CSV format includes the following fields:</strong></p>
 <ul class="simple">
@@ -1230,11 +1233,11 @@ library of tests written for the Ibex core, found at
 </ul>
 </li>
 <li><p>binary: Instruction binary</p></li>
-<li><p>instr_str: Instruction in assmebly format</p></li>
+<li><p>instr_str: Instruction in assembly format</p></li>
 <li><p>operand: Instruction operands</p></li>
 <li><p>pad: Unused</p></li>
 </ul>
-<p><strong>Here's a sample of the CSV trace file:</strong></p>
+<p><strong>Here’s a sample of the CSV trace file:</strong></p>
 <div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="n">pc</span><span class="p">,</span><span class="n">instr</span><span class="p">,</span><span class="n">gpr</span><span class="p">,</span><span class="n">csr</span><span class="p">,</span><span class="n">binary</span><span class="p">,</span><span class="n">mode</span><span class="p">,</span><span class="n">instr_str</span><span class="p">,</span><span class="n">operand</span><span class="p">,</span><span class="n">pad</span>
 <span class="n">ffffffff8000000c</span><span class="p">,</span><span class="n">c</span><span class="p">.</span><span class="n">addi</span><span class="p">,</span><span class="nl">ra:</span><span class="n">daab700e</span><span class="p">,,</span><span class="mh">000000</span><span class="n">b9</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;c.addi  ra, 14&quot;</span><span class="p">,</span><span class="s">&quot;ra,14&quot;</span><span class="p">,</span>
 <span class="n">ffffffff8000000e</span><span class="p">,</span><span class="n">lui</span><span class="p">,</span><span class="nl">sp:</span><span class="n">ff8e6000</span><span class="p">,,</span><span class="n">ff8e6137</span><span class="p">,</span><span class="mh">3</span><span class="p">,</span><span class="s">&quot;lui     sp, 0xff8e6&quot;</span><span class="p">,</span><span class="s">&quot;sp,0xff8e6&quot;</span><span class="p">,</span>
@@ -1276,11 +1279,19 @@ script <a class="reference external" href="https://github.com/google/riscv-dv/bl
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2020, Google, Inc.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -1291,7 +1302,6 @@ script <a class="reference external" href="https://github.com/google/riscv-dv/bl
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {
