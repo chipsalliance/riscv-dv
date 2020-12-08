@@ -20,7 +20,7 @@ from importlib import import_module
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t,
-                                       riscv_instr_category_t)
+                                       riscv_instr_category_t, satp_mode_t)
 
 
 @vsc.randobj
@@ -176,7 +176,7 @@ class riscv_instr_gen_config:
 
         if len(self.march_isa) != 0:
             rcs.supported_isa.append(self.march_isa)
-        if "RV32C" not in rcs.supported_isa:
+        if riscv_instr_group_t.RV32C not in rcs.supported_isa:
             self.disable_compressed_instr = 1
         self.setup_instr_distribution()
         self.get_invalid_priv_lvl_csr()
@@ -234,7 +234,7 @@ class riscv_instr_gen_config:
             self.mstatus_mprv == 1
         else:
             self.mstatus_mprv == 0
-        if rcs.SATP_MODE == "BARE":
+        if rcs.SATP_MODE == satp_mode_t.BARE:
             self.mstatus_mxr == 0
             self.mstatus_sum == 0
             self.mstatus_tvm == 0
@@ -244,15 +244,18 @@ class riscv_instr_gen_config:
         support_128b = 0
 
         # check the valid isa support
-        for x in rcs.supported_isa:
-            if x in ["RV64I", "RV64M", "RV64A", "RV64F", "RV64D", "RV64C", "RV64B"]:
+        for group in rcs.supported_isa:
+            if group in [riscv_instr_group_t.RV64I, riscv_instr_group_t.RV64M,
+                         riscv_instr_group_t.RV64A, riscv_instr_group_t.RV64F,
+                         riscv_instr_group_t.RV64D, riscv_instr_group_t.RV64C,
+                         riscv_instr_group_t.RV64B]:
                 support_64b = 1
                 logging.info("support_64b = {}".format(support_64b))
-                logging.debug("Supported ISA = {}".format(x))
-            elif x in ["RV128I", "RV128C"]:
+                logging.debug("Supported ISA = {}".format(group.name))
+            elif group in [riscv_instr_group_t.RV128I, riscv_instr_group_t.RV128C]:
                 support_128b = 1
                 logging.info("support_128b = {}".format(support_128b))
-                logging.debug("Supported ISA = {}".format(x))
+                logging.debug("Supported ISA = {}".format(group.name))
 
         if support_128b and rcs.XLEN != 128:
             logging.critical("XLEN should be set to 128 based on \
@@ -272,24 +275,26 @@ class riscv_instr_gen_config:
             logging.info("XLEN Value = {}".format(rcs.XLEN))
             sys.exit("XLEN is not equal to 32, set it Accordingly!")
 
-        if not(support_128b or support_64b) and not(rcs.SATP_MODE in ['SV32', "BARE"]):
-            logging.critical("SATP mode {} is not supported for RV32G ISA".format(rcs.SATP_MODE))
+        if not(support_128b or support_64b) and \
+                not(rcs.SATP_MODE in [satp_mode_t.SV32, satp_mode_t.BARE]):
+            logging.critical("SATP mode {} is not supported for RV32G ISA"
+                             .format(rcs.SATP_MODE.name))
             sys.exit("Supported SATP mode is not provided")
 
     def setup_instr_distribution(self):
-        if(self.dist_control_mode):
+        if self.dist_control_mode:
             category_iter = iter([x for x in riscv_instr_category_t.__members__])
             category = riscv_instr_category_t(0)
             while True:
                 opts = "dist_{}".format(category.name)
                 opts = opts.lower()
-                if(self.args_dict[opts]):
+                if self.args_dict[opts]:
                     self.category_dist[category] = self.args_dict[opts]
                 else:
                     self.category_dist[category] = 10
                 logging.info("Set dist[{}] = {}".format(category, self.category_dist[category]))
                 category = next(category_iter)
-                if(category != riscv_instr_category_t(0)):
+                if category != riscv_instr_category_t(0):
                     break
 
     # TODO
@@ -297,8 +302,8 @@ class riscv_instr_gen_config:
         pass
 
     def pre_randomize(self):
-        for x in rcs.supported_privileged_mode:
-            if x == privileged_mode_t.SUPERVISOR_MODE:
+        for mode in rcs.supported_privileged_mode:
+            if mode == privileged_mode_t.SUPERVISOR_MODE:
                 self.support_supervisor_mode = 1
 
     def get_non_reserved_gpr(self):
@@ -338,9 +343,9 @@ class riscv_instr_gen_config:
             sys.exit(1)
 
         # implemented_csr from riscv_core_setting.py
-        for x in rcs.implemented_csr:
-            if x in invalid_lvl:
-                self.invalid_priv_mode_csrs.append(x)
+        for csr in rcs.implemented_csr:
+            if csr in invalid_lvl:
+                self.invalid_priv_mode_csrs.append(csr)
 
     def parse_args(self):
         parse = argparse.ArgumentParser()
