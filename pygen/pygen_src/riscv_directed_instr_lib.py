@@ -54,9 +54,9 @@ class riscv_mem_access_stream(riscv_directed_instr_stream):
         self.data_page = {}
 
     def pre_randomize(self):
-        if(self.load_store_shared_memory):
+        if self.load_store_shared_memory:
             self.data_page = cfg.amo_region
-        elif(self.kernel_mode):
+        elif self.kernel_mode:
             self.data_page = cfg.s_mem_region
         else:
             self.data_page = cfg.mem_region
@@ -66,9 +66,9 @@ class riscv_mem_access_stream(riscv_directed_instr_stream):
         la_instr = riscv_pseudo_instr()
         la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA
         la_instr.rd = gpr
-        if(self.load_store_shared_memory):
+        if self.load_store_shared_memory:
             la_instr.imm_str = "{}+{}".format(cfg.amo_region[idx]['name'], base)
-        elif(self.kernel_mode):
+        elif self.kernel_mode:
             la_instr.imm_str = "{}{}+{}".format(pkg_ins.hart_prefix(self.hart),
                                                 cfg.s_mem_region[idx]['name'], base)
         else:
@@ -80,7 +80,7 @@ class riscv_mem_access_stream(riscv_directed_instr_stream):
         self.setup_allowed_instr(1, 1)
         for i in range(instr_cnt):
             instr = riscv_instr()
-            instr = self.randomize_instr(instr, [])
+            instr = self.randomize_instr(instr)
             self.insert_instr(instr)
 
 
@@ -168,7 +168,6 @@ class riscv_int_numeric_corner_stream(riscv_directed_instr_stream):
     def init_val_c(self):
         # TODO
         vsc.solve_order(self.init_val_type, self.init_val)
-        self.avail_regs_c.constraint_mode(False)
         self.init_val_type.size == 10  # self.num_of_avail_regs
         self.init_val.size == 10  # self.num_of_avail_regs
         self.num_of_instr in vsc.rangelist(vsc.rng(15, 30))

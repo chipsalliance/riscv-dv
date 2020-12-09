@@ -1,6 +1,7 @@
 """
 Copyright 2020 Google LLC
 Copyright 2020 PerfectVIPs Inc.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,17 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 import vsc
 import random
-import logging
 from importlib import import_module
 from pygen_src.riscv_directed_instr_lib import riscv_mem_access_stream
-from pygen_src.riscv_instr_pkg import riscv_reg_t, riscv_pseudo_instr_name_t,\
-    riscv_instr_name_t, riscv_instr_category_t
+from pygen_src.riscv_instr_pkg import (riscv_reg_t, riscv_pseudo_instr_name_t,
+                                       riscv_instr_name_t, riscv_instr_category_t,
+                                       riscv_instr_group_t)
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_pseudo_instr import riscv_pseudo_instr
 from pygen_src.isa.riscv_instr import riscv_instr
 rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
 
+# Base class for AMO instruction stream
 @vsc.randobj
 class riscv_amo_base_instr_stream(riscv_mem_access_stream):
     def __init__(self):
@@ -35,6 +37,7 @@ class riscv_amo_base_instr_stream(riscv_mem_access_stream):
         self.data_page_id = vsc.uint32_t()
         self.max_offset = vsc.uint32_t()
         self.XLEN = vsc.uint32_t(rcs.XLEN)
+        # User can specify a small group of available registers to generate various hazard condition
         self.avail_regs = vsc.randsz_list_t(vsc.enum_t(riscv_reg_t))
 
     @vsc.constraint
@@ -43,16 +46,18 @@ class riscv_amo_base_instr_stream(riscv_mem_access_stream):
 
     @vsc.constraint
     def rs1_c(self):
+        # TODO constraint size with num_of_rs1_reg
         vsc.solve_order(self.num_of_rs1_reg, self.rs1_reg)
-        self.rs1_reg.size == 1 # self.num_of_rs1_reg
-        self.offset.size == 1 # self.num_of_rs1_reg
-        with vsc.foreach(self.rs1_reg, idx=True) as i:
-            self.rs1_reg[i].not_inside(vsc.rangelist(cfg.reserved_regs, self.reserved_rd, riscv_reg_t.ZERO))
-        vsc.unique(self.rs1_reg) # TODO
+        self.rs1_reg.size == 1  # self.num_of_rs1_reg
+        self.offset.size == 1  # self.num_of_rs1_reg
+        with vsc.foreach(self.rs1_reg, idx = True) as i:
+            self.rs1_reg[i].not_inside(vsc.rangelist(cfg.reserved_regs,
+                                                     self.reserved_rd, riscv_reg_t.ZERO))
+        vsc.unique(self.rs1_reg)
 
     @vsc.constraint
     def addr_range_c(self):
-        with vsc.foreach(self.offset, idx=True) as i:
+        with vsc.foreach(self.offset, idx = True) as i:
             self.offset[i] in vsc.rangelist(vsc.rng(0, self.max_offset - 1))
 
     @vsc.constraint
@@ -67,7 +72,7 @@ class riscv_amo_base_instr_stream(riscv_mem_access_stream):
     def pre_randomize(self):
         self.data_page = cfg.amo_region
         max_data_page_id = len(self.data_page)
-        self.data_page_id = random.randint(0, max_data_page_id - 1)
+        self.data_page_id = random.randrange(0, max_data_page_id - 1)
         self.max_offset = self.data_page[self.data_page_id]['size_in_bytes']
 
     # Use "la" instruction to initialize the offset regiseter
@@ -82,8 +87,7 @@ class riscv_amo_base_instr_stream(riscv_mem_access_stream):
 
     def post_randomize(self):
         self.gen_amo_instr()
-        logging.info("len of reserved_rd {}".format(len(self.reserved_rd)))
-        self.reserved_rd.append(self.rs1_reg[0])
+        self.reserved_rd.append(self.rs1_reg)
         self.add_mixed_instr(self.num_mixed_instr)
         self.init_offset_reg()
         super().post_randomize()
@@ -93,6 +97,7 @@ class riscv_amo_base_instr_stream(riscv_mem_access_stream):
         pass
 
 
+# A pair of LR/SC instruction
 @vsc.randobj
 class riscv_lr_sc_instr_stream (riscv_amo_base_instr_stream):
     def __init__(self):
@@ -108,16 +113,16 @@ class riscv_lr_sc_instr_stream (riscv_amo_base_instr_stream):
     def gen_amo_instr(self):
         allowed_lr_instr = []
         allowed_sc_instr = []
-        if "RV32A" in rcs.supported_isa:
+        if riscv_instr_group_t.RV32A in rcs.supported_isa:
             allowed_lr_instr.append(riscv_instr_name_t.LR_W)
             allowed_sc_instr.append(riscv_instr_name_t.SC_W)
-        if "RV64A" in rcs.supported_isa:
+        if riscv_instr_group_t.RV64A in rcs.supported_isa:
             allowed_lr_instr.append(riscv_instr_name_t.LR_D)
             allowed_sc_instr.append(riscv_instr_name_t.SC_D)
-        self.lr_instr = riscv_instr.get_rand_instr(include_instr=allowed_lr_instr)
-        self.sc_instr = riscv_instr.get_rand_instr(include_instr=allowed_sc_instr)
+        self.lr_instr = riscv_instr.get_rand_instr(include_instr = allowed_lr_instr)
+        self.sc_instr = riscv_instr.get_rand_instr(include_instr = allowed_sc_instr)
         with self.lr_instr.randomize_with():
-            # self.lr_instr.rs1 == self.rs1_reg[0]  # TODO Getting error 
+            # self.lr_instr.rs1 == self.rs1_reg[0]  # TODO Getting error
             with vsc.if_then(self.reserved_rd.size > 0):
                 self.lr_instr.rd.not_inside(vsc.rangelist(self.reserved_rd))
             with vsc.if_then(cfg.reserved_regs.size > 0):
@@ -130,14 +135,23 @@ class riscv_lr_sc_instr_stream (riscv_amo_base_instr_stream):
             with vsc.if_then(cfg.reserved_regs.size > 0):
                 self.sc_instr.rd.not_inside(vsc.rangelist(cfg.reserved_regs))
             # self.sc_instr.rd != self.rs1_reg[0]  # TODO
-        self.instr_list.append(self.lr_instr)
-        self.instr_list.append(self.sc_instr)
+        self.instr_list.extend((self.lr_instr, self.sc_instr))
 
+    '''
+    section 8.3 Eventual Success of Store-Conditional Instructions
+    An LR/SC sequence begins with an LR instruction and ends with an SC instruction.
+    The dynamic code executed between the LR and SC instructions can only contain
+    instructions from the base “I” instruction set, excluding loads, stores, backward
+    jumps, taken backward branches, JALR, FENCE, and SYSTEM instructions. If the “C”
+    extension is supported, then compressed forms of the aforementioned “I” instructions
+    are also permitted.
+    '''
     def add_mixed_instr(self, instr_cnt):
-        self.setup_allowed_instr(no_branch=1, no_load_store=1)
+        self.setup_allowed_instr(no_branch = 1, no_load_store = 1)
         for i in range(instr_cnt):
             instr = riscv_instr()
-            instr = self.randomize_instr(instr, include_group = ["RV32I", "RV32C"])
+            instr = self.randomize_instr(instr, include_group = [riscv_instr_group_t.RV32I,
+                                                                 riscv_instr_group_t.RV32C])
             if instr.category not in [riscv_instr_category_t.SYSTEM, riscv_instr_category_t.SYNCH]:
                 self.insert_instr(instr)
 
@@ -162,8 +176,9 @@ class riscv_amo_instr_stream (riscv_amo_base_instr_stream):
 
     def gen_amo_instr(self):
         for i in range(self.num_amo):
-            self.amo_instr.append(riscv_instr.get_rand_instr(include_category=["AMO"]))
-            with self.amo_instr[i].randomize_with() as it:
+            self.amo_instr.append(riscv_instr.get_rand_instr(
+                                  include_category=[riscv_instr_category_t.AMO]))
+            with self.amo_instr[i].randomize_with():
                 with vsc.if_then(self.reserved_rd.size > 0):
                     self.amo_instr[i].rd.not_inside(vsc.rangelist(self.reserved_rd))
                 with vsc.if_then(cfg.reserved_regs.size > 0):
@@ -171,3 +186,8 @@ class riscv_amo_instr_stream (riscv_amo_base_instr_stream):
                 self.amo_instr[i].rs1.inside(vsc.rangelist(self.rs1_reg))
                 self.amo_instr[i].rd.inside(vsc.rangelist(self.rs1_reg))
             self.instr_list.insert(0, self.amo_instr[i])
+
+
+class riscv_vector_amo_instr_stream():
+    # TODO
+    pass

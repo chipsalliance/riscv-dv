@@ -1,6 +1,7 @@
 """
 Copyright 2020 Google LLC
 Copyright 2020 PerfectVIPs Inc.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -31,7 +32,7 @@ class riscv_amo_instr(riscv_instr):
     def get_instr_name(self):
         get_instr_name = self.instr_name.name
         if self.group == riscv_instr_group_t.RV32A:
-            get_instr_name = "{}.w".format(get_instr_name[0:len(get_instr_name) - 2:])
+            get_instr_name = "{}.w".format(get_instr_name[:-2])
             if self.aq:
                 get_instr_name = "{}.aq".format(get_instr_name)
             else:
@@ -40,23 +41,21 @@ class riscv_amo_instr(riscv_instr):
                 else:
                     get_instr_name = get_instr_name
         elif self.group == riscv_instr_group_t.RV64A:
-            get_instr_name = "{}.d".format(get_instr_name[0:len(get_instr_name) - 2:])
+            get_instr_name = "{}.d".format(get_instr_name[:-2])
             if self.aq:
                 get_instr_name = "{}.aq".format(get_instr_name)
             else:
                 if self.rl:
                     get_instr_name = "{}.rl".format(get_instr_name)
-                else:
-                    get_instr_name = get_instr_name
         else:
             logging.critical("Unexpected amo instr group: {} / {}"
                              .format(self.group.name, self.instr_name.name))
             sys.exit(1)
         return get_instr_name
 
-    def convert2asm(self, prefix=""):
+    # Convert the instruction to assembly code
+    def convert2asm(self, prefix = ""):
         asm_str = pkg_ins.format_string(self.get_instr_name(), pkg_ins.MAX_INSTR_STR_LEN)
-        logging.info("Inside amo_instr convert2asm")
         if self.group in [riscv_instr_group_t.RV32A, riscv_instr_group_t.RV64A]:
             if self.instr_name in [riscv_instr_name_t.LR_W, riscv_instr_name_t.LR_D]:
                 asm_str = "{} {}, ({})".format(asm_str, self.rd.name, self.rs1.name)

@@ -21,7 +21,7 @@ from pygen_src.isa.riscv_amo_instr import riscv_amo_instr
 
 # Regular integer instruction
 def DEFINE_INSTR(instr_n, instr_format, instr_category,
-                 instr_group, imm_tp=imm_t.IMM, g=globals()):
+                 instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -43,7 +43,7 @@ def DEFINE_INSTR(instr_n, instr_format, instr_category,
 
 # Compressed instruction
 def DEFINE_C_INSTR(instr_n, instr_format, instr_category,
-                   instr_group, imm_tp=imm_t.IMM, g=globals()):
+                   instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -64,7 +64,7 @@ def DEFINE_C_INSTR(instr_n, instr_format, instr_category,
 
 # Floating point instruction
 def DEFINE_FP_INSTR(instr_n, instr_format, instr_category,
-                    instr_group, imm_tp=imm_t.IMM, g=globals()):
+                    instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -85,7 +85,7 @@ def DEFINE_FP_INSTR(instr_n, instr_format, instr_category,
 
 # Floating point compressed instruction
 def DEFINE_FC_INSTR(instr_n, instr_format, instr_category,
-                    instr_group, imm_tp=imm_t.IMM, g=globals()):
+                    instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -106,7 +106,7 @@ def DEFINE_FC_INSTR(instr_n, instr_format, instr_category,
 
 # B-extension instruction
 def DEFINE_B_INSTR(instr_n, instr_format, instr_category,
-                   instr_group, imm_tp=imm_t.IMM, g=globals()):
+                   instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):
@@ -127,7 +127,7 @@ def DEFINE_B_INSTR(instr_n, instr_format, instr_category,
 
 # A-extension instruction
 def DEFINE_AMO_INSTR(instr_n, instr_format, instr_category,
-                     instr_group, imm_tp=imm_t.IMM, g=globals()):
+                     instr_group, imm_tp = imm_t.IMM, g = globals()):
     class_name = "riscv_{}_instr".format(instr_n.name)
 
     def __init__(self):

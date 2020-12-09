@@ -183,7 +183,7 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def default_c(self):
-        self.main_program_instr_cnt in vsc.rangelist(vsc.rng(10, 100))
+        self.main_program_instr_cnt in vsc.rangelist(vsc.rng(10, self.instr_cnt))
 
     @vsc.constraint
     def sp_tp_c(self):

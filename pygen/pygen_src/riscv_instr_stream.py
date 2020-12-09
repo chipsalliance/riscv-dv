@@ -218,7 +218,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             if len(self.instr_list) == 0:
                 break
 
-    def randomize_instr(self, instr, is_in_debug = 0, disable_dist =0, include_group = []):
+    def randomize_instr(self, instr, is_in_debug = 0, disable_dist = 0, include_group = []):
         exclude_instr = []
         is_SP_in_reserved_rd = riscv_reg_t.SP in self.reserved_rd
         is_SP_in_reserved_regs = riscv_reg_t.SP in cfg.reserved_regs

@@ -1,6 +1,7 @@
 """
 Copyright 2020 Google LLC
 Copyright 2020 PerfectVIPs Inc.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -29,7 +30,7 @@ SATP_MODE = satp_mode_t.BARE
 supported_isa = [riscv_instr_group_t.RV32I, riscv_instr_group_t.RV32M,
                  riscv_instr_group_t.RV32C, riscv_instr_group_t.RV32F,
                  riscv_instr_group_t.RV32FC, riscv_instr_group_t.RV32D,
-                 riscv_instr_group_t.RV32DC]
+                 riscv_instr_group_t.RV32DC, riscv_instr_group_t.RV32A]
 
 supported_privileged_mode = [privileged_mode_t.MACHINE_MODE]
 
