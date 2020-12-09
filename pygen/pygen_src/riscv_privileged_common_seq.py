@@ -15,7 +15,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import logging
 import vsc
 from importlib import import_module
-from pygen_src.riscv_instr_pkg import pkg_ins, privileged_reg_t
+from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
+                                       privileged_mode_t, satp_mode_t)
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_privil_reg import riscv_privil_reg
 rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
@@ -34,15 +35,15 @@ class riscv_privileged_common_seq():
 
     def enter_privileged_mode(self, mode, instrs):
         label = pkg_ins.format_string("{}init_{}:"
-                                      .format(pkg_ins.hart_prefix(self.hart), mode),
+                                      .format(pkg_ins.hart_prefix(self.hart), mode.name),
                                       pkg_ins.LABEL_STR_LEN)
         ret_instr = ["mret"]
         regs = vsc.list_t(vsc.attr(riscv_privil_reg()))
         label = label.lower()
         self.setup_mmode_reg(mode, regs)
-        if mode == "SUPERVISOR_MODE":
+        if mode == privileged_mode_t.SUPERVISOR_MODE:
             self.setup_smode_reg(mode, regs)
-        if mode == "USER_MODE":
+        if mode == privileged_mode_t.USER_MODE:
             self.setup_umode_reg(mode, regs)
         if cfg.virtual_addr_translation_on:
             self.setup_satp(instrs)
@@ -84,7 +85,7 @@ class riscv_privileged_common_seq():
 
     def setup_satp(self, instrs):
         satp_ppn_mask = vsc.bit_t(rcs.XLEN)
-        if rcs.SATP_MODE == 'BARE':
+        if rcs.SATP_MODE == satp_mode_t.BARE:
             return
         satp = riscv_privil_reg()
         satp.init_reg(privileged_reg_t.SATP)
@@ -114,11 +115,12 @@ class riscv_privileged_common_seq():
         self.mstatus.set_field("TW", cfg.set_mstatus_tw)
         self.mstatus.set_field("FS", cfg.mstatus_fs)
         self.mstatus.set_field("VS", cfg.mstatus_vs)
-        if (not("SUPERVISOR_MODE" in rcs.supported_privileged_mode) and (rcs.XLEN != 32)):
+        if (not(privileged_mode_t.SUPERVISOR_MODE in rcs.supported_privileged_mode) and
+                (rcs.XLEN != 32)):
             self.mstatus.set_field("SXL", 0)
         elif rcs.XLEN == 64:
             self.mstatus.set_field("SXL", 2)
-        if (not("USER_MODE" in rcs.supported_privileged_mode) and (rcs.XLEN != 32)):
+        if (not(privileged_mode_t.USER_MODE in rcs.supported_privileged_mode) and (rcs.XLEN != 32)):
             self.mstatus.set_field("UXL", 0)
         elif rcs.XLEN == 64:
             self.mstatus.set_field("UXL", 2)
@@ -126,7 +128,7 @@ class riscv_privileged_common_seq():
         self.mstatus.set_field("SD", 0)
         self.mstatus.set_field("UIE", 0)
         # Set the previous privileged mode as the target mode
-        self.mstatus.set_field("MPP", 3)  # TODO pass mode value as parameter
+        self.mstatus.set_field("MPP", mode.value)
         self.mstatus.set_field("SPP", 0)
         # Enable Interrupt
         self.mstatus.set_field("MPIE", cfg.enable_interrupt)
@@ -163,7 +165,7 @@ class riscv_privileged_common_seq():
 
     def mie_set_field(self, mode, regs):
         # Enable external and timer interrupt
-        if "MIE" in rcs.implemented_csr:
+        if privileged_reg_t.MIE in rcs.implemented_csr:
             self.mie = riscv_privil_reg()
             self.mie.init_reg(privileged_reg_t.MIE)
             if cfg.randomize_csr:
@@ -181,7 +183,7 @@ class riscv_privileged_common_seq():
 
     def sie_set_field(self, mode, regs):
         # Enable external and timer interrupt
-        if "SIE" in rcs.implemeted_csr:
+        if privileged_reg_t.SIE in rcs.implemeted_csr:
             self.sie = riscv_privil_reg()
             self.sie.init_reg(privileged_reg_t.SIE)
             if cfg.randomize_csr:
@@ -195,7 +197,7 @@ class riscv_privileged_common_seq():
             regs.append(self.sie)
 
     def uie_set_field(self, mode, regs):
-        if "UIE" in rcs.implemented_csr:
+        if privileged_reg_t.UIE in rcs.implemented_csr:
             self.uie = riscv_privil_reg()
             self.uie.init_reg(privileged_reg_t.UIE)
             if cfg.randomize_csr:
