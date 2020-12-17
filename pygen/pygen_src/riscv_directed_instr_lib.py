@@ -46,6 +46,45 @@ class riscv_directed_instr_stream(riscv_rand_instr_stream):
 
 
 @vsc.randobj
+class riscv_mem_access_stream(riscv_directed_instr_stream):
+    def __init__(self):
+        super().__init__()
+        self.max_data_page_id = vsc.int32_t()
+        self.load_store_shared_memory = 0
+        self.data_page = {}
+
+    def pre_randomize(self):
+        if self.load_store_shared_memory:
+            self.data_page = cfg.amo_region
+        elif self.kernel_mode:
+            self.data_page = cfg.s_mem_region
+        else:
+            self.data_page = cfg.mem_region
+        self.max_data_page_id = len(self.data_page)
+
+    def add_rs1_init_la_instr(self, gpr, idx, base = 0):
+        la_instr = riscv_pseudo_instr()
+        la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA
+        la_instr.rd = gpr
+        if self.load_store_shared_memory:
+            la_instr.imm_str = "{}+{}".format(cfg.amo_region[idx]['name'], base)
+        elif self.kernel_mode:
+            la_instr.imm_str = "{}{}+{}".format(pkg_ins.hart_prefix(self.hart),
+                                                cfg.s_mem_region[idx]['name'], base)
+        else:
+            la_instr.imm_str = "{}{}+{}".format(pkg_ins.hart_prefix(self.hart),
+                                                cfg.mem_region[idx]['name'], base)
+        self.instr_list.insert(0, la_instr)
+
+    def add_mixed_instr(self, instr_cnt):
+        self.setup_allowed_instr(1, 1)
+        for i in range(instr_cnt):
+            instr = riscv_instr()
+            instr = self.randomize_instr(instr)
+            self.insert_instr(instr)
+
+
+@vsc.randobj
 class riscv_jal_instr(riscv_rand_instr_stream):
     def __init__(self):
         super().__init__()
@@ -73,7 +112,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
             jal.append(riscv_instr_name_t.C_J)
             if rcs.XLEN == 32:
                 jal.append(riscv_instr_name_t.C_JAL)
-        self.jump_start = riscv_instr.get_instr(riscv_instr_name_t.JAL.name)
+        self.jump_start = riscv_instr.get_instr(riscv_instr_name_t.JAL)
         with self.jump_start.randomize_with() as it:
             self.jump_start.rd == RA
         self.jump_start.imm_str = "{}f".format(order[0])
@@ -83,7 +122,7 @@ class riscv_jal_instr(riscv_rand_instr_stream):
         self.jump_end = self.randomize_instr(self.jump_end)
         self.jump_end.label = "{}".format(self.num_of_jump_instr)
         for i in range(self.num_of_jump_instr):
-            self.jump[i] = riscv_instr.get_rand_instr(include_instr = [jal[0].name])
+            self.jump[i] = riscv_instr.get_rand_instr(include_instr = [jal[0]])
             with self.jump[i].randomize_with() as it:
                 if self.jump[i].has_rd:
                     vsc.dist(self.jump[i].rd, [vsc.weight(riscv_reg_t.RA, 5), vsc.weight(
