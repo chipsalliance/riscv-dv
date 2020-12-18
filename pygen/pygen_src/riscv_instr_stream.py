@@ -165,6 +165,10 @@ class riscv_rand_instr_stream(riscv_instr_stream):
         self.allowed_instr = []
         self.category_dist = []
 
+    @vsc.constraint
+    def avail_reg_c(self):
+        self.avail_regs.size == 10
+
     def create_instr_instance(self):
         for i in range(self.instr_cnt):
             self.instr_list.append(None)
@@ -214,7 +218,7 @@ class riscv_rand_instr_stream(riscv_instr_stream):
             if len(self.instr_list) == 0:
                 break
 
-    def randomize_instr(self, instr, is_in_debug = 0):
+    def randomize_instr(self, instr, is_in_debug = 0, disable_dist = 0, include_group = []):
         exclude_instr = []
         is_SP_in_reserved_rd = riscv_reg_t.SP in self.reserved_rd
         is_SP_in_reserved_regs = riscv_reg_t.SP in cfg.reserved_regs
@@ -235,7 +239,8 @@ class riscv_rand_instr_stream(riscv_instr_stream):
                 exclude_instr.extend([riscv_instr_name_t.EBREAK.name,
                                       riscv_instr_name_t.C_EBREAK.name])
         instr = riscv_instr.get_rand_instr(
-            include_instr = self.allowed_instr, exclude_instr = exclude_instr)
+            include_instr = self.allowed_instr, exclude_instr = exclude_instr,
+            include_group = include_group)
         instr = self.randomize_gpr(instr)
         return instr
 
