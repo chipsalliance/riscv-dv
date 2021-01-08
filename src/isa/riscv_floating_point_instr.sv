@@ -21,6 +21,7 @@ class riscv_floating_point_instr extends riscv_instr;
   rand riscv_fpr_t fs3;
   rand riscv_fpr_t fd;
   rand f_rounding_mode_t rm;
+  rand bit use_rounding_mode_from_instr;
   bit              has_fs1 = 1'b1;
   bit              has_fs2 = 1'b1;
   bit              has_fs3 = 1'b0;
@@ -68,7 +69,7 @@ class riscv_floating_point_instr extends riscv_instr;
       default:
         `uvm_fatal(`gfn, $sformatf("Unsupported floating point format: %0s", format.name()))
     endcase
-    if ((category == ARITHMETIC) && (rm != RNE) &&
+    if ((category == ARITHMETIC) && use_rounding_mode_from_instr &&
         !(instr_name inside {FMIN_S, FMAX_S, FMIN_D, FMAX_D, FMV_W_X, FMV_X_W,
                              FMV_D_X, FMV_X_D, FCLASS_S, FCLASS_D,
                              FCVT_D_S, FCVT_D_W, FCVT_D_WU,
