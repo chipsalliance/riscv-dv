@@ -463,6 +463,7 @@ class riscv_instr_gen_config:
         parse.add_argument('--log_file_name', help='log file name',
                            default="")
         parse.add_argument('--target', help='target', default="rv32imc")
+        parse.add_argument('--gen_test', help='gen_test', default="riscv_instr_base_test")
         parse.add_argument("--enable_visualization", action="store_true", default=False,
                            help="Enabling coverage report visualization for pyflow")
         parse.add_argument('--trace_csv', help='List of csv traces', default="")

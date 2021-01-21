@@ -10,6 +10,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
+import re
 import sys
 import logging
 import time
@@ -29,6 +30,10 @@ class riscv_instr_base_test:
         self.start_idx = cfg.argv.start_idx
         self.asm_file_name = cfg.argv.asm_file_name
         self.asm = ""
+
+    def run(self):
+        with multiprocessing.Pool(processes = cfg.num_of_tests) as pool:
+            pool.map(self.run_phase, list(range(cfg.num_of_tests)))
 
     def run_phase(self, num):
         self.randomize_cfg()
@@ -51,7 +56,9 @@ class riscv_instr_base_test:
 
 start_time = time.time()
 riscv_base_test_ins = riscv_instr_base_test()
-with multiprocessing.Pool(processes = cfg.num_of_tests) as pool:
-    pool.map(riscv_base_test_ins.run_phase, list(range(cfg.num_of_tests)))
-end_time = time.time()
-logging.info("Total execution time: {}".format(round(end_time - start_time)))
+testname = re.search("out_.*/asm_test/(.*)",
+                      riscv_base_test_ins.asm_file_name).group(1)
+if cfg.argv.gen_test == "riscv_instr_base_test":
+    riscv_base_test_ins.run()
+    end_time = time.time()
+    logging.info("Total execution time: {}s".format(round(end_time - start_time)))
