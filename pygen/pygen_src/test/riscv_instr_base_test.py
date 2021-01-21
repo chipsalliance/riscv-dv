@@ -10,7 +10,6 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 """
 
-import re
 import sys
 import logging
 import time
@@ -56,8 +55,6 @@ class riscv_instr_base_test:
 
 start_time = time.time()
 riscv_base_test_ins = riscv_instr_base_test()
-testname = re.search("out_.*/asm_test/(.*)",
-                      riscv_base_test_ins.asm_file_name).group(1)
 if cfg.argv.gen_test == "riscv_instr_base_test":
     riscv_base_test_ins.run()
     end_time = time.time()
