@@ -4,13 +4,14 @@
         "DSIM_LIB_PATH" : "${DSIM_HOME}/uvm-1.2/src/dpi",
         "RISCV_GCC" : "${RISCV_TOOLCHAIN}/bin/riscv-none-embed-gcc",
         "RISCV_OBJCOPY" : "${RISCV_TOOLCHAIN}/bin/riscv-none-embed-objcopy",
-        "OVPSIM_PATH" : "/customer-tools/riscv-ovpsim/bin/Linux64"
+        "OVPSIM_PATH" : "/customer-tools/riscv-ovpsim/bin/Linux64",
+        "DUMMY":" variable"
     },
     "builds": {
       "list": [{
         "name": "rv32imc",
         "image": "ibex-dsim-toolchain:latest",
-        "memory" : "1",  
+        "memory" : "1",
         "cmd": "python3 run.py --test riscv_arithmetic_basic_test --simulator dsim --output out --verbose --co",
         "wavesCmd": "python3 run.py --test riscv_arithmetic_basic_test --simulator dsim --output out --verbose --co"
       }]
@@ -43,7 +44,7 @@
       "tests": {
         "resultsDir": "/mux-flow/build/repo/out",
         "builds": ["rv32imc"],
-        "memory": "1",  
+        "memory": "1",
         "listCmd": "<rootDir>/scripts/genMetricsList.py",
         "listFile": "<rootDir>/regression_list.json"
       }
