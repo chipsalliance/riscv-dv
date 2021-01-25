@@ -96,7 +96,7 @@ class riscv_asm_program_gen:
             self.generate_directed_instr_stream(hart=hart,
                                                 label=self.main_program[hart].label_name,
                                                 original_instr_cnt=
-                                                    self.main_program[hart].instr_cnt,
+                                                self.main_program[hart].instr_cnt,
                                                 min_insert_cnt=1,
                                                 instr_stream=self.main_program[hart].directed_instr)
             self.main_program[hart].gen_instr(is_main_program=1, no_branch=cfg.no_branch_jump)
@@ -126,7 +126,7 @@ class riscv_asm_program_gen:
                 if not cfg.no_data_page:
                     self.gen_data_page(hart)
                     if(hart == 0 and riscv_instr_group_t.RV32A
-                                         in rcs.supported_isa):
+                       in rcs.supported_isa):
                         self.gen_data_page(hart, amo = 1)
 
             self.gen_stack_section(hart)
@@ -551,9 +551,9 @@ class riscv_asm_program_gen:
                          "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
                                                         cfg.gpr[0].value, rcs.XLEN - 1) +
                          "{}bne x{}, x0, {}{}mode_intr_handler".format(pkg_ins.indent,
-                                                                        cfg.gpr[0].value,
-                                                                        pkg_ins.hart_prefix(hart),
-                                                                        mode))
+                                                                       cfg.gpr[0].value,
+                                                                       pkg_ins.hart_prefix(hart),
+                                                                       mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
         # the page table with a specific privileged mode.
 
@@ -571,6 +571,7 @@ class riscv_asm_program_gen:
             pkg_ins.push_gpr_to_kernel_stack(
                 status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
         self.gen_section(pkg_ins.get_label("{}mode_exception_handler".format(mode), hart), instr)
+
     def gen_interrupt_vector_table(self, hart, mode, status, cause, ie,
                                    ip, scratch, instr):
         '''In vector mode, the BASE address is shared between interrupt 0 and exception handling.
@@ -579,7 +580,7 @@ class riscv_asm_program_gen:
            ambiguity does not arise in practice, since user-mode software interrupts are either
            disabled or delegated'''
         instr.extend((".option norvc;", "j {}{}mode_exception_handler".format(pkg_ins.hart_prefix(hart),
-                                                                             mode)))
+                                                                              mode)))
         # Redirect the interrupt to the corresponding interrupt handler
         for i in range(1, rcs.max_interrupt_vector_num):
             instr.append("j {}{}mode_intr_vector_{}".format(pkg_ins.hart_prefix(hart), mode, i))
@@ -587,22 +588,25 @@ class riscv_asm_program_gen:
             instr.append(".option rvc;")
         for i in range(1, rcs.max_interrupt_vector_num):
             intr_handler = []
-            pkg_ins.push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, intr_handler)
-            self.gen_signature_handshake(instr=intr_handler, signature_type='CORE_STATUS', core_status='HANDLING_IRQ')
+            pkg_ins.push_gpr_to_kernel_stack(
+                status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, intr_handler)
+            self.gen_signature_handshake(
+                instr=intr_handler, signature_type='CORE_STATUS', core_status='HANDLING_IRQ')
             intr_handler.extend(("csrr x{}, {} # {}".format(cfg.gpr[0], hex(cause.value), cause.name),
-                      # Terminate the test if xCause[31] != 0 (indicating exception)
-                      "srli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], hex(rcs.XLEN-1)),
-                      "beqz x{}, 1f".format(cfg.gpr[0])))
+                                 # Terminate the test if xCause[31] != 0 (indicating exception)
+                                 "srli x{}, x{}, {}".format(
+                                     cfg.gpr[0], cfg.gpr[0], hex(rcs.XLEN - 1)),
+                                 "beqz x{}, 1f".format(cfg.gpr[0])))
             self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=status)
             self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=cause)
             self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=ie)
             self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=ip)
             # Jump to commmon interrupt handling routine
             intr_handler.extend(("j {}{}mode_intr_handler".format(pkg_ins.hart_prefix(hart), mode),
-                                "1: la x{}, test_done".format(cfg.scratch_reg),
-                                "jalr x0, x{}, 0".format(cfg.scratch_reg)))
-            self.gen_section(pkg_ins.get_label("{}mode_intr_vector_{}".format(mode, i), hart), intr_handler) 
-        
+                                 "1: la x{}, test_done".format(cfg.scratch_reg),
+                                 "jalr x0, x{}, 0".format(cfg.scratch_reg)))
+            self.gen_section(pkg_ins.get_label(
+                "{}mode_intr_vector_{}".format(mode, i), hart), intr_handler)
 
     def gen_ecall_handler(self, hart):
         string = ""
@@ -735,7 +739,71 @@ class riscv_asm_program_gen:
 
     def gen_signature_handshake(self, instr, signature_type, core_status = "INITIALIZED",
                                 test_result = "TEST_FAIL", csr = "MSCRATCH", addr_label = ""):
-        pass
+        logging.info("entered in gen_signature_handshake")
+        if(cfg.require_signature_addr):
+            string = []
+            string = pkg_ins.format_string("li x{},0x{}".format(cfg.gpr[1], cfg.signature_addr))
+            instr.extends(string)
+            # A single data word is written to the signature address.
+            # Bits [7:0] contain the signature_type of CORE_STATUS, and the upper
+            # XLEN-8 bits contain the core_status_t data.
+            if(signature_type == "CORE_STATUS"):
+                string.append(pkg_ins.format_string("li x{}, 0x{}".format(cfg.gpr[0], core_status)))
+                string.append(pkg_ins.format_string(
+                    "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0])))
+                string.append(pkg_ins.format_string(
+                    "addi x{}, x{}, 0x{}".format(cfg.gpr[0], cfg.gpr[0], signature_type)))
+                string.append(pkg_ins.format_string(
+                    "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
+                instr.extend(string)
+            # A single data word is written to the signature address.
+            # Bits [7:0] contain the signature_type of TEST_RESULT, and the upper
+            # XLEN-8 bits contain the test_result_t data.
+            elif(signature_type == "TEST_RESULT"):
+                string.append(pkg_ins.format_string("li x{}, 0x{}".format(cfg.gpr[0], test_result)))
+                string.append(pkg_ins.format_string(
+                    "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0])))
+                string.append(pkg_ins.format_string(
+                    "addi x{}, x{}, 0x{}".format(cfg.gpr[0], cfg.gpr[0], signature_type)))
+                string.append(pkg_ins.format_string(
+                    "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
+                instr.extend(string)
+            # The first write to the signature address contains just the
+            # signature_type of WRITE_GPR.
+            # It is followed by 32 consecutive writes to the signature address,
+            # each writing the data contained in one GPR, starting from x0 as the
+            # first write, and ending with x31 as the 32nd write.
+            elif(signature_type == "WRITE_GPR"):
+                string.append(pkg_ins.format_string(
+                    "li x{}, 0x{}".format(cfg.gpr[0], signature_type)))
+                string.append(pkg_ins.format_string(
+                    "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
+                instr.extend(string)
+                for i in range(32):
+                    string.append(pkg_ins.format_string("sw x{},0(x{})".format(i, cfg.gpr[1])))
+                    instr.extend(string)
+            # The first write to the signature address contains the
+            # signature_type of WRITE_CSR in bits [7:0], and the CSR address in
+            # the upper XLEN-8 bits.
+            # It is followed by a second write to the signature address,
+            # containing the data stored in the specified CSR.
+            elif(signature_type == "WRITE_CSR"):
+                if(csr not in rcs.implemented_csr):
+                    return
+                string.append(pkg_ins.format_string("li x{}, 0x{}".format(cfg.gpr[0], csr)))
+                string.append(pkg_ins.format_string(
+                    "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0])))
+                string.append(pkg_ins.format_string(
+                    "addi x{}, x{}, 0x{}".format(cfg.gpr[0], cfg.gpr[0], signature_type)))
+                string.append(pkg_ins.format_string(
+                    "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
+                string.append(pkg_ins.format_string("csrr x{}, 0x{}".format(cfg.gpr[0], csr)))
+                string.append(pkg_ins.format_string(
+                    "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
+                instr.extend(string)
+
+            else:
+                logging.critical("signature_type is not allowed")
 
     def add_directed_instr_stream(self, name, ratio):
         self.directed_instr_stream_ratio[name] = ratio
