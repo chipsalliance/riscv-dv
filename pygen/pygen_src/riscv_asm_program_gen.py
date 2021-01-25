@@ -550,7 +550,7 @@ class riscv_asm_program_gen:
                                                       cause.name) +
                          "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
                                                         cfg.gpr[0].value, rcs.XLEN - 1) +
-                         "{}bne x{}, x0, {}{}mode_instr_handler".format(pkg_ins.indent,
+                         "{}bne x{}, x0, {}{}mode_intr_handler".format(pkg_ins.indent,
                                                                         cfg.gpr[0].value,
                                                                         pkg_ins.hart_prefix(hart),
                                                                         mode))
@@ -570,10 +570,39 @@ class riscv_asm_program_gen:
         if cfg.mtvec_mode == mtvec_mode_t.VECTORED:
             pkg_ins.push_gpr_to_kernel_stack(
                 status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr)
-
+        self.gen_section(pkg_ins.get_label("{}mode_exception_handler".format(mode), hart), instr)
     def gen_interrupt_vector_table(self, hart, mode, status, cause, ie,
                                    ip, scratch, instr):
-        pass
+        '''In vector mode, the BASE address is shared between interrupt 0 and exception handling.
+           When vectored interrupts are enabled, interrupt cause 0, which corresponds to user-mode
+           software interrupts, are vectored to the same location as synchronous exceptions. This
+           ambiguity does not arise in practice, since user-mode software interrupts are either
+           disabled or delegated'''
+        instr.extend((".option norvc;", "j {}{}mode_exception_handler".format(pkg_ins.hart_prefix(hart),
+                                                                             mode)))
+        # Redirect the interrupt to the corresponding interrupt handler
+        for i in range(1, rcs.max_interrupt_vector_num):
+            instr.append("j {}{}mode_intr_vector_{}".format(pkg_ins.hart_prefix(hart), mode, i))
+        if not cfg.disable_compressed_instr:
+            instr.append(".option rvc;")
+        for i in range(1, rcs.max_interrupt_vector_num):
+            intr_handler = []
+            pkg_ins.push_gpr_to_kernel_stack(status, scratch, cfg.mstatus_mprv, cfg.sp, cfg.tp, intr_handler)
+            self.gen_signature_handshake(instr=intr_handler, signature_type='CORE_STATUS', core_status='HANDLING_IRQ')
+            intr_handler.extend(("csrr x{}, {} # {}".format(cfg.gpr[0], hex(cause.value), cause.name),
+                      # Terminate the test if xCause[31] != 0 (indicating exception)
+                      "srli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], hex(rcs.XLEN-1)),
+                      "beqz x{}, 1f".format(cfg.gpr[0])))
+            self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=status)
+            self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=cause)
+            self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=ie)
+            self.gen_signature_handshake(instr=intr_handler, signature_type='WRITE_CSR', csr=ip)
+            # Jump to commmon interrupt handling routine
+            intr_handler.extend(("j {}{}mode_intr_handler".format(pkg_ins.hart_prefix(hart), mode),
+                                "1: la x{}, test_done".format(cfg.scratch_reg),
+                                "jalr x0, x{}, 0".format(cfg.scratch_reg)))
+            self.gen_section(pkg_ins.get_label("{}mode_intr_vector_{}".format(mode, i), hart), intr_handler) 
+        
 
     def gen_ecall_handler(self, hart):
         string = ""
@@ -678,7 +707,7 @@ class riscv_asm_program_gen:
         else:
             self.instr_stream.append(".align 2")
 
-        self.gen_section(pkg_ins.get_label("%0smode_instr_handler" %
+        self.gen_section(pkg_ins.get_label("%0smode_intr_handler" %
                                            (mode_prefix), hart), interrupt_handler_instr)
 
     def format_section(self, instr):
