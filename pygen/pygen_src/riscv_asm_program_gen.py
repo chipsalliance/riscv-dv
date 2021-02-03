@@ -250,7 +250,7 @@ class riscv_asm_program_gen:
         self.init_gpr()
         # Init stack pointer to point to the end of the user stack
         string = "{}la x{}, {}user_stack_end".format(
-            pkg_ins.indent, cfg.sp.value, pkg_ins.hart_prefix(hart))
+            pkg_ins.indent, cfg.sp, pkg_ins.hart_prefix(hart))
         self.instr_stream.append(string)
         if cfg.enable_vector_extension:
             self.init_vector_engine()
@@ -308,10 +308,10 @@ class riscv_asm_program_gen:
                 sys.exit(1)
         if privileged_mode_t.SUPERVISOR_MODE.name in rcs.supported_privileged_mode:
             misa[misa_ext_t.MISA_EXT_S] = 1
-        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value,
+        self.instr_stream.append("{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0],
                                                        hex(misa.get_val())))
         self.instr_stream.append("{}csrw {}, x{}".format(pkg_ins.indent, hex(privileged_reg_t.MISA),
-                                                         cfg.gpr[0].value))
+                                                         cfg.gpr[0]))
 
     def core_is_initialized(self):
         pass
@@ -348,9 +348,9 @@ class riscv_asm_program_gen:
 
     def init_floating_point_gpr_with_spf(self, int_floating_gpr):
         imm = self.get_rand_spf_value()
-        li_instr = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0].value, hex(imm))
+        li_instr = "{}li x{}, {}".format(pkg_ins.indent, cfg.gpr[0], hex(imm))
         fmv_instr = "{}fmv.w.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr,
-                                                cfg.gpr[0].value)
+                                                cfg.gpr[0])
         self.instr_stream.extend((li_instr, fmv_instr))
 
     def init_floating_point_gpr_with_dpf(self, int_floating_gpr):
@@ -396,24 +396,24 @@ class riscv_asm_program_gen:
     def gen_register_dump(self):
         string = ""
         # load base address
-        string = "{}la x{}, _start".format(pkg_ins.indent, cfg.gpr[0].value)
+        string = "{}la x{}, _start".format(pkg_ins.indent, cfg.gpr[0])
         self.instr_stream.append(string)
 
         # Generate sw/sd instructions
         for i in range(32):
             if rcs.XLEN == 64:
                 string = "{}sd x{}, {}(x{})".format(
-                    pkg_ins.indent, i, i * (rcs.XLEN / 8), cfg.gpr[0].value)
+                    pkg_ins.indent, i, i * (rcs.XLEN / 8), cfg.gpr[0])
             else:
                 string = "{}sw x{}, {}(x{})".format(
-                    pkg_ins.indent, i, int(i * (rcs.XLEN / 8)), cfg.gpr[0].value)
+                    pkg_ins.indent, i, int(i * (rcs.XLEN / 8)), cfg.gpr[0])
             self.instr_stream.append(string)
 
     def pre_enter_privileged_mode(self, hart):
         instr = []
         string = []
 
-        string.append("la x{}, {}kernel_stack_end".format(cfg.tp.value, pkg_ins.hart_prefix(hart)))
+        string.append("la x{}, {}kernel_stack_end".format(cfg.tp, pkg_ins.hart_prefix(hart)))
         self.gen_section(pkg_ins.get_label("kernel_sp", hart), string)
 
         if not cfg.no_delegation and (cfg.init_privileged_mode != privileged_mode_t.MACHINE_MODE):
@@ -447,17 +447,15 @@ class riscv_asm_program_gen:
 
     def setup_epc(self, hart):
         instr = []
-        instr.append("la x{}, {}init".format(cfg.gpr[0].value, pkg_ins.hart_prefix(hart)))
+        instr.append("la x{}, {}init".format(cfg.gpr[0], pkg_ins.hart_prefix(hart)))
         if cfg.virtual_addr_translation_on:
             # For supervisor and user mode, use virtual address instead of physical address.
             # Virtual address starts from address 0x0, here only the lower 12 bits are kept
             # as virtual address offset.
-            instr.append("slli x{}, x{}, {}".format(cfg.gpr[0].value,
-                                                    cfg.gpr[0].value, rcs.XLEN - 12) +
-                         "srli x{}, x{}, {}".format(cfg.gpr[0].value,
-                                                    cfg.gpr[0].value, rcs.XLEN - 12))
+            instr.append("slli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], rcs.XLEN - 12) +
+                         "srli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], rcs.XLEN - 12))
         mode_name = cfg.init_privileged_mode.name
-        instr.append("csrw {}, x{}".format(hex(privileged_reg_t.MEPC), cfg.gpr[0].value))
+        instr.append("csrw {}, x{}".format(hex(privileged_reg_t.MEPC), cfg.gpr[0]))
         if not rcs.support_pmp:
             instr.append("j {}init_{}".format(pkg_ins.hart_prefix(hart), mode_name.lower()))
         self.gen_section(pkg_ins.get_label("mepc_setup", hart), instr)
@@ -500,17 +498,14 @@ class riscv_asm_program_gen:
             tvec_name = trap_vec_reg.name
             tvec_name = tvec_name.lower()
             instr.append("la x{}, {}{}_handler".format(
-                cfg.gpr[0].value, pkg_ins.hart_prefix(hart), tvec_name))
+                cfg.gpr[0], pkg_ins.hart_prefix(hart), tvec_name))
             if(rcs.SATP_MODE != satp_mode_t.BARE and mode != privileged_mode_t.MACHINE_MODE):
-                instr.append("slli x{}, x{}, {}\n".format(cfg.gpr[0].value,
-                                                          cfg.gpr[0].value, rcs.XLEN - 20) +
-                             "srli x{}, x{}, {}".format(cfg.gpr[0].value,
-                                                        cfg.gpr[0].value, rcs.XLEN - 20))
+                instr.append("slli x{}, x{}, {}\n".format(cfg.gpr[0], cfg.gpr[0],rcs.XLEN - 20) +
+                             "srli x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], rcs.XLEN - 20))
 
-            instr.append("ori x{}, x{}, {}".format(
-                cfg.gpr[0].value, cfg.gpr[0].value, cfg.mtvec_mode.value))
+            instr.append("ori x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0], cfg.mtvec_mode))
             instr.append("csrw {}, x{} # {}".format(
-                hex(trap_vec_reg.value), cfg.gpr[0].value, trap_vec_reg.name))
+                hex(trap_vec_reg), cfg.gpr[0], trap_vec_reg.name))
 
         self.gen_section(pkg_ins.get_label("trap_vec_init", hart), instr)
 
@@ -547,13 +542,13 @@ class riscv_asm_program_gen:
             # certain fields compared with the RTL processor.
             if cfg.check_xstatus:
                 instr.append("csrr x{}, {} # {}".format(
-                    cfg.gpr[0].value, hex(status.value), status.name))
-            instr.append("csrr x{}, {} # {}\n".format(cfg.gpr[0].value, hex(cause.value),
+                    cfg.gpr[0], hex(status), status.name))
+            instr.append("csrr x{}, {} # {}\n".format(cfg.gpr[0], hex(cause),
                                                       cause.name) +
-                         "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0].value,
-                                                        cfg.gpr[0].value, rcs.XLEN - 1) +
+                         "{}srli x{}, x{}, {}\n".format(pkg_ins.indent, cfg.gpr[0],
+                                                        cfg.gpr[0], rcs.XLEN - 1) +
                          "{}bne x{}, x0, {}{}mode_intr_handler".format(pkg_ins.indent,
-                                                                       cfg.gpr[0].value,
+                                                                       cfg.gpr[0],
                                                                        pkg_ins.hart_prefix(hart),
                                                                        mode))
         # The trap handler will occupy one 4KB page, it will be allocated one entry in
@@ -581,8 +576,8 @@ class riscv_asm_program_gen:
            software interrupts, are vectored to the same location as synchronous exceptions. This
            ambiguity does not arise in practice, since user-mode software interrupts are either
            disabled or delegated'''
-        instr.extend((".option norvc;", "j {}{}mode_exception_handler".
-                      format(pkg_ins.hart_prefix(hart), mode)))
+        instr.extend((".option norvc;", "j {}{}mode_exception_handler".format(
+                       pkg_ins.hart_prefix(hart), mode)))
         # Redirect the interrupt to the corresponding interrupt handler
         for i in range(1, rcs.max_interrupt_vector_num):
             instr.append("j {}{}mode_intr_vector_{}".format(pkg_ins.hart_prefix(hart), mode, i))
@@ -596,23 +591,20 @@ class riscv_asm_program_gen:
                                          signature_type=signature_type_t.CORE_STATUS,
                                          core_status=core_status_t.HANDLING_IRQ)
             intr_handler.extend(("csrr x{}, {} # {}".format(
-                                 cfg.gpr[0].value, hex(cause.value), cause.name),
+                                 cfg.gpr[0], hex(cause), cause.name),
                                  # Terminate the test if xCause[31] != 0 (indicating exception)
                                  "srli x{}, x{}, {}".format(
-                                 cfg.gpr[0].value, cfg.gpr[0].value, hex(rcs.XLEN - 1)),
-                                 "beqz x{}, 1f".format(cfg.gpr[0].value)))
-            self.gen_signature_handshake(
-                instr=intr_handler, signature_type=signature_type_t.WRITE_CSR, csr=status)
-            self.gen_signature_handshake(
-                instr=intr_handler, signature_type=signature_type_t.WRITE_CSR, csr=cause)
-            self.gen_signature_handshake(
-                instr=intr_handler, signature_type=signature_type_t.WRITE_CSR, csr=ie)
-            self.gen_signature_handshake(
-                instr=intr_handler, signature_type=signature_type_t.WRITE_CSR, csr=ip)
+                                 cfg.gpr[0], cfg.gpr[0], hex(rcs.XLEN - 1)),
+                                 "beqz x{}, 1f".format(cfg.gpr[0])))
+            csr_list = [status, cause, ie, ip]
+            for csr_t in csr_list:
+                self.gen_signature_handshake(
+                    instr=intr_handler, signature_type=signature_type_t.WRITE_CSR, csr=csr_t)
+
             # Jump to commmon interrupt handling routine
             intr_handler.extend(("j {}{}mode_intr_handler".format(pkg_ins.hart_prefix(hart), mode),
-                                 "1: la x{}, test_done".format(cfg.scratch_reg.value),
-                                 "jalr x0, x{}, 0".format(cfg.scratch_reg.value)))
+                                 "1: la x{}, test_done".format(cfg.scratch_reg),
+                                 "jalr x0, x{}, 0".format(cfg.scratch_reg)))
             self.gen_section(pkg_ins.get_label(
                 "{}mode_intr_vector_{}".format(mode, i), hart), intr_handler)
 
@@ -681,38 +673,38 @@ class riscv_asm_program_gen:
             sys.exit(1)
 
         if cfg.enable_nested_interrupt:
-            interrupt_handler_instr.append("csrr x%0d, 0x%0x" % (cfg.gpr[0].value, scratch.value))
-            interrupt_handler_instr.append("bgtz x%0d, 1f" % (cfg.gpr[0].value))
-            interrupt_handler_instr.append("csrwi 0x%0x, 0x1" % (scratch.value))
+            interrupt_handler_instr.append("csrr x{}, {}".format(cfg.gpr[0], hex(scratch)))
+            interrupt_handler_instr.append("bgtz x{}, 1f".format(cfg.gpr[0]))
+            interrupt_handler_instr.append("csrwi {}, 0x1".format(hex(scratch)))
 
             if status == privileged_reg_t.MSTATUS:
-                interrupt_handler_instr.append("csrsi 0x%0x, 0x%0x" % (status.value, 8))
+                interrupt_handler_instr.append("csrsi {}, {}".format(hex(status), hex(8)))
             elif status == privileged_reg_t.SSTATUS:
-                interrupt_handler_instr.append("csrsi 0x%0x, 0x%0x" % (status.value, 2))
+                interrupt_handler_instr.append("csrsi {}, {}".format((hex(status), hex(2))))
             elif status == privileged_reg_t.USTATUS:
-                interrupt_handler_instr.append("csrsi 0x%0x, 0x%0x" % (status.value, 1))
+                interrupt_handler_instr.append("csrsi {}, {}".format(hex(status), hex(1)))
             else:
                 logging.critical("Unsupported status {}".format(status.name))
                 sys.exit(1)
 
-            interrupt_handler_instr.append("1: csrwi 0x%0x,0" % (scratch.value))
+            interrupt_handler_instr.append("1: csrwi {},0".format(hex(scratch)))
 
-        to_extend_interrupt_hanlder_instr = ["csrr  x%0d, 0x%0x # %0s;" % (cfg.gpr[0].value,
-                                                                           status.value,
+        to_extend_interrupt_hanlder_instr = ["csrr  x{}, {} # {};".format(cfg.gpr[0],
+                                                                           hex(status),
                                                                            status.name),
-                                             "csrr  x%0d, 0x%0x # %0s;" % (cfg.gpr[0].value,
-                                                                           ie.value, ie.name),
-                                             "csrr  x%0d, 0x%0x # %0s;" % (cfg.gpr[0].value,
-                                                                           ip.value, ip.name),
-                                             "csrrc x%0d, 0x%0x, x%0d # %0s;" % (cfg.gpr[0].value,
-                                                                                 ip.value,
-                                                                                 cfg.gpr[0].value,
+                                             "csrr  x{}, {} # {};".format(cfg.gpr[0],
+                                                                           hex(ie), ie.name),
+                                             "csrr  x{}, {} # {};".format(cfg.gpr[0],
+                                                                           hex(ip), ip.name),
+                                             "csrrc x{}, {}, x{} # {};".format(cfg.gpr[0],
+                                                                                 hex(ip),
+                                                                                 cfg.gpr[0],
                                                                                  ip.name)]
         interrupt_handler_instr.extend(to_extend_interrupt_hanlder_instr)
         self.gen_plic_section(interrupt_handler_instr)
         pkg_ins.pop_gpr_from_kernel_stack(status, scratch, cfg.mstatus_mprv,
                                           cfg.sp, cfg.tp, interrupt_handler_instr)
-        interrupt_handler_instr.append("%0sret;" % (mode_prefix))
+        interrupt_handler_instr.append("{}ret;".format(mode_prefix))
 
         if rcs.SATP_MODE != satp_mode_t.BARE:
             self.instr_stream.append(".align 12")
@@ -743,49 +735,43 @@ class riscv_asm_program_gen:
             file.write("{}\n".format(items))
 
         file.close()
-        logging.info("%0s is generated", test_name)
+        logging.info("{} is generated".format(test_name))
 
     def gen_signature_handshake(self, instr, signature_type,
-                                core_status = core_status_t.INITIALIZED,
-                                test_result = test_result_t.TEST_FAIL,
-                                csr = privileged_reg_t.MSCRATCH,
+                                core_status=core_status_t.INITIALIZED,
+                                test_result=test_result_t.TEST_FAIL,
+                                csr=privileged_reg_t.MSCRATCH,
                                 addr_label = ""):
         if cfg.require_signature_addr:
-            string = []
-            string = ("li x{}, {}".format(cfg.gpr[1].value, hex(cfg.signature_addr)))
-            instr.extends(string)
+            instr.extend(("li x{}, {}".format(cfg.gpr[1], hex(cfg.signature_addr))))
             # A single data word is written to the signature address.
             # Bits [7:0] contain the signature_type of CORE_STATUS, and the upper
             # XLEN-8 bits contain the core_status_t data.
             if signature_type == signature_type_t.CORE_STATUS:
-                string.extend(("li x{}, {}".format(cfg.gpr[0].value, hex(core_status.value)),
-                               "slli x{}, x{}, 8".format(cfg.gpr[0].value, cfg.gpr[0].value),
-                               "addi x{}, x{}, {}".format(cfg.gpr[0].value, cfg.gpr[0].value,
-                                                          hex(signature_type.value)),
-                               "sw x{}, 0(x{})".format(cfg.gpr[0].value, cfg.gpr[1].value)))
-                instr.extend(string)
+                instr.extend(("li x{}, {}".format(cfg.gpr[0], hex(core_status)),
+                               "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0]),
+                               "addi x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0],
+                                                          hex(signature_type)),
+                               "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
             # A single data word is written to the signature address.
             # Bits [7:0] contain the signature_type of TEST_RESULT, and the upper
             # XLEN-8 bits contain the test_result_t data.
             elif signature_type == test_result_t.TEST_RESULT:
-                string.extend(("li x{}, {}".format(cfg.gpr[0].value, hex(test_result.value)),
-                               "slli x{}, x{}, 8".format(cfg.gpr[0].value, cfg.gpr[0].value),
+                instr.extend(("li x{}, {}".format(cfg.gpr[0], hex(test_result)),
+                               "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0]),
                                "addi x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0],
-                                                          hex(signature_type.value)),
-                               "sw x{}, 0(x{})".format(cfg.gpr[0].value, cfg.gpr[1].value)))
-                instr.extend(string)
+                                                          hex(signature_type)),
+                               "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
             # The first write to the signature address contains just the
             # signature_type of WRITE_GPR.
             # It is followed by 32 consecutive writes to the signature address,
             # each writing the data contained in one GPR, starting from x0 as the
             # first write, and ending with x31 as the 32nd write.
             elif signature_type == signature_type_t.WRITE_GPR:
-                string.extend(("li x{}, {}".format(cfg.gpr[0].value, hex(signature_type.value)),
-                               "sw x{}, 0(x{})".format(cfg.gpr[0].value, cfg.gpr[1].value)))
-                instr.extend(string)
+                instr.extend(("li x{}, {}".format(cfg.gpr[0], hex(signature_type),
+                               "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1]))))
                 for i in range(32):
-                    string.append("sw x{},0(x{})".format(i, cfg.gpr[1].value))
-                    instr.extend(string)
+                    instr.append("sw x{},0(x{})".format(i, cfg.gpr[1]))
             # The first write to the signature address contains the
             # signature_type of WRITE_CSR in bits [7:0], and the CSR address in
             # the upper XLEN-8 bits.
@@ -794,14 +780,13 @@ class riscv_asm_program_gen:
             elif signature_type == signature_type_t.WRITE_CSR:
                 if csr not in rcs.implemented_csr:
                     return
-                string.extend(("li x{}, {}".format(cfg.gpr[0], hex(csr.value)),
-                               "slli x{}, x{}, 8".format(cfg.gpr[0].value, cfg.gpr[0].value),
-                               "addi x{}, x{}, {}".format(cfg.gpr[0].value, cfg.gpr[0].value,
-                                                          hex(signature_type.value)),
-                               "sw x{}, 0(x{})".format(cfg.gpr[0].value, cfg.gpr[1].value),
-                               "csrr x{}, {}".format(cfg.gpr[0].value, hex(csr.value)),
-                               "sw x{}, 0(x{})".format(cfg.gpr[0].value, cfg.gpr[1].value)))
-                instr.extend(string)
+                instr.extend(("li x{}, {}".format(cfg.gpr[0], hex(csr)),
+                               "slli x{}, x{}, 8".format(cfg.gpr[0], cfg.gpr[0]),
+                               "addi x{}, x{}, {}".format(cfg.gpr[0], cfg.gpr[0],
+                                                          hex(signature_type)),
+                               "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1]),
+                               "csrr x{}, {}".format(cfg.gpr[0], hex(csr)),
+                               "sw x{}, 0(x{})".format(cfg.gpr[0], cfg.gpr[1])))
             else:
                 logging.critical("signature_type is not defined")
                 sys.exit(1)
