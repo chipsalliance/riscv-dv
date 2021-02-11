@@ -17,6 +17,7 @@ import random
 import copy
 import sys
 import vsc
+import pdb
 from importlib import import_module
 from pygen_src.riscv_instr_sequence import riscv_instr_sequence
 from pygen_src.riscv_instr_pkg import (pkg_ins, privileged_reg_t,
@@ -59,8 +60,11 @@ class riscv_asm_program_gen:
         self.instr_stream.clear()
         self.gen_program_header()
         for hart in range(cfg.num_of_harts):
+            logging.info("harts in cfg are in asm_program gen {}".format(cfg.num_of_harts))
+            logging.info("hart is asm program :{}".format(hart))
             # Commenting out for now
             # sub_program_name = []
+           # pdb.set_trace()
             self.instr_stream.append(f"h{int(hart)}_start:")
             if not cfg.bare_program_mode:
                 self.setup_misa()
