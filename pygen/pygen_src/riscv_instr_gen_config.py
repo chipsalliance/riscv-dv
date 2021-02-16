@@ -113,7 +113,10 @@ class riscv_instr_gen_config:
         self.enable_unaligned_load_store = self.argv.enable_unaligned_load_store
         self.illegal_instr_ratio = self.argv.illegal_instr_ratio
         self.hint_instr_ratio = self.argv.hint_instr_ratio
-        self.num_of_harts = self.argv.num_of_harts
+        if self.argv.num_of_harts is None:
+            self.num_of_harts = rcs.NUM_HARTS
+        else:
+            self.num_of_harts = self.argv.num_of_harts
         self.fix_sp = self.argv.fix_sp
         self.use_push_data_section = self.argv.use_push_data_section
         self.boot_mode_opts = self.argv.boot_mode
@@ -401,8 +404,6 @@ class riscv_instr_gen_config:
         parse.add_argument('--illegal_instr_ratio',
                            help = 'illegal_instr_ratio', type = int, default = 0)
         parse.add_argument('--hint_instr_ratio', help = 'hint_instr_ratio', type = int, default = 0)
-        # TODO map it with rcs NUM_HARTS. After solving the cyclic issue for core setting.
-        # rcs is out of scope while using in the default value of num_of_harts
         parse.add_argument('--num_of_harts', help = 'num_of_harts',
                            type = int, default = 1)
         parse.add_argument('--enable_unaligned_load_store',
