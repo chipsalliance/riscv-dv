@@ -12,16 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 """
 
-import argparse
-import logging
 import sys
+import math
+import logging
+import argparse
 import vsc
 from importlib import import_module
 from pygen_src.riscv_instr_pkg import (mtvec_mode_t, f_rounding_mode_t,
                                        riscv_reg_t, privileged_mode_t,
                                        riscv_instr_group_t, data_pattern_t,
-                                       riscv_instr_category_t, satp_mode_t)
-
+                                       riscv_instr_category_t, satp_mode_t,
+                                       mem_region_t)
 
 
 @vsc.randobj
@@ -82,19 +83,17 @@ class riscv_instr_gen_config:
         # Commenting out for now
         # vector_cfg = riscv_vector_cfg # TODO
         # pmp_cfg = riscv_pmp_cfg  # TODO
-        self.mem_region = {
-            0: {'name': "region_0", 'size_in_bytes': 4096, 'xwr': 8},
-            1: {'name': "region_1", 'size_in_bytes': 4096 * 16, 'xwr': 8}
-        }
-        self.amo_region = {
-            0: {'name': "amo_0", 'size_in_bytes': 64, 'xwr': 8}
-        }
-        self.stack_len = 5000
-        self.s_mem_region = {
-            0: {'name': "s_region_0", 'size_in_bytes': 4096, 'xwr': 8},
-            1: {'name': "s_region_1", 'size_in_bytes': 4096, 'xwr': 8}
-        }
 
+        self.mem_region = vsc.list_t(mem_region_t())
+        self.amo_region = vsc.list_t(mem_region_t())
+        self.s_mem_region = vsc.list_t(mem_region_t())
+        self.mem_region.extend([mem_region_t(name = "region_0", size_in_bytes = 4096, xwr = 8),
+                                mem_region_t(name = "region_1", size_in_bytes = 4096, xwr = 8)])
+        self.amo_region.extend([mem_region_t(name = "amo_0", size_in_bytes = 64, xwr = 8)])
+        self.s_mem_region.extend([mem_region_t(name = "s_region_0", size_in_bytes = 4096, xwr = 8),
+                                  mem_region_t(name = "s_region_1", size_in_bytes = 4096, xwr = 8)])
+
+        self.stack_len = 5000
         self.kernel_stack_len = 4000
         self.kernel_program_instr_cnt = 400
         # list of main implemented CSRs
@@ -165,6 +164,7 @@ class riscv_instr_gen_config:
         self.enable_debug_single_step = self.argv.enable_debug_single_step
         self.single_step_iterations = 0
         self.set_mstatus_tw = self.argv.set_mstatus_tw
+        self.set_mstatus_mprv = vsc.bit_t(1)
         self.set_mstatus_mprv = self.argv.set_mstatus_mprv
         self.min_stack_len_per_program = 10 * (rcs.XLEN / 8)
         self.max_stack_len_per_program = 16 * (rcs.XLEN / 8)
@@ -184,6 +184,17 @@ class riscv_instr_gen_config:
             self.disable_compressed_instr = 1
         self.setup_instr_distribution()
         self.get_invalid_priv_lvl_csr()
+        # Helpers fields to build the vsc constraints
+        self.supported_interrupt_mode = vsc.list_t(vsc.enum_t(mtvec_mode_t))
+        self.XLEN = vsc.uint32_t()
+        self.SATP_MODE = vsc.enum_t(satp_mode_t)
+        self.init_privil_mode = vsc.enum_t(privileged_mode_t)
+        self.init_privil_mode = self.init_privileged_mode
+        self.supported_interrupt_mode = rcs.supported_interrupt_mode
+        self.XLEN = rcs.XLEN
+        self.SATP_MODE = rcs.SATP_MODE
+        self.tvec_ceil = vsc.uint32_t()
+        self.tvec_ceil = math.ceil(math.log2((self.XLEN * 4) / 8))
 
     @vsc.constraint
     def default_c(self):
@@ -219,11 +230,11 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def mtvec_c(self):
-        self.mtvec_mode.inside(vsc.rangelist(mtvec_mode_t.DIRECT, mtvec_mode_t.VECTORED))
+        self.mtvec_mode.inside(vsc.rangelist(self.supported_interrupt_mode))
         with vsc.if_then(self.mtvec_mode == mtvec_mode_t.DIRECT):
             vsc.soft(self.tvec_alignment == 2)
         with vsc.else_then():
-            vsc.soft(self.tvec_alignment == (rcs.XLEN * 4) // 8)
+            vsc.soft(self.tvec_alignment == self.tvec_ceil)
 
     @vsc.constraint
     def floating_point_c(self):
@@ -234,11 +245,11 @@ class riscv_instr_gen_config:
 
     @vsc.constraint
     def mstatus_c(self):
-        if self.set_mstatus_mprv:
+        with vsc.if_then(self.set_mstatus_mprv == 1):
             self.mstatus_mprv == 1
-        else:
+        with vsc.else_then():
             self.mstatus_mprv == 0
-        if rcs.SATP_MODE == satp_mode_t.BARE:
+        with vsc.if_then(self.SATP_MODE == satp_mode_t.BARE):
             self.mstatus_mxr == 0
             self.mstatus_sum == 0
             self.mstatus_tvm == 0
