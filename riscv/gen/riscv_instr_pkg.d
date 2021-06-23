@@ -22,7 +22,8 @@ module riscv.gen.riscv_instr_pkg;
 import riscv.gen.riscv_core_setting: XLEN, NUM_HARTS, SATP_MODE, implemented_csr;
 import std.traits: EnumMembers;
 
-import esdl;
+import esdl.data.bvec: bvec, ubvec;
+import esdl.rand: rand;
 import uvm;
 
 // Data section setting
@@ -1345,6 +1346,7 @@ void get_hex_arg_value(string cmdline_str, ref int val) {
 class cmdline_enum_processor(T)
 {
   static void get_array_values(string cmdline_str, ref T[] vals) {
+    import std.format: format;
     string s;
     uvm_cmdline_proc().get_arg_value(cmdline_str, s);
     if (s != "") {
