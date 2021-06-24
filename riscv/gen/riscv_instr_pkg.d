@@ -1141,12 +1141,14 @@ string get_label(string label, int hart = 0) {
 }
 
 struct vtype_t {
-  bool ill;
-  bool fractional_lmul;
-  ubvec!(XLEN-8) reserved;   // bit [XLEN-2:7] reserved check for equalence
-  uint vediv;
-  uint vsew;
-  uint vlmul;
+  @UVM_DEFAULT {
+    @rand bool ill;
+    @rand bool fractional_lmul;
+    @rand ubvec!(XLEN-8) reserved;
+    @rand uint vediv;
+    @rand uint vsew;
+    @rand uint vlmul;
+  }
 } 
 
 

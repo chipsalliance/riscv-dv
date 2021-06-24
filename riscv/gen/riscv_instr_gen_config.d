@@ -55,19 +55,19 @@ class riscv_instr_gen_config: uvm_object
   //-----------------------------------------------------------------------------
 
   // Instruction count of the main program
-  @rand int               main_program_instr_cnt;
+  @rand @UVM_DEFAULT int               main_program_instr_cnt;
 
   // Instruction count of each sub-program
-  @rand int[]             sub_program_instr_cnt;
+  @rand @UVM_DEFAULT int[]             sub_program_instr_cnt;
 
   // Instruction count of the debug rom
-  @rand int               debug_program_instr_cnt;
+  @rand @UVM_DEFAULT int               debug_program_instr_cnt;
 
   // Instruction count of debug sub-programs
   @rand int[]             debug_sub_program_instr_cnt;
 
   // Pattern of data section: RAND_DATA, ALL_ZERO, INCR_VAL
-  @rand data_pattern_t    data_page_pattern;
+  @rand @UVM_DEFAULT data_pattern_t    data_page_pattern;
 
   // Initialization of the vregs
   // SAME_VALUES_ALL_ELEMS - Using vmv.v.x to fill all the elements of the vreg with the same value as the one in the GPR selected
@@ -83,7 +83,7 @@ class riscv_instr_gen_config: uvm_object
   @rand bool[interrupt_cause_t]              s_mode_interrupt_delegation;
 
   // Priviledged mode after boot
-  @rand privileged_mode_t init_privileged_mode;
+  @rand @UVM_DEFAULT privileged_mode_t init_privileged_mode;
 
   @rand ubvec!(XLEN)     mstatus;
   @rand ubvec!(XLEN)     mie;
@@ -105,7 +105,7 @@ class riscv_instr_gen_config: uvm_object
   // TVEC alignment
   // This value is the log_2 of the byte-alignment of TVEC.BASE field
   // As per RISC-V privileged spec, default will be set to 2 (4-byte aligned)
-  @rand int              tvec_alignment = 2;
+  @rand @UVM_DEFAULT int              tvec_alignment = 2;
 
   // Floating point rounding mode
   @rand f_rounding_mode_t fcsr_rm;
@@ -125,9 +125,9 @@ class riscv_instr_gen_config: uvm_object
   // random instructions.
   @rand riscv_reg_t       pmp_reg;
   // Use a random register for stack pointer/thread pointer
-  @rand riscv_reg_t       sp;
-  @rand riscv_reg_t       tp;
-  @rand riscv_reg_t       ra;
+  @rand @UVM_DEFAULT riscv_reg_t       sp;
+  @rand @UVM_DEFAULT riscv_reg_t       tp;
+  @rand @UVM_DEFAULT riscv_reg_t       ra;
 
   // Options for privileged mode CSR checking
   // Below checking can be made optional as the ISS implementation could be different with the
@@ -184,105 +184,105 @@ class riscv_instr_gen_config: uvm_object
   int                    instr_cnt = 200;
   int                    num_of_tests = 1;
   // For tests doesn't involve load/store, the data section generation could be skipped
-  bool                    no_data_page;
+  @UVM_DEFAULT bool                    no_data_page;
   // Options to turn off some specific types of instructions
-  bool                    no_branch_jump;     // No branch/jump instruction
-  bool                    no_load_store;      // No load/store instruction
-  bool                    no_csr_instr;       // No csr instruction
-  bool                    no_ebreak = true;      // No ebreak instruction
-  bool                    no_dret = true;        // No dret instruction
-  bool                    no_fence;           // No fence instruction
-  bool                    no_wfi = true;         // No WFI instruction
-  bool                    enable_unaligned_load_store;
-  int                     illegal_instr_ratio;
-  int                     hint_instr_ratio;
+  @UVM_DEFAULT bool                    no_branch_jump;     // No branch/jump instruction
+  @UVM_DEFAULT bool                    no_load_store;      // No load/store instruction
+  @UVM_DEFAULT bool                    no_csr_instr;       // No csr instruction
+  @UVM_DEFAULT bool                    no_ebreak = true;      // No ebreak instruction
+  @UVM_DEFAULT bool                    no_dret = true;        // No dret instruction
+  @UVM_DEFAULT bool                    no_fence;           // No fence instruction
+  @UVM_DEFAULT bool                    no_wfi = true;         // No WFI instruction
+  @UVM_DEFAULT bool                    enable_unaligned_load_store;
+  @UVM_DEFAULT int                     illegal_instr_ratio;
+  @UVM_DEFAULT int                     hint_instr_ratio;
   // Number of harts to be simulated, must be <= NUM_HARTS
-  int                     num_of_harts = NUM_HARTS;
+  @UVM_DEFAULT int                     num_of_harts = NUM_HARTS;
   // Use SP as stack pointer
-  bool                    fix_sp;
+  @UVM_DEFAULT bool                    fix_sp;
   // Use push/pop section for data pages
-  bool                    use_push_data_section = false;
+  @UVM_DEFAULT bool                    use_push_data_section = false;
   // Directed boot privileged mode, u, m, s
-  string                  boot_mode_opts;
-  bool                    enable_page_table_exception; // int in SV version
-  bool                    no_directed_instr;
+  @UVM_DEFAULT string                  boot_mode_opts;
+  @UVM_DEFAULT bool                    enable_page_table_exception; // int in SV version
+  @UVM_DEFAULT bool                    no_directed_instr;
   // A name suffix for the generated assembly program
   string                  asm_test_suffix;
   // Enable interrupt bit in MSTATUS (MIE, SIE, UIE)
-  bool                    enable_interrupt;
+  @UVM_DEFAULT bool                    enable_interrupt;
   bool                    enable_nested_interrupt;
   // We need a separate control knob for enabling timer interrupts, as Spike
   // throws an exception if xIE.xTIE is enabled
-  bool                    enable_timer_irq;
+  @UVM_DEFAULT bool                    enable_timer_irq;
   // Generate a bare program without any init/exit/error handling/page table routines
   // The generated program can be integrated with a larger program.
   // Note that the bare mode program is not expected to run in standalone mode
-  bool                    bare_program_mode;
+  @UVM_DEFAULT bool                    bare_program_mode;
   // Enable accessing illegal CSR instruction
   // - Accessing non-existence CSR
   // - Accessing CSR with wrong privileged mode
-  bool                    enable_illegal_csr_instruction;
+  @UVM_DEFAULT bool                    enable_illegal_csr_instruction;
   // Enable accessing CSRs at an invalid privilege level
-  bool                    enable_access_invalid_csr_level;
+  @UVM_DEFAULT bool                    enable_access_invalid_csr_level;
   // Enable misaligned instruction (caused by JALR instruction)
-  bool                    enable_misaligned_instr;
+  @UVM_DEFAULT bool                    enable_misaligned_instr;
   // Enable some dummy writes to main system CSRs (xSTATUS/xIE) at beginning of test
   // to check repeated writes
-  bool                    enable_dummy_csr_write;
-  bool                    randomize_csr = false;
+  @UVM_DEFAULT bool                    enable_dummy_csr_write;
+  @UVM_DEFAULT bool                    randomize_csr = false;
   // sfence support
-  bool                    allow_sfence_exception = false;
+  @UVM_DEFAULT bool                    allow_sfence_exception = false;
   // Interrupt/Exception Delegation
-  bool                    no_delegation = true;
-  bool                    force_m_delegation = false;
-  bool                    force_s_delegation = false;
-  bool                    support_supervisor_mode;
-  bool                    disable_compressed_instr;
+  @UVM_DEFAULT bool                    no_delegation = true;
+  @UVM_DEFAULT bool                    force_m_delegation = false;
+  @UVM_DEFAULT bool                    force_s_delegation = false;
+  @UVM_DEFAULT bool                    support_supervisor_mode;
+  @UVM_DEFAULT bool                    disable_compressed_instr;
   // "Memory mapped" address that when written to will indicate some event to
   // the testbench - testbench will take action based on the value written
-  ubvec!XLEN              signature_addr = 0xdead_beef;
-  bool                    require_signature_addr = false;
+  @UVM_DEFAULT ubvec!XLEN              signature_addr = 0xdead_beef;
+  @UVM_DEFAULT bool                    require_signature_addr = false;
   // Enable a full or empty debug_rom section.
   // Full debug_rom will contain random instruction streams.
   // Empty debug_rom will contain just dret instruction and will return immediately.
   // Will be empty by default.
-  bool                    gen_debug_section = false;
+  @UVM_DEFAULT bool                    gen_debug_section = false;
   // Enable generation of a directed sequence of instructions containing
   // ebreak inside the debug_rom.
   // Disabled by default.
-  bool                    enable_ebreak_in_debug_rom = false;
+  @UVM_DEFAULT bool                    enable_ebreak_in_debug_rom = false;
   // Enable setting dcsr.ebreak(m/s/u)
-  bool                    set_dcsr_ebreak = false;
+  @UVM_DEFAULT bool                    set_dcsr_ebreak = false;
   // Number of sub programs in the debug rom
-  int                     num_debug_sub_program = 0;
+  @UVM_DEFAULT int                     num_debug_sub_program = 0;
   // Enable debug single stepping
-  bool                    enable_debug_single_step = false;
+  @UVM_DEFAULT bool                    enable_debug_single_step = false;
   // Number of single stepping iterations
-  @rand int               single_step_iterations;
+  @UVM_DEFAULT @rand int               single_step_iterations;
   // Enable mstatus.tw bit - causes u-mode WFI to raise illegal instruction exceptions
-  bool                    set_mstatus_tw;
+  @UVM_DEFAULT bool                    set_mstatus_tw;
   // Enable users to set mstatus.mprv to enable privilege checks on memory accesses.
-  bool                    set_mstatus_mprv;
+  @UVM_DEFAULT bool                    set_mstatus_mprv;
   // Stack space allocated to each program, need to be enough to store necessary context
   // Example: RA, SP, T0
   uint                    min_stack_len_per_program = 10 * (XLEN/8);
   uint                    max_stack_len_per_program = 16 * (XLEN/8);
   // Maximum branch distance, avoid skipping large portion of the code
-  uint                    max_branch_step = 20;
+  @UVM_DEFAULT uint                    max_branch_step = 20;
   // Maximum directed instruction stream sequence count
-  uint                    max_directed_instr_stream_seq = 20;
+  @UVM_DEFAULT uint                    max_directed_instr_stream_seq = 20;
   // Reserved registers
-  riscv_reg_t[]           reserved_regs;
+  @UVM_DEFAULT riscv_reg_t[]           reserved_regs;
   // Floating point support
-  bool                    enable_floating_point;
+  @UVM_DEFAULT bool                    enable_floating_point;
 
-    // Vector extension support
-  bool                    enable_vector_extension;
+  // Vector extension support
+  @UVM_DEFAULT bool                    enable_vector_extension;
   // Only generate vector instructions
-  bool                    vector_instr_only;
+  @UVM_DEFAULT bool                    vector_instr_only;
   // Bit manipulation extension support
-  bool                    enable_b_extension;
-  b_ext_group_t[]         enable_bitmanip_groups =
+  @UVM_DEFAULT bool                    enable_b_extension;
+  @UVM_DEFAULT b_ext_group_t[]         enable_bitmanip_groups =
     [b_ext_group_t.ZBB, b_ext_group_t.ZBS, b_ext_group_t.ZBP, b_ext_group_t.ZBE,
      b_ext_group_t.ZBF, b_ext_group_t.ZBC, b_ext_group_t.ZBR, b_ext_group_t.ZBM,
      b_ext_group_t.ZBT, b_ext_group_t.ZB_TMP];
@@ -311,10 +311,8 @@ class riscv_instr_gen_config: uvm_object
       (init_privileged_mode != privileged_mode_t.SUPERVISOR_MODE) || mstatus_tvm == true;
     }
     else {
-      if (init_privileged_mode != privileged_mode_t.SUPERVISOR_MODE || !support_sfence || mstatus_tvm
-          || no_fence) {
-	enable_sfence == false;
-      }
+      (init_privileged_mode != privileged_mode_t.SUPERVISOR_MODE || !support_sfence || mstatus_tvm
+       || no_fence) -> (enable_sfence == false);
     }
   } default_c;
   

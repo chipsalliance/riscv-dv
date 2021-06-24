@@ -33,15 +33,16 @@ class riscv_vector_cfg : uvm_object
 
   mixin uvm_object_utils;
 
-  @rand vtype_t       vtype;
-  @rand ubvec!XLEN    vl;
-  @rand ubvec!XLEN    vstart;
-  @rand vxrm_t        vxrm;
-  @rand bool          vxsat;
+  @rand @UVM_DEFAULT vtype_t       vtype;
+  @rand @UVM_DEFAULT ubvec!XLEN    vl;
+  @rand @UVM_DEFAULT ubvec!XLEN    vstart;
+  @rand @UVM_DEFAULT vxrm_t        vxrm;
+  @rand @UVM_DEFAULT bool          vxsat;
+
   riscv_vreg_t[]      reserved_vregs;
 
   // Allowed effective element width based on the LMUL setting
-  uint[]           legal_eew;
+  @UVM_DEFAULT uint[]           legal_eew;
 
   // Allow only vector instructions from the random sequences
   @rand bool only_vec_instr;
@@ -75,10 +76,10 @@ class riscv_vector_cfg : uvm_object
   @rand bool vec_reg_hazards;
 
   // Enable segmented load/store extension ops
-  @rand bool enable_zvlsseg = true;
+  @rand @UVM_DEFAULT bool enable_zvlsseg = true;
 
   // Enable fault only first load ops
-  @rand bool enable_fault_only_first_load;
+  @rand @UVM_DEFAULT bool enable_fault_only_first_load;
 
   
    Constraint! q{
