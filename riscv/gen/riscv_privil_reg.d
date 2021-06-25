@@ -27,7 +27,7 @@ import std.format: format;
 
 import uvm;
 
-class riscv_privil_reg : riscv_reg!(privileged_reg_t)
+class riscv_privil_reg: riscv_reg!(privileged_reg_t)
 {
 
   mixin uvm_object_utils;
@@ -41,14 +41,14 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
     switch(reg_name) {
       /////////////// Machine mode reigster //////////////
       // Machine ISA Register
-    case privileged_reg_t.MISA :
+    case privileged_reg_t.MISA:
       privil_level = privileged_level_t.M_LEVEL;
       add_field("WARL0", 26, reg_field_access_t.WARL);
       add_field("WLRL", XLEN-28, reg_field_access_t.WLRL);
       add_field("MXL", 2, reg_field_access_t.WARL);
       break;
       // Machine Vendor ID Register
-    case privileged_reg_t.MVENDORID :
+    case privileged_reg_t.MVENDORID:
       privil_level = privileged_level_t.M_LEVEL;
       add_field("OFFSET", 7, reg_field_access_t.WPRI);
       add_field("BANK", XLEN-7, reg_field_access_t.WPRI);
@@ -202,101 +202,24 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field("MINSTRETH", 32, reg_field_access_t.WPRI);
       break;
       // Hardware Performance Monitor Counters
-    case privileged_reg_t.MHPMCOUNTER3,
-      privileged_reg_t.MHPMCOUNTER4,
-      privileged_reg_t.MHPMCOUNTER5,
-      privileged_reg_t.MHPMCOUNTER6,
-      privileged_reg_t.MHPMCOUNTER7,
-      privileged_reg_t.MHPMCOUNTER8,
-      privileged_reg_t.MHPMCOUNTER9,
-      privileged_reg_t.MHPMCOUNTER10,
-      privileged_reg_t.MHPMCOUNTER11,
-      privileged_reg_t.MHPMCOUNTER12,
-      privileged_reg_t.MHPMCOUNTER13,
-      privileged_reg_t.MHPMCOUNTER14,
-      privileged_reg_t.MHPMCOUNTER15,
-      privileged_reg_t.MHPMCOUNTER16,
-      privileged_reg_t.MHPMCOUNTER17,
-      privileged_reg_t.MHPMCOUNTER18,
-      privileged_reg_t.MHPMCOUNTER19,
-      privileged_reg_t.MHPMCOUNTER20,
-      privileged_reg_t.MHPMCOUNTER21,
-      privileged_reg_t.MHPMCOUNTER22,
-      privileged_reg_t.MHPMCOUNTER23,
-      privileged_reg_t.MHPMCOUNTER24,
-      privileged_reg_t.MHPMCOUNTER25,
-      privileged_reg_t.MHPMCOUNTER26,
-      privileged_reg_t.MHPMCOUNTER28,
-      privileged_reg_t.MHPMCOUNTER29,
-      privileged_reg_t.MHPMCOUNTER30,
-      privileged_reg_t.MHPMCOUNTER31 :
+    case privileged_reg_t.MHPMCOUNTER3:
+      ..
+    case privileged_reg_t.MHPMCOUNTER31:
       privil_level = privileged_level_t.M_LEVEL;
       add_field(format("%s", reg_name), XLEN, reg_field_access_t.WARL);
       break;
       // Hardware Performance Monitor Events
-    case privileged_reg_t.MHPMEVENT3,
-      privileged_reg_t.MHPMEVENT4,
-      privileged_reg_t.MHPMEVENT5,
-      privileged_reg_t.MHPMEVENT6,
-      privileged_reg_t.MHPMEVENT7,
-      privileged_reg_t.MHPMEVENT8,
-      privileged_reg_t.MHPMEVENT9,
-      privileged_reg_t.MHPMEVENT10,
-      privileged_reg_t.MHPMEVENT11,
-      privileged_reg_t.MHPMEVENT12,
-      privileged_reg_t.MHPMEVENT13,
-      privileged_reg_t.MHPMEVENT14,
-      privileged_reg_t.MHPMEVENT15,
-      privileged_reg_t.MHPMEVENT16,
-      privileged_reg_t.MHPMEVENT17,
-      privileged_reg_t.MHPMEVENT18,
-      privileged_reg_t.MHPMEVENT19,
-      privileged_reg_t.MHPMEVENT20,
-      privileged_reg_t.MHPMEVENT21,
-      privileged_reg_t.MHPMEVENT22,
-      privileged_reg_t.MHPMEVENT23,
-      privileged_reg_t.MHPMEVENT24,
-      privileged_reg_t.MHPMEVENT25,
-      privileged_reg_t.MHPMEVENT26,
-      privileged_reg_t.MHPMEVENT27,
-      privileged_reg_t.MHPMEVENT28,
-      privileged_reg_t.MHPMEVENT29,
-      privileged_reg_t.MHPMEVENT30,
-      privileged_reg_t.MHPMEVENT31 :
+    case privileged_reg_t.MHPMEVENT3:
+      ..
+    case privileged_reg_t.MHPMEVENT31:
       privil_level = privileged_level_t.M_LEVEL;
       add_field(format("%s", reg_name), XLEN, reg_field_access_t.WARL);
       break;
 	
       // Hardware Performance Monitor Counters - RV32I only
-    case  privileged_reg_t.MHPMCOUNTER3H,
-      privileged_reg_t.MHPMCOUNTER4H,
-      privileged_reg_t.MHPMCOUNTER5H,
-      privileged_reg_t.MHPMCOUNTER6H,
-      privileged_reg_t.MHPMCOUNTER7H,
-      privileged_reg_t.MHPMCOUNTER8H,
-      privileged_reg_t.MHPMCOUNTER9H,
-      privileged_reg_t.MHPMCOUNTER10H,
-      privileged_reg_t.MHPMCOUNTER11H,
-      privileged_reg_t.MHPMCOUNTER12H,
-      privileged_reg_t.MHPMCOUNTER13H,
-      privileged_reg_t.MHPMCOUNTER14H,
-      privileged_reg_t.MHPMCOUNTER15H,
-      privileged_reg_t.MHPMCOUNTER16H,
-      privileged_reg_t.MHPMCOUNTER17H,
-      privileged_reg_t.MHPMCOUNTER18H,
-      privileged_reg_t.MHPMCOUNTER19H,
-      privileged_reg_t.MHPMCOUNTER20H,
-      privileged_reg_t.MHPMCOUNTER21H,
-      privileged_reg_t.MHPMCOUNTER22H,
-      privileged_reg_t.MHPMCOUNTER23H,
-      privileged_reg_t.MHPMCOUNTER24H,
-      privileged_reg_t.MHPMCOUNTER25H,
-      privileged_reg_t.MHPMCOUNTER26H,
-      privileged_reg_t.MHPMCOUNTER27H,
-      privileged_reg_t.MHPMCOUNTER28H,
-      privileged_reg_t.MHPMCOUNTER29H,
-      privileged_reg_t.MHPMCOUNTER30H,
-      privileged_reg_t.MHPMCOUNTER31H :
+    case  privileged_reg_t.MHPMCOUNTER3H:
+      ..
+    case privileged_reg_t.MHPMCOUNTER31H:
       if (XLEN != 32) {
 	uvm_fatal(get_full_name(), format("Register %s is only in RV32I", reg_name));
       }
@@ -304,7 +227,7 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field(format("%s", reg_name), 32, reg_field_access_t.WARL);
       break;
       // Machine Counter Enable Register
-    case privileged_reg_t.MCOUNTEREN :
+    case privileged_reg_t.MCOUNTEREN:
       privil_level = privileged_level_t.M_LEVEL;
       add_field("CY", 1, reg_field_access_t.WARL);
       add_field("TM", 1, reg_field_access_t.WARL);
@@ -353,7 +276,7 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field("BASE",  XLEN,  reg_field_access_t.WARL);
       break;
       // Machine Cause Register
-    case privileged_reg_t.MCAUSE :
+    case privileged_reg_t.MCAUSE:
       privil_level = privileged_level_t.M_LEVEL;
       add_field("CODE",  4,  reg_field_access_t.WLRL);
       add_field("WLRL", XLEN-5, reg_field_access_t.WLRL);
@@ -365,7 +288,7 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field("VALUE",  XLEN,  reg_field_access_t.WARL);
       break;
       // Physical Memory Protection Configuration Register
-    case privileged_reg_t.PMPCFG0 :
+    case privileged_reg_t.PMPCFG0:
       privil_level = privileged_level_t.M_LEVEL;
       add_field("PMP0CFG", 8, reg_field_access_t.WARL);
       add_field("PMP1CFG", 8, reg_field_access_t.WARL);
@@ -379,7 +302,7 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       }
       break;
       // Physical Memory Protection Configuration Register
-    case  privileged_reg_t.PMPCFG1 :
+    case  privileged_reg_t.PMPCFG1:
       privil_level = privileged_level_t.M_LEVEL;
       if (XLEN!=32) {
 	uvm_fatal(get_full_name(), "CSR PMPCFG1 only exists in RV32.");
@@ -417,22 +340,9 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field("PMP15CFG", 8, reg_field_access_t.WARL);
       break;			      
       // Physical Memory Protection Configuration Registers
-    case privileged_reg_t.PMPADDR0,
-      privileged_reg_t.PMPADDR1,
-      privileged_reg_t.PMPADDR2,
-      privileged_reg_t.PMPADDR3,
-      privileged_reg_t.PMPADDR4,
-      privileged_reg_t.PMPADDR5,
-      privileged_reg_t.PMPADDR6,
-      privileged_reg_t.PMPADDR7,
-      privileged_reg_t.PMPADDR8,
-      privileged_reg_t.PMPADDR9,
-      privileged_reg_t.PMPADDR10,
-      privileged_reg_t.PMPADDR11,
-      privileged_reg_t.PMPADDR12,
-      privileged_reg_t.PMPADDR13,
-      privileged_reg_t.PMPADDR14,
-      privileged_reg_t.PMPADDR15  :
+    case privileged_reg_t.PMPADDR0:
+      ..
+    case privileged_reg_t.PMPADDR15:
       privil_level = privileged_level_t.M_LEVEL;
       if (XLEN==64) {
 	add_field("ADDRESS", 54, reg_field_access_t.WARL);
@@ -579,12 +489,12 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       }
       break;
       // Supervisor Scratch Register
-    case privileged_reg_t.SSCRATCH :
+    case privileged_reg_t.SSCRATCH:
       privil_level = privileged_level_t.S_LEVEL;
       add_field("SSCRATCH", XLEN, reg_field_access_t.WARL);
       break;
       // Supervisor Exception Program Counter
-    case privileged_reg_t.SEPC :
+    case privileged_reg_t.SEPC:
       privil_level = privileged_level_t.S_LEVEL;
       add_field("BASE",  XLEN,  reg_field_access_t.WARL);
       break;
@@ -667,7 +577,7 @@ class riscv_privil_reg : riscv_reg!(privileged_reg_t)
       add_field("INTERRUPT",  1,  reg_field_access_t.WARL);
       break;
       // User Trap Value
-    case privileged_reg_t.UTVAL :
+    case privileged_reg_t.UTVAL:
       privil_level = privileged_level_t.U_LEVEL;
       add_field("VALUE",  XLEN,  reg_field_access_t.WARL);
       break;
