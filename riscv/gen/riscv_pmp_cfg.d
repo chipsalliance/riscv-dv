@@ -396,10 +396,10 @@ class riscv_pmp_cfg : uvm_object {
   //
   // TODO(udinator) : investigate switching branch targets to named labels instead of numbers
   //                  to better clarify where the multitude of jumps are actually going to.
-  void gen_pmp_exception_routine(riscv_reg_t[6] scratch_reg,
+  void gen_pmp_exception_routine(riscv_reg_t[] scratch_reg,
 				 exception_cause_t fault_type,
 				 ref string[] instr) {
-    // assert (scratch_reg.length >= 6);
+    assert (scratch_reg.length == 6);
     // mscratch       : loop counter
     // scratch_reg[0] : temporary storage
     // scratch_reg[1] : &pmpaddr[i]
