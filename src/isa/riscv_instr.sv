@@ -344,7 +344,7 @@ class riscv_instr extends uvm_object;
       if(imm_type == UIMM) begin
         imm_len = 5;
       end else begin
-        imm_len = 11;
+        imm_len = 12;
       end
     end
     imm_mask = imm_mask << imm_len;

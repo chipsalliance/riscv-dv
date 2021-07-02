@@ -316,7 +316,7 @@ class riscv_instr:
             if self.imm_type.name == "UIMM":
                 self.imm_len = 5
             else:
-                self.imm_len = 11
+                self.imm_len = 12
         self.imm_mask = (self.imm_mask << self.imm_len) & self.shift_t
 
     def extend_imm(self):
