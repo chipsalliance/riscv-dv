@@ -147,7 +147,7 @@ class riscv_cov_instr:
             if self.imm_type.name == "UIMM":
                 self.imm_len = 5
             else:
-                self.imm_len = 11
+                self.imm_len = 12
 
     def set_mode(self):
         # mode setting for Instruction Format
