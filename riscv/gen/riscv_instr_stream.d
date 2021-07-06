@@ -35,10 +35,9 @@ import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
 import std.algorithm: canFind, sort;
 
-import esdl.rand: rand, Constraint, randomize, randomize_with;
+import esdl.rand: rand, Constraint, randomize, randomize_with, urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec;
-import esdl.base.core: urandom;
 
 import uvm;
 
@@ -210,7 +209,7 @@ class riscv_instr_stream : uvm_object
   // Mix the input instruction stream with the original instruction, the instruction order is
   // preserved. When 'contained' is set, the original instruction stream will be inside the
   // new instruction stream with the first and last instruction from the input instruction stream.
-  void mix_instr_stream(riscv_instr [] new_instr, bool contained = false) {
+  void mix_instr_stream(riscv_instr[] new_instr, bool contained = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int[] insert_instr_position;
     int new_instr_cnt = cast(int) new_instr.length;
@@ -227,7 +226,30 @@ class riscv_instr_stream : uvm_object
 	insert_instr_position[new_instr_cnt-1] = current_instr_cnt-1;
       }
     }
-    foreach(k, instr; new_instr) {
+    foreach (k, instr; new_instr) {
+      insert_instr(instr, insert_instr_position[k] + cast(int) k);
+    }
+  }
+
+  void mix_instr_stream(Queue!riscv_instr new_instr, bool contained = false) {
+    import std.range: enumerate;
+    int current_instr_cnt = cast(int) instr_list.length;
+    int[] insert_instr_position;
+    int new_instr_cnt = cast(int) new_instr.length;
+    insert_instr_position.length = new_instr_cnt;
+    foreach (ref position; insert_instr_position) {
+      position = urandom(0, current_instr_cnt);
+    }
+    if (insert_instr_position.length > 0) {
+      insert_instr_position.sort();
+    }
+    if (contained) {
+      insert_instr_position[0] = 0;
+      if (new_instr_cnt > 1) {
+	insert_instr_position[new_instr_cnt-1] = current_instr_cnt-1;
+      }
+    }
+    foreach (k, instr; new_instr[].enumerate) {
       insert_instr(instr, insert_instr_position[k] + cast(int) k);
     }
   }

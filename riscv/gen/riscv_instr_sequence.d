@@ -49,9 +49,8 @@ import std.format: format;
 import std.algorithm.searching: canFind;
 import std.random: randomShuffle;
 
-import esdl.base.core: urandom, getRandGen;
 import esdl.data.queue: Queue;
-import esdl.rand: randomize, randomize_with;
+import esdl.rand: randomize, randomize_with, urandom, getRandGen;
 
 
 import uvm;
