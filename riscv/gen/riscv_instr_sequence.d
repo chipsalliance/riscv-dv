@@ -47,10 +47,9 @@ import riscv.gen.riscv_illegal_instr: riscv_illegal_instr;
 
 import std.format: format;
 import std.algorithm.searching: canFind;
-import std.random: randomShuffle;
 
 import esdl.data.queue: Queue;
-import esdl.rand: randomize, randomize_with, urandom, getRandGen;
+import esdl.rand: randomize, randomize_with, urandom, shuffle;
 
 
 import uvm;
@@ -218,7 +217,7 @@ class riscv_instr_sequence :  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
         branch_cnt++;
         if (branch_cnt == branch_idx.length) {
           branch_cnt = 0;
-          branch_idx.randomShuffle(getRandGen());
+          branch_idx.shuffle();
         }
         uvm_info(get_full_name(),
 		 format("Processing branch instruction[%0d]:%0s # %0d -> %0d",
@@ -323,7 +322,7 @@ class riscv_instr_sequence :  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     string str;
     int i;
     Queue!riscv_instr_name_t jump_instr = [riscv_instr_name_t.JALR];
-    bool rand_lsb = cast(bool) urandom(0, 2);
+    bool rand_lsb = cast(bool) urandom!q{[]}(0, 1);
     riscv_reg_t ra;
     uint ra_idx;
 

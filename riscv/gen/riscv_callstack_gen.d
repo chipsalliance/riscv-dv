@@ -26,14 +26,13 @@ module riscv.gen.riscv_callstack_gen;
 
 import riscv.gen.riscv_instr_pkg: program_id_t;
 
-import esdl.rand: Constraint, rand, randomize, getRandGen, urandom;
+import esdl.rand: Constraint, rand, randomize, urandom, shuffle;
 import esdl.data.bvec: ubvec, toubvec;
 
 import uvm;
 
 import std.format: format;
 
-import std.random: randomShuffle;
 
 class riscv_program: uvm_object
 {
@@ -184,7 +183,7 @@ class riscv_callstack_gen : uvm_object
       }
       
 
-      sub_program_id_pool.randomShuffle(getRandGen());
+      sub_program_id_pool.shuffle();
       sub_program_cnt.length = program_list.length;
       uvm_info(get_full_name(), format("%0d programs @Lv%0d-> %0d programs at next level",
 				       program_list.length, i, sub_program_id_pool.length), UVM_LOW);
