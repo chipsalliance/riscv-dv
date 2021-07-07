@@ -301,17 +301,30 @@ class riscv_rand_instr_stream: riscv_instr_stream
     setup_instruction_dist(no_branch, no_load_store);
   }
 
-  Constraint! q{
-    unique [avail_regs];
-    avail_regs[0] inside [riscv_reg_t.S0 : riscv_reg_t.A5];
-    foreach (areg; avail_regs) {
-      areg !inside [cfg.reserved_regs, reserved_rd];
-    }
-  } avail_regs_cst;
-
   void randomize_avail_regs() {
+    import std.traits: EnumMembers;
+    import std.algorithm.mutation: remove;
+    import std.algorithm.searching: countUntil;
     if (avail_regs.length > 0) {
-      this.randomize();
+      riscv_reg_t[(EnumMembers!riscv_reg_t).length] allowed_regs = [EnumMembers!riscv_reg_t];
+      riscv_reg_t[] allowed_regs_range = allowed_regs;
+      // remove cfg.reserved_regs and reserved_rd
+      foreach (rreg; cfg.reserved_regs) allowed_regs_range.remove(rreg);
+      foreach (rreg; reserved_rd) allowed_regs_range.remove(rreg);
+      // avail_regs[0] has to be between S0 and A5
+      auto start0 = allowed_regs_range.countUntil!((a) => a >= riscv_reg_t.S0);
+      auto end0 =   allowed_regs_range.countUntil!((a) => a >  riscv_reg_t.A5);
+      if (start0 < 0 || start0 == end0) assert(false, "Cannot randomize avail_regs");
+      auto loc0 =   urandom(start0, end0);
+      avail_regs[0] = allowed_regs_range[loc0];
+      allowed_regs_range.remove(loc0);
+      // avail_regs elements have to be unique
+      for (size_t n=1; n != avail_regs.length; ++n) {
+	if (allowed_regs_range.length == 0) assert (false, "Cannot randomize avail_regs");
+	auto loc = urandom(0, allowed_regs_range.length);
+	avail_regs[n] = allowed_regs_range[loc];
+	allowed_regs_range.remove(loc);
+      }
     }
   }
 
