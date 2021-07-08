@@ -49,7 +49,7 @@ import std.format: format;
 import std.algorithm.searching: canFind;
 
 import esdl.data.queue: Queue;
-import esdl.rand: randomize, randomize_with, urandom, shuffle;
+import esdl.rand: randomize, randomize_with, urandom, shuffle, toss;
 
 
 import uvm;
@@ -322,7 +322,7 @@ class riscv_instr_sequence :  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     string str;
     int i;
     Queue!riscv_instr_name_t jump_instr = [riscv_instr_name_t.JALR];
-    bool rand_lsb = cast(bool) urandom!q{[]}(0, 1);
+    bool rand_lsb = toss();
     riscv_reg_t ra;
     uint ra_idx;
 

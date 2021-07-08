@@ -29,7 +29,7 @@ import std.format: format;
 
 import std.algorithm: canFind;
 
-import esdl.rand: rand, Constraint, randomize_with, urandom, randomize, shuffle;
+import esdl.rand: rand, Constraint, randomize_with, urandom, randomize, shuffle, toss;
 import esdl.data.bvec: ubvec, toubvec;
 import uvm;
 
@@ -386,7 +386,7 @@ class riscv_push_stack_instr : riscv_rand_instr_stream
     }
     if (allow_branch) {
       //DV_CHECK_STD_RANDOMIZE_FATAL(enable_branch)
-      enable_branch = cast(bool) urandom!q{[]}(0, 1);
+      enable_branch = toss();
     }
     else {
       enable_branch = false;
