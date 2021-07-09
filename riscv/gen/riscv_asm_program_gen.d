@@ -55,7 +55,7 @@ import std.format: format;
 
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
-import esdl.rand: randomize, urandom, shuffle, toss;
+import esdl.rand: randomize, urandom, shuffle;
 import esdl.solver: CstVecDistSolver, CstVecDistRange;
 import esdl.base.cmdl: CommandLine;
 
@@ -670,7 +670,7 @@ class riscv_asm_program_gen : uvm_object
     string str;
     for (int i = 0; i < NUM_FLOAT_GPR; i++) {
       if (canFind( supported_isa, riscv_instr_group_t.RV64D)) {
-	if (toss()) init_floating_point_gpr_with_spf(i);
+	if (urandom!bool()) init_floating_point_gpr_with_spf(i);
 	else init_floating_point_gpr_with_dpf(i);
       }
       else init_floating_point_gpr_with_spf(i);
