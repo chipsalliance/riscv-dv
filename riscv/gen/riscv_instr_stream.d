@@ -376,9 +376,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 	exclude_instr ~= [riscv_instr_name_t.EBREAK, riscv_instr_name_t.C_EBREAK];
       }
     }
-    instr = registry.get_rand_instr(allowed_instr,
-				    exclude_instr, null, null,
-				    include_group);
+    instr = registry.get_rand_instr(allowed_instr, exclude_instr, include_group);
     instr.m_cfg = cfg;
     randomize_gpr(instr);
   }
