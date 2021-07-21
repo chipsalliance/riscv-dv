@@ -1561,6 +1561,8 @@ class riscv_instr_pkg:
     MAX_SUB_PROGRAM_CNT = 20
     MAX_CALL_PER_FUNC = 5
     indent = LABEL_STR_LEN * " "
+    SINGLE_PRECISION_FRACTION_BITS = 23
+    DOUBLE_PRECISION_FRACTION_BITS = 52
 
     def hart_prefix(self, hart=0):
         if rcs.NUM_HARTS <= 1:

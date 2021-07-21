@@ -38,6 +38,8 @@ rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting
 # handling etc. Check gen_program() function to see how the program is generated.
 # ----------------------------------------------------------------------------------
 
+
+@vsc.randobj
 class riscv_asm_program_gen:
 
     def __init__(self):
@@ -49,6 +51,8 @@ class riscv_asm_program_gen:
         self.main_program = []
         self.sub_program = []
         self.data_page_gen = None
+        self.spf_val = vsc.rand_bit_t(32)
+        self.dpf_val = vsc.rand_bit_t(64)
 
     # ----------------------------------------------------------------------------------
     # Main function to generate the whole program
@@ -436,37 +440,63 @@ class riscv_asm_program_gen:
         fmv_instr = "{}fmv.d.x f{}, x{}".format(pkg_ins.indent, int_floating_gpr, int_gpr2)
         self.instr_stream.extend((li_instr0, slli_instr, li_instr1, or_instr, fmv_instr))
 
-    # Get a random single precision floating value
-    @staticmethod
-    def get_randselect0(addr_range1, addr_range2):
-        value = vsc.rand_bit_t(32)
-        with vsc.randomize_with(value): value in vsc.rangelist(addr_range1, addr_range2)
+    def get_randselect(self, addr_range1, addr_range2, flag):
+        if flag:
+            # Get a random double precision floating value
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.dpf_val):
+                    self.dpf_val in vsc.rangelist(addr_range1, addr_range2)
+        else:
+            # Get a random single precision floating value
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.spf_val):
+                    self.spf_val in vsc.rangelist(addr_range1, addr_range2)
+
+    def get_rng(self, val0, val1, spf_dpf, flag):
+        if flag == 0 and spf_dpf == 32:
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.spf_val): self.spf_val[val0 : val1] > 0
+        elif flag == 0 and spf_dpf == 64:
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.dpf_val): self.dpf_val[val0 : val1] > 0
+        elif flag == 1 and spf_dpf == 32:
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.spf_val): self.spf_val[val0 : val1] == 0
+        else:
+            with vsc.raw_mode():
+                with vsc.randomize_with(self.dpf_val): self.dpf_val[val0 : val1] == 0
 
     def get_rand_spf_value(self):
         vsc.randselect([
-            (1, lambda: get_randselect0(hex(0x7f80_0000), hex(0xff80_0000))),
-            (1, lambda: get_randselect0(hex(0x7f7f_ffff), hex(0xff7f_ffff))),
-            (1, lambda: get_randselect0(hex(0x0000_0000), hex(0x8000_0000))),
-            (1, lambda: get_randselect0(hex(0x7f80_0001), hex(0x7fc0_0000))),
-            (1, lambda: vsc.rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS) > 0)
-            (1, lambda: vsc.rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS) == 0)])
-        return value
-
-    # Get a random double precision floating value
-    @staticmethod
-    def get_randselect1(addr_range1, addr_range2):
-        value = vsc.bit_t(64)
-        with vsc.randomize_with(value): value in vsc.rangelist(addr_range1, addr_range2)
+            # Infinity
+            (1, lambda: self.get_randselect(0x7f80_0000, 0xff80_0000, 0)),
+            # Largest
+            (1, lambda: self.get_randselect(0x7f7f_ffff, 0xff7f_ffff, 0)),
+            # Zero
+            (1, lambda: self.get_randselect(0x0000_0000, 0x8000_0000, 0)),
+            # NaN
+            (1, lambda: self.get_randselect(0x7f80_0001, 0x7fc0_0000, 0)),
+            # Normal
+            (1, lambda: self.get_rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS, 32, 0)),
+            # Subnormal
+            (1, lambda: self.get_rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS, 32, 1))])
+        return self.spf_val
 
     def get_rand_dpf_value(self):
         vsc.randselect([
-            (1, lambda: get_randselect1(hex(0x7ff0_0000_0000_0000), hex(0xfff0_0000_0000_0000))),
-            (1, lambda: get_randselect1(hex(0x7fef_ffff_ffff_ffff), hex(0xffef_ffff_ffff_ffff))),
-            (1, lambda: get_randselect1(hex(0x0000_0000_0000_0000), hex(0x8000_0000_0000_0000))),
-            (1, lambda: get_randselect1(hex(0x7ff0_0000_0000_0001), hex(0x7ff8_0000_0000_0000))),
-            (1, lambda: vsc.rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS) > 0)
-            (1, lambda: vsc.rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS) == 0)])
-        return value
+            # Infinity
+            (1, lambda: self.get_randselect(0x7ff0_0000_0000_0000, 0xfff0_0000_0000_0000, 1)),
+            # largest
+            (1, lambda: self.get_randselect(0x7fef_ffff_ffff_ffff, 0xffef_ffff_ffff_ffff, 1)),
+            # Zero
+            (1, lambda: self.get_randselect(0x0000_0000_0000_0000, 0x8000_0000_0000_0000, 1)),
+            # NaN
+            (1, lambda: self.get_randselect(0x7ff0_0000_0000_0001, 0x7ff8_0000_0000_0000, 1)),
+            # Normal
+            (1, lambda: self.get_rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS, 64 , 0)),
+            # Subnormal
+            (1, lambda: self.get_rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS, 64, 1))])
+        return self.dpf_val
 
     # Generate "test_done" section, test is finished by an ECALL instruction
     # The ECALL trap handler will handle the clean up procedure before finishing the test.
