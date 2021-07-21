@@ -149,8 +149,8 @@ class riscv_lr_sc_instr_stream : riscv_amo_base_instr_stream
       allowed_sc_instr ~= riscv_instr_name_t.SC_D;
     }
     
-    lr_instr = registry.get_rand_instr(allowed_lr_instr);
-    sc_instr = registry.get_rand_instr(allowed_sc_instr);
+    lr_instr = cfg.instr_registry.get_rand_instr(allowed_lr_instr);
+    sc_instr = cfg.instr_registry.get_rand_instr(allowed_sc_instr);
 
     lr_instr.randomize_with! q{
       rs1 == $0;
@@ -226,7 +226,7 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
   override void gen_amo_instr() {
     amo_instr.length = num_amo;
     foreach (i, ref instr; amo_instr) {
-      instr = registry.get_rand_instr([riscv_instr_category_t.AMO]);
+      instr = cfg.instr_registry.get_rand_instr([riscv_instr_category_t.AMO]);
       amo_instr[i].randomize_with! q{
         if ($0.length > 0) {
           rd !inside [$0];

@@ -164,7 +164,8 @@ class riscv_loop_instr: riscv_rand_instr_stream
     loop_branch_target_instr.length = num_of_nested_loop;
     for (int i = 0; i < num_of_nested_loop; i++) {
       // Instruction to init the loop counter
-      loop_init_instr[2*i] = registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+      loop_init_instr[2*i] =
+	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
       //  `DV_CHECK_RANDOMIZE_WITH_FATAL(loop_init_instr[2*i],
       loop_init_instr[2*i].randomize_with!q{
 	rd == $0;
@@ -175,7 +176,8 @@ class riscv_loop_instr: riscv_rand_instr_stream
       loop_init_instr[2*i].comment = format("init loop %0d counter", i);
 
       // Instruction to init loop limit
-      loop_init_instr[2*i+1] = registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+      loop_init_instr[2*i+1] =
+	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
       //  `DV_CHECK_RANDOMIZE_WITH_FATAL(l,
       loop_init_instr[2*i+1].randomize_with! q{
 	rd == $0;
@@ -187,10 +189,10 @@ class riscv_loop_instr: riscv_rand_instr_stream
 
       // Branch target instruction, can be anything
       loop_branch_target_instr[i] =
-	registry.get_rand_instr(null, [riscv_instr_name_t.C_ADDI16SP],
-				[riscv_instr_category_t.ARITHMETIC,
-				 riscv_instr_category_t.LOGICAL,
-				 riscv_instr_category_t.COMPARE]);
+	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.C_ADDI16SP],
+					  [riscv_instr_category_t.ARITHMETIC,
+					   riscv_instr_category_t.LOGICAL,
+					   riscv_instr_category_t.COMPARE]);
       //DV_CHECK_RANDOMIZE_WITH_FATAL(,
       loop_branch_target_instr[i].randomize_with! q{
 	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
@@ -204,7 +206,8 @@ class riscv_loop_instr: riscv_rand_instr_stream
       loop_branch_target_instr[i].label = format("%0s_%0d_t", label, i);
 
       // Instruction to update loop counter
-      loop_update_instr[i] = registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+      loop_update_instr[i] =
+	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
       //DV_CHECK_RANDOMIZE_WITH_FATAL(],
       loop_update_instr[i].randomize_with! q{
 	rd == $0;
@@ -214,7 +217,7 @@ class riscv_loop_instr: riscv_rand_instr_stream
       loop_update_instr[i].comment = format("update loop %0d counter", i);
 
       // Backward branch instruction
-      loop_branch_instr[i] = registry.get_rand_instr(null, [branch_type[i]]);
+      loop_branch_instr[i] = cfg.instr_registry.get_rand_instr(null, [branch_type[i]]);
       // `DV_CHECK_RANDOMIZE_WITH_FATAL(,
       loop_branch_instr[i].randomize_with! q{
 	rs1 == $0;

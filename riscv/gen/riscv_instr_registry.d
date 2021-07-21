@@ -29,6 +29,7 @@ import riscv.gen.riscv_core_setting: unsupported_instr, supported_isa,
 
 import std.format: format;
 import std.algorithm: canFind, remove;
+import std.traits: EnumMembers;
 
 import esdl.rand: urandom;
 
@@ -68,8 +69,10 @@ class riscv_instr_registry: uvm_object
   // generator.
   void create_instr_list(riscv_instr_gen_config cfg) {
     instr_names.length = 0;
-    instr_group.clear();
-    instr_category.clear();
+    // instr_group.clear();
+    foreach (group; EnumMembers!riscv_instr_group_t) instr_group[group] = [];
+    // instr_category.clear();
+    foreach (category; EnumMembers!riscv_instr_category_t) instr_category[category] = [];
     foreach (instr_name, val; instr_registry) {
       riscv_instr instr_inst;
       if (canFind(unsupported_instr, instr_name)) continue;
@@ -140,11 +143,11 @@ class riscv_instr_registry: uvm_object
     if (obj is null) {
       uvm_fatal("riscv_instr", format("Failed to create instr: %0s", instr_class_name));
     }
-    riscv_instr inst = cast(riscv_instr) obj;
-    if (inst is null) {
+    riscv_instr instr = cast(riscv_instr) obj;
+    if (instr is null) {
       uvm_fatal("riscv_instr", format("Failed to cast instr: %0s", instr_class_name));
     }
-    return inst;
+    return instr;
   }
 
   void build_basic_instruction_list(riscv_instr_gen_config cfg) {

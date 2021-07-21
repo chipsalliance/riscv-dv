@@ -22,7 +22,7 @@ import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, riscv_instr_format_t,
   MAX_INSTR_STR_LEN;
 import riscv.gen.riscv_core_setting: XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
-import riscv.gen.riscv_instr_registry: riscv_instr_registry;
+// import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 
 import esdl.data.bvec: bvec, ubvec, toubvec;
 import esdl.rand: rand, Constraint;
@@ -37,7 +37,7 @@ class riscv_instr: uvm_object
   mixin uvm_object_utils;
   
   riscv_instr_gen_config     m_cfg;
-  riscv_instr_registry       m_registry;
+  // riscv_instr_registry       m_registry;
 
   // Instruction attributes
   riscv_instr_group_t        group;
@@ -95,11 +95,11 @@ class riscv_instr: uvm_object
   
   Constraint!  q{
     if (category == riscv_instr_category_t.CSR) {
-      if (m_registry.include_reg.length > 0) {
-        csr inside [m_registry.include_reg];
+      if (m_cfg.instr_registry.include_reg.length > 0) {
+        csr inside [m_cfg.instr_registry.include_reg];
       }
-      if (m_registry.exclude_reg.length > 0) {
-        csr !inside [m_registry.exclude_reg];
+      if (m_cfg.instr_registry.exclude_reg.length > 0) {
+        csr !inside [m_cfg.instr_registry.exclude_reg];
       }
     }
   } csr_c;

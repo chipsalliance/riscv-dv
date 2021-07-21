@@ -139,7 +139,7 @@ class riscv_pmp_cfg : uvm_object {
     super(name);
     int pmp_max_offset_int;
     cfg_per_csr = XLEN / 8;
-    if (uvm_cmdline_proc().get_arg_value("+pmp_num_regions=", s)) {
+    if (uvm_cmdline_processor.get_inst().get_arg_value("+pmp_num_regions=", s)) {
       import std.conv: to;
       pmp_num_regions = s.to!int;
       rand_mode!q{pmp_num_regions}(false);
@@ -194,7 +194,7 @@ class riscv_pmp_cfg : uvm_object {
     string pmp_region;
     foreach (i, ref cfg; pmp_cfg) {
       arg_name = format("+pmp_region_%0d=", i);
-      if (uvm_cmdline_proc().get_arg_value(arg_name, pmp_region)) {
+      if (uvm_cmdline_processor.get_inst().get_arg_value(arg_name, pmp_region)) {
         cfg = parse_pmp_config(pmp_region, cfg);
         uvm_info(get_full_name(), format("Configured pmp_cfg[%0d] from command line: %p",
 					 i , cfg), UVM_LOW);
@@ -208,10 +208,10 @@ class riscv_pmp_cfg : uvm_object {
     string field_type;
     string field_val;
     pmp_cfg_reg_t pmp_cfg_reg = ref_pmp_cfg;
-    uvm_split_string(pmp_region, ',', fields);
+    uvm_string_split(pmp_region, ',', fields);
     foreach (i, ref field; fields) {
       import std.conv: to;
-      uvm_split_string(field, ':', field_vals);
+      uvm_string_split(field, ':', field_vals);
 	
       field_type = field_vals[0];
       field_val = field_vals[1];
@@ -223,9 +223,8 @@ class riscv_pmp_cfg : uvm_object {
 	break;
       case "A":
 	bool ch_mode = addr_mode_wrapper.from_name(field_val, addr_mode);
-	if(!ch_mode) {
-	  uvm_error(get_full_name(), format("Check failed : %s", field_val, UVM_LOW ));
-	}
+	if(!ch_mode) uvm_error(get_full_name(), format("Check failed : %s", field_val));
+	pmp_cfg_reg.a = addr_mode;
 	break;
       case "X":
 	pmp_cfg_reg.x = field_val.to!bool;

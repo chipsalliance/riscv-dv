@@ -587,14 +587,14 @@ class riscv_asm_program_gen : uvm_object
 	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0),
 							  ubvec!DATA_WIDTH(0),
 							  1, false);
-	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0x8000_0000),
-							  ubvec!DATA_WIDTH(0x8000_0000),
-							  1, false);
 	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0x1),
 							  ubvec!DATA_WIDTH(0xF),
 							  1, false);
 	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0x10),
 							  ubvec!DATA_WIDTH(0xEFFF_FFFF),
+							  1, false);
+	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0x8000_0000),
+							  ubvec!DATA_WIDTH(0x8000_0000),
 							  1, false);
 	_gpr_solver ~= CstVecDistRange!(ubvec!DATA_WIDTH)(ubvec!DATA_WIDTH(0xF000_0000),
 							  ubvec!DATA_WIDTH(0xFFFF_FFFF),
@@ -1766,8 +1766,8 @@ class riscv_asm_program_gen : uvm_object
       stream_name_opts = format("stream_name_%0d=", i);
       stream_freq_opts = format("stream_freq_%0d=", i);
 
-      if (cmdl.plusArgs(args ~ "%0s", val)) {
-	uvm_split_string(val, ',', opts);
+      if (cmdl.plusArgs(args ~ "%s", val)) {
+	uvm_string_split(val, ',', opts);
 	if (opts.length != 2) {
 	  uvm_fatal(get_full_name(),
 		    format("Incorrect directed instruction format : %0s, expect: name,ratio", val));
@@ -1776,8 +1776,8 @@ class riscv_asm_program_gen : uvm_object
 	  add_directed_instr_stream(opts[0], opts[1].to!int());
 	}
       }
-      else if (cmdl.plusArgs(stream_name_opts ~ "%0s", stream_name) &&
-	       cmdl.plusArgs(stream_freq_opts ~ "%0d", stream_freq)) {
+      else if (cmdl.plusArgs(stream_name_opts ~ "%s", stream_name) &&
+	       cmdl.plusArgs(stream_freq_opts ~ "%d", stream_freq)) {
 	add_directed_instr_stream(stream_name, stream_freq);
       }
     }

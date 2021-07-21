@@ -34,7 +34,7 @@ import esdl.rand: rand, Constraint, randomize_with,
 import esdl.data.bvec: ubvec, toubvec;
 import uvm;
 
-class riscv_directed_instr_stream : riscv_rand_instr_stream
+class riscv_directed_instr_stream: riscv_rand_instr_stream
 {
 
   mixin uvm_object_utils;
@@ -45,9 +45,6 @@ class riscv_directed_instr_stream : riscv_rand_instr_stream
 
   this(string name = "") {
     super(name);  
-  }
-
-  void pre_randomize() { // super.pre_randomize();
   }
 
   void post_randomize() {
@@ -71,8 +68,8 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
 
   mixin uvm_object_utils;
 
-  int             max_data_page_id;
-  bool             load_store_shared_memory;
+  int               max_data_page_id;
+  bool              load_store_shared_memory;
   mem_region_t[]    data_page;
 
 
@@ -81,7 +78,7 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
   }
   
   
-  override void pre_randomize() {
+  void pre_randomize() {
     if (load_store_shared_memory) {
       data_page = cfg.amo_region;
     }
@@ -91,6 +88,7 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
     else {
       data_page = cfg.mem_region;
     }
+    uvm_info("DATAPAGE", format("max_data_page_id is %d", data_page.length), UVM_NONE);
     max_data_page_id = cast(int) data_page.length;
   }
 
@@ -164,21 +162,21 @@ class riscv_jump_instr: riscv_directed_instr_stream
     la = riscv_pseudo_instr.type_id.create("la");
   }
 
-  override void pre_randomize() {
+  void pre_randomize() {
     if (use_jalr) {
-      jump = registry.get_instr(riscv_instr_name_t.JALR);
+      jump = cfg.instr_registry.get_instr(riscv_instr_name_t.JALR);
     }
     else if (cfg.disable_compressed_instr || (cfg.ra != riscv_reg_t.RA)) {
-      jump = registry.get_rand_instr([riscv_instr_name_t.JAL, riscv_instr_name_t.JALR]);
+      jump = cfg.instr_registry.get_rand_instr([riscv_instr_name_t.JAL, riscv_instr_name_t.JALR]);
     }
     else {
-      jump = registry.get_rand_instr([riscv_instr_name_t.JAL, riscv_instr_name_t.JALR,
-				      riscv_instr_name_t.C_JALR]);
+      jump = cfg.instr_registry.get_rand_instr([riscv_instr_name_t.JAL, riscv_instr_name_t.JALR,
+						riscv_instr_name_t.C_JALR]);
     }
-    addi = registry.get_instr(riscv_instr_name_t.ADDI);
-    branch = registry.get_rand_instr([riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
-				      riscv_instr_name_t.BLT, riscv_instr_name_t.BGE,
-				      riscv_instr_name_t.BLTU, riscv_instr_name_t.BGEU]);
+    addi = cfg.instr_registry.get_instr(riscv_instr_name_t.ADDI);
+    branch = cfg.instr_registry.get_rand_instr([riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
+						riscv_instr_name_t.BLT, riscv_instr_name_t.BGE,
+						riscv_instr_name_t.BLTU, riscv_instr_name_t.BGEU]);
   }
 
   override void post_randomize() {
@@ -282,7 +280,7 @@ class riscv_jal_instr : riscv_rand_instr_stream
       }
     }
     // First instruction
-    jump_start = registry.get_instr(riscv_instr_name_t.JAL);
+    jump_start = cfg.instr_registry.get_instr(riscv_instr_name_t.JAL);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(jump_start, rd == cfg.ra;)
     jump_start.randomize_with! q{rd == $0;} (cfg.ra);
     jump_start.imm_str = format("%0df", order[0]);
@@ -291,7 +289,7 @@ class riscv_jal_instr : riscv_rand_instr_stream
     randomize_instr(jump_end);
     jump_end.label = format("%0d", num_of_jump_instr);
     foreach (i, ref jj ; jump) {
-      jj = registry.get_rand_instr(jal);
+      jj = cfg.instr_registry.get_rand_instr(jal);
       //DV_CHECK_RANDOMIZE_WITH_FATAL(jump[i],
       // Giving randomization error
       jj.randomize_with! q{ 
@@ -363,21 +361,21 @@ class riscv_push_stack_instr : riscv_rand_instr_stream
       sinstr = riscv_instr.type_id.create(format("push_stack_instr_%0d", i));
     }
     // addi sp,sp,-imm
-    push_stack_instr[0] = registry.get_instr(riscv_instr_name_t.ADDI);
+    push_stack_instr[0] = cfg.instr_registry.get_instr(riscv_instr_name_t.ADDI);
     //DV_CHECK_RANDOMIZE_WITH_FATAL(push_stack_instr[0],
     push_stack_instr[0].randomize_with! q{ rd == $0; rs1 == $0;
       imm == $1;} (cfg.sp, ~stack_len + 1);
     push_stack_instr[0].imm_str = format("-%0d", stack_len);
     foreach (i, sreg;  saved_regs) {
       if (XLEN == 32) {
-        push_stack_instr[i+1] = registry.get_instr(riscv_instr_name_t.SW);
+        push_stack_instr[i+1] = cfg.instr_registry.get_instr(riscv_instr_name_t.SW);
 	//     `DV_CHECK_RANDOMIZE_WITH_FATAL(push_stack_instr[i+1],
 	push_stack_instr[i+1].randomize_with! q{
 	  rs2 == $0 ; rs1 == $1 ; imm == 4 * ($2+1);
 	} (sreg, cfg.sp, i);
       }
       else {
-        push_stack_instr[i+1] = registry.get_instr(riscv_instr_name_t.SD);
+        push_stack_instr[i+1] = cfg.instr_registry.get_instr(riscv_instr_name_t.SD);
 	//     `DV_CHECK_RANDOMIZE_WITH_FATAL(push_stack_instr[i+1],
 	push_stack_instr[i+1].randomize_with! q{
 	  instr_name == riscv_instr_name_t.SD; rs2 == $0 ; rs1 == $1 ; imm == 8 * ($2+1);
@@ -393,7 +391,7 @@ class riscv_push_stack_instr : riscv_rand_instr_stream
       enable_branch = false;
     }
     if (enable_branch) {
-      branch_instr = registry.get_rand_instr([riscv_instr_category_t.BRANCH]);
+      branch_instr = cfg.instr_registry.get_rand_instr([riscv_instr_category_t.BRANCH]);
       // `DV_CHECK_RANDOMIZE_FATAL(branch_instr)
       branch_instr.randomize();
       branch_instr.imm_str = push_start_label;
@@ -453,14 +451,14 @@ class riscv_pop_stack_instr: riscv_rand_instr_stream
     }
     foreach (i, ref sreg; saved_regs) {
       if (XLEN == 32) {
-        pop_stack_instr[i] = registry.get_instr(riscv_instr_name_t.LW);
+        pop_stack_instr[i] = cfg.instr_registry.get_instr(riscv_instr_name_t.LW);
         //DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[i],
 	pop_stack_instr[i].randomize_with! q{
 	  rd == $0; rs1 == $1; imm == 4 * ($2+1);
 	} (sreg, cfg.sp, i);
       }
       else {
-        pop_stack_instr[i] = registry.get_instr(riscv_instr_name_t.LD);
+        pop_stack_instr[i] = cfg.instr_registry.get_instr(riscv_instr_name_t.LD);
         //DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[i],
 	pop_stack_instr[i].randomize_with! q{
 	  rd == $0; rs1 == $1; imm == 8 * ($2+1);
@@ -469,7 +467,7 @@ class riscv_pop_stack_instr: riscv_rand_instr_stream
       pop_stack_instr[i].process_load_store = false;
     }
     // addi sp,sp,imm
-    pop_stack_instr[num_of_reg_to_save] = registry.get_instr(riscv_instr_name_t.ADDI);
+    pop_stack_instr[num_of_reg_to_save] = cfg.instr_registry.get_instr(riscv_instr_name_t.ADDI);
     //DV_CHECK_RANDOMIZE_WITH_FATAL(pop_stack_instr[num_of_reg_to_save],
     pop_stack_instr[num_of_reg_to_save].randomize_with! q{
       rd == $0; rs1 == $0; imm == $1;
@@ -521,9 +519,9 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
     super(name);
   }
   
-  override   void pre_randomize() {
+  void pre_randomize() {
     avail_regs.length = num_of_avail_regs;
-    super.pre_randomize();
+    // super.pre_randomize();
   }
 
   override  void post_randomize() {
@@ -545,11 +543,11 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
       instr_list ~= init_instr[i];
     }
     for (int i = 0; i < num_of_instr; i++) {
-      riscv_instr instr;
-      instr = registry.get_rand_instr([riscv_instr_category_t.ARITHMETIC],
-				      [riscv_instr_group_t.RV32C, riscv_instr_group_t.RV64C,
-				       riscv_instr_group_t.RV32F , riscv_instr_group_t.RV64F,
-				       riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D]);
+      riscv_instr instr =
+	cfg.instr_registry.get_rand_instr([riscv_instr_category_t.ARITHMETIC],
+					  [riscv_instr_group_t.RV32C, riscv_instr_group_t.RV64C,
+					   riscv_instr_group_t.RV32F , riscv_instr_group_t.RV64F,
+					   riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D]);
       randomize_gpr(instr);
       instr_list ~= instr;
     }

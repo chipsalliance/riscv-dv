@@ -26,6 +26,8 @@ import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_
   riscv_instr_group_t, get_int_arg_value, get_bool_arg_value, get_hex_arg_value,
   cmdline_enum_processor, satp_mode_t;
 
+import riscv.gen.riscv_instr_registry: riscv_instr_registry;
+
 import riscv.gen.riscv_core_setting: NUM_HARTS, XLEN, supported_privileged_mode, supported_isa,
   SATP_MODE, implemented_csr, support_sfence, support_debug_mode, supported_interrupt_mode;
 import riscv.gen.riscv_pmp_cfg: riscv_pmp_cfg;
@@ -293,6 +295,8 @@ class riscv_instr_gen_config: uvm_object
   int                     dist_control_mode;
   uint[riscv_instr_category_t] category_dist;
 
+  riscv_instr_registry instr_registry;
+  
   CommandLine cmdl;
 
   Constraint! q{
@@ -335,7 +339,7 @@ class riscv_instr_gen_config: uvm_object
   
   // Boot privileged mode distribution
    Constraint! q{
-  //   // Boot to higher privileged mode more often
+     // Boot to higher privileged mode more often
      if (supported_privileged_mode.length == 2) {
        init_privileged_mode dist [supported_privileged_mode[0] := 6,
                                   supported_privileged_mode[1] := 4];
@@ -367,7 +371,7 @@ class riscv_instr_gen_config: uvm_object
   Constraint! q{
     // This is default disabled at setup phase. It can be enabled in the exception and interrupt
     // handling routine
-    if (set_mstatus_mprv) {
+    if (set_mstatus_mprv == true) {
       mstatus_mprv == true;
     } else {
       mstatus_mprv == false;
@@ -469,7 +473,7 @@ class riscv_instr_gen_config: uvm_object
 
    Constraint! q{
      solve init_privileged_mode before virtual_addr_translation_on;
-   } addr_translaction_rnd_order_c;
+   } addr_translation_rnd_order_c;
   
   Constraint! q{
     if ((init_privileged_mode != privileged_mode_t.MACHINE_MODE) &&
@@ -479,7 +483,7 @@ class riscv_instr_gen_config: uvm_object
     else {
       virtual_addr_translation_on == false;
     }
-  } addr_translaction_c;
+  } addr_translation_c;
   
   
   Constraint! q{
@@ -566,6 +570,7 @@ class riscv_instr_gen_config: uvm_object
 
   this(string name = "") {
     // string s;
+    instr_registry = riscv_instr_registry.type_id.create("registry");
     riscv_instr_group_t[] march_isa;
     super(name);
     init_delegation();
@@ -609,7 +614,7 @@ class riscv_instr_gen_config: uvm_object
       get_hex_arg_value("+signature_addr=", signature_addr_int);
       signature_addr = toubvec!XLEN(signature_addr_int);
     }
-    if (cmdl.plusArgs("tvec_alignment=%0d", tvec_alignment)) {
+    if (cmdl.plusArgs("tvec_alignment=%d", tvec_alignment)) {
       rand_mode!q{tvec_alignment}(false);
     }
     get_bool_arg_value("+gen_debug_section=", gen_debug_section);
@@ -625,25 +630,25 @@ class riscv_instr_gen_config: uvm_object
     get_bool_arg_value("+enable_b_extension=", enable_b_extension);
     cmdline_enum_processor!(b_ext_group_t).get_array_values("+enable_bitmanip_groups=",
 							    enable_bitmanip_groups);
-    if(uvm_cmdline_proc().get_arg_value("+boot_mode=", boot_mode_opts)) {
+    if (uvm_cmdline_processor.get_inst().get_arg_value("+boot_mode=", boot_mode_opts)) {
       uvm_info(get_full_name(), format("Got boot mode option - %0s", boot_mode_opts), UVM_LOW);
       switch(boot_mode_opts) {
-      case  "m" : init_privileged_mode = privileged_mode_t.MACHINE_MODE;
+      case  "m": init_privileged_mode = privileged_mode_t.MACHINE_MODE;
 	break;
-      case "s" : init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE;
+      case "s": init_privileged_mode = privileged_mode_t.SUPERVISOR_MODE;
 	break;
-      case "u" : init_privileged_mode = privileged_mode_t.USER_MODE;
+      case "u": init_privileged_mode = privileged_mode_t.USER_MODE;
 	break;
       default: uvm_fatal(get_full_name(),
 			 format("Illegal boot mode option - %0s", boot_mode_opts));
 	break;
       }
       rand_mode!q{init_privileged_mode}(false); //
-      addr_translaction_rnd_order_c.constraint_mode(false);
+      addr_translation_rnd_order_c.constraint_mode(false);
     }
     uvm_info(get_full_name(), format("riscv_instr_pkg.supported_privileged_mode = %0d",
 				     supported_privileged_mode.length), UVM_LOW);
-    uvm_cmdline_proc().get_arg_value("+asm_test_suffix=", asm_test_suffix);
+    uvm_cmdline_processor.get_inst().get_arg_value("+asm_test_suffix=", asm_test_suffix);
     // Directed march list from the runtime options, ex. RV32I, RV32M etc.
     cmdline_enum_processor !(riscv_instr_group_t).get_array_values("+march=", march_isa);
     if (march_isa.length != 0) supported_isa = march_isa;
@@ -711,6 +716,7 @@ class riscv_instr_gen_config: uvm_object
     if (init_privileged_mode == privileged_mode_t.USER_MODE) {
       no_wfi = true;
     }
+    instr_registry.create_instr_list(this);
   }
 
   void check_setting() {

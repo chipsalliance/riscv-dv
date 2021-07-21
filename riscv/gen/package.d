@@ -29,3 +29,4 @@ public import riscv.gen.riscv_pseudo_instr;
 public import riscv.gen.riscv_reg;
 public import riscv.gen.riscv_signature_pkg;
 public import riscv.gen.riscv_vector_cfg;
+public import riscv.gen.riscv_defines;

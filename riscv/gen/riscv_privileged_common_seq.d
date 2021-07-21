@@ -57,8 +57,8 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out Queue!string instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:" ~
-					hart_prefix(hart) ~ mode.to!string()), LABEL_STR_LEN);
+    string label = format_string(format("%0sinit_%0s:",
+					hart_prefix(hart), mode), LABEL_STR_LEN);
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();
@@ -84,8 +84,8 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out string[] instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:" ~
-					hart_prefix(hart) ~ mode.to!string()), LABEL_STR_LEN);
+    string label = format_string(format("%0sinit_%0s:",
+					hart_prefix(hart), mode), LABEL_STR_LEN);
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();

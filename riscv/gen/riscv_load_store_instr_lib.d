@@ -26,7 +26,6 @@ import riscv.gen.riscv_instr_pkg: riscv_reg_t, riscv_vreg_t, riscv_instr_name_t,
 import riscv.gen.riscv_core_setting: XLEN, VLEN, supported_isa;
 import riscv.gen.riscv_pseudo_instr: riscv_pseudo_instr;
 import riscv.gen.isa.riscv_vector_instr: riscv_vector_instr;
-import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.riscv_directed_instr_lib: riscv_mem_access_stream;
 
 
@@ -59,8 +58,6 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
   @rand locality_e      locality;
   @rand uint            max_load_store_offset;
   @rand bool            use_sp_as_rs1;
-
-  riscv_instr_registry  registry;
 
   mixin uvm_object_utils;
 
@@ -232,7 +229,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
 	  }
         }
       }
-      instr = registry.get_load_store_instr(allowed_instr);
+      instr = cfg.instr_registry.get_load_store_instr(allowed_instr);
       instr.has_rs1 = false;
       instr.has_imm = false;
       randomize_gpr(instr);
@@ -401,8 +398,10 @@ class riscv_load_store_hazard_instr_stream : riscv_load_store_base_instr_stream
 
 // Back to back access to multiple data pages
 // This is useful to test data TLB switch and replacement
-class riscv_multi_page_load_store_instr_stream : riscv_mem_access_stream
+class riscv_multi_page_load_store_instr_stream: riscv_mem_access_stream
 {
+  mixin uvm_object_utils;
+
   riscv_load_store_stress_instr_stream[] load_store_instr_stream;
   @rand uint  num_of_instr_stream;
   @rand uint[]  data_page_id;
@@ -431,8 +430,6 @@ class riscv_multi_page_load_store_instr_stream : riscv_mem_access_stream
   Constraint! q{
     num_of_instr_stream inside [2:8];
   } reasonable_c; 
-
-  mixin uvm_object_utils;
 
   this(string name = "") {
     super(name);
@@ -472,7 +469,7 @@ class riscv_multi_page_load_store_instr_stream : riscv_mem_access_stream
 }
 
 // Access the different locations of the same memory regions
-class riscv_mem_region_stress_test : riscv_multi_page_load_store_instr_stream
+class riscv_mem_region_stress_test: riscv_multi_page_load_store_instr_stream
 {
   mixin uvm_object_utils;
 
@@ -482,7 +479,7 @@ class riscv_mem_region_stress_test : riscv_multi_page_load_store_instr_stream
 
   Constraint! q{
     num_of_instr_stream inside [2..5];
-    foreach (i; data_page_id) {
+    foreach (i, id; data_page_id) {
       if (i > 0) {
         data_page_id[i] == data_page_id[i-1];
       }
@@ -545,7 +542,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
     } (cfg.gpr, gpr);
     li_instr.imm_str = format("0x%0x", addr_offset);
     // Add offset to the base address
-    add_instr = registry.get_instr(riscv_instr_name_t.ADD);
+    add_instr = cfg.instr_registry.get_instr(riscv_instr_name_t.ADD);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(add_instr,
 
     add_instr.randomize_with! q{
@@ -556,7 +553,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
     instr ~= li_instr;
     instr ~= add_instr;
     // Create SW instruction template
-    store_instr = registry.get_instr(riscv_instr_name_t.SB);
+    store_instr = cfg.instr_registry.get_instr(riscv_instr_name_t.SB);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(store_instr,
     store_instr.randomize_with! q{
       instr_name == riscv_instr_name_t.SB;
@@ -764,7 +761,8 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
   }
 
   void randomize_vec_load_store_instr() {
-    load_store_instr = cast(riscv_vector_instr) registry.get_load_store_instr(allowed_instr);
+    load_store_instr =
+      cast(riscv_vector_instr) cfg.instr_registry.get_load_store_instr(allowed_instr);
     load_store_instr.m_cfg = cfg;
     load_store_instr.has_rs1 = false;
     load_store_instr.has_vs2 = true;

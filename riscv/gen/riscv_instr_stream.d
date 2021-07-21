@@ -27,7 +27,7 @@ import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, riscv_reg_t,
   riscv_pseudo_instr_name_t, va_variant_t;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.riscv_pseudo_instr: riscv_pseudo_instr;
-import riscv.gen.riscv_instr_registry: riscv_instr_registry;
+// import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_vector_instr: riscv_vector_instr;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.riscv_core_setting: XLEN;
@@ -55,7 +55,7 @@ class riscv_instr_stream : uvm_object
   riscv_reg_t[]            reserved_rd;
   int                      hart;
 
-  riscv_instr_registry     registry;
+  // riscv_instr_registry     registry;
 
   this(string name = "riscv_instr_stream") {
     super(name);
@@ -290,13 +290,13 @@ class riscv_rand_instr_stream: riscv_instr_stream
   }
 
   void setup_allowed_instr(bool no_branch = false, bool no_load_store = true) {
-    allowed_instr = registry.basic_instr;
+    allowed_instr = cfg.instr_registry.basic_instr;
     if (no_branch == false) {
-      allowed_instr ~= registry.instr_category[riscv_instr_category_t.BRANCH];
+      allowed_instr ~= cfg.instr_registry.instr_category[riscv_instr_category_t.BRANCH];
     }
     if (no_load_store == false) {
-      allowed_instr ~= registry.instr_category[riscv_instr_category_t.LOAD];
-      allowed_instr ~= registry.instr_category[riscv_instr_category_t.STORE];
+      allowed_instr ~= cfg.instr_registry.instr_category[riscv_instr_category_t.LOAD];
+      allowed_instr ~= cfg.instr_registry.instr_category[riscv_instr_category_t.STORE];
     }
     setup_instruction_dist(no_branch, no_load_store);
   }
@@ -376,7 +376,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 	exclude_instr ~= [riscv_instr_name_t.EBREAK, riscv_instr_name_t.C_EBREAK];
       }
     }
-    instr = registry.get_rand_instr(allowed_instr, exclude_instr, include_group);
+    instr = cfg.instr_registry.get_rand_instr(allowed_instr, exclude_instr, include_group);
     instr.m_cfg = cfg;
     randomize_gpr(instr);
   }
@@ -428,7 +428,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 
   void  add_init_vector_gpr_instr(riscv_vreg_t gpr, ubvec!XLEN val) {
     riscv_vector_instr instr
-      = cast(riscv_vector_instr) registry.get_instr(riscv_instr_name_t.VMV);
+      = cast(riscv_vector_instr) cfg.instr_registry.get_instr(riscv_instr_name_t.VMV);
     instr.m_cfg = cfg;
     instr.avoid_reserved_vregs_c.constraint_mode(0);
     instr.randomize_with! q{

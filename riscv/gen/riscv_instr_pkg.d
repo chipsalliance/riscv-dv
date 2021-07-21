@@ -28,7 +28,8 @@ import uvm;
 
 // Data section setting
 
-uvm_cmdline_processor  inst;
+// use uvm_cmdline_processor.get_inst() directly
+// uvm_cmdline_processor  inst;
 
 
 struct mem_region_t
@@ -1320,7 +1321,7 @@ void pop_gpr_from_kernel_stack(privileged_reg_t status,
 void get_int_arg_value(string cmdline_str, ref int val) {
   import std.conv: to;
   string s;
-  if (uvm_cmdline_proc().get_arg_value(cmdline_str, s)) {
+  if (uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
     val = s.to!int;
   }
 }
@@ -1330,7 +1331,7 @@ void get_int_arg_value(string cmdline_str, ref int val) {
 void get_bool_arg_value(string cmdline_str, ref bool val) {
   import std.conv: to;
   string s;
-  if (uvm_cmdline_proc().get_arg_value(cmdline_str, s)) {
+  if (uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
     val = s.to!bool;
   }
 }
@@ -1339,7 +1340,7 @@ void get_bool_arg_value(string cmdline_str, ref bool val) {
 void get_hex_arg_value(string cmdline_str, ref int val) {
   import std.conv: to;
   string s;
-  if(uvm_cmdline_proc().get_arg_value(cmdline_str, s)) {
+  if(uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
     val = s.to!int(16);
   }
 }
@@ -1350,11 +1351,11 @@ class cmdline_enum_processor(T)
   static void get_array_values(string cmdline_str, ref T[] vals) {
     import std.format: format;
     string s;
-    uvm_cmdline_proc().get_arg_value(cmdline_str, s);
+    uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s);
     if (s != "") {
       string[] cmdline_list;
       T value;
-      uvm_split_string(s, ',', cmdline_list);
+      uvm_string_split(s, ',', cmdline_list);
       vals.length = cmdline_list.length;
       foreach (i, str; cmdline_list) {
 	import std.string: toUpper;
