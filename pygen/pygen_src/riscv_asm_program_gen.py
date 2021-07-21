@@ -437,31 +437,33 @@ class riscv_asm_program_gen:
         self.instr_stream.extend((li_instr0, slli_instr, li_instr1, or_instr, fmv_instr))
 
     # Get a random single precision floating value
-    def randselect_fun(addr_range1, addr_range2):
+    @staticmethod
+    def get_randselect0(addr_range1, addr_range2):
         value = vsc.rand_bit_t(32)
         with vsc.randomize_with(value): value in vsc.rangelist(addr_range1, addr_range2)
 
     def get_rand_spf_value(self):
         vsc.randselect([
-            (1, lambda: randselect_fun(hex(0x7f80_0000), hex(0xff80_0000))),
-            (1, lambda: randselect_fun(hex(0x7f7f_ffff), hex(0xff7f_ffff))),
-            (1, lambda: randselect_fun(hex(0x0000_0000), hex(0x8000_0000))),
-            (1, lambda: randselect_fun(hex(0x7f80_0001), hex(0x7fc0_0000))),
+            (1, lambda: get_randselect0(hex(0x7f80_0000), hex(0xff80_0000))),
+            (1, lambda: get_randselect0(hex(0x7f7f_ffff), hex(0xff7f_ffff))),
+            (1, lambda: get_randselect0(hex(0x0000_0000), hex(0x8000_0000))),
+            (1, lambda: get_randselect0(hex(0x7f80_0001), hex(0x7fc0_0000))),
             (1, lambda: vsc.rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS) > 0)
             (1, lambda: vsc.rng(30, pkg_ins.SINGLE_PRECISION_FRACTION_BITS) == 0)])
         return value
 
     # Get a random double precision floating value
-    def randselect_fun1(addr_range1, addr_range2):
+    @staticmethod
+    def get_randselect1(addr_range1, addr_range2):
         value = vsc.bit_t(64)
         with vsc.randomize_with(value): value in vsc.rangelist(addr_range1, addr_range2)
 
     def get_rand_dpf_value(self):
         vsc.randselect([
-            (1, lambda: randselect_fun1(hex(0x7ff0_0000_0000_0000), hex(0xfff0_0000_0000_0000))),
-            (1, lambda: randselect_fun1(hex(0x7fef_ffff_ffff_ffff), hex(0xffef_ffff_ffff_ffff))),
-            (1, lambda: randselect_fun1(hex(0x0000_0000_0000_0000), hex(0x8000_0000_0000_0000))),
-            (1, lambda: randselect_fun1(hex(0x7ff0_0000_0000_0001), hex(0x7ff8_0000_0000_0000))),
+            (1, lambda: get_randselect1(hex(0x7ff0_0000_0000_0000), hex(0xfff0_0000_0000_0000))),
+            (1, lambda: get_randselect1(hex(0x7fef_ffff_ffff_ffff), hex(0xffef_ffff_ffff_ffff))),
+            (1, lambda: get_randselect1(hex(0x0000_0000_0000_0000), hex(0x8000_0000_0000_0000))),
+            (1, lambda: get_randselect1(hex(0x7ff0_0000_0000_0001), hex(0x7ff8_0000_0000_0000))),
             (1, lambda: vsc.rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS) > 0)
             (1, lambda: vsc.rng(62, pkg_ins.DOUBLE_PRECISION_FRACTION_BITS) == 0)])
         return value

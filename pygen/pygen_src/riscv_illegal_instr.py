@@ -162,8 +162,8 @@ class riscv_illegal_instr:
     @vsc.constraint
     def b_extension_c(self):
         if riscv_instr_group_t.RV32B in rcs.supported_isa:
-            with vsc.if_then(self.exception in [illegal_instr_type_e.kIllegalFunc3,
-                                                illegal_instr_type_e.kIllegalFunc7]):
+            with vsc.if_then(self.exception.inside(vsc.rangelist(illegal_instr_type_e.kIllegalFunc3,
+                                                illegal_instr_type_e.kIllegalFunc7))):
                 self.opcode.inside(vsc.rangelist([51, 19, 59]))
 
     @vsc.constraint
