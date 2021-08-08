@@ -15,6 +15,19 @@
  * limitations under the License.
  */
 
+module riscv.gen.riscv_defines;
+
+public import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, riscv_instr_group_t,
+  riscv_instr_category_t, riscv_instr_format_t, va_variant_t, imm_t;
+
+mixin(declareEnums!riscv_instr_name_t());
+mixin(declareEnums!riscv_instr_group_t());
+mixin(declareEnums!riscv_instr_category_t());
+mixin(declareEnums!riscv_instr_format_t());
+mixin(declareEnums!va_variant_t());
+mixin(declareEnums!imm_t());
+
+
 public import riscv.gen.isa.riscv_instr: riscv_instr;
 public import riscv.gen.isa.riscv_floating_point_instr: riscv_floating_point_instr;
 public import riscv.gen.isa.riscv_compressed_instr: riscv_compressed_instr;
@@ -22,9 +35,6 @@ public import riscv.gen.isa.riscv_amo_instr: riscv_amo_instr;
 public import riscv.gen.isa.riscv_b_instr: riscv_b_instr;
 public import riscv.gen.isa.riscv_vector_instr: riscv_vector_instr;
 public import riscv.gen.isa.custom.riscv_custom_instr: riscv_custom_instr;
-
-public import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, riscv_instr_group_t,
-  riscv_instr_category_t, riscv_instr_format_t, va_variant_t, imm_t;
 
 // enum aliases
 
@@ -41,13 +51,6 @@ static string declareEnums (alias E)()
     }
   return res;
 }
-
-mixin(declareEnums!riscv_instr_name_t());
-mixin(declareEnums!riscv_instr_group_t());
-mixin(declareEnums!riscv_instr_category_t());
-mixin(declareEnums!riscv_instr_format_t());
-mixin(declareEnums!va_variant_t());
-mixin(declareEnums!imm_t());
 
 string riscv_instr_mixin_tmpl(BASE_TYPE)(riscv_instr_name_t instr_name,
 					 riscv_instr_format_t instr_format,

@@ -88,7 +88,6 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
     else {
       data_page = cfg.mem_region;
     }
-    uvm_info("DATAPAGE", format("max_data_page_id is %d", data_page.length), UVM_NONE);
     max_data_page_id = cast(int) data_page.length;
   }
 

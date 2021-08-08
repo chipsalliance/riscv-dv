@@ -122,7 +122,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
   override void pre_randomize() {
     super.pre_randomize();
     if (canFind(cfg.reserved_regs, riscv_reg_t.SP) ||
-	canFind(reserved_rd, riscv_reg_t.SP )) {
+	canFind(reserved_rd, riscv_reg_t.SP)) {
       use_sp_as_rs1 = false;
       rand_mode!q{use_sp_as_rs1}(false);
       sp_rnd_order_c.constraint_mode(false);
@@ -445,7 +445,7 @@ class riscv_multi_page_load_store_instr_stream: riscv_mem_access_stream
       instr.max_instr_cnt = 10;
       instr.cfg = cfg;
       instr.hart = hart;
-      instr.sp_c.constraint_mode(0);
+      instr.sp_c.constraint_mode(false);
       // Make sure each load/store sequence doesn't override the rs1 of other sequences.
       foreach(j , ref l; rs1_reg) {
 	if(i != j) {

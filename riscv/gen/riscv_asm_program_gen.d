@@ -1811,15 +1811,16 @@ class riscv_asm_program_gen : uvm_object
       // endif
       uvm_info(get_full_name(), format("Insert directed instr stream %0s %0d/%0d times",
 				       instr_stream_name, instr_insert_cnt, original_instr_cnt), UVM_LOW);
-      for(int i = 0; i < instr_insert_cnt; i++) {
+      for (int i = 0; i < instr_insert_cnt; i++) {
         string name = format("%0s_%0d", instr_stream_name, i);
         object_h = factory.create_object_by_name(instr_stream_name, get_full_name(), name);
-        if(object_h is null) {
+        if (object_h is null) {
           uvm_fatal(get_full_name(), format("Cannot create instr stream %0s", name));
         }
 	
 	riscv_rand_instr_stream new_instr_stream = cast(riscv_rand_instr_stream) object_h;
         if (new_instr_stream !is null) {
+	  assert (cfg !is null);
           new_instr_stream.cfg = cfg;
           new_instr_stream.hart = hart;
           new_instr_stream.label = format("%0s_%0d", label, idx);

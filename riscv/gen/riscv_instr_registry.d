@@ -40,7 +40,7 @@ class riscv_instr_registry: uvm_object
   mixin uvm_object_utils;
   
   // All derived instructions
-  bool[riscv_instr_name_t]                      instr_registry;
+  string[riscv_instr_name_t]                    instr_registry;
 
   // Instruction list
   riscv_instr_name_t[]                          instr_names;
@@ -55,28 +55,36 @@ class riscv_instr_registry: uvm_object
   privileged_reg_t[]                            exclude_reg;
   privileged_reg_t[]                            include_reg;
 
-  this(string name="") {
+  riscv_instr_gen_config                        cfg;
+
+  this (string name="") {
     super(name);
   }
 
-  bool register(riscv_instr_name_t instr_name) {
+  void set_cfg(riscv_instr_gen_config cfg) {
+    this.cfg = cfg;
+  }
+  
+  bool register(riscv_instr_name_t instr_name, string qualified_name) {
     uvm_info("riscv_instr", format("Registering %0s", instr_name), UVM_LOW);
-    instr_registry[instr_name] = true;
+    instr_registry[instr_name] = qualified_name;
     return true;
   }
 
   // Create the list of instructions based on the supported ISA extensions and configuration of the
   // generator.
   void create_instr_list(riscv_instr_gen_config cfg) {
+    assert (cfg !is null);
     instr_names.length = 0;
     // instr_group.clear();
-    foreach (group; EnumMembers!riscv_instr_group_t) instr_group[group] = [];
+    foreach (group; [EnumMembers!riscv_instr_group_t]) instr_group[group] = [];
     // instr_category.clear();
-    foreach (category; EnumMembers!riscv_instr_category_t) instr_category[category] = [];
-    foreach (instr_name, val; instr_registry) {
+    foreach (category; [EnumMembers!riscv_instr_category_t]) instr_category[category] = [];
+    foreach (instr_name, instr_class_name; instr_registry) {
       riscv_instr instr_inst;
       if (canFind(unsupported_instr, instr_name)) continue;
-      instr_inst = create_instr(instr_name);
+      instr_inst = create_instr(instr_name, instr_class_name);
+      instr_inst.m_cfg = cfg;
       instr_template[instr_name] = instr_inst;
       if (!instr_inst.is_supported(cfg)) continue;
       // C_JAL is RV32C only instruction
@@ -133,11 +141,10 @@ class riscv_instr_registry: uvm_object
     }
   }
 
-  riscv_instr create_instr(riscv_instr_name_t instr_name) {
+  riscv_instr create_instr(riscv_instr_name_t instr_name, string instr_class_name) {
     import std.conv: to;
     uvm_coreservice_t coreservice = uvm_coreservice_t.get();
     uvm_factory factory = coreservice.get_factory();
-    string instr_class_name = "riscv_" ~ instr_name.to!string() ~ "_instr";
     uvm_object obj =
       factory.create_object_by_name(instr_class_name, "riscv_instr", instr_class_name);
     if (obj is null) {
@@ -277,7 +284,9 @@ class riscv_instr_registry: uvm_object
       name = inter_set[idx];
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    return instr_template[name].dup;
+    auto instr = instr_template[name].dup;
+    instr.m_cfg = cfg;
+    return instr;
   }
 
   riscv_instr get_load_store_instr(riscv_instr_name_t[] load_store_instr = null) {
@@ -303,7 +312,9 @@ class riscv_instr_registry: uvm_object
     ulong idx = urandom( 0, load_store_instr.length);
     riscv_instr_name_t name = load_store_instr[idx];
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    return instr_template[name].dup;
+    auto instr = instr_template[name].dup;
+    instr.m_cfg = cfg;
+    return instr;
   }
 
   riscv_instr get_instr(riscv_instr_name_t name) {
@@ -311,7 +322,9 @@ class riscv_instr_registry: uvm_object
       uvm_fatal("riscv_instr", format("Cannot get instr %0s", name));
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    return instr_template[name].dup;
+    auto instr = instr_template[name].dup;
+    instr.m_cfg = cfg;
+    return instr;
   }
   
 }

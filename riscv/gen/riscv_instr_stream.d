@@ -285,7 +285,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
   override void create_instr_instance() {
     riscv_instr instr;
     for (int i = 0; i < instr_cnt; i++) {
-      instr_list ~= null;
+      instr_list.length = instr_list.length + 1;
     }
   }
 
@@ -309,11 +309,18 @@ class riscv_rand_instr_stream: riscv_instr_stream
       riscv_reg_t[(EnumMembers!riscv_reg_t).length] allowed_regs = [EnumMembers!riscv_reg_t];
       riscv_reg_t[] allowed_regs_range = allowed_regs;
       // remove cfg.reserved_regs and reserved_rd
-      foreach (rreg; cfg.reserved_regs) allowed_regs_range.remove(rreg);
-      foreach (rreg; reserved_rd) allowed_regs_range.remove(rreg);
+      foreach (rreg; cfg.reserved_regs) {
+	ptrdiff_t loc = allowed_regs_range.countUntil(rreg);
+	if (loc >= 0) allowed_regs_range.remove(loc);
+      }
+      foreach (rreg; reserved_rd) {
+	ptrdiff_t loc = allowed_regs_range.countUntil(rreg);
+	if (loc >= 0) allowed_regs_range.remove(loc);
+      }
       // avail_regs[0] has to be between S0 and A5
       auto start0 = allowed_regs_range.countUntil!((a) => a >= riscv_reg_t.S0);
       auto end0 =   allowed_regs_range.countUntil!((a) => a >  riscv_reg_t.A5);
+      if (end0 < 0) end0 = allowed_regs_range.length;
       if (start0 < 0 || start0 == end0) assert(false, "Cannot randomize avail_regs");
       auto loc0 =   urandom(start0, end0);
       avail_regs[0] = allowed_regs_range[loc0];
@@ -345,12 +352,13 @@ class riscv_rand_instr_stream: riscv_instr_stream
   void gen_instr(bool no_branch = false, bool no_load_store = true,
 		 bool is_debug_program = false) {
     setup_allowed_instr(no_branch, no_load_store);
-    foreach(instr; instr_list) {
+    assert (instr_list.length != 0);
+    foreach (ref instr; instr_list) {
       randomize_instr(instr, is_debug_program);
     }
     // Do not allow branch instruction as the last instruction because there's no
     // forward branch target
-    while (instr_list[$].category == riscv_instr_category_t.BRANCH) {
+    while (instr_list[$-1].category == riscv_instr_category_t.BRANCH) {
       instr_list.length = instr_list.length - 1;
       if (instr_list.length == 0) break;
     }
@@ -377,11 +385,12 @@ class riscv_rand_instr_stream: riscv_instr_stream
       }
     }
     instr = cfg.instr_registry.get_rand_instr(allowed_instr, exclude_instr, include_group);
-    instr.m_cfg = cfg;
     randomize_gpr(instr);
   }
 
   void randomize_gpr(riscv_instr instr) {
+    assert (cfg !is null);
+    instr.m_cfg = cfg;
     instr.randomize_with! q{
       if ($0.length > 0) {
         if (has_rs1) {
@@ -430,7 +439,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
     riscv_vector_instr instr
       = cast(riscv_vector_instr) cfg.instr_registry.get_instr(riscv_instr_name_t.VMV);
     instr.m_cfg = cfg;
-    instr.avoid_reserved_vregs_c.constraint_mode(0);
+    instr.avoid_reserved_vregs_c.constraint_mode(false);
     instr.randomize_with! q{
       va_variant == va_variant_t.VX;
       vd == $0;

@@ -27,6 +27,7 @@ import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_
   cmdline_enum_processor, satp_mode_t;
 
 import riscv.gen.riscv_instr_registry: riscv_instr_registry;
+import riscv.gen.isa.riscv_instr_register: register_isa;
 
 import riscv.gen.riscv_core_setting: NUM_HARTS, XLEN, supported_privileged_mode, supported_isa,
   SATP_MODE, implemented_csr, support_sfence, support_debug_mode, supported_interrupt_mode;
@@ -571,6 +572,8 @@ class riscv_instr_gen_config: uvm_object
   this(string name = "") {
     // string s;
     instr_registry = riscv_instr_registry.type_id.create("registry");
+    register_isa(instr_registry);
+    instr_registry.set_cfg(this);
     riscv_instr_group_t[] march_isa;
     super(name);
     init_delegation();
@@ -668,7 +671,7 @@ class riscv_instr_gen_config: uvm_object
     int val;
     get_int_arg_value("+dist_control_mode=", dist_control_mode);
     if (dist_control_mode == 1) {
-      foreach (category; EnumMembers!riscv_instr_category_t) {
+      foreach (category; [EnumMembers!riscv_instr_category_t]) {
 	string opts = format("dist_%0s=", category) ~ "%d";
 	opts = opts.toLower();
 	if (cmdl.plusArgs(opts, val)) { // $value$plusargs(opts, val)
@@ -685,11 +688,11 @@ class riscv_instr_gen_config: uvm_object
 
   // Initialize the exception/interrupt delegation associate array, set all delegation default to 0
   void init_delegation() {
-    foreach (cause; EnumMembers!exception_cause_t) {
+    foreach (cause; [EnumMembers!exception_cause_t]) {
       m_mode_exception_delegation[cause] = false;
       s_mode_exception_delegation[cause] = false;
     }
-    foreach (cause; EnumMembers!interrupt_cause_t) {
+    foreach (cause; [EnumMembers!interrupt_cause_t]) {
       m_mode_interrupt_delegation[cause] = false;
       s_mode_interrupt_delegation[cause] = false;
     }

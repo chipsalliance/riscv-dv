@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-module riscv.gen.riscv_amo_base_instr_stream;
+module riscv.gen.riscv_amo_instr_lib;
 
 
 import riscv.gen.riscv_instr_pkg: riscv_reg_t, riscv_pseudo_instr_name_t,

@@ -262,7 +262,7 @@ class riscv_instr_sequence :  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     riscv_jump_instr jump_instr;
     jump_instr = riscv_jump_instr.type_id.create("jump_instr");
     jump_instr.target_program_label = target_label;
-    if(!is_main_program)
+    if (!is_main_program)
       jump_instr.stack_exit_instr = instr_stack_exit.pop_stack_instr;
     jump_instr.cfg = cfg;
     jump_instr.label = label_name;
