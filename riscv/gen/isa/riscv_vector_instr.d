@@ -60,6 +60,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   va_variant_t []    allowed_va_variants;
   string             sub_extension;
   @rand ubvec!3      nfields; // Used by segmented load/store
+  bool               rand_nfields;
   @rand ubvec!4      emul;
 
   Constraint!q{
@@ -594,6 +595,7 @@ class riscv_vector_instr: riscv_floating_point_instr
     rand_mode!q{vs2}(has_vs2);
     rand_mode!q{vs3}(has_vs3);
     rand_mode!q{vd}(has_vd);
+    rand_mode!q{nfields}(rand_nfields);
     if (! (category.inside(riscv_instr_category_t.LOAD,
 			   riscv_instr_category_t.STORE,
 			   riscv_instr_category_t.AMO))) {
@@ -612,8 +614,9 @@ class riscv_vector_instr: riscv_floating_point_instr
     has_fs3 = false;
     has_fd  = false;
     has_imm = false;
+    rand_nfields = true;
     if (sub_extension != "zvlsseg") {
-      rand_mode!q{nfields}(false);
+      rand_nfields = false;
     }
     if ((name[0..2] == "VW") || (name[0..3] == "VFW")) {
       is_widening_instr = true;
@@ -630,7 +633,7 @@ class riscv_vector_instr: riscv_floating_point_instr
       has_vs1 = false;
     }
     if (allowed_va_variants.length > 0) {
-      has_va_variant = 1;
+      has_va_variant = true;
     }
     // Set the rand mode based on the superset of all VA variants
     if (instr_format == riscv_instr_format_t.VA_FORMAT) {
