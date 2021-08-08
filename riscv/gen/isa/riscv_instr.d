@@ -87,7 +87,8 @@ class riscv_instr: uvm_object
 			   riscv_instr_name_t.SRAI]) {
       if (XLEN == 32) {
         imm[5..12] == 0;
-      } else {
+      }
+      else {
         imm[6..12] == 0;
       }
     }

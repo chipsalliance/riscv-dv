@@ -134,10 +134,10 @@ class riscv_vector_cfg : uvm_object
     CommandLine cmdl = new CommandLine();
     //if ($value$plusargs("enable_zvlsseg=%0d", enable_zvlsseg)) begin
     if (cmdl.plusArgs("enable_zvlsseg=%d", enable_zvlsseg)) {
-      rand_mode!"enable_zvlsseg"(0);
+      rand_mode!"enable_zvlsseg"(false);
     }
     if (cmdl.plusArgs("enable_fault_only_first_load=%d", enable_fault_only_first_load)) {
-      rand_mode!"enable_fault_only_first_load"(0);
+      rand_mode!"enable_fault_only_first_load"(false);
     }
   }
 
