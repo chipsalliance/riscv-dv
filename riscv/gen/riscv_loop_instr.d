@@ -35,6 +35,13 @@ import uvm;
 
 class riscv_loop_instr: riscv_rand_instr_stream
 {
+  mixin uvm_object_utils;
+
+  this(string name = "") {
+    super(name);
+  }
+
+
   @rand riscv_reg_t[]         loop_cnt_reg;
   @rand riscv_reg_t[]         loop_limit_reg;
   @rand int[]                 loop_init_val;
@@ -51,8 +58,8 @@ class riscv_loop_instr: riscv_rand_instr_stream
   riscv_instr[]               loop_instr;
 
   Constraint! q{
-    //solve num_of_nested_loop before loop_cnt_reg;
-    //solve num_of_nested_loop before loop_limit_reg;
+    solve num_of_nested_loop before loop_cnt_reg;
+    solve num_of_nested_loop before loop_limit_reg;
     foreach (lcnt; loop_cnt_reg) {
       lcnt != riscv_reg_t.ZERO;
       foreach (resr; cfg.reserved_regs) {
@@ -70,13 +77,13 @@ class riscv_loop_instr: riscv_rand_instr_stream
   }  legal_loop_regs_c;
 
   Constraint!  q{
-    // solve num_of_nested_loop before loop_init_val;
-    // solve num_of_nested_loop before loop_step_val;
-    // solve num_of_nested_loop before loop_limit_val;
-    // solve loop_limit_val before loop_limit_reg;
-    // solve branch_type before loop_init_val;
-    // solve branch_type before loop_step_val;
-    // solve branch_type before loop_limit_val;
+    solve num_of_nested_loop before loop_init_val;
+    solve num_of_nested_loop before loop_step_val;
+    solve num_of_nested_loop before loop_limit_val;
+    solve loop_limit_val before loop_limit_reg;
+    solve branch_type before loop_init_val;
+    solve branch_type before loop_step_val;
+    solve branch_type before loop_limit_val;
     num_of_instr_in_loop inside [1:25];
     num_of_nested_loop inside [1:2];
     loop_init_val.length == num_of_nested_loop;
@@ -85,23 +92,15 @@ class riscv_loop_instr: riscv_rand_instr_stream
     branch_type.length == num_of_nested_loop;
     foreach (btype; branch_type) {
       if (!cfg.disable_compressed_instr) {
-	// btype inside [riscv_instr_name_t.C_BNEZ, riscv_instr_name_t.C_BEQZ,
-	// 	      riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
-	// 	      riscv_instr_name_t.BLTU, riscv_instr_name_t.BLT,
-	// 	      riscv_instr_name_t.BGEU, riscv_instr_name_t.BGE];
-	btype dist [riscv_instr_name_t.C_BNEZ := 1, riscv_instr_name_t.C_BEQZ := 1,
-		    riscv_instr_name_t.BEQ := 1, riscv_instr_name_t.BNE := 1,
-		    riscv_instr_name_t.BLTU := 1, riscv_instr_name_t.BLT := 1,
-		    riscv_instr_name_t.BGEU := 1, riscv_instr_name_t.BGE :=1];
-	
+	btype inside [riscv_instr_name_t.C_BNEZ, riscv_instr_name_t.C_BEQZ,
+		      riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
+		      riscv_instr_name_t.BLTU, riscv_instr_name_t.BLT,
+		      riscv_instr_name_t.BGEU, riscv_instr_name_t.BGE];
       }
       else {
-	// btype inside [riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
-	// 	      riscv_instr_name_t.BLTU, riscv_instr_name_t.BLT,
-	// 	      riscv_instr_name_t.BGEU, riscv_instr_name_t.BGE];
-	btype dist [riscv_instr_name_t.BEQ := 1, riscv_instr_name_t.BNE := 1,
-		    riscv_instr_name_t.BLTU := 1, riscv_instr_name_t.BLT := 1,
-		    riscv_instr_name_t.BGEU := 1, riscv_instr_name_t.BGE := 1];
+	btype inside [riscv_instr_name_t.BEQ, riscv_instr_name_t.BNE,
+		      riscv_instr_name_t.BLTU, riscv_instr_name_t.BLT,
+		      riscv_instr_name_t.BGEU, riscv_instr_name_t.BGE];
       }
     }
     foreach (i, linit; loop_init_val) {
@@ -146,12 +145,6 @@ class riscv_loop_instr: riscv_rand_instr_stream
     }
   } loop_c;
 
-  mixin uvm_object_utils;
-
-  this(string name = "") {
-    super(name);
-  }
-
   void post_randomize() {
     reserved_rd = loop_cnt_reg ~ loop_limit_reg;
     // Generate instructions that mixed with the loop instructions
@@ -165,25 +158,25 @@ class riscv_loop_instr: riscv_rand_instr_stream
     for (int i = 0; i < num_of_nested_loop; i++) {
       // Instruction to init the loop counter
       loop_init_instr[2*i] =
-	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+	cfg.instr_registry.get_rand_instr([riscv_instr_name_t.ADDI]);
       //  `DV_CHECK_RANDOMIZE_WITH_FATAL(loop_init_instr[2*i],
       loop_init_instr[2*i].randomize_with!q{
 	rd == $0;
 	rs1 == riscv_reg_t.ZERO;
 	imm == $1;
-      } (loop_cnt_reg[i],loop_init_val[i]);
+      } (loop_cnt_reg[i], loop_init_val[i]);
       
       loop_init_instr[2*i].comment = format("init loop %0d counter", i);
 
       // Instruction to init loop limit
       loop_init_instr[2*i+1] =
-	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+	cfg.instr_registry.get_rand_instr([riscv_instr_name_t.ADDI]);
       //  `DV_CHECK_RANDOMIZE_WITH_FATAL(l,
       loop_init_instr[2*i+1].randomize_with! q{
 	rd == $0;
 	rs1 == riscv_reg_t.ZERO;
 	imm == $1;
-      } (loop_limit_reg[i],loop_limit_val[i]);
+      } (loop_limit_reg[i], loop_limit_val[i]);
 
       loop_init_instr[2*i+1].comment = format("init loop %0d limit", i);
 
@@ -207,17 +200,17 @@ class riscv_loop_instr: riscv_rand_instr_stream
 
       // Instruction to update loop counter
       loop_update_instr[i] =
-	cfg.instr_registry.get_rand_instr(null, [riscv_instr_name_t.ADDI]);
+	cfg.instr_registry.get_rand_instr([riscv_instr_name_t.ADDI]);
       //DV_CHECK_RANDOMIZE_WITH_FATAL(],
       loop_update_instr[i].randomize_with! q{
 	rd == $0;
 	rs1 == $0;
 	imm == $1;
-      } (loop_cnt_reg[i],loop_step_val[i]);
+      } (loop_cnt_reg[i], loop_step_val[i]);
       loop_update_instr[i].comment = format("update loop %0d counter", i);
 
       // Backward branch instruction
-      loop_branch_instr[i] = cfg.instr_registry.get_rand_instr(null, [branch_type[i]]);
+      loop_branch_instr[i] = cfg.instr_registry.get_rand_instr([branch_type[i]]);
       // `DV_CHECK_RANDOMIZE_WITH_FATAL(,
       loop_branch_instr[i].randomize_with! q{
 	rs1 == $0;
