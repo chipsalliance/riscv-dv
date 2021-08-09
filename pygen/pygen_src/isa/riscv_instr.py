@@ -119,6 +119,19 @@ class riscv_instr:
         cls.instr_registry[instr_name] = instr_group
         return 1
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__  # Extract the class of the object.
+        # Create a new instance of the object based on extracted class.
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k in ["_ro_int", "tname", "__field_info"]:
+                continue  # Skip the fields which are not required.
+            else:
+                # Copy over attributes by copying directly.
+                setattr(result, k, copy.deepcopy(v, memo))
+        return result
+
     # Create the list of instructions based on the supported ISA extensions and configuration
     # of the generator
     @classmethod
