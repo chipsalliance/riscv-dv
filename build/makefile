@@ -1,7 +1,7 @@
 MTRIPLE = -m64
 CC = gcc
-DEBUG = NONE
-DFLAGS = $(MTRIPLE) -g -preview=intpromote -d-version=CHECK_COMPILE -w -d-debug=$(DEBUG) -O3  # -release -boundscheck=off
+DEBUG = NONE # CSTSOLVER
+DFLAGS = $(MTRIPLE) -g -preview=intpromote -w -d-debug=$(DEBUG) -O3  # -release -boundscheck=off  -d-version=CHECK_COMPILE
 DBGDFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -g
 
 LDC2 = ldc2
@@ -46,6 +46,7 @@ ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/riscv_floating_point_instr.d			\
             riscv/gen/isa/riscv_instr.d riscv/gen/isa/riscv_b_instr.d	\
             riscv/gen/isa/riscv_vector_instr.d				\
+            riscv/gen/isa/riscv_instr_register.d			\
             riscv/gen/isa/rv128c_instr.d riscv/gen/isa/rv32a_instr.d	\
             riscv/gen/isa/rv32b_instr.d riscv/gen/isa/rv32c_instr.d	\
             riscv/gen/isa/rv32dc_instr.d riscv/gen/isa/rv32d_instr.d	\
@@ -87,8 +88,23 @@ TAGS: $(addprefix ../,$(GEN_FILES)) \
       $(addprefix ../,$(TEST_FILES))
 	dscanner --etags $^ > $@
 
+# riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d $(addprefix ../,$(GEN_FILES)) $(addprefix ../,$(ISA_FILES))
+# 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
+
+# riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
+# 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
+
 riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
-	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
 
 run: riscv_instr_base_test
-	./riscv_instr_base_test +UVM_VERBOSITY=DEBUG +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=2 +start_idx=0 +asm_file_name=out_2021-03-04/asm_test/riscv_rand_instr_test +instr_cnt=10000 +num_of_sub_program=5 +directed_instr_0=riscv_load_store_rand_instr_stream,4 +directed_instr_1=riscv_loop_instr,4 +directed_instr_2=riscv_hazard_instr_stream,4 +directed_instr_3=riscv_load_store_hazard_instr_stream,4 +directed_instr_4=riscv.gen.riscv_load_store_instr_lib.riscv_multi_page_load_store_instr_stream,4 +directed_instr_5=riscv.gen.riscv_load_store_instr_lib.riscv_mem_region_stress_test,4 +directed_instr_6=riscv_jal_instr,4 +pmp_num_regions=10
+	./riscv_instr_base_test +UVM_VERBOSITY=DEBUG +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=2 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=10000 +num_of_sub_program=5 \
+	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
+	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
+	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \
+	+directed_instr_3=riscv.gen.riscv_load_store_instr_lib.riscv_multi_page_load_store_instr_stream,4 \
+	+directed_instr_4=riscv.gen.riscv_load_store_instr_lib.riscv_mem_region_stress_test,4 \
+	+directed_instr_5=riscv.gen.riscv_directed_instr_lib.riscv_jal_instr,4 \
+	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4 \
+	+pmp_num_regions=5
+
