@@ -1204,7 +1204,7 @@ template SPACES(uint spaces) {
 string spaces_string(uint len) {
   import std.algorithm: fill;
   char[] str = new char[len];
-  fill(str, '-');
+  fill(str, ' ');
   return cast(string) str;
 }
 
