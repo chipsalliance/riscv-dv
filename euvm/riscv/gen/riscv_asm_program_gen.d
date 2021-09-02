@@ -283,9 +283,9 @@ class riscv_asm_program_gen : uvm_object
 		       in int num_sub_program,
 		       bool is_debug = false,
 		       string prefix = "sub") {
-    if(num_sub_program > 0) {
+    if (num_sub_program > 0) {
       sub_program.length = num_sub_program;
-      foreach(j, ref subp; sub_program) {
+      foreach (j, ref subp; sub_program) {
         subp = riscv_instr_sequence.type_id.create(get_label(format("%s_%0d", prefix, j + 1), hart));
         uvm_info(get_full_name(), format("sub program name: %s", subp.get_name()), UVM_LOW);
         subp.is_debug_program = is_debug;
@@ -341,7 +341,7 @@ class riscv_asm_program_gen : uvm_object
   }
 
   void insert_sub_program(riscv_instr_sequence[] sub_program,
-			  Queue!string instr_list) {
+			  ref Queue!string instr_list) {
     sub_program.shuffle();
     foreach(subp; sub_program) {
       subp.post_process_instr();
@@ -351,7 +351,7 @@ class riscv_asm_program_gen : uvm_object
   }
 
   void insert_sub_program(riscv_instr_sequence[] sub_program,
-			  string[] instr_list) {
+			  ref string[] instr_list) {
     sub_program.shuffle();
     foreach(subp; sub_program) {
       subp.post_process_instr();
