@@ -29,7 +29,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import std.format: format;
 
 import esdl.data.bvec: ubvec, toubvec;
-import esdl.rand: urandom;
+import esdl.base.rand: urandom;
 
 import uvm;
 

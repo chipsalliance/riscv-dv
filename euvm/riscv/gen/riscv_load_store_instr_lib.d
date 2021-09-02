@@ -32,7 +32,8 @@ import riscv.gen.riscv_directed_instr_lib: riscv_mem_access_stream;
 import std.format: format;
 import std.algorithm.searching: canFind, minElement, maxElement;
 
-import esdl.rand: rand, Constraint, randomize_with, urandom;
+import esdl.rand: rand, Constraint, randomize_with;
+import esdl.base.rand: urandom;
 import esdl.data.bvec: ubvec, toubvec;
 
 import uvm;

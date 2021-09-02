@@ -26,8 +26,9 @@ module riscv.gen.riscv_callstack_gen;
 
 import riscv.gen.riscv_instr_pkg: program_id_t;
 
-import esdl.rand: Constraint, rand, randomize, urandom, shuffle;
+import esdl.rand: Constraint, rand, randomize;
 import esdl.data.bvec: ubvec, toubvec;
+import esdl.base.rand: urandom, shuffle;
 
 import uvm;
 

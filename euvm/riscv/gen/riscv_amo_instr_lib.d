@@ -29,7 +29,8 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.rand: Constraint, rand, randomize_with, urandom;
+import esdl.rand: Constraint, rand, randomize_with;
+import esdl.base.rand: urandom;
 
 import uvm;
 

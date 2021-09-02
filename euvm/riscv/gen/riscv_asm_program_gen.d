@@ -55,7 +55,8 @@ import std.format: format;
 
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
-import esdl.rand: randomize, urandom, shuffle;
+import esdl.rand: randomize;
+import esdl.base.rand: urandom, shuffle;
 import esdl.solver: CstVecDistSolver, CstVecDistRange;
 import esdl.base.cmdl: CommandLine;
 

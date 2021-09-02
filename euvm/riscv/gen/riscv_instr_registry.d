@@ -31,7 +31,7 @@ import std.format: format;
 import std.algorithm: canFind, remove;
 import std.traits: EnumMembers;
 
-import esdl.rand: urandom;
+import esdl.base.rand: urandom;
 
 import uvm;
 

@@ -49,13 +49,14 @@ import std.format: format;
 import std.algorithm.searching: canFind;
 
 import esdl.data.queue: Queue;
-import esdl.rand: randomize, randomize_with, urandom, shuffle;
+import esdl.rand: randomize, randomize_with;
+import esdl.base.rand: urandom, shuffle;
 
 
 import uvm;
 
 
-class riscv_instr_sequence :  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
+class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
 {
 
   uint                     instr_cnt;            // Instruction count of this sequence

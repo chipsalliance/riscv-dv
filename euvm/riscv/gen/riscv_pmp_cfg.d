@@ -664,7 +664,7 @@ class riscv_pmp_cfg : uvm_object {
   // CSRs to test that writes succeed or fail appropriately.
   void gen_pmp_write_test(riscv_reg_t[2] scratch_reg,
 			  ref string[] instr) {
-    import esdl.rand: urandom;
+    import esdl.base.rand: urandom;
     ubvec!12 pmp_addr;
     ubvec!12 pmpcfg_addr;
     ubvec!XLEN pmp_val;

@@ -35,13 +35,14 @@ import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
 import std.algorithm: canFind, sort;
 
-import esdl.rand: rand, Constraint, randomize, randomize_with, urandom;
+import esdl.rand: rand, Constraint, randomize, randomize_with;
+import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec;
 
 import uvm;
 
-class riscv_instr_stream : uvm_object
+class riscv_instr_stream: uvm_object
 {
   mixin uvm_object_utils;
 

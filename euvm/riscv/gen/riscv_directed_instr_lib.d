@@ -29,8 +29,8 @@ import std.format: format;
 
 import std.algorithm: canFind;
 
-import esdl.rand: rand, Constraint, randomize_with,
-  urandom, randomize, shuffle;
+import esdl.rand: rand, Constraint, randomize_with, randomize;
+import esdl.base.rand: urandom, shuffle;
 import esdl.data.bvec: ubvec, toubvec;
 import uvm;
 
