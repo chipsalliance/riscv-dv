@@ -43,7 +43,7 @@ import std.math: log2, ceil;
 
 import esdl.base.cmdl: CommandLine;
 import esdl.data.bvec: ubvec, toBit, toubvec;
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 
 import uvm;
 
@@ -300,7 +300,7 @@ class riscv_instr_gen_config: uvm_object
   
   CommandLine cmdl;
 
-  Constraint! q{
+  constraint! q{
     sub_program_instr_cnt.length == num_of_sub_program;
     debug_sub_program_instr_cnt.length == num_debug_sub_program;
     main_program_instr_cnt inside [10:instr_cnt];
@@ -321,7 +321,7 @@ class riscv_instr_gen_config: uvm_object
     }
   } default_c;
   
-  Constraint! q{
+  constraint! q{
     if (support_debug_mode) {
       debug_program_instr_cnt inside [100:300];
       foreach (cnt; debug_sub_program_instr_cnt) {
@@ -332,14 +332,14 @@ class riscv_instr_gen_config: uvm_object
   } debug_mode_c;
   
   // Keep the number of single step iterations relatively small
-  Constraint! q{
+  constraint! q{
     if (enable_debug_single_step) {
       single_step_iterations inside [10 : 50];
     }
   } debug_single_step_c;
   
   // Boot privileged mode distribution
-   Constraint! q{
+   constraint! q{
      // Boot to higher privileged mode more often
      if (supported_privileged_mode.length == 2) {
        init_privileged_mode dist [supported_privileged_mode[0] := 6,
@@ -357,7 +357,7 @@ class riscv_instr_gen_config: uvm_object
   
   immutable int tvec_align =  cast(int) ceil(log2((XLEN*4)/8));
   
-  Constraint! q{
+  constraint! q{
       mtvec_mode inside [supported_interrupt_mode];
     if (mtvec_mode == mtvec_mode_t.DIRECT) {
       @soft tvec_alignment == 2;
@@ -369,7 +369,7 @@ class riscv_instr_gen_config: uvm_object
   } mtvec_c;
 
   
-  Constraint! q{
+  constraint! q{
     // This is default disabled at setup phase. It can be enabled in the exception and interrupt
     // handling routine
     if (set_mstatus_mprv == true) {
@@ -385,7 +385,7 @@ class riscv_instr_gen_config: uvm_object
   } mstatus_c;
   
   // Exception delegation setting
-  Constraint! q{
+  constraint! q{
     // Do not delegate instructino page fault to supervisor/user mode because this may introduce
     // dead loop. All the subsequent instruction fetches may fail and program cannot recover.
     m_mode_exception_delegation[exception_cause_t.INSTRUCTION_PAGE_FAULT] == false;
@@ -409,7 +409,7 @@ class riscv_instr_gen_config: uvm_object
 
   // Spike only supports a subset of exception and interrupt delegation
   // You can modify this constraint if your ISS support different set of delegations
-  Constraint! q{
+  constraint! q{
     foreach (del, enbl; m_mode_exception_delegation) {
        if (!support_supervisor_mode || no_delegation) {
          enbl == false;
@@ -435,7 +435,7 @@ class riscv_instr_gen_config: uvm_object
      }
   } delegation_c;
 
-  Constraint! q{
+  constraint! q{
     ra dist [riscv_reg_t.RA := 3, riscv_reg_t.T1 := 2,
 	     riscv_reg_t.SP:riscv_reg_t.T0 :/ 1,
 	     riscv_reg_t.T2:riscv_reg_t.T6 :/ 4];
@@ -444,7 +444,7 @@ class riscv_instr_gen_config: uvm_object
     ra != riscv_reg_t.ZERO;
   } ra_c;
 
-  Constraint! q{
+  constraint! q{
     if (fix_sp) {
       sp == riscv_reg_t.SP;
     }
@@ -453,18 +453,18 @@ class riscv_instr_gen_config: uvm_object
     tp !inside [riscv_reg_t.GP, riscv_reg_t.RA, riscv_reg_t.ZERO];
   }  sp_tp_c;
 
-  Constraint! q{
+  constraint! q{
     scratch_reg !inside [riscv_reg_t.ZERO, sp, tp, ra, riscv_reg_t.GP];
   } reserve_scratch_reg_c;
 
   // This reg is only used inside PMP exception routine,
   // so we can be a bit looser with constraints.
-  Constraint! q{
+  constraint! q{
     pmp_reg !inside [riscv_reg_t.ZERO, sp, tp];
   } reserve_pmp_reg_c;
 
 
-  Constraint! q{
+  constraint! q{
     foreach (r; gpr) {
       r !inside [sp, tp, scratch_reg, pmp_reg, riscv_reg_t.ZERO,
 		 riscv_reg_t.RA, riscv_reg_t.GP];
@@ -472,11 +472,11 @@ class riscv_instr_gen_config: uvm_object
     unique [gpr];
   } gpr_c;
 
-   Constraint! q{
+   constraint! q{
      solve init_privileged_mode before virtual_addr_translation_on;
    } addr_translation_rnd_order_c;
   
-  Constraint! q{
+  constraint! q{
     if ((init_privileged_mode != privileged_mode_t.MACHINE_MODE) &&
 	(SATP_MODE != satp_mode_t.BARE)) {
       virtual_addr_translation_on == true;
@@ -487,7 +487,7 @@ class riscv_instr_gen_config: uvm_object
   } addr_translation_c;
   
   
-  Constraint! q{
+  constraint! q{
     if (enable_floating_point) {
       mstatus_fs == 1;
     }
@@ -497,7 +497,7 @@ class riscv_instr_gen_config: uvm_object
   } floating_point_c;
   
 
-  Constraint! q{
+  constraint! q{
     if (enable_vector_extension) {
       mstatus_vs == 1;
     }

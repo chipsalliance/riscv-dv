@@ -25,7 +25,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 import std.string: toLower;
 
-import esdl.rand: rand, Constraint;
+import esdl.rand: rand, constraint;
 import uvm;
 
 class riscv_pseudo_instr: riscv_instr
@@ -33,7 +33,7 @@ class riscv_pseudo_instr: riscv_instr
   @rand riscv_pseudo_instr_name_t  pseudo_instr_name;
 
   // `add_pseudo_instr(LI, I_FORMAT, LOAD, RV32I)
-  Constraint! q{
+  constraint! q{
     if (pseudo_instr_name  == riscv_pseudo_instr_name_t.LI) { 
       instr_format       == riscv_instr_format_t.I_FORMAT; 
       category           == riscv_instr_category_t.LOAD; 
@@ -42,7 +42,7 @@ class riscv_pseudo_instr: riscv_instr
   } riscv_RV32I_LI_c;
 
   // `add_pseudo_instr(LA, I_FORMAT, LOAD, RV32I)
-  Constraint! q{
+  constraint! q{
     if (pseudo_instr_name  == riscv_pseudo_instr_name_t.LA) { 
       instr_format       == riscv_instr_format_t.I_FORMAT; 
       category           == riscv_instr_category_t.LOAD; 

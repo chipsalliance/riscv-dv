@@ -24,7 +24,7 @@ import riscv.gen.riscv_core_setting: XLEN, VLEN, MAX_LMUL, ELEN, SELEN;
 import std.string: format, toUpper, toLower, strip;
 
 import esdl.data.bvec: ubvec;
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 import uvm;
 
 
@@ -47,7 +47,7 @@ class riscv_vector_cfg : uvm_object
   // Allow only vector instructions from the random sequences
   @rand bool only_vec_instr;
   
-  Constraint! q{@soft only_vec_instr == false;} only_vec_instr_c;
+  constraint! q{@soft only_vec_instr == false;} only_vec_instr_c;
 
   // Allow vector floating-point instructions (Allows vtype.vsew to be set <16 or >32).
   @rand bool vec_fp;
@@ -58,14 +58,14 @@ class riscv_vector_cfg : uvm_object
   // Allow vector quad-widening instructions.
   @rand bool vec_quad_widening;
 
-  Constraint! q{
+  constraint! q{
     (!vec_narrowing_widening) -> (!vec_quad_widening);
     // FP requires at least 16 bits and quad-widening requires no more than ELEN/4 bits.
     (ELEN < 64) -> (!(vec_fp && vec_quad_widening));
   } vec_quad_widening_c ;
 
   @rand bool allow_illegal_vec_instr;
-  Constraint! q{@soft allow_illegal_vec_instr == false;} allow_illegal_vec_instr_c;
+  constraint! q{@soft allow_illegal_vec_instr == false;} allow_illegal_vec_instr_c;
 
   // Cause frequent hazards for the Vector Registers:
   //  * Write-After-Read (WAR)
@@ -82,7 +82,7 @@ class riscv_vector_cfg : uvm_object
   @rand @UVM_DEFAULT bool enable_fault_only_first_load;
 
   
-   Constraint! q{
+   constraint! q{
      //solve vtype before vl;
      //solve vl before vstart;
      vstart inside [0:vl];
@@ -90,7 +90,7 @@ class riscv_vector_cfg : uvm_object
    } legal_c;
 
   // Basic constraint for initial bringup
-   Constraint! q{
+   constraint! q{
      vstart == 0;
      vl == VLEN/vtype.vsew;
      vtype.vediv == 1;
@@ -98,7 +98,7 @@ class riscv_vector_cfg : uvm_object
 
   // For all widening instructions, the destination element width must be a supported element
   // width and the destination LMUL value must also be a supported LMUL value
-   Constraint! q{
+   constraint! q{
      vtype.vlmul inside [1, 2, 4, 8];
      vtype.vlmul <= MAX_LMUL;
      if (vec_narrowing_widening) {
@@ -109,7 +109,7 @@ class riscv_vector_cfg : uvm_object
      }
    } vlmul_c ; 
 
-   Constraint! q{
+   constraint! q{
      vtype.vsew inside [8, 16, 32, 64, 128];
      vtype.vsew <= ELEN;
      // TODO: Determine the legal range of floating point format
@@ -118,11 +118,11 @@ class riscv_vector_cfg : uvm_object
      if (vec_quad_widening) {vtype.vsew < (ELEN >> 1);}
    } vsew_c; 
 
-   Constraint! q{
+   constraint! q{
      enable_zvlsseg -> (vtype.vlmul < 8);
    } vseg_c;
 
-   Constraint!  q{
+   constraint!  q{
      vtype.vediv inside [1, 2, 4, 8];
      vtype.vediv <= (vtype.vsew / SELEN);
    } vdeiv_c;

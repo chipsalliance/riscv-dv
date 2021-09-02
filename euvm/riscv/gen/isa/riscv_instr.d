@@ -25,7 +25,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 // import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 
 import esdl.data.bvec: bvec, ubvec, toubvec;
-import esdl.rand: rand, Constraint;
+import esdl.rand: rand, constraint;
 
 import std.format: format;
 import std.algorithm.searching: canFind;
@@ -76,7 +76,7 @@ class riscv_instr: uvm_object
   bool                       has_imm = true;
 
 
-  Constraint! q{
+  constraint! q{
     if (instr_name inside [riscv_instr_name_t.SLLIW,
 			   riscv_instr_name_t.SRLIW,
 			   riscv_instr_name_t.SRAIW]) {
@@ -94,7 +94,7 @@ class riscv_instr: uvm_object
     }
   } imm_c;
   
-  Constraint!  q{
+  constraint!  q{
     if (category == riscv_instr_category_t.CSR) {
       if (m_cfg.instr_registry.include_reg.length > 0) {
         csr inside [m_cfg.instr_registry.include_reg];

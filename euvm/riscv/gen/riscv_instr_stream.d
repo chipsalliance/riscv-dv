@@ -35,7 +35,7 @@ import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
 import std.algorithm: canFind, sort;
 
-import esdl.rand: rand, Constraint, randomize, randomize_with;
+import esdl.rand: rand, constraint, randomize, randomize_with;
 import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec;

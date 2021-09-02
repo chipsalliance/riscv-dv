@@ -22,7 +22,7 @@ import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, format_string,
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 
 import uvm;
 
@@ -33,7 +33,7 @@ class riscv_amo_instr: riscv_instr
   @rand bool aq;
   @rand bool rl;
 
-  Constraint! q{
+  constraint! q{
     (aq && rl) == false;
   } aq_rl_c;
 

@@ -27,7 +27,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 
 import std.format: format;
 
-import esdl.rand: rand, Constraint, randomize_with;
+import esdl.rand: rand, constraint, randomize_with;
 import esdl.data.bvec: ubvec;
 
 import uvm;
@@ -57,7 +57,7 @@ class riscv_loop_instr: riscv_rand_instr_stream
   // Aggregated loop instruction stream
   riscv_instr[]               loop_instr;
 
-  Constraint! q{
+  constraint! q{
     solve num_of_nested_loop before loop_cnt_reg;
     solve num_of_nested_loop before loop_limit_reg;
     foreach (lcnt; loop_cnt_reg) {
@@ -76,7 +76,7 @@ class riscv_loop_instr: riscv_rand_instr_stream
     loop_limit_reg.length == num_of_nested_loop;
   }  legal_loop_regs_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve num_of_nested_loop before loop_init_val;
     solve num_of_nested_loop before loop_step_val;
     solve num_of_nested_loop before loop_limit_val;

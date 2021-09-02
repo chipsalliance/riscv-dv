@@ -32,7 +32,7 @@ import riscv.gen.riscv_directed_instr_lib: riscv_mem_access_stream;
 import std.format: format;
 import std.algorithm.searching: canFind, minElement, maxElement;
 
-import esdl.rand: rand, Constraint, randomize_with;
+import esdl.rand: rand, constraint, randomize_with;
 import esdl.base.rand: urandom;
 import esdl.data.bvec: ubvec, toubvec;
 
@@ -62,22 +62,22 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
 
   mixin uvm_object_utils;
 
-  Constraint!  q{
+  constraint!  q{
     solve use_sp_as_rs1 before rs1_reg;
   } sp_rnd_order_c;
 
-  Constraint! q{
+  constraint! q{
     use_sp_as_rs1 dist [true := 1, false := 2];
     if (use_sp_as_rs1 == true) {
       rs1_reg == riscv_reg_t.SP;
     }
   } sp_c;
 
-  Constraint! q{
+  constraint! q{
     rs1_reg !inside [cfg.reserved_regs, reserved_rd, riscv_reg_t.ZERO];
   } rs1_c ;
 
-  Constraint! q{
+  constraint! q{
     solve data_page_id before max_load_store_offset;
     solve max_load_store_offset before base;
     data_page_id < max_data_page_id;
@@ -248,7 +248,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
 class riscv_single_load_store_instr_stream : riscv_load_store_base_instr_stream
 {
 
-  Constraint! q{
+  constraint! q{
     num_load_store == 1;
     num_mixed_instr < 5;
   }  legal_c;
@@ -268,7 +268,7 @@ class riscv_load_store_stress_instr_stream : riscv_load_store_base_instr_stream
   uint max_instr_cnt = 30;
   uint min_instr_cnt = 10;
 
-  Constraint! q{
+  constraint! q{
     num_load_store inside [min_instr_cnt:max_instr_cnt];
     num_mixed_instr == 0;
   }  legal_c;
@@ -304,7 +304,7 @@ class riscv_load_store_shared_mem_stream : riscv_load_store_stress_instr_stream
 class riscv_load_store_rand_instr_stream : riscv_load_store_base_instr_stream
 {
 
-  Constraint!  q{
+  constraint!  q{
     num_load_store inside [10:30];
     num_mixed_instr inside [10:30];
   } legal_c;
@@ -322,7 +322,7 @@ class riscv_hazard_instr_stream : riscv_load_store_base_instr_stream
 
   uint  num_of_avail_regs = 6;
 
-  Constraint! q{
+  constraint! q{
     num_load_store inside [10:30];
     num_mixed_instr inside [10:30];
   } legal_c;
@@ -347,11 +347,11 @@ class riscv_load_store_hazard_instr_stream : riscv_load_store_base_instr_stream
 
   @rand int hazard_ratio;
 
-  Constraint! q{
+  constraint! q{
     hazard_ratio inside [20:100];
   }  hazard_ratio_c;
 
-  Constraint! q{
+  constraint! q{
     num_load_store inside [10:20];
     num_mixed_instr inside [1:7];
   } legal_c;
@@ -408,7 +408,7 @@ class riscv_multi_page_load_store_instr_stream: riscv_mem_access_stream
   @rand uint[]  data_page_id;
   @rand riscv_reg_t[] rs1_reg;
 
-  Constraint! q{
+  constraint! q{
     foreach (id; data_page_id) {
       id < max_data_page_id;
     }  
@@ -420,7 +420,7 @@ class riscv_multi_page_load_store_instr_stream: riscv_mem_access_stream
     }
   } default_c;
 
-  Constraint! q{
+  constraint! q{
     // solve num_of_instr_stream before data_page_id;
     num_of_instr_stream inside [1 : max_data_page_id];
     unique [data_page_id];
@@ -428,7 +428,7 @@ class riscv_multi_page_load_store_instr_stream: riscv_mem_access_stream
 
   // Avoid accessing a large number of pages because we may run out of registers for rs1
   // Each page access needs a reserved register as the base address of load/store instruction
-  Constraint! q{
+  constraint! q{
     num_of_instr_stream inside [2:8];
   } reasonable_c; 
 
@@ -478,7 +478,7 @@ class riscv_mem_region_stress_test: riscv_multi_page_load_store_instr_stream
     super(name);
   }
 
-  Constraint! q{
+  constraint! q{
     num_of_instr_stream inside [2..5];
     foreach (i, id; data_page_id) {
       if (i > 0) {
@@ -496,14 +496,14 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
   @rand ubvec!XLEN  addr_offset;
 
   // Find an unused 4K page from address 1M onward
-  Constraint! q{
+  constraint! q{
     addr_offset[XLEN-1:20] != 0;
     // TODO(taliu) Support larger address range
     addr_offset[XLEN-1:31] == 0;
     addr_offset[11:0] == 0;
   } addr_offset_c;
 
-  Constraint!  q{
+  constraint!  q{
     num_load_store inside [5:10];
     num_mixed_instr inside [5:10];
   } legal_c;
@@ -622,31 +622,31 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
   @rand riscv_reg_t rs2_reg;  // Stride offset
   riscv_vreg_t vs2_reg;      // Index address
 
-  Constraint!  q{
+  constraint!  q{
     num_mixed_instr inside [0:10];
   } vec_mixed_instr_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve eew before stride_byte_offset;
     // Keep a reasonable byte offset range to avoid vector memory address overflow
     stride_byte_offset inside [1 : 128];
     stride_byte_offset % (eew / 8) == 1;
   } stride_byte_offset_c;
 
-  Constraint! q{
+  constraint! q{
     solve eew before index_addr;
     // Keep a reasonable index address range to avoid vector memory address overflow
     index_addr inside [1 : 128];
     index_addr % (eew / 8) == 1;
   } index_addr_c;
 
-  Constraint!  q{
+  constraint!  q{
     rs1_reg !inside [cfg.reserved_regs, reserved_rd, riscv_reg_t.ZERO];
     rs2_reg !inside [cfg.reserved_regs, reserved_rd, riscv_reg_t.ZERO];
     rs1_reg != rs2_reg;
   } vec_rs_c;
 
-  Constraint!  q{
+  constraint!  q{
     data_page_id < max_data_page_id;
   } vec_data_page_id_c;
 

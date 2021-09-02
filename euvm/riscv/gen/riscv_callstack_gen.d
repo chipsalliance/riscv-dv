@@ -26,7 +26,7 @@ module riscv.gen.riscv_callstack_gen;
 
 import riscv.gen.riscv_instr_pkg: program_id_t;
 
-import esdl.rand: Constraint, rand, randomize;
+import esdl.rand: constraint, rand, randomize;
 import esdl.data.bvec: ubvec, toubvec;
 import esdl.base.rand: urandom, shuffle;
 
@@ -46,7 +46,7 @@ class riscv_program: uvm_object
   // The list of all sub-programs of the current program
   @rand program_id_t[] sub_program_id;
 
-  Constraint! q{
+  constraint! q{
     unique [sub_program_id];
     foreach (id; sub_program_id) {
       // Cannot call itself, recursive function call is not supported
@@ -102,7 +102,7 @@ class riscv_callstack_gen : uvm_object
   // Call stack level of each program
   @rand ubvec!11[] stack_level;
 
-  Constraint! q{
+  constraint! q{
     // The stack level is assigned in ascending order to avoid call loop
     stack_level.length == program_cnt;
     stack_level[0] == 0;

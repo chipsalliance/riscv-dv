@@ -22,7 +22,7 @@ import riscv.gen.riscv_core_setting: XLEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 import esdl.data.bvec: ubvec, toubvec;
 
 import uvm;
@@ -33,7 +33,7 @@ class riscv_compressed_instr: riscv_instr
 
   int imm_align;
 
-  Constraint! q{
+  constraint! q{
     //  Registers specified by the three-bit rs1’, rs2’, and rd’
     if (instr_format inside [riscv_instr_format_t.CIW_FORMAT,
 			     riscv_instr_format_t.CL_FORMAT,
@@ -60,7 +60,7 @@ class riscv_compressed_instr: riscv_instr
     }
   } rvc_csr_c ;
 
-  Constraint! q{
+  constraint! q{
     if(imm_type inside [imm_t.NZIMM, imm_t.NZUIMM]) {
       imm[0..6] != 0;
       if (instr_name == riscv_instr_name_t.C_LUI) {
@@ -79,14 +79,14 @@ class riscv_compressed_instr: riscv_instr
   } imm_val_c ;
 
   // C_JAL is RV32C only instruction
-  Constraint! q{
+  constraint! q{
     if (XLEN != 32) {
       instr_name != riscv_instr_name_t.C_JAL;
     }
   } jal_c ;
 
   // Avoid generating HINT or illegal instruction by default as it's not supported by the compiler
-  Constraint! q{
+  constraint! q{
     if (instr_name inside [riscv_instr_name_t.C_ADDI, riscv_instr_name_t.C_ADDIW,
 			   riscv_instr_name_t.C_LI, riscv_instr_name_t.C_LUI,
 			   riscv_instr_name_t.C_SLLI, riscv_instr_name_t.C_SLLI64,

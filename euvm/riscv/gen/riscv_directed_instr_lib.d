@@ -29,7 +29,7 @@ import std.format: format;
 
 import std.algorithm: canFind;
 
-import esdl.rand: rand, Constraint, randomize_with, randomize;
+import esdl.rand: rand, constraint, randomize_with, randomize;
 import esdl.base.rand: urandom, shuffle;
 import esdl.data.bvec: ubvec, toubvec;
 import uvm;
@@ -145,7 +145,7 @@ class riscv_jump_instr: riscv_directed_instr_stream
   int                  idx;
   bool                 use_jalr;
 
-  Constraint! q{
+  constraint! q{
     gpr !inside [cfg.reserved_regs, riscv_reg_t.ZERO];
     imm inside [-1023:1023];
     mixed_instr_cnt inside [5:10];
@@ -252,7 +252,7 @@ class riscv_jal_instr : riscv_rand_instr_stream
   @rand uint           num_of_jump_instr;
   riscv_instr_name_t[] jal;
 
-  Constraint!  q{
+  constraint!  q{
     num_of_jump_instr inside [10:30];
   } instr_c;
 
@@ -497,14 +497,14 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
   @rand int_numeric_e[] init_val_type;
   riscv_pseudo_instr[]  init_instr;
 
-  Constraint! q{
+  constraint! q{
     //solve init_val_type before init_val;
     init_val_type.length == num_of_avail_regs;
     init_val.length == num_of_avail_regs;
     num_of_instr inside [15..31];
   }  init_val_c ;
 
-  Constraint! q{
+  constraint! q{
     unique [avail_regs];
     foreach (areg; avail_regs) {
       areg !inside [cfg.reserved_regs];

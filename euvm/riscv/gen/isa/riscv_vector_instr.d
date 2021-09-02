@@ -29,7 +29,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 
 import std.format: format;
 
-import esdl.rand: rand, Constraint;
+import esdl.rand: rand, constraint;
 import esdl.data.bvec: ubvec;
 import std.algorithm: canFind;
 
@@ -63,13 +63,13 @@ class riscv_vector_instr: riscv_floating_point_instr
   bool               rand_nfields;
   @rand ubvec!4      emul;
 
-  Constraint!q{
+  constraint!q{
     if (m_cfg.vector_cfg.reserved_vregs.length > 0) {
       !(vd inside [m_cfg.vector_cfg.reserved_vregs]);
     }
   } avoid_reserved_vregs_c;
 
-  Constraint!q{
+  constraint!q{
     if (has_va_variant == true) {
       va_variant inside [allowed_va_variants];
     }
@@ -80,7 +80,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // illegal instruction exception.
   // TODO: Exclude the instruction that ignore VLMUL
   // TODO: Update this constraint for fractional LMUL
-  Constraint!q{
+  constraint!q{
     if (m_cfg.vector_cfg.vtype.vlmul > 0) {
       vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
@@ -90,7 +90,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   } operand_group_c;
 
   // Section 11.2: Widening Vector Arithmetic Instructions
-  Constraint!q{
+  constraint!q{
     if (is_widening_instr == true) {
       // The destination vector register group results are arranged as if both
       // SEW and LMUL were at twice their current settings.
@@ -108,7 +108,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   } widening_instr_c;
 
   // Section 11.3: Narrowing Vector Arithmetic Instructions
-  Constraint!q{
+  constraint!q{
     if (is_narrowing_instr == true) {
       // The source and destination vector register numbers must be aligned
       // appropriately for the vector registergroup size
@@ -122,7 +122,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   }  narrowing_instr_c;
 
   // 12.3. Vector Integer Add-with-Carry / Subtract-with-Borrow Instructions
-  Constraint!q{
+  constraint!q{
     if (m_cfg.vector_cfg.vtype.vlmul  > 1) {
       // For vadc and vsbc, an illegal instruction exception is raised if the
       // destination vector register is v0 and LMUL> 1
@@ -143,7 +143,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // 12.7. Vector Integer Comparison Instructions
   // For all comparison instructions, an illegal instruction exception is raised if the
   // destination vector register overlaps a source vector register group and LMUL > 1
-  Constraint!q{
+  constraint!q{
     if (category == riscv_instr_category_t.COMPARE) {
       vd != vs2;
       vd != vs1;
@@ -154,7 +154,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // An illegal instruction exception is raised if the destination vector register group
   // overlaps the source vector mask register. If the instruction is masked, an illegal
   // instruction exception is issued if the destination vector register group overlaps v0.
-  Constraint!q{
+  constraint!q{
     if (instr_name == riscv_instr_name_t.VIOTA_M) {
       vd != vs2;
       (vm == false) -> (vd != 0);
@@ -163,7 +163,7 @@ class riscv_vector_instr: riscv_floating_point_instr
 
   // 16.9. Vector Element Index Instruction
   // The vs2 eld of the instruction must be set to v0, otherwise the encoding is reserved
-  Constraint!q{
+  constraint!q{
     if (instr_name == riscv_instr_name_t.VID_V) {
       vs2 == 0;
       // TODO; Check if this constraint is needed
@@ -174,7 +174,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // Section 17.3  Vector Slide Instructions
   // The destination vector register group for vslideup cannot overlap the vector register
   // group of the source vector register group or the mask register
-  Constraint!q{
+  constraint!q{
     if (instr_name inside [riscv_instr_name_t.VSLIDEUP,
 			   riscv_instr_name_t.VSLIDE1UP,
 			   riscv_instr_name_t.VSLIDEDOWN,
@@ -188,7 +188,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // Section 17.4: Vector Register Gather Instruction
   // For any vrgather instruction, the destination vector register group cannot overlap
   // with the source vector register group
-  Constraint!q{
+  constraint!q{
     if (instr_name == riscv_instr_name_t.VRGATHER) {
       vd != vs2;
       vd != vs1;
@@ -199,7 +199,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // Section 17.5: Vector compress instruction
   // The destination vector register group cannot overlap the source vector register
   // group or the source vector mask register
-  Constraint!q{
+  constraint!q{
     if (instr_name == riscv_instr_name_t.VCOMPRESS) {
       vd != vs2;
       vd != vs1;
@@ -212,7 +212,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // Vector register numbers accessed by the segment load or store would increment
   // cannot past 31
 
-  Constraint!q{
+  constraint!q{
     if $(check_sub_extension(sub_extension, "zvlsseg")) {
 	if (m_cfg.vector_cfg.vtype.vlmul < 8) {
 	  (nfields + 1) * m_cfg.vector_cfg.vtype.vlmul <= 8;
@@ -231,7 +231,7 @@ class riscv_vector_instr: riscv_floating_point_instr
       }
   } nfields_c;
 
-  Constraint!q{
+  constraint!q{
     if (instr_name == riscv_instr_name_t.VMV2R_V) {
       vs2 % 2 == 0;
       vd  % 2 == 0;
@@ -251,11 +251,11 @@ class riscv_vector_instr: riscv_floating_point_instr
   // Section 5.3
   // The destination vector register group for a masked vector instruction can only overlap
   // the source mask register (v0) when LMUL=1
-  Constraint!q{
+  constraint!q{
     (vm == false) && (m_cfg.vector_cfg.vtype.vlmul > 1) -> (vd != 0);
   } vmask_overlap_c; 
 
-  Constraint!q{
+  constraint!q{
     // Below instruction is always masked
     if (instr_name inside [riscv_instr_name_t.VMERGE,
 			   riscv_instr_name_t.VFMERGE,
@@ -265,7 +265,7 @@ class riscv_vector_instr: riscv_floating_point_instr
     }
   } vector_mask_enable_c;
 
-  Constraint!q{
+  constraint!q{
     // (vm=0) is reserved for below ops
     if (instr_name inside [riscv_instr_name_t.VMV, riscv_instr_name_t.VFMV,
 			   riscv_instr_name_t.VCOMPRESS, riscv_instr_name_t.VFMV_F_S,
@@ -279,19 +279,19 @@ class riscv_vector_instr: riscv_floating_point_instr
 
   // 16.1. Vector Mask-Register Logical Instructions
   // No vector mask for these instructions
-  Constraint!q{
+  constraint!q{
     if (instr_name inside [riscv_instr_name_t.VMAND_MM : riscv_instr_name_t.VMXNOR_MM]) {
       vm == true;
     }
   } vector_mask_instr_c;
 
-  Constraint!q{
+  constraint!q{
     if (! m_cfg.vector_cfg.vec_fp) {
       va_variant != va_variant_t.VF;
     }
   } disable_floating_point_varaint_c;
 
-  Constraint!q{
+  constraint!q{
     // TODO: Check why this is needed?
     if (category == riscv_instr_category_t.STORE) {
       (vm == false) -> (vs3 != 0);
@@ -307,7 +307,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   } vector_load_store_mask_overlap_c;
 
   // load/store EEW/EMUL and corresponding register grouping constraints
-  Constraint!q{
+  constraint!q{
     solve eew before emul;
     solve emul before vd;
     solve emul before vs1;
@@ -315,7 +315,7 @@ class riscv_vector_instr: riscv_floating_point_instr
     solve emul before vs3;
   }  load_store_solve_order_c;
 
-  Constraint!q{
+  constraint!q{
     if (category inside [riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE,
 			 riscv_instr_category_t.AMO]) {
       eew inside [m_cfg.vector_cfg.legal_eew];
@@ -336,7 +336,7 @@ class riscv_vector_instr: riscv_floating_point_instr
 
   // Some temporarily constraint to avoid illegal instruction
   // TODO: Review these constraints
-  Constraint!q{
+  constraint!q{
     (vm == false) -> (vd != 0);
   } temp_c;
 

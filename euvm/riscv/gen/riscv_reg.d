@@ -30,7 +30,7 @@ import riscv.gen.riscv_instr_pkg: reg_field_access_t, privileged_reg_t,
 import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
 
-import esdl.rand: rand, Constraint, randomize;
+import esdl.rand: rand, constraint, randomize;
 import uvm;
 
 class riscv_reg_field: uvm_object
@@ -43,11 +43,11 @@ class riscv_reg_field: uvm_object
   reg_field_access_t      access_type;
   bool                    hard_wired;
 
-  Constraint! q{
+  constraint! q{
     (access_type == reg_field_access_t.WPRI) -> (val == 0);
   } zero_reserved_field_c;
 
-  Constraint! q{
+  constraint! q{
     (hard_wired == true) -> (val == reset_val);
   } hardwired_fld_c;
 

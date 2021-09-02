@@ -26,7 +26,7 @@ import std.format: format;
 import std.math: log2, ceil;
 
 import esdl.data.bvec: ubvec, toubvec, tobvec;
-import esdl.rand: rand, Constraint;
+import esdl.rand: rand, constraint;
 
 import uvm;
 
@@ -81,30 +81,30 @@ class riscv_pmp_cfg : uvm_object {
   privileged_reg_t base_pmpcfg_addr = privileged_reg_t.PMPCFG0;
 
   /////////////////////////////////////////////////
-  // Constraints - apply when pmp_randomize is 1 //
+  // constraints - apply when pmp_randomize is 1 //
   /////////////////////////////////////////////////
 
   
-  Constraint! q{
+  constraint! q{
     pmp_num_regions inside [1 : 16];
     pmp_granularity inside [0 : XLEN + 3];
   } sanity_c;
 
 
-  Constraint! q{
+  constraint! q{
     foreach (cfg; pmp_cfg) {
       !(cfg.w && !cfg.r);
     }
   } xwr_c;
 
-  Constraint! q{
+  constraint! q{
     foreach (cfg; pmp_cfg) {
       (pmp_granularity == 0) ->	(cfg.a != pmp_addr_mode_t.NAPOT);
       (pmp_granularity >= 1) -> (cfg.a != pmp_addr_mode_t.NA4);
     }
   } grain_addr_mode_c;
 
-  Constraint! q{
+  constraint! q{
     foreach (i, cfg; pmp_cfg) {
       // Offset of pmp_cfg[0] does not matter, since it will be set to <main>,
       // so we do not constrain it here, as it will be overridden during generation
@@ -117,7 +117,7 @@ class riscv_pmp_cfg : uvm_object {
     }
   }  addr_range_c;
 
-  Constraint! q{
+  constraint! q{
     foreach (i, cfg; pmp_cfg) {
       if (!pmp_allow_addr_overlap && i > 0) {
         cfg.offset > pmp_cfg[i-1].offset;
@@ -126,7 +126,7 @@ class riscv_pmp_cfg : uvm_object {
   }  addr_overlapping_c;
 
   // Privileged spec states that in TOR mode, offset[i-1] < offset[i]
-  Constraint! q{
+  constraint! q{
     foreach (cfg; pmp_cfg) {
       if (cfg.a == pmp_addr_mode_t.TOR) {
         pmp_allow_addr_overlap == false;

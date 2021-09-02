@@ -29,7 +29,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.rand: Constraint, rand, randomize_with;
+import esdl.rand: constraint, rand, randomize_with;
 import esdl.base.rand: urandom;
 
 import uvm;
@@ -53,11 +53,11 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   // User can specify a small group of available registers to generate various hazard condition
   @rand riscv_reg_t[] avail_regs;
 
-  Constraint! q{
+  constraint! q{
     num_of_rs1_reg == 1;
   } num_of_rs1_reg_c;
 
-  Constraint! q{
+  constraint! q{
     // solve num_of_rs1_reg before rs1_reg;
     rs1_reg.length == num_of_rs1_reg;
     offset.length == num_of_rs1_reg;
@@ -67,13 +67,13 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
     unique [rs1_reg];
   } rs1_c;
 
-  Constraint! q{
+  constraint! q{
     foreach (offs; offset) {
       offs inside [0..max_offset];
     }
   } addr_range_c;
 
-  Constraint! q{
+  constraint! q{
     foreach (offs; offset) {
       if (XLEN == 32) {
         offs % 4 == 0;
@@ -132,7 +132,7 @@ class riscv_lr_sc_instr_stream : riscv_amo_base_instr_stream
   riscv_instr lr_instr;
   riscv_instr sc_instr;
 
-  Constraint! q{
+  constraint! q{
     num_amo == 1;
     num_mixed_instr inside [0..16]; // [0:15]
   } legal_c ;
@@ -207,13 +207,13 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
 
   riscv_instr[] amo_instr;
 
-  Constraint! q{
+  constraint! q{
     solve num_amo before num_mixed_instr;
     num_amo inside [1..11];
     num_mixed_instr inside [0..num_amo+1];
   } reasonable_c;
 
-  Constraint! q{
+  constraint! q{
     solve num_amo before num_of_rs1_reg;
     num_of_rs1_reg inside [1..num_amo+1];
     num_of_rs1_reg < 5;
@@ -246,7 +246,7 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
 class riscv_vector_amo_instr_stream: riscv_vector_load_store_instr_stream
 {
 
-  Constraint! q{
+  constraint! q{
     // AMO operation uses indexed address mode
     address_mode == address_mode_e.INDEXED;
   } amo_address_mode_c;

@@ -40,7 +40,7 @@ import std.math: log2, ceil;
 import std.string: format;
 
 import esdl.data.bvec: ubvec;
-import esdl.rand: Constraint, rand, randomize_with, randomize;
+import esdl.rand: constraint, rand, randomize_with, randomize;
 import uvm;
 
 version(CHECK_COMPILE) alias riscv_page_table_list_SV39 = riscv_page_table_list!(satp_mode_t.SV39);
@@ -94,7 +94,7 @@ class riscv_page_table_list(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
   @rand riscv_reg_t mask_reg;
   @rand riscv_reg_t mpp_reg;
 
-  Constraint! q{
+  constraint! q{
     unique [level_reg, fault_vaddr_reg, pte_addr_reg,
             pte_reg, tmp_reg, mask_reg, mpp_reg];
     level_reg !inside [cfg.reserved_regs, riscv_reg_t.ZERO];

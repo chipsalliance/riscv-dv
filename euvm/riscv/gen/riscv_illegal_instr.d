@@ -32,7 +32,7 @@ import std.format: format;
 import std.algorithm: canFind;
 
 import esdl.data.bvec: ubvec, toubvec;
-import esdl.rand: rand, Constraint;
+import esdl.rand: rand, constraint;
 
 import uvm;
 
@@ -107,7 +107,7 @@ class riscv_illegal_instr: uvm_object
   riscv_instr_gen_config      cfg;
   privileged_reg_t[]          csrs;
 
-  Constraint!  q{
+  constraint!  q{
     exception dist [
 		    illegal_instr_type_e.kIllegalOpcode           := 3,
 		    illegal_instr_type_e.kIllegalCompressedOpcode := 1,
@@ -123,7 +123,7 @@ class riscv_illegal_instr: uvm_object
     }
   } exception_dist_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve opcode before instr_bin;
     solve func3 before instr_bin;
     solve func7 before instr_bin;
@@ -145,7 +145,7 @@ class riscv_illegal_instr: uvm_object
   } instr_bit_assignment_c;
 
   // Invalid SYSTEM instructions
-  Constraint!  q{
+  constraint!  q{
     if (exception == illegal_instr_type_e.kIllegalSystemInstr) {
       opcode == 0b1110011;
       // ECALL/EBREAK/xRET/WFI
@@ -165,7 +165,7 @@ class riscv_illegal_instr: uvm_object
     }
   } system_instr_c;
 
-  Constraint!  q{
+  constraint!  q{
     if ((c_msb == 0b000) && (c_op == 0b10) && (XLEN == 32)) {
       if (exception == illegal_instr_type_e.kReservedCompressedInstr) {
         instr_bin[12] == 1;
@@ -176,7 +176,7 @@ class riscv_illegal_instr: uvm_object
     }
   } legal_rv32_c_slli;
 
-  Constraint!  q{
+  constraint!  q{
     if (compressed == true ) {
       exception inside [illegal_instr_type_e.kReservedCompressedInstr,
 			illegal_instr_type_e.kIllegalCompressedOpcode,
@@ -196,14 +196,14 @@ class riscv_illegal_instr: uvm_object
     }
   } exception_type_c;
 
-  Constraint!  q{
+  constraint!  q{
     c_op != 0b11;
   } compressed_instr_op_c;
 
   // Avoid generating illegal func3/func7 errors for opcode used by B-extension for now
   //
   // TODO(udi): add support for generating illegal B-extension instructions
-  Constraint!  q{
+  constraint!  q{
     if (riscv_instr_group_t.RV32B inside [supported_isa]) {
       if (exception inside [illegal_instr_type_e.kIllegalFunc3,
 			    illegal_instr_type_e.kIllegalFunc7]) {
@@ -212,7 +212,7 @@ class riscv_illegal_instr: uvm_object
     }
   } b_extension_c;
 
-  Constraint!  q{
+  constraint!  q{
     if (exception == illegal_instr_type_e.kIllegalCompressedOpcode) {
       c_op != 0b01;
       if (legal_c00_opcode.length == 8) {
@@ -230,7 +230,7 @@ class riscv_illegal_instr: uvm_object
     }
   } illegal_compressed_op_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve exception  before reserved_c;
     solve exception  before opcode;
     solve reserved_c before instr_bin;
@@ -269,7 +269,7 @@ class riscv_illegal_instr: uvm_object
     }
   } reserved_compressed_instr_c;
 
-  Constraint!  q{
+  constraint!  q{
     if (exception == illegal_instr_type_e.kHintInstr) {
       // C.ADDI
       (c_msb == 0b000 && c_op == 0b01 && instr_bin[12] == 0 && instr_bin[2..7] == 0b00000) ||
@@ -295,7 +295,7 @@ class riscv_illegal_instr: uvm_object
     }
   } hint_instr_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve opcode before instr_bin;
     if (exception == illegal_instr_type_e.kIllegalOpcode) {
       !(opcode inside [legal_opcode]);
@@ -307,13 +307,13 @@ class riscv_illegal_instr: uvm_object
   } illegal_opcode_c;
 
   // TODO: Enable atomic instruction
-  Constraint!  q{
+  constraint!  q{
     if (exception != illegal_instr_type_e.kIllegalOpcode) {
       opcode != 0b0101111;
     }
   } no_atomic_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve opcode before func3;
     if (compressed == false) {
       if (exception == illegal_instr_type_e.kIllegalFunc3) {
@@ -354,7 +354,7 @@ class riscv_illegal_instr: uvm_object
     
   } illegal_func3_c;
 
-  Constraint! q{
+  constraint! q{
     solve opcode before func7;
     if ((opcode == 0b0010011) && (func3 ==  0b001) || (func3 == 0b101) ||
 	(opcode == 0b0110011) || (opcode == 0b0111011)) {
@@ -365,7 +365,7 @@ class riscv_illegal_instr: uvm_object
     }
   } has_func7_c;
 
-  Constraint!  q{
+  constraint!  q{
     solve opcode before func7;
     if (opcode inside [0b0110111, 0b1101111, 0b0010111]) {
       has_func3 == false;
@@ -375,7 +375,7 @@ class riscv_illegal_instr: uvm_object
     }
   } has_func3_c;
 
-  Constraint!  q{
+  constraint!  q{
     if (compressed == false) {
       if (exception == illegal_instr_type_e.kIllegalFunc7) {
 	!(func7 inside [0, 0b0100000, 1]);

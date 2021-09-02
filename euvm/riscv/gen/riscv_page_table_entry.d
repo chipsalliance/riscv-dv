@@ -28,7 +28,7 @@ import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
 
 import esdl.data.bvec: ubvec;
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 
 import uvm;
 
@@ -74,26 +74,26 @@ class riscv_page_table_entry(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
   ubvec!XLEN                    starting_va; // Starting virtual address offset
 
   // This two bits are implementation specific, set them to 1 to avoid mismatching
-  Constraint! q{
+  constraint! q{
     @soft a    == true;
     @soft d    == true;
   } access_dirty_bit_c;
 
   // Set reserved fields to 0
-  Constraint! q{
+  constraint! q{
     @soft rsw  == 0;
     @soft rsvd == 0;
   } reserved_bits_c;
 
   // PPN is assigned in the post-process
-  Constraint! q{
+  constraint! q{
     @soft ppn0 == 0;
     @soft ppn1 == 0;
     @soft ppn2 == 0;
     @soft ppn3 == 0;
   } ppn_zero_c;
 
-  Constraint! q{
+  constraint! q{
     // If the PTE is not a leaf page, U,A,D must be cleared by SW for future compatibility
     if (xwr == pte_permission_t.NEXT_LEVEL_PAGE) {
       u == false;

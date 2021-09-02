@@ -16,7 +16,7 @@
  */
 module riscv.gen.riscv_page_table_exception_cfg;
 
-import esdl.rand: Constraint, rand;
+import esdl.rand: constraint, rand;
 import uvm;
 
 
@@ -48,7 +48,7 @@ class riscv_page_table_exception_cfg : uvm_object
   uint zero_access_fault_ratio     = 5;
   uint zero_dirty_fault_ratio      = 5;
 
-  Constraint! q{
+  constraint! q{
     if (enable_exception == true) {
       allow_page_access_control_exception dist
 	[ true := page_access_fault_ratio,
