@@ -410,14 +410,14 @@ class riscv_pmp_cfg : uvm_object {
       //////////////////////////////////////////////////
       // Initialize loop counter and save to mscratch //
       //////////////////////////////////////////////////
-      format("li x%0d, 0", scratch_reg[0])
-      ~ format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0])
-      ~ format("li x%0d, 0", scratch_reg[5])
+      [format("li x%0d, 0", scratch_reg[0]),
+       format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0]),
+       format("li x%0d, 0", scratch_reg[5]),
       ////////////////////////////////////////////////////
       // calculate next pmpaddr and pmpcfg CSRs to read //
       ////////////////////////////////////////////////////
-      ~ format("0: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      ~ format("mv x%0d, x%0d", scratch_reg[4], scratch_reg[0]);
+       format("0: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("mv x%0d, x%0d", scratch_reg[4], scratch_reg[0])];
     
     // Generate a sequence of loads and branches that will compare the loop index to every
     // value within [0 : pmp_num_regions] to manually check which PMP CSRs to read from
@@ -444,77 +444,77 @@ class riscv_pmp_cfg : uvm_object {
       ////////////////////////////////////////////
       // get correct 8-bit configuration fields //
       ////////////////////////////////////////////
-      format("17: li x%0d, %0d", scratch_reg[3], cfg_per_csr)
-      ~ format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      // calculate offset to left-shift pmpcfg[i] (scratch_reg[2]),
-      // use scratch_reg[4] as temporary storage
-      //
-      // First calculate (loop_counter % cfg_per_csr)
-      ~ format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
-	       XLEN - cast(int) ceil(log2(cfg_per_csr)))
-      ~ format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
-	       XLEN - cast(int) ceil(log2(cfg_per_csr)))
-      // Calculate (cfg_per_csr - modded_loop_counter - 1) to determine how many 8bit slots to
-      // the left this needs to be shifted
-      ~ format("sub x%0d, x%0d, x%0d", scratch_reg[4], scratch_reg[3], scratch_reg[0])
-      ~ format("addi x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], -1)
-      // Multiply this "slot offset" by 8 to get the actual number of bits it should
-      // be leftshifted.
-      ~ format("slli x%0d, x%0d, 3", scratch_reg[4], scratch_reg[4])
-      // Perform the leftshifting operation
-      ~ format("sll x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[2], scratch_reg[4])
-      // Add 8*modded_loop_counter to 8*(cfg_per_csr - modded_loop_counter - 1)
-      // stored in scratch_reg[4] to get "slot offset" for the pending rightshift operation.
-      ~ format("slli x%0d, x%0d, 3", scratch_reg[0], scratch_reg[0])
-      ~ format("add x%0d, x%0d, x%0d", scratch_reg[4], scratch_reg[4], scratch_reg[0])
-      // Perform the rightshift operation
-      ~ format("srl x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[3], scratch_reg[4])
-      ///////////////////////////
-      // get pmpcfg[i].A field //
-      ///////////////////////////
-      // pmpcfg[i].A will be bits [4:3] of the 8-bit configuration entry
-      ~ format("slli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[3], XLEN - 5)
-      ~ format("srli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], XLEN - 2)
-      //////////////////////////////////////////////////////////////////
-      // based on address match mode, branch to appropriate "handler" //
-      //////////////////////////////////////////////////////////////////
-      // pmpcfg[i].A == OFF
-      ~ format("beqz x%0d, 20f", scratch_reg[4])
-      // pmpcfg[i].A == TOR
-      // scratch_reg[5] will contain pmpaddr[i-1]
-      ~ format("li x%0d, 1", scratch_reg[0])
-      ~ format("beq x%0d, x%0d, 21f", scratch_reg[4], scratch_reg[0])
-      // pmpcfg[i].A == NA4
-      ~ format("li x%0d, 2", scratch_reg[0])
-      ~ format("beq x%0d, x%0d, 25f", scratch_reg[4], scratch_reg[0])
-      // pmpcfg[i].A == NAPOT
-      ~ format("li x%0d, 3", scratch_reg[0])
-      ~ format("beq x%0d, x%0d, 27f", scratch_reg[4], scratch_reg[0])
-      // Error check, if no address modes match, something has gone wrong
-      ~ format("la x%0d, test_done", scratch_reg[0])
-      ~ format("jalr x0, x%0d, 0", scratch_reg[0])
-      /////////////////////////////////////////////////////////////////
-      // increment loop counter and branch back to beginning of loop //
-      /////////////////////////////////////////////////////////////////
-      ~ format("18: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      // load pmpaddr[i] into scratch_reg[5] to store for iteration [i+1]
-      ~ format("mv x%0d, x%0d", scratch_reg[5], scratch_reg[1])
-      // increment loop counter by 1
-      ~ format("addi x%0d, x%0d, 1", scratch_reg[0], scratch_reg[0])
-      // store loop counter to MSCRATCH
-      ~ format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0])
-      // load number of pmp regions - loop limit
-      ~ format("li x%0d, %0d", scratch_reg[1], pmp_num_regions)
-      // if counter < pmp_num_regions => branch to beginning of loop,
-      // otherwise jump to the end of the loop
-      ~ format("ble x%0d, x%0d, 19f", scratch_reg[1], scratch_reg[0])
-      ~ format("j 0b")
-      // If we reach here, it means that no PMP entry has matched the request.
-      // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
-      // but this routine is unable to find a matching PMP region for the faulting access -
-      // there is a bug somewhere.
-      ~ format("19: la x%0d, test_done", scratch_reg[0])
-      ~ format("jalr x0, x%0d, 0", scratch_reg[0]);
+      [format("17: li x%0d, %0d", scratch_reg[3], cfg_per_csr),
+       format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       // calculate offset to left-shift pmpcfg[i] (scratch_reg[2]),
+       // use scratch_reg[4] as temporary storage
+       //
+       // First calculate (loop_counter % cfg_per_csr)
+       format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
+	      XLEN - cast(int) ceil(log2(cfg_per_csr))),
+       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
+	      XLEN - cast(int) ceil(log2(cfg_per_csr))),
+       // Calculate (cfg_per_csr - modded_loop_counter - 1) to determine how many 8bit slots to
+       // the left this needs to be shifted
+       format("sub x%0d, x%0d, x%0d", scratch_reg[4], scratch_reg[3], scratch_reg[0]),
+       format("addi x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], -1),
+       // Multiply this "slot offset" by 8 to get the actual number of bits it should
+       // be leftshifted.
+       format("slli x%0d, x%0d, 3", scratch_reg[4], scratch_reg[4]),
+       // Perform the leftshifting operation
+       format("sll x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[2], scratch_reg[4]),
+       // Add 8*modded_loop_counter to 8*(cfg_per_csr - modded_loop_counter - 1)
+       // stored in scratch_reg[4] to get "slot offset" for the pending rightshift operation.
+       format("slli x%0d, x%0d, 3", scratch_reg[0], scratch_reg[0]),
+       format("add x%0d, x%0d, x%0d", scratch_reg[4], scratch_reg[4], scratch_reg[0]),
+       // Perform the rightshift operation
+       format("srl x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[3], scratch_reg[4]),
+       ///////////////////////////
+       // get pmpcfg[i].A field //
+       ///////////////////////////
+       // pmpcfg[i].A will be bits [4:3] of the 8-bit configuration entry
+       format("slli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[3], XLEN - 5),
+       format("srli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], XLEN - 2),
+       //////////////////////////////////////////////////////////////////
+       // based on address match mode, branch to appropriate "handler" //
+       //////////////////////////////////////////////////////////////////
+       // pmpcfg[i].A == OFF
+       format("beqz x%0d, 20f", scratch_reg[4]),
+       // pmpcfg[i].A == TOR
+       // scratch_reg[5] will contain pmpaddr[i-1]
+       format("li x%0d, 1", scratch_reg[0]),
+       format("beq x%0d, x%0d, 21f", scratch_reg[4], scratch_reg[0]),
+       // pmpcfg[i].A == NA4
+       format("li x%0d, 2", scratch_reg[0]),
+       format("beq x%0d, x%0d, 25f", scratch_reg[4], scratch_reg[0]),
+       // pmpcfg[i].A == NAPOT
+       format("li x%0d, 3", scratch_reg[0]),
+       format("beq x%0d, x%0d, 27f", scratch_reg[4], scratch_reg[0]),
+       // Error check, if no address modes match, something has gone wrong
+       format("la x%0d, test_done", scratch_reg[0]),
+       format("jalr x0, x%0d, 0", scratch_reg[0]),
+       /////////////////////////////////////////////////////////////////
+       // increment loop counter and branch back to beginning of loop //
+       /////////////////////////////////////////////////////////////////
+       format("18: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       // load pmpaddr[i] into scratch_reg[5] to store for iteration [i+1]
+       format("mv x%0d, x%0d", scratch_reg[5], scratch_reg[1]),
+       // increment loop counter by 1
+       format("addi x%0d, x%0d, 1", scratch_reg[0], scratch_reg[0]),
+       // store loop counter to MSCRATCH
+       format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0]),
+       // load number of pmp regions - loop limit
+       format("li x%0d, %0d", scratch_reg[1], pmp_num_regions),
+       // if counter < pmp_num_regions => branch to beginning of loop,
+       // otherwise jump to the end of the loop
+       format("ble x%0d, x%0d, 19f", scratch_reg[1], scratch_reg[0]),
+       format("j 0b"),
+       // If we reach here, it means that no PMP entry has matched the request.
+       // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
+       // but this routine is unable to find a matching PMP region for the faulting access -
+       // there is a bug somewhere.
+       format("19: la x%0d, test_done", scratch_reg[0]),
+       format("jalr x0, x%0d, 0", scratch_reg[0])];
 
     /////////////////////////////////////////////////
     // Sub-sections for all address matching modes //
@@ -532,68 +532,68 @@ class riscv_pmp_cfg : uvm_object {
 
     // Sub-section to handle address matching mode TOR.
     instr ~=
-      format("21: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      ~ format("csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MTVAL)
-      ~ format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4])
-      // If loop_counter==0, compare fault_addr to 0
-      ~ format("bnez x%0d, 22f", scratch_reg[0])
-      // If fault_addr < 0 : continue looping
-      ~ format("bltz x%0d, 18b", scratch_reg[4])
-      ~ format("j 23f")
-      // If fault_addr < pmpaddr[i-1] : continue looping
-      ~ format("22: bgtu x%0d, x%0d, 18b", scratch_reg[5], scratch_reg[4])
-      // If fault_addr >= pmpaddr[i] : continue looping
-      ~ format("23: bleu x%0d, x%0d, 18b", scratch_reg[1], scratch_reg[4])
-      // If we get here, there is a TOR match, if the entry is locked jump to
-      // <test_done>, otherwise modify access bits and return
-      ~ format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3])
-      ~ format("beqz x%0d, 24f", scratch_reg[4])
-      ~ format("la x%0d, test_done", scratch_reg[0])
-      ~ format("jalr x0, x%0d, 0", scratch_reg[0])
-      ~ format("24: j 29f") ;
+      [format("21: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MTVAL),
+       format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4]),
+       // If loop_counter==0, compare fault_addr to 0
+       format("bnez x%0d, 22f", scratch_reg[0]),
+       // If fault_addr < 0 : continue looping
+       format("bltz x%0d, 18b", scratch_reg[4]),
+       format("j 23f"),
+       // If fault_addr < pmpaddr[i-1] : continue looping
+       format("22: bgtu x%0d, x%0d, 18b", scratch_reg[5], scratch_reg[4]),
+       // If fault_addr >= pmpaddr[i] : continue looping
+       format("23: bleu x%0d, x%0d, 18b", scratch_reg[1], scratch_reg[4]),
+       // If we get here, there is a TOR match, if the entry is locked jump to
+       // <test_done>, otherwise modify access bits and return
+       format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
+       format("beqz x%0d, 24f", scratch_reg[4]),
+       format("la x%0d, test_done", scratch_reg[0]),
+       format("jalr x0, x%0d, 0", scratch_reg[0]),
+       format("24: j 29f")];
 
     // Sub-section to handle address matching mode NA4.
     // TODO(udinator) : add rv64 support
     instr ~=
-      format("25: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL)
-      ~ format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0])
-      // Zero out pmpaddr[i][31:30]
-      ~ format("slli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[1])
-      ~ format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4])
-      // If fault_addr[31:2] != pmpaddr[i][29:0] => there is a mismatch,
-      // so continue looping
-      ~ format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4])
-      // If we get here, there is an NA4 address match, jump to <test_done> if the
-      // entry is locked, otherwise modify access bits
-      ~ format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3])
-      ~ format("beqz x%0d, 26f", scratch_reg[4])
-      ~ format("la x%0d, test_done", scratch_reg[0])
-      ~ format("jalr x0, x%0d, 0", scratch_reg[0])
-      ~ format("26: j 29f");
+      [format("25: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
+       format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+       // Zero out pmpaddr[i][31:30]
+       format("slli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[1]),
+       format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4]),
+       // If fault_addr[31:2] != pmpaddr[i][29:0] => there is a mismatch,
+       // so continue looping
+       format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4]),
+       // If we get here, there is an NA4 address match, jump to <test_done> if the
+       // entry is locked, otherwise modify access bits
+       format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
+       format("beqz x%0d, 26f", scratch_reg[4]),
+       format("la x%0d, test_done", scratch_reg[0]),
+       format("jalr x0, x%0d, 0", scratch_reg[0]),
+       format("26: j 29f")];
 
     // Sub-section to handle address matching mode NAPOT.
     instr ~=
-      format("27: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL)
-      // get fault_addr[31:2]
-      ~ format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0])
-      // mask the bottom pmp_granularity bits of fault_addr
-      ~ format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], pmp_granularity)
-      ~ format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], pmp_granularity)
-      // get pmpaddr[i][29:0]
-      ~ format("slli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[1])
-      ~ format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4])
-      // mask the bottom pmp_granularity bits of pmpaddr[i]
-      ~ format("srli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], pmp_granularity)
-      ~ format("slli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], pmp_granularity)
-      // If masked_fault_addr != masked_pmpaddr[i] : mismatch, so continue looping
-      ~ format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4])
-      // If we get here there is an NAPOT address match, jump to <test_done> if
-      // the entry is locked, otherwise modify access bits
-      ~ format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3])
-      ~ format("beqz x%0d, 29f", scratch_reg[4])
-      ~ format("la x%0d, test_done", scratch_reg[0])
-      ~ format("jalr x0, x%0d, 0", scratch_reg[0])
-      ~ format("28: j 29f");
+      [format("27: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
+       // get fault_addr[31:2]
+       format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+       // mask the bottom pmp_granularity bits of fault_addr
+       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], pmp_granularity),
+       format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], pmp_granularity),
+       // get pmpaddr[i][29:0]
+       format("slli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[1]),
+       format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4]),
+       // mask the bottom pmp_granularity bits of pmpaddr[i]
+       format("srli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], pmp_granularity),
+       format("slli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], pmp_granularity),
+       // If masked_fault_addr != masked_pmpaddr[i] : mismatch, so continue looping
+       format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4]),
+       // If we get here there is an NAPOT address match, jump to <test_done> if
+       // the entry is locked, otherwise modify access bits
+       format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
+       format("beqz x%0d, 29f", scratch_reg[4]),
+       format("la x%0d, test_done", scratch_reg[0]),
+       format("jalr x0, x%0d, 0", scratch_reg[0]),
+       format("28: j 29f")];
   
 
     // This case statement creates a bitmask that enables the correct access permissions
@@ -615,49 +615,49 @@ class riscv_pmp_cfg : uvm_object {
       break;
     }
     instr ~=
-      format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      // Calculate (loop_counter % cfg_per_csr) to find the index of the correct
-      // entry in pmpcfg[i].
-      //
-      // Calculate XLEN - $clog2(cfg_per_csr) to give how many low order bits
-      // of loop_counter we need to keep around
-      ~ format("li x%0d, %0d", scratch_reg[4], XLEN - cast(int) ceil(log2(cfg_per_csr)))
-      // Now leftshift and rightshift loop_counter by this amount to clear all the upper
-      // bits
-      ~ format("sll x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4])
-      ~ format("srl x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4])
-      // Multiply the index by 8 to get the shift amount.
-      ~ format("slli x%0d, x%0d, 3", scratch_reg[4], scratch_reg[0])
-      // Shift the updated configuration byte to the proper alignment
-      ~ format("sll x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[3], scratch_reg[4])
-      // OR pmpcfg[i] with the updated configuration byte
-      ~ format("or x%0d, x%0d, x%0d", scratch_reg[2], scratch_reg[2], scratch_reg[3])
-      // Divide the loop counter by cfg_per_csr to determine which pmpcfg CSR to write to.
-      ~ format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH)
-      ~ format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], cast(int) ceil(log2(cfg_per_csr)))
-      // Write the updated pmpcfg[i] to the CSR bank and exit the handler.
-      //
-      // Don't touch scratch_reg[2], as it contains the updated pmpcfg[i] to be written.
-      // All other scratch_reg[*] can be used.
-      // scratch_reg[0] contains the index of the correct pmpcfg CSR.
-      // We simply check the index and then write to the correct pmpcfg CSR based on its value.
-      ~ format("beqz x%0d, 30f", scratch_reg[0])
-      ~ format("li x%0d, 1", scratch_reg[4])
-      ~ format("beq x%0d, x%0d, 31f", scratch_reg[0], scratch_reg[4])
-      ~ format("li x%0d, 2", scratch_reg[4])
-      ~ format("beq x%0d, x%0d, 32f", scratch_reg[0], scratch_reg[4])
-      ~ format("li x%0d, 3", scratch_reg[4])
-      ~ format("beq x%0d, x%0d, 33f", scratch_reg[0], scratch_reg[4])
-      ~ format("30: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG0, scratch_reg[2])
-      ~ format("j 34f")
-      ~ format("31: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG1, scratch_reg[2])
-      ~ format("j 34f")
-      ~ format("32: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG2, scratch_reg[2])
-      ~ format("j 34f")
-      ~ format("33: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG3, scratch_reg[2])
-      // End the pmp handler with a labeled nop instruction, this provides a branch target
-      // for the internal routine after it has "fixed" the pmp configuration CSR.
-      ~ format("34: nop");
+      [format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       // Calculate (loop_counter % cfg_per_csr) to find the index of the correct
+       // entry in pmpcfg[i].
+       //
+       // Calculate XLEN - $clog2(cfg_per_csr) to give how many low order bits
+       // of loop_counter we need to keep around
+       format("li x%0d, %0d", scratch_reg[4], XLEN - cast(int) ceil(log2(cfg_per_csr))),
+       // Now leftshift and rightshift loop_counter by this amount to clear all the upper
+       // bits
+       format("sll x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
+       format("srl x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
+       // Multiply the index by 8 to get the shift amount.
+       format("slli x%0d, x%0d, 3", scratch_reg[4], scratch_reg[0]),
+       // Shift the updated configuration byte to the proper alignment
+       format("sll x%0d, x%0d, x%0d", scratch_reg[3], scratch_reg[3], scratch_reg[4]),
+       // OR pmpcfg[i] with the updated configuration byte
+       format("or x%0d, x%0d, x%0d", scratch_reg[2], scratch_reg[2], scratch_reg[3]),
+       // Divide the loop counter by cfg_per_csr to determine which pmpcfg CSR to write to.
+       format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], cast(int) ceil(log2(cfg_per_csr))),
+       // Write the updated pmpcfg[i] to the CSR bank and exit the handler.
+       //
+       // Don't touch scratch_reg[2], as it contains the updated pmpcfg[i] to be written.
+       // All other scratch_reg[*] can be used.
+       // scratch_reg[0] contains the index of the correct pmpcfg CSR.
+       // We simply check the index and then write to the correct pmpcfg CSR based on its value.
+       format("beqz x%0d, 30f", scratch_reg[0]),
+       format("li x%0d, 1", scratch_reg[4]),
+       format("beq x%0d, x%0d, 31f", scratch_reg[0], scratch_reg[4]),
+       format("li x%0d, 2", scratch_reg[4]),
+       format("beq x%0d, x%0d, 32f", scratch_reg[0], scratch_reg[4]),
+       format("li x%0d, 3", scratch_reg[4]),
+       format("beq x%0d, x%0d, 33f", scratch_reg[0], scratch_reg[4]),
+       format("30: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG0, scratch_reg[2]),
+       format("j 34f"),
+       format("31: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG1, scratch_reg[2]),
+       format("j 34f"),
+       format("32: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG2, scratch_reg[2]),
+       format("j 34f"),
+       format("33: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG3, scratch_reg[2]),
+       // End the pmp handler with a labeled nop instruction, this provides a branch target
+       // for the internal routine after it has "fixed" the pmp configuration CSR.
+       format("34: nop")]; 
   }
 
   // This function is used for a directed PMP test to test writes to all the pmpcfg and pmpaddr
