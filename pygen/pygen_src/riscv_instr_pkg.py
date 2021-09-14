@@ -1175,42 +1175,6 @@ class jalr_riscv_reg_t(IntEnum):
     RA = 0
     T1 = auto()
 
-
-# Ignore ZERO as src1 of load instructions
-class riscv_reg_ex_zero_t(IntEnum):
-    RA = 0
-    SP = auto()
-    GP = auto()
-    TP = auto()
-    T0 = auto()
-    T1 = auto()
-    T2 = auto()
-    S0 = auto()
-    S1 = auto()
-    A0 = auto()
-    A1 = auto()
-    A2 = auto()
-    A3 = auto()
-    A4 = auto()
-    A5 = auto()
-    A6 = auto()
-    A7 = auto()
-    S2 = auto()
-    S3 = auto()
-    S4 = auto()
-    S5 = auto()
-    S6 = auto()
-    S7 = auto()
-    S8 = auto()
-    S9 = auto()
-    S10 = auto()
-    S11 = auto()
-    T3 = auto()
-    T4 = auto()
-    T5 = auto()
-    T6 = auto()
-
-
 # PMP address matching mode
 class pmp_addr_mode_t(Enum):
     OFF = 0b00
@@ -1379,7 +1343,7 @@ class riscv_reg_ex_zero_t(IntEnum):
     T6 = auto()
 
 # Currently PyVSC doesn't supports ignore bins
-# riscv_reg_ex_zero_sp_t and riscv_reg_ex_zero_t is added as a WA and it can be removed later.
+# TODO riscv_reg_ex_zero_sp_t and riscv_reg_ex_zero_t is added as a WA and it can be removed later.
 
 def get_val(in_string, hexa=0):
     if len(in_string) > 2:

@@ -1620,6 +1620,96 @@ class riscv_instr_cover_group:
                                            }
                                            )
 
+    @vsc.covergroup
+    class hint_cg(object):
+        def __init__(self):
+            super().__init__()
+            self.instr = None
+            self.cp_hint0 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                          bins=dict(addi=vsc.wildcard_bin_array([],
+                                                    "0b0000_1xxx_x000_0001",
+                                                    "0b0000_x1xx_x000_0001",
+                                                    "0b0000_xx1x_x000_0001",
+                                                    "0b0000_xxx1_x000_0001",
+                                                    "0b0000_xxxx_1000_0001")))
+            self.cp_hint1 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(li=vsc.wildcard_bin(
+                                           "0b010x_0000_0xxx_xx01")))
+            self.cp_hint2 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(lui=vsc.wildcard_bin(
+                                           "0b011x_0000_0xxx_xx01")))
+            self.cp_hint3 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(srli64=vsc.wildcard_bin(
+                                           "0b1000_00xx_x000_0001")))
+            self.cp_hint4 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(srai64=vsc.wildcard_bin(
+                                           "0b1000_01xx_x000_0001")))
+            self.cp_hint5 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(slli=vsc.wildcard_bin(
+                                           "0b000x_0000_0xxx_xx10")))
+            self.cp_hint6 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(slli64=vsc.wildcard_bin(
+                                           "0b0000_xxxx_x000_0010")))
+            self.cp_hint7 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(mv=vsc.wildcard_bin_array([],
+                                                    "0b1000_0000_01xx_xx10",
+                                                    "0b1000_0000_0x1x_xx10",
+                                                    "0b1000_0000_0xx1_xx10",
+                                                    "0b1000_0000_0xxx_1x10",
+                                                    "0b1000_0000_0xxx_x110")))
+            self.cp_hint8 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins=dict(add=vsc.wildcard_bin_array([],
+                                                    "0b1001_0000_01xx_xx10",
+                                                    "0b1001_0000_0x1x_xx10",
+                                                    "0b1001_0000_0xx1_xx10",
+                                                    "0b1001_0000_0xxx_1x10",
+                                                    "0b1001_0000_0xxx_x110"
+                                                 )))
+
+    @vsc.covergroup
+    class illegal_compressed_instr_cg(object):
+        def __init__(self):
+            super().__init__()
+            self.instr = None
+            self.cp_point0 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_illegal=vsc.wildcard_bin(
+                                           "0b0000_0000_0000_0000")))
+            self.cp_point1 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_addi4spn=vsc.wildcard_bin_array([],
+                                           "0b0000_0000_000x_x100",
+                                           "0b0000_0000_000x_1x00",
+                                           "0b0000_0000_0001_xx00")))
+            self.cp_point2 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_addiw=vsc.wildcard_bin(
+                                           "0b001x_0000_0xxx_xx01")))
+            self.cp_point3 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_addi16sp=vsc.wildcard_bin(
+                                           "0b0110_0001_0000_0001")))
+            self.cp_point4 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_lui=vsc.wildcard_bin_array([],
+                                           "0b0110_xxxx_1000_0001",
+                                           "0b0110_xx1x_x000_0001",
+                                           "0b0110_x1xx_x000_0001",
+                                           "0b0110_1xxx_x000_0001")))
+            self.cp_point5 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_reserv_0=vsc.wildcard_bin(
+                                           "0b1001_11xx_x10x_xx01")))
+            self.cp_point6 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_reserv_1=vsc.wildcard_bin(
+                                           "0b1001_11xx_x11x_xx01")))
+            self.cp_point7 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_jr=vsc.wildcard_bin(
+                                           "0b1000_0000_0000_0010")))
+            self.cp_point8 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_lwsp=vsc.wildcard_bin(
+                                           "0b010x_0000_0xxx_xx10")))
+            self.cp_point9 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_lqsp=vsc.wildcard_bin(
+                                           "0b001x_0000_0xxx_xx10")))
+            self.cp_point10 = vsc.coverpoint(lambda: self.instr.binary[15:0],
+                                           bins = dict(c_ldsp=vsc.wildcard_bin(
+                                           "0b011x_0000_0xxx_xx10")))
+
     '''Compressed instructions'''
 
     @vsc.covergroup
@@ -2010,16 +2100,21 @@ class riscv_instr_cover_group:
         self.c_jal_cg_i = self.c_jal_cg()
         self.c_jr_cg_i = self.c_jr_cg()
         self.c_jalr_cg_i = self.c_jalr_cg()
+        self.hint_cg_i = self.hint_cg()
+        self.illegal_compressed_instr_cg_i = self.illegal_compressed_instr_cg()
 
     def sample(self, instr):
         self.instr_cnt += 1
         if self.instr_cnt > 1:
             instr.check_hazard_condition(self.pre_instr)
-        # TODO: sampling for hint, compressed, and illegal_compressed insts
+        # TODO: sampling for compressed_instr_cg
         if ((instr.binary[1:0] != 3) and (riscv_instr_group_t.RV32C in rcs.supported_isa)):
             # self.compressed_opcode_cg_i.instr = instr
             # self.compressed_opcode_cg_i.sample()
-            pass
+            self.hint_cg_i.instr = instr
+            self.hint_cg_i.sample()
+            self.illegal_compressed_instr_cg_i.instr = instr
+            self.illegal_compressed_instr_cg_i.sample()
 
         if instr.binary[1:0] == 3:
             self.opcode_cg_i.instr = instr
