@@ -11,8 +11,8 @@ randomization and coverage collection. It currently supports the following featu
 - Supports mixing directed instructions with random instruction stream
 - Support for direct & vectored interrupt table.
 - Multi-hart support
-- Functional coverage framework (reports GUI as well as text, currently supports RV32I
-  and RV32M only)
+- Functional coverage framework (reports GUI as well as text, currently
+  supports RV32IMFDC extensions)
 - Supported ISS : Spike, OVPsim
 
 ## Supported tests
@@ -70,7 +70,30 @@ Run the generator only, do not compile and simluation with ISS
 ```bash
 python3 run.py --test=riscv_arithmetic_basic_test --simulator=pyflow --steps gen
 ```
+## Coverage Model
+The coverage model of PyFlow is developed using PyVSC library.
 
+Command to generate the coverage report.
+#### Process spike simulation log and collect functional coverage
+```bash
+python3 cov.py --dir out/spike_sim/ --simulator=pyflow --enable_visualization
+```
+--enable_visualization helps enabling coverage report visualization for pyflow.
+#### Get the command reference
+```bash
+cov --help
+```
+#### Run the coverage flow with predefined targets
+```bash
+python3 cov.py --dir out/spike_sim/ --simulator=pyflow --enable_visualization --target rv32imc
+```
+The coverage reports can be viewed using two ways:
+1) Text format: By opening the CoverageReport.txt file.
+2) GUI format: By opening the cov_db.xml using pyucis-viewer.
+The GUI format could be enabled using "--enable_visualization" command option.
+```bash
+pyucis-viewer cov_db.xml
+```
 ## Note
 Currently, time to generate a single program with larger than 10k instructions is around
 12 minutes. We are working on improving the overall performance.
