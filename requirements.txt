@@ -10,4 +10,3 @@ flake8
 pyvsc
 tabulate
 pandas
-pyucis-viewer
