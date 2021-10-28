@@ -42,7 +42,7 @@ import riscv.gen.target: support_pmp, XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.riscv_directed_instr_lib: riscv_push_stack_instr, riscv_pop_stack_instr,
   riscv_jump_instr;
-import riscv.gen.riscv_instr_stream: riscv_instr_stream, riscv_rand_instr_stream;
+import riscv.gen.riscv_instr_stream: riscv_instr_stream, riscv_prog_instr_stream;
 import riscv.gen.riscv_illegal_instr: riscv_illegal_instr;
 
 import std.format: format;
@@ -62,7 +62,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   uint                     instr_cnt;            // Instruction count of this sequence
   riscv_push_stack_instr   instr_stack_enter;    // Stack push instructions for sub-programs
   riscv_pop_stack_instr    instr_stack_exit;     // Stack pop instructions for sub-programs
-  riscv_rand_instr_stream  instr_stream;         // Main instruction streams
+  riscv_prog_instr_stream  instr_stream;         // Main instruction streams
   bool                     is_main_program;      // Type of this sequence (main or sub program)
   bool                     is_debug_program;     // Indicates whether sequence is debug program
   string                   label_name;           // Label of the sequence (program name)
@@ -80,7 +80,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     super(name);
     if(!uvm_config_db!(riscv_instr_gen_config).get(null, "*", "instr_cfg", cfg))
       uvm_fatal(get_full_name(), "Cannot get instr_gen_cfg");
-    instr_stream = riscv_rand_instr_stream.type_id.create("instr_stream");
+    instr_stream = riscv_prog_instr_stream.type_id.create("instr_stream");
     instr_stack_enter = riscv_push_stack_instr.type_id.create("instr_stack_enter");
     instr_stack_exit  = riscv_pop_stack_instr.type_id.create("instr_stack_exit");
     illegal_instr = riscv_illegal_instr.type_id.create("illegal_instr");
