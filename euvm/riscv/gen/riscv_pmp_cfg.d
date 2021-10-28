@@ -30,7 +30,7 @@ import esdl.rand: rand, constraint;
 
 import uvm;
 
-class riscv_pmp_cfg : uvm_object {
+class riscv_pmp_cfg: uvm_object {
   
   mixin uvm_object_utils;
  
@@ -172,7 +172,7 @@ class riscv_pmp_cfg : uvm_object {
 
   void set_defaults() {
     uvm_info(get_full_name(), format("MAX OFFSET: 0x%0x", pmp_max_offset), UVM_LOW);
-    foreach(i, cfg; pmp_cfg) {
+    foreach (i, cfg; pmp_cfg) {
       cfg.l      = false;
       cfg.a      = pmp_addr_mode_t.TOR;
       cfg.x      = true;

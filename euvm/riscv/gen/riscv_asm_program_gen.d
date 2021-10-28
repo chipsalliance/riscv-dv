@@ -342,22 +342,22 @@ class riscv_asm_program_gen : uvm_object
   }
 
   void insert_sub_program(riscv_instr_sequence[] sub_program,
-			  ref Queue!string instr_list) {
+			  ref Queue!string instr_string_list) {
     sub_program.shuffle();
     foreach(subp; sub_program) {
       subp.post_process_instr();
       subp.generate_instr_stream();
-      instr_list = instr_list ~ subp.instr_string_list;
+      instr_string_list ~= subp.instr_string_list;
     }
   }
 
   void insert_sub_program(riscv_instr_sequence[] sub_program,
-			  ref string[] instr_list) {
+			  ref string[] instr_string_list) {
     sub_program.shuffle();
     foreach(subp; sub_program) {
       subp.post_process_instr();
       subp.generate_instr_stream();
-      instr_list ~= subp.instr_string_list.toArray;
+      instr_string_list ~= subp.instr_string_list.toArray;
     }
   }
 
