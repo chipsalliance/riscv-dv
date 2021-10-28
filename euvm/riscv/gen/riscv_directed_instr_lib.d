@@ -109,7 +109,7 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
       la_instr.imm_str = format("%0s%0s+%0d",
 				hart_prefix(hart), cfg.mem_region[id].name, base);
     }
-    instr_list.pushFront(la_instr);
+    prepend_instr(la_instr);
   }
 
   // Insert some other instructions to mix with mem_access instruction
@@ -229,7 +229,7 @@ class riscv_jump_instr: riscv_directed_instr_stream
       instr = [la, addi] ~ instr;
     }
     mix_instr_stream(instr);
-    instr_list ~= jump;
+    append_instr(jump);
     foreach (linstr; instr_list) {
       linstr.has_label = false;
       linstr.atomic = true;
@@ -312,6 +312,7 @@ class riscv_jal_instr : riscv_rand_instr_stream
 	}
       }
     }
+    
     instr_list = jump_start ~ jump ~ jump_end;
     foreach (instr; instr_list) {
       instr.has_label = true;
@@ -473,7 +474,7 @@ class riscv_pop_stack_instr: riscv_rand_instr_stream
     } ( cfg.sp, stack_len);
     pop_stack_instr[num_of_reg_to_save].imm_str = format("%0d", stack_len);
     mix_instr_stream(pop_stack_instr);
-    foreach(instr; instr_list) {
+    foreach (instr; instr_list) {
       instr.atomic = true;
       instr.has_label = false;
     }
@@ -539,7 +540,7 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
       init_instr[i].rd = avail_regs[i];
       init_instr[i].pseudo_instr_name = riscv_pseudo_instr_name_t.LI;
       init_instr[i].imm_str = format("0x%0x", init_val[i]);
-      instr_list ~= init_instr[i];
+      append_instr(init_instr[i]);
     }
     for (int i = 0; i < num_of_instr; i++) {
       riscv_instr instr =
@@ -548,7 +549,7 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
 					   riscv_instr_group_t.RV32F , riscv_instr_group_t.RV64F,
 					   riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D]);
       randomize_gpr(instr);
-      instr_list ~= instr;
+      append_instr(instr);
     }
     super.post_randomize();
   }

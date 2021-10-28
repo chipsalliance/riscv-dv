@@ -127,7 +127,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     instr_stack_enter.cfg = cfg;
     instr_stack_enter.push_start_label = label_name ~ "_stack_p";
     instr_stack_enter.gen_push_stack_instr(program_stack_len, allow_branch);
-    instr_stream.instr_list = instr_stack_enter.instr_list ~ instr_stream.instr_list;
+    instr_stream.prepend_instr_list(instr_stack_enter.instr_list);
   }
 
   // Recover the saved GPR from the stack
@@ -135,7 +135,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   void gen_stack_exit_instr() {
     instr_stack_exit.cfg = cfg;
     instr_stack_exit.gen_pop_stack_instr(program_stack_len, instr_stack_enter.saved_regs);
-    instr_stream.instr_list ~= instr_stack_exit.instr_list;
+    instr_stream.append_instr_list(instr_stack_exit.instr_list);
   }
 
   //----------------------------------------------------------------------------------------------

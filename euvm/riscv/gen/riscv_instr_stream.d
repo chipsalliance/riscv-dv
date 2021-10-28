@@ -42,6 +42,28 @@ import esdl.data.bvec: ubvec;
 
 import uvm;
 
+struct riscv_instr_stream_elem
+{
+  this(Queue!riscv_instr seq) {
+    _seq = seq;
+    _seq_insert_map.length = _seq.length;
+  }
+  this(riscv_instr elem) {
+    _elem = elem;
+  }
+  // when streams are getting mixed
+  Queue!riscv_instr _seq;
+  // for individual elements
+  riscv_instr       _elem;
+  // bypass to the next -- 0 means no bypass
+  uint              _next;
+  // 
+  uint[]            _seq_insert_map;
+  uint              _elem_insert_map;
+  // true if _seq or _elem is atomic
+  bool              _is_atomic;
+}
+
 class riscv_instr_stream: uvm_object
 {
   mixin uvm_object_utils;
@@ -56,6 +78,8 @@ class riscv_instr_stream: uvm_object
   riscv_reg_t[]            reserved_rd;
   int                      hart;
 
+  riscv_instr_stream_elem[] instr_map;
+
   // riscv_instr_registry     registry;
 
   this(string name = "riscv_instr_stream") {
@@ -66,6 +90,7 @@ class riscv_instr_stream: uvm_object
   
   void initialize_instr_list(uint instr_cnt) {
     instr_list.length = 0;
+    instr_map.length = 0;
     this.instr_cnt = instr_cnt;
     create_instr_instance();
   }
@@ -74,7 +99,7 @@ class riscv_instr_stream: uvm_object
     riscv_instr instr;
     for (int i = 0; i < instr_cnt; i++) {
       instr = riscv_instr.type_id.create(format("instr_%0d", i));
-      instr_list ~= instr;
+      append_instr(instr);
     }
   }
 
@@ -103,6 +128,10 @@ class riscv_instr_stream: uvm_object
     instr_list.insert(idx, instr);
   }
 
+  void insert_instr_map(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
+    assert (replace == false);
+  }
+  
   // Insert an instruction to the existing instruction stream at the given index
   // When index is -1, the instruction is injected at a random location
   // When replace is 1, the original instruction at the inserted position will be replaced
@@ -139,19 +168,16 @@ class riscv_instr_stream: uvm_object
     if (replace) {
       new_instr[0].label = instr_list[idx].label;
       new_instr[0].has_label = instr_list[idx].has_label;
-      if (idx == 0) {
-	instr_list = new_instr ~ instr_list[idx+1..current_instr_cnt];
-      }
-      else {
-	instr_list = instr_list[0..idx] ~ new_instr ~ instr_list[idx+1..current_instr_cnt];
+      foreach (i, instr; new_instr) {
+	instr_list[i+idx] = instr;
       }
     }
     else {
       if (idx == 0) {
-	instr_list = new_instr ~ instr_list[idx..current_instr_cnt];
+	instr_list.pushFront(new_instr[]);
       }
       else {
-        instr_list = instr_list[0..idx] ~ new_instr ~ instr_list[idx..current_instr_cnt];
+        instr_list.insert(idx, new_instr[]);
       }
     }
   }
@@ -197,17 +223,32 @@ class riscv_instr_stream: uvm_object
 	instr_list.remove(idx);
 	instr_list.insert(idx, new_instr);
       }
-    }
+     }
     else {
       if (idx == 0) {
 	instr_list.pushFront(new_instr);
       }
       else {
-	instr_list.insert(idx, new_instr);
+        instr_list.insert(idx, new_instr);
       }
     }
   }
 
+  void append_instr(riscv_instr instr) {
+    instr_list ~= instr;
+  }
+
+  void prepend_instr(riscv_instr instr) {
+    instr_list.pushFront(instr);
+  }
+
+  void append_instr_list(Queue!riscv_instr instr) {
+    instr_list ~= instr[];
+  }
+
+  void prepend_instr_list(Queue!riscv_instr instr) {
+    instr_list.pushFront(instr[]);
+  }
 
   // Mix the input instruction stream with the original instruction, the instruction order is
   // preserved. When 'contained' is set, the original instruction stream will be inside the
@@ -286,10 +327,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
   }
 
   override void create_instr_instance() {
-    riscv_instr instr;
-    for (int i = 0; i < instr_cnt; i++) {
-      instr_list.length = instr_list.length + 1;
-    }
+    instr_list.length = instr_cnt;
   }
 
   void setup_allowed_instr(bool no_branch = false, bool no_load_store = true) {
@@ -449,8 +487,8 @@ class riscv_rand_instr_stream: riscv_instr_stream
       vd == $0;
       rs1 == $1;
     } (gpr, cfg.gpr[0]);
-    instr_list.pushFront(instr);
-    instr_list.pushFront(get_init_gpr_instr(cfg.gpr[0], val));
+    prepend_instr(instr);
+    prepend_instr(get_init_gpr_instr(cfg.gpr[0], val));
   }
 }
 

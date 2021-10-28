@@ -34,6 +34,7 @@ import std.algorithm.searching: canFind, minElement, maxElement;
 
 import esdl.rand: rand, constraint, randomize_with;
 import esdl.base.rand: urandom;
+import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
 
 import uvm;
@@ -237,7 +238,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
       instr.rs1 = rs1_reg;
       instr.imm_str = format("%0d", offset[i]);  // $signed(offset[i]));
       instr.process_load_store = 0;
-      instr_list ~= instr;
+      append_instr(instr);
       load_store_instr ~= instr;
     }
   }
@@ -525,7 +526,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
   }
 
   override void add_rs1_init_la_instr(riscv_reg_t gpr, int id, int base = 0) {
-    riscv_instr[] instr;
+    Queue!riscv_instr instr;
     riscv_pseudo_instr li_instr;
     riscv_instr store_instr;
     riscv_instr add_instr;
@@ -601,7 +602,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
 	instr ~= store;
       }
     }
-    instr_list = instr ~ instr_list;
+    prepend_instr_list(instr);
     super.add_rs1_init_la_instr(gpr, id, 0);
   }
 
@@ -669,7 +670,7 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
     add_mixed_instr(num_mixed_instr);
     add_rs1_init_la_instr(rs1_reg, data_page_id, base);
     if (address_mode == address_mode_e.STRIDED) {
-      instr_list ~= get_init_gpr_instr(rs2_reg, toubvec!64(stride_byte_offset));
+      this.append_instr(get_init_gpr_instr(rs2_reg, toubvec!64(stride_byte_offset)));
     }
     else if (address_mode == address_mode_e.INDEXED) {
       // TODO: Support different index address for each element
@@ -727,7 +728,7 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
   void gen_load_store_instr() {
     build_allowed_instr();
     randomize_vec_load_store_instr();
-    instr_list ~= load_store_instr;
+    this.append_instr(load_store_instr);
   }
 
   void build_allowed_instr() {

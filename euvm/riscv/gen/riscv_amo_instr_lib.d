@@ -104,7 +104,7 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
       la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA;
       la_instr.rd = rreg;
       la_instr.imm_str = format("%0s+%0d", cfg.amo_region[data_page_id], offset[i]);
-      instr_list ~= la_instr;
+      append_instr(la_instr);
     }
   }
 
@@ -174,8 +174,8 @@ class riscv_lr_sc_instr_stream : riscv_amo_base_instr_stream
       }
       rd != $0;
     } (rs1_reg[0], reserved_rd, cfg.reserved_regs);
-    instr_list ~= lr_instr;
-    instr_list ~= sc_instr;
+    append_instr(lr_instr);
+    append_instr(sc_instr);
   }
 
   // section 8.3 Eventual Success of Store-Conditional Instructions
@@ -239,7 +239,7 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
         rs1 inside [$2];
         rd !inside [$2];
       } (reserved_rd, cfg.reserved_regs, rs1_reg);
-      instr_list ~= instr;
+      append_instr(instr);
     } 
   }
 }
