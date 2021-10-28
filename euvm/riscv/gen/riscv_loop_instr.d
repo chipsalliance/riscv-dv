@@ -106,7 +106,7 @@ class riscv_loop_instr: riscv_rand_instr_stream
     foreach (i, linit; loop_init_val) {
       if (branch_type[i] inside [riscv_instr_name_t.C_BNEZ, riscv_instr_name_t.C_BEQZ]) {
         loop_limit_val[i] == 0;
-        loop_limit_reg[i] == riscv_reg_t.ZERO;
+        // loop_limit_reg[i] == riscv_reg_t.ZERO; // handled in post_randomize
 	loop_cnt_reg[i] inside [compressed_gpr]; // TBD -- FIXME -- EUVM
       }
       else {
@@ -156,6 +156,10 @@ class riscv_loop_instr: riscv_rand_instr_stream
     loop_branch_instr.length = num_of_nested_loop;
     loop_branch_target_instr.length = num_of_nested_loop;
     for (int i = 0; i < num_of_nested_loop; i++) {
+      if (branch_type[i] == riscv_instr_name_t.C_BNEZ ||
+	  branch_type[i] == riscv_instr_name_t.C_BEQZ) {
+	loop_limit_reg[i] = riscv_reg_t.ZERO;
+      }
       // Instruction to init the loop counter
       loop_init_instr[2*i] =
 	cfg.instr_registry.get_rand_instr([riscv_instr_name_t.ADDI]);
