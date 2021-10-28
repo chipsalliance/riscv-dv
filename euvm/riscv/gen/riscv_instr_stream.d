@@ -42,6 +42,28 @@ import esdl.data.bvec: ubvec;
 
 import uvm;
 
+struct riscv_instr_stream_elem
+{
+  this(Queue!riscv_instr seq) {
+    _seq = seq;
+    _seq_insert_map.length = _seq.length;
+  }
+  this(riscv_instr elem) {
+    _elem = elem;
+  }
+  // when streams are getting mixed
+  Queue!riscv_instr _seq;
+  // for individual elements
+  riscv_instr       _elem;
+  // bypass to the next -- 0 means no bypass
+  uint              _next;
+  // 
+  uint[]            _seq_insert_map;
+  uint              _elem_insert_map;
+  // true if _seq or _elem is atomic
+  bool              _is_atomic;
+}
+
 class riscv_instr_stream: uvm_object
 {
   mixin uvm_object_utils;
@@ -69,6 +91,7 @@ class riscv_instr_stream: uvm_object
 
   void initialize_instr_list(uint instr_cnt) {
     instr_list.length = 0;
+    instr_map.length = 0;
     this.instr_cnt = instr_cnt;
     create_instr_instance();
   }
@@ -193,13 +216,8 @@ class riscv_instr_stream: uvm_object
     if (replace) {
       new_instr[0].label = instr_list[idx].label;
       new_instr[0].has_label = instr_list[idx].has_label;
-      if (idx == 0) {
-	instr_list.removeFront();
-	instr_list.pushFront(new_instr);
-      }
-      else {
-	instr_list.remove(idx);
-	instr_list.insert(idx, new_instr);
+      foreach (i, instr; new_instr) {
+	instr_list[i+idx] = instr;
       }
      }
     else {
