@@ -3,6 +3,8 @@ CC = gcc
 DEBUG = NONE # CSTSOLVER
 DFLAGS = $(MTRIPLE) -g -preview=intpromote -w -d-debug=$(DEBUG) -O3  # -release -boundscheck=off  -d-version=CHECK_COMPILE
 DBGDFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -g
+INSTRCOUNT = 100000
+VERBOSITY=NONE
 
 LDC2 = ldc2
 PICOBJDIR = picobj-ldc
@@ -98,7 +100,7 @@ riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
 
 run: riscv_instr_base_test
-	./riscv_instr_base_test +UVM_VERBOSITY=DEBUG +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=2 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=10000 +num_of_sub_program=5 \
+	./riscv_instr_base_test +UVM_VERBOSITY=$(VERBOSITY) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
 	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
 	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
 	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \
