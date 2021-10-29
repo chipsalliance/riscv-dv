@@ -1802,14 +1802,6 @@ class riscv_asm_program_gen : uvm_object
       if(instr_insert_cnt <= min_insert_cnt) {
         instr_insert_cnt = min_insert_cnt;
       }
-      // ifdef DSIM
-      //   // Temporarily skip loop instruction for dsim as it cannot support dynamic array
-      //   // randomization
-      //   if (uvm_is_match("*loop*", instr_stream_name)) begin
-      //     uvm_info(`gfn, $sformatf("%0s is skipped", instr_stream_name), UVM_LOW)
-      //     continue;
-      //   end
-      // endif
       uvm_info(get_full_name(), format("Insert directed instr stream %0s %0d/%0d times",
 				       instr_stream_name, instr_insert_cnt, original_instr_cnt), UVM_LOW);
       for (int i = 0; i < instr_insert_cnt; i++) {

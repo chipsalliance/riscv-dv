@@ -95,11 +95,6 @@ class riscv_callstack_gen : uvm_object
   riscv_program[]  program_h;
   // Maximum call stack level
   int max_stack_level = 50;
-  // `ifdef DSIM
-  //   // Call stack level of each program
-  //   bit[10:0] stack_level[];
-  // `else
-  // Call stack level of each program
   @rand ubvec!11[] stack_level;
 
   constraint! q{
@@ -137,14 +132,6 @@ class riscv_callstack_gen : uvm_object
   // Solving a complex call stack with SV constraint could take considerable time for the solver.
   void post_randomize() {
     int last_level;
-    // `ifdef DSIM
-    //   stack_level = new[program_cnt];
-    //   foreach (stack_level[i]) begin
-    //     if (i > 0) begin
-    //       stack_level[i] = stack_level[i-1] + $urandom_range(0,1);
-    //     end
-    //   end
-    // `endif
     last_level = stack_level[program_cnt-1];
     foreach(i, prog; program_h) {
       prog.program_id = toubvec!16(i);
