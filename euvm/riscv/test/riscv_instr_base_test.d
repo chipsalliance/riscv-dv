@@ -125,12 +125,12 @@ class riscv_instr_base_test: uvm_test
 }
 
 int main(string[] args) {
-  auto tb = new uvm_tb;
-  tb.multicore(0, 1);
-  tb.elaborate("test", args);
-  tb.set_seed(1);
-  tb.setAsyncMode();
+  auto testbench = new uvm_testbench;
+  testbench.multicore(0, 8);
+  testbench.elaborate("test", args);
+  testbench.set_seed(1);
+  testbench.set_async_mode();
 
-  return tb.start();
+  return testbench.start();
 }
 
