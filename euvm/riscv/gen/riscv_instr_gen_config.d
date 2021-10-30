@@ -185,6 +185,10 @@ class riscv_instr_gen_config: uvm_object
   int                    num_of_sub_program = 5;
   int                    instr_cnt = 200;
   int                    num_of_tests = 1;
+
+  uint                   par_num_threads = 8;
+  uint                   par_instr_threshold = 4000;
+
   // For tests doesn't involve load/store, the data section generation could be skipped
   @UVM_DEFAULT bool                    no_data_page;
   // Options to turn off some specific types of instructions

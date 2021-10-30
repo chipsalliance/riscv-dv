@@ -268,20 +268,20 @@ class riscv_rand_instr_stream: riscv_instr_stream
 		 bool is_debug_program = false) {
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
-    if (instr_list.length <= 4000) {
+    if (instr_list.length <= cfg.par_instr_threshold) {
       foreach (ref instr; instr_list) {
 	randomize_instr(instr, is_debug_program);
       }
     }
-    else {			// parallelise with 8 threads
+    else {	// parallelise with cfg.par_num_threads
       Fork[] forks;
       size_t instr_count = instr_list.length;
-      size_t instr_grp_length = instr_count / 8;
-      for (size_t i=0; i!=8; ++i) {
+      size_t instr_grp_length = instr_count / cfg.par_num_threads;
+      for (size_t i=0; i!=cfg.par_num_threads; ++i) {
 	size_t start_idx = i * instr_grp_length;
 	size_t end_idx = (i + 1) * instr_grp_length;
 	// last group
-	if (i == 8 - 1) end_idx = instr_count;
+	if (i == cfg.par_num_threads - 1) end_idx = instr_count;
 	// capture start_idx and end_idx and fork
 	Fork new_fork = (size_t start, size_t end) {
 	  return fork({
@@ -290,7 +290,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 	      }
 	    });
 	} (start_idx, end_idx);
-	new_fork.setAffinity(forks.length);
+	new_fork.set_thread_affinity(forks.length);
 	forks ~= new_fork;
       }
       foreach (f; forks) f.join();
