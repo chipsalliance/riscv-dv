@@ -58,6 +58,7 @@ import esdl.rand: randomize;
 import esdl.base.rand: urandom, shuffle;
 import esdl.solver: CstVecDistSolver, CstVecDistRange;
 import esdl.base.cmdl: CommandLine;
+import esdl.base.core: fork, Fork;
 
 import uvm;
 
@@ -1799,43 +1800,67 @@ class riscv_asm_program_gen : uvm_object
 				      in uint  min_insert_cnt,
 				      in bool kernel_mode,
 				      out riscv_instr_stream[] instr_stream) {
-    uvm_object object_h;
-    uint  instr_insert_cnt;
-    uint  idx;
+    if (cfg.no_directed_instr) return;
+    else {
+      Fork[] forks;
+      uint instr_stream_length = 0;
+      uint instr_stream_idx = 0;
+      foreach (instr_stream_name, ratio; directed_instr_stream_ratio) {
+	uint  instr_insert_cnt = original_instr_cnt * ratio / 1000;
+	if (instr_insert_cnt <= min_insert_cnt) instr_insert_cnt = min_insert_cnt;
+	instr_stream_length += instr_insert_cnt;
+	uvm_info(get_full_name(), format("Insert directed instr stream %0s %0d/%0d times",
+					 instr_stream_name, instr_insert_cnt, original_instr_cnt), UVM_LOW);
+	// capture instr_stream_name, ratio, instr_stream_idx and instr_insert_cnt and fork
+	Fork new_fork = (string name, uint ratio, uint idx, uint cnt) {
+	  return fork ({
+	      generate_directed_instr_stream(hart, label, original_instr_cnt, kernel_mode, name, ratio,
+					     instr_stream, idx, cnt);
+	    });
+	} (instr_stream_name, ratio, instr_stream_idx, instr_insert_cnt);
+	new_fork.setAffinity(forks.length);
+	forks ~= new_fork;
+	instr_stream_idx += instr_insert_cnt;
+      }
+      instr_stream.length = instr_stream_length;
+      foreach (f; forks) f.join();
+      assert (instr_stream_idx == instr_stream.length);
+      instr_stream.shuffle();
+    }
+  }
+
+  void generate_directed_instr_stream(int hart,
+				      string label,
+				      uint original_instr_cnt,
+				      bool kernel_mode,
+				      string instr_stream_name,
+				      uint ratio,
+				      ref riscv_instr_stream[] instr_stream,
+				      uint instr_stream_idx,
+				      uint instr_insert_cnt) {
     uvm_coreservice_t coreservice = uvm_coreservice_t.get();
     uvm_factory factory = coreservice.get_factory();
-    if (cfg.no_directed_instr) return;
-    foreach (instr_stream_name, ref ratio; directed_instr_stream_ratio) {
-      instr_insert_cnt = original_instr_cnt * ratio / 1000;
-      if(instr_insert_cnt <= min_insert_cnt) {
-        instr_insert_cnt = min_insert_cnt;
+    for (uint i = 0; i < instr_insert_cnt; i++) {
+      string name = format("%0s_%0d", instr_stream_name, instr_stream_idx+i);
+      uvm_object object_h = factory.create_object_by_name(instr_stream_name, get_full_name(), name);
+      if (object_h is null) {
+	uvm_fatal(get_full_name(), format("Cannot create instr stream %0s", name));
       }
-      uvm_info(get_full_name(), format("Insert directed instr stream %0s %0d/%0d times",
-				       instr_stream_name, instr_insert_cnt, original_instr_cnt), UVM_LOW);
-      for (int i = 0; i < instr_insert_cnt; i++) {
-        string name = format("%0s_%0d", instr_stream_name, i);
-        object_h = factory.create_object_by_name(instr_stream_name, get_full_name(), name);
-        if (object_h is null) {
-          uvm_fatal(get_full_name(), format("Cannot create instr stream %0s", name));
-        }
-
-	riscv_rand_instr_stream new_instr_stream = cast(riscv_rand_instr_stream) object_h;
-        if (new_instr_stream !is null) {
-	  assert (cfg !is null);
-          new_instr_stream.cfg = cfg;
-          new_instr_stream.hart = hart;
-          new_instr_stream.label = format("%0s_%0d", label, idx);
-          new_instr_stream.kernel_mode = kernel_mode;
-          new_instr_stream.randomize();
-          instr_stream ~= new_instr_stream;
-        }
-	else {
-          uvm_fatal(get_full_name(), format("Cannot cast instr stream %0s", name));
-        }
-        idx += 1;
+	
+      riscv_rand_instr_stream new_instr_stream = cast(riscv_rand_instr_stream) object_h;
+      if (new_instr_stream !is null) {
+	assert (cfg !is null);
+	new_instr_stream.cfg = cfg;
+	new_instr_stream.hart = hart;
+	new_instr_stream.label = format("%0s_%0d", label, instr_stream_idx+i);
+	new_instr_stream.kernel_mode = kernel_mode;
+	new_instr_stream.randomize();
+	instr_stream[instr_stream_idx+i] = new_instr_stream;
+      }
+      else {
+	uvm_fatal(get_full_name(), format("Cannot cast instr stream %0s", name));
       }
     }
-    instr_stream.shuffle();
   }
 
   //---------------------------------------------------------------------------------------
