@@ -39,6 +39,7 @@ import esdl.rand: rand, constraint, randomize, randomize_with;
 import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec;
+import esdl.base.core: fork, Fork;
 
 import uvm;
 
@@ -267,13 +268,35 @@ class riscv_rand_instr_stream: riscv_instr_stream
 		 bool is_debug_program = false) {
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
-    uvm_trace("GEN INSTR", "START", UVM_NONE);
-    foreach (ref instr; instr_list) {
-      randomize_instr(instr, is_debug_program);
+    if (instr_list.length <= 4000) {
+      foreach (ref instr; instr_list) {
+	randomize_instr(instr, is_debug_program);
+      }
     }
-    uvm_trace("GEN INSTR", "END", UVM_NONE);
-    // Do not allow branch instruction as the last instruction because there's no
-    // forward branch target
+    else {			// parallelise with 8 threads
+      Fork[] forks;
+      size_t instr_count = instr_list.length;
+      size_t instr_grp_length = instr_count / 8;
+      for (size_t i=0; i!=8; ++i) {
+	size_t start_idx = i * instr_grp_length;
+	size_t end_idx = (i + 1) * instr_grp_length;
+	// last group
+	if (i == 8 - 1) end_idx = instr_count;
+	// capture start_idx and end_idx and fork
+	Fork new_fork = (size_t start, size_t end) {
+	  return fork({
+	      for (size_t i=start; i!=end; ++i) {
+		randomize_instr(instr_list[i], is_debug_program);
+	      }
+	    });
+	} (start_idx, end_idx);
+	new_fork.setAffinity(forks.length);
+	forks ~= new_fork;
+      }
+      foreach (f; forks) f.join();
+    }
+    // Do not allow branch instruction as the last instruction because
+    // there's no forward branch target
     while (instr_list[$-1].category == riscv_instr_category_t.BRANCH) {
       instr_list.length = instr_list.length - 1;
       if (instr_list.length == 0) break;
