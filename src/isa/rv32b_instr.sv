@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+`ifdef BITMANIP_V0_9_2
 // LOGICAL instructions
 `DEFINE_B_INSTR(SEXT_B,  R_FORMAT, LOGICAL, RV32B)
 `DEFINE_B_INSTR(SEXT_H,  R_FORMAT, LOGICAL, RV32B)
@@ -74,3 +74,4 @@
 `DEFINE_B_INSTR(SHFLI,   I_FORMAT, ARITHMETIC, RV32B, UIMM)
 `DEFINE_B_INSTR(UNSHFLI,   I_FORMAT, ARITHMETIC, RV32B, UIMM)
 
+  `endif

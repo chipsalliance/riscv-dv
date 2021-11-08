@@ -18,6 +18,8 @@
 
 package riscv_instr_pkg;
 
+  `define BITMANIP_V1_0_0
+
   `include "dv_defines.svh"
   `include "riscv_defines.svh"
   `include "uvm_macros.svh"
@@ -99,7 +101,15 @@ package riscv_instr_pkg;
     RV128C,
     RVV,
     RV32B,
+    RV32ZBA,
+    RV32ZBB,
+    RV32ZBC,
+    RV32ZBS,
     RV64B,
+    RV64ZBA,
+    RV64ZBB,
+    RV64ZBC,
+    RV64ZBS,
     RV32X,
     RV64X
   } riscv_instr_group_t;
@@ -155,6 +165,41 @@ package riscv_instr_pkg;
     CSRRSI,
     CSRRCI,
     // RV32B instructions
+`ifdef BITMANIP_V1_0_0
+    SH1ADD,
+    SH2ADD,
+    SH3ADD,
+    ANDN,
+    CLZ,
+    CPOP,
+    CTZ,
+    MAX,
+    MAXU,
+    MIN,
+    MINU,
+    ORC_B,
+    ORN,
+    REV8,
+    ROL,
+    ROR,
+    RORI,
+    SEXT_B,
+    SEXT_H,
+    XNOR,
+    ZEXT_H,
+    CLMUL,
+    CLMULH,
+    CLMULR,
+    BCLR,
+    BCLRI,
+    BEXT,
+    BEXTI,
+    BINV,
+    BINVI,
+    BSET,
+    BSETI,
+`endif // BITMANIP_V1_0_0
+`ifdef BITMANIP_V0_9_2
     ANDN,
     ORN,
     XNOR,
@@ -212,6 +257,25 @@ package riscv_instr_pkg;
     BFP,
     SHFLI,
     UNSHFLI,
+`endif // BITMANIP_V0_9_2
+
+`ifdef BITMANIP_V1_0_0
+    // RV64ZBA instructions
+    ADD_UW,
+    SH1ADD_UW,
+    SH2ADD_UW,
+    SH3ADD_UW,
+    SLLI_UW,
+    // RV64ZBB instructions
+    CLZW,
+    CPOPW,
+    CTZW,
+    ROLW,
+    RORW,
+    RORIW,
+`endif // BITMANIP_V1_0_0
+
+`ifdef BITMANIP_V0_9_2
     //RV64B instructions
     ADDIWU,
     SLLIU_W,
@@ -256,6 +320,7 @@ package riscv_instr_pkg;
     PACKW,
     PACKUW,
     BFPW,
+`endif // BITMANIP_V0_9_2
     // RV32M instructions
     MUL,
     MULH,
@@ -1151,6 +1216,7 @@ package riscv_instr_pkg;
   } vxrm_t;
 
   typedef enum int {
+    ZBA,
     ZBB,
     ZBS,
     ZBP,
@@ -1372,11 +1438,28 @@ package riscv_instr_pkg;
   `include "riscv_vector_cfg.sv"
   `include "riscv_pmp_cfg.sv"
   typedef class riscv_instr;
+  `ifdef BITMANIP_V0_9_2
   typedef class riscv_b_instr;
+  `endif
+
+  `ifdef BITMANIP_V1_0_0
+  typedef class riscv_zba_instr;
+  typedef class riscv_zbb_instr;
+  typedef class riscv_zbc_instr;
+  typedef class riscv_zbs_instr;
+  `endif
   `include "riscv_instr_gen_config.sv"
   `include "isa/riscv_instr.sv"
   `include "isa/riscv_amo_instr.sv"
+  `ifdef BITMANIP_V0_9_2
   `include "isa/riscv_b_instr.sv"
+  `endif
+  `ifdef BITMANIP_V1_0_0
+  `include "isa/riscv_zba_instr.sv"
+  `include "isa/riscv_zbb_instr.sv"
+  `include "isa/riscv_zbc_instr.sv"
+  `include "isa/riscv_zbs_instr.sv"
+  `endif
   `include "isa/riscv_floating_point_instr.sv"
   `include "isa/riscv_vector_instr.sv"
   `include "isa/riscv_compressed_instr.sv"
@@ -1388,9 +1471,15 @@ package riscv_instr_pkg;
   `include "isa/rv32f_instr.sv"
   `include "isa/rv32i_instr.sv"
   `include "isa/rv32b_instr.sv"
+  `include "isa/rv32zba_instr.sv"
+  `include "isa/rv32zbb_instr.sv"
+  `include "isa/rv32zbc_instr.sv"
+  `include "isa/rv32zbs_instr.sv"
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"
   `include "isa/rv64b_instr.sv"
+  `include "isa/rv64zba_instr.sv"
+  `include "isa/rv64zbb_instr.sv"
   `include "isa/rv64c_instr.sv"
   `include "isa/rv64d_instr.sv"
   `include "isa/rv64f_instr.sv"
