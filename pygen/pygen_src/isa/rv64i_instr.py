@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 from pygen_src.riscv_defines import DEFINE_INSTR
 from pygen_src.riscv_instr_pkg import (riscv_instr_name_t, riscv_instr_format_t,
-                                       riscv_instr_category_t, riscv_instr_group_t, imm_t)
+                                       riscv_instr_category_t, riscv_instr_group_t)
 
 
 DEFINE_INSTR(riscv_instr_name_t.LWU, riscv_instr_format_t.I_FORMAT,
