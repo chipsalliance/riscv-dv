@@ -147,7 +147,7 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd):
             cmd = re.sub("\<path_var\>",
                          get_env_var(entry['path_var'], debug_cmd=debug_cmd),
                          cmd)
-            m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-z]+?)$", isa)
+            m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-zA-Z_]+?)$", isa)
             if m:
                 cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
             else:
