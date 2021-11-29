@@ -34,6 +34,10 @@
 
 `define SAMPLE_F(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_floating_point_instr)
 `define SAMPLE_B(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_b_instr)
+`define SAMPLE_ZBA(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zba_instr)
+`define SAMPLE_ZBB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbb_instr)
+`define SAMPLE_ZBC(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbc_instr)
+`define SAMPLE_ZBS(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbs_instr)
 
 `define INSTR_CG_BEGIN(INSTR_NAME, INSTR_CLASS = riscv_instr) \
   covergroup ``INSTR_NAME``_cg with function sample(INSTR_CLASS instr);
@@ -375,6 +379,58 @@
       illegal_bins others = default; \
     } \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ZBA_I_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zba_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rd          : coverpoint instr.rd; \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+`define ZBA_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zba_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ZBB_I_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbb_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rd          : coverpoint instr.rd; \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+`define ZBB_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbb_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ZBC_I_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbc_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rd          : coverpoint instr.rd; \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+`define ZBC_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbc_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ZBS_I_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbs_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rd          : coverpoint instr.rd; \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+`define ZBS_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbs_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define B_I_INSTR_CG_BEGIN(INSTR_NAME) \
@@ -858,7 +914,178 @@ class riscv_instr_cover_group;
   `CG_END
 
   // B extension
+`ifdef BITMANIP_V1_0_0
+  `ZBA_R_INSTR_CG_BEGIN(sh1add)
+  `CG_END
+  `ZBA_R_INSTR_CG_BEGIN(sh2add)
+  `CG_END
+  `ZBA_R_INSTR_CG_BEGIN(sh3add)
+  `CG_END
+  `ZBA_R_INSTR_CG_BEGIN(sh1add_uw)
+  `CG_END
+  `ZBA_R_INSTR_CG_BEGIN(sh2add_uw)
+  `CG_END
+  `ZBA_R_INSTR_CG_BEGIN(sh3add_uw)
+  `CG_END
+
   // Count Leading/Trailing Zeros (clz, ctz)
+  `ZBB_I_INSTR_CG_BEGIN(clz)
+    `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(ctz)
+    `CP_VALUE_RANGE(num_trailing_zeros, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(clzw)
+    `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(ctzw)
+    `CP_VALUE_RANGE(num_trailing_zeros, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(cpop)
+    `CP_VALUE_RANGE(num_set_bits, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(cpopw)
+    `CP_VALUE_RANGE(num_set_bits, instr.rd_value, 0, XLEN-1)
+  `CG_END
+
+  // Logic-with-negate (andn, orn, xnor)
+  `ZBB_R_INSTR_CG_BEGIN(andn)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(orn)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(xnor)
+  `CG_END
+
+  // Or-combine
+  `ZBB_R_INSTR_CG_BEGIN(orc_b)
+    `CP_VALUE_RANGE(or_combine_mode, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  // Min/max instructions (min, max, minu, maxu)
+  `ZBB_R_INSTR_CG_BEGIN(min)
+    cp_rs1_gt_rs2  : coverpoint (longint'(instr.rs1_value) > longint'(instr.rs2_value));
+    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
+      bins equal = {1};
+    }
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(max)
+    cp_rs1_gt_rs2  : coverpoint (longint'(instr.rs1_value) > longint'(instr.rs2_value));
+    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
+      bins equal = {1};
+    }
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(minu)
+    cp_rs1_gt_rs2  : coverpoint (instr.rs1_value > instr.rs2_value);
+    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
+      bins equal = {1};
+    }
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(maxu)
+    cp_rs1_gt_rs2  : coverpoint (instr.rs1_value > instr.rs2_value);
+    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
+      bins equal = {1};
+    }
+  `CG_END
+
+  // Sign-extend instructions (sext.b, sext.h)
+  `ZBB_I_INSTR_CG_BEGIN(sext_b)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(sext_h)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(zext_h)
+  `CG_END
+
+  // Rotate (Left/Right) (rol, ror, rori)
+  `ZBB_R_INSTR_CG_BEGIN(ror)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(rol)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(rori)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(rorw)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN/2-1)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(rolw)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN/2-1)
+  `CG_END
+
+  `ZBB_I_INSTR_CG_BEGIN(roriw)
+    `CP_VALUE_RANGE(num_bit_rotate, instr.imm, 0, XLEN/2-1)
+  `CG_END
+
+  `ZBB_R_INSTR_CG_BEGIN(rev8)
+  `CG_END
+
+  // Multiplication
+  `ZBC_R_INSTR_CG_BEGIN(clmul)
+  `CG_END
+
+  `ZBC_R_INSTR_CG_BEGIN(clmulh)
+  `CG_END
+
+  `ZBC_R_INSTR_CG_BEGIN(clmulr)
+  `CG_END
+
+  `ZBA_I_INSTR_CG_BEGIN(slli_uw)
+    `CP_VALUE_RANGE(num_shift, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  `ZBA_R_INSTR_CG_BEGIN(add_uw)
+  `CG_END
+
+  `ZBS_R_INSTR_CG_BEGIN(bclr)
+    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_I_INSTR_CG_BEGIN(bclri)
+    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_R_INSTR_CG_BEGIN(bext)
+    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_I_INSTR_CG_BEGIN(bexti)
+    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_R_INSTR_CG_BEGIN(binv)
+    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_I_INSTR_CG_BEGIN(binvi)
+    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_R_INSTR_CG_BEGIN(bset)
+    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
+  `CG_END
+
+  `ZBS_I_INSTR_CG_BEGIN(bseti)
+    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
+  `CG_END
+`endif // BITMANIP_V1_0_0
+
+`ifdef BITMANIP_V0_9_2
   `B_R_INSTR_NO_RS2_CG_BEGIN(clz)
     `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN-1)
   `CG_END
@@ -1147,6 +1374,7 @@ class riscv_instr_cover_group;
   `B_R_INSTR_CG_BEGIN(bdepw)
   `CG_END
 
+  // Multiplication
   `B_R_INSTR_CG_BEGIN(clmul)
   `CG_END
 
@@ -1248,6 +1476,7 @@ class riscv_instr_cover_group;
   `B_I_INSTR_CG_BEGIN(slliu_w)
     `CP_VALUE_RANGE(num_shift, instr.imm, 0, XLEN-1)
   `CG_END
+`endif // BITMANIP_V0_9_2
 
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
@@ -1971,6 +2200,50 @@ class riscv_instr_cover_group;
       fcvt_d_lu_cg = new();
     `CG_SELECTOR_END
 
+`ifdef BITMANIP_V1_0_0
+    `CG_SELECTOR_BEGIN(RV32ZBA)
+      sh1add_cg = new();
+      sh2add_cg = new();
+      sh3add_cg = new();
+    `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV32ZBB)
+      andn_cg   = new();
+      clz_cg    = new();
+      cpop_cg   = new();
+      ctz_cg    = new();
+      max_cg    = new();
+      maxu_cg   = new();
+      min_cg    = new();
+      minu_cg   = new();
+      orc_b_cg  = new();
+      orn_cg    = new();
+      rev8_cg   = new();
+      rol_cg    = new();
+      ror_cg    = new();
+      rori_cg   = new();
+      sext_b_cg = new();
+      sext_h_cg = new();
+      xnor_cg   = new();
+      zext_h_cg = new();
+    `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV32ZBC)
+      clmul_cg  = new();
+      clmulh_cg = new();
+      clmulr_cg = new();
+    `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV32ZBS)
+      bclr_cg   = new();
+      bclri_cg  = new();
+      bext_cg   = new();
+      bexti_cg  = new();
+      binv_cg   = new();
+      binvi_cg  = new();
+      bset_cg   = new();
+      bseti_cg  = new();
+    `CG_SELECTOR_END
+`endif // BITMANIP_V1_0_0
+
+`ifdef BITMANIP_V0_9_2
     `CG_SELECTOR_BEGIN(RV32B)
       clz_cg      = new();
       ctz_cg      = new();
@@ -2027,7 +2300,27 @@ class riscv_instr_cover_group;
       fsr_cg      = new();
       fsri_cg     = new();
     `CG_SELECTOR_END
+`endif
 
+`ifdef BITMANIP_V1_0_0
+    `CG_SELECTOR_BEGIN(RV64ZBA)
+        add_uw_cg          = new();
+        sh1add_uw_cg       = new();
+        sh2add_uw_cg       = new();
+        sh3add_uw_cg       = new();
+        slli_uw_cg         = new();
+    `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV64ZBB)
+        clzw_cg           = new();
+        cpopw_cg          = new();
+        ctzw_cg           = new();
+        rolw_cg           = new();
+        rorw_cg           = new();
+        roriw_cg          = new();
+    `CG_SELECTOR_END
+`endif
+
+`ifdef BITMANIP_V0_9_2
     `CG_SELECTOR_BEGIN(RV64B)
       clzw_cg     = new();
       ctzw_cg     = new();
@@ -2068,6 +2361,8 @@ class riscv_instr_cover_group;
       subu_w_cg   = new();
       slliu_w_cg  = new();
     `CG_SELECTOR_END
+`endif
+
     // Ignore the exception which cannot be covered when running with ISS
     if (iss_mode) begin
       int i;
@@ -2284,6 +2579,45 @@ class riscv_instr_cover_group;
       FLE_D      : `SAMPLE_F(fle_d_cg, instr)
       FCLASS_S   : `SAMPLE_F(fclass_s_cg, instr)
       FCLASS_D   : `SAMPLE_F(fclass_d_cg, instr)
+`ifdef BITMANIP_V1_0_0
+      // RV32ZBA
+      SH1ADD     : `SAMPLE_ZBA(sh1add_cg, instr)
+      SH2ADD     : `SAMPLE_ZBA(sh2add_cg, instr)
+      SH3ADD     : `SAMPLE_ZBA(sh3add_cg, instr)
+      // RV32ZBB
+      ANDN       : `SAMPLE_ZBB(andn_cg, instr)
+      CLZ        : `SAMPLE_ZBB(clz_cg, instr)
+      CPOP       : `SAMPLE_ZBB(cpop_cg, instr)
+      CTZ        : `SAMPLE_ZBB(ctz_cg, instr)
+      MAX        : `SAMPLE_ZBB(max_cg, instr)
+      MAXU       : `SAMPLE_ZBB(maxu_cg, instr)
+      MIN        : `SAMPLE_ZBB(min_cg, instr)
+      MINU       : `SAMPLE_ZBB(minu_cg, instr)
+      ORC_B      : `SAMPLE_ZBB(orc_b_cg, instr)
+      ORN        : `SAMPLE_ZBB(orn_cg, instr)
+      REV8       : `SAMPLE_ZBB(rev8_cg, instr)
+      ROL        : `SAMPLE_ZBB(rol_cg, instr)
+      ROR        : `SAMPLE_ZBB(ror_cg, instr)
+      RORI       : `SAMPLE_ZBB(rori_cg, instr)
+      SEXT_B     : `SAMPLE_ZBB(sext_b_cg, instr)
+      SEXT_H     : `SAMPLE_ZBB(sext_h_cg, instr)
+      XNOR       : `SAMPLE_ZBB(xnor_cg, instr)
+      ZEXT_H     : `SAMPLE_ZBB(zext_h_cg, instr)
+      // RV32ZBC
+      CLMUL      : `SAMPLE_ZBC(clmul_cg, instr)
+      CLMULH     : `SAMPLE_ZBC(clmulh_cg, instr)
+      CLMULR     : `SAMPLE_ZBC(clmulr_cg, instr)
+      // RV32ZBS
+      BCLR       : `SAMPLE_ZBS(bclr_cg, instr)
+      BCLRI      : `SAMPLE_ZBS(bclri_cg, instr)
+      BEXT       : `SAMPLE_ZBS(bext_cg, instr)
+      BEXTI      : `SAMPLE_ZBS(bexti_cg, instr)
+      BINV       : `SAMPLE_ZBS(binv_cg, instr)
+      BINVI      : `SAMPLE_ZBS(binvi_cg, instr)
+      BSET       : `SAMPLE_ZBS(bset_cg, instr)
+      BSETI      : `SAMPLE_ZBS(bseti_cg, instr)
+`endif
+`ifdef BITMANIP_V0_9_2
       // RV32B
       CLZ        : `SAMPLE_B(clz_cg, instr)
       CTZ        : `SAMPLE_B(ctz_cg, instr)
@@ -2339,6 +2673,23 @@ class riscv_instr_cover_group;
       FSL        : `SAMPLE_B(fsl_cg, instr)
       FSR        : `SAMPLE_B(fsr_cg, instr)
       FSRI       : `SAMPLE_B(fsri_cg, instr)
+`endif // BITMANIP_V0_9_2
+`ifdef BITMANIP_V1_0_0
+      // RV64ZBA
+      ADD_UW        : `SAMPLE_ZBA(add_uw_cg, instr)
+      SH1ADD_UW     : `SAMPLE_ZBA(sh1add_uw_cg, instr)
+      SH2ADD_UW     : `SAMPLE_ZBA(sh2add_uw_cg, instr)
+      SH3ADD_UW     : `SAMPLE_ZBA(sh3add_uw_cg, instr)
+      SLLI_UW       : `SAMPLE_ZBA(slli_uw_cg, instr)
+      // RV64ZBB
+      CLZW         : `SAMPLE_ZBB(clzw_cg, instr)
+      CPOPW        : `SAMPLE_ZBB(cpopw_cg, instr)
+      CTZW         : `SAMPLE_ZBB(ctzw_cg, instr)
+      ROLW         : `SAMPLE_ZBB(rolw_cg, instr)
+      RORW         : `SAMPLE_ZBB(rorw_cg, instr)
+      RORIW        : `SAMPLE_ZBB(roriw_cg, instr)
+`endif // BITMANIP_V1_0_0
+`ifdef BITMANIP_V0_9_2
       // RV64B
       CLZW       : `SAMPLE_B(clzw_cg, instr)
       CTZW       : `SAMPLE_B(ctzw_cg, instr)
@@ -2378,6 +2729,7 @@ class riscv_instr_cover_group;
       ADDU_W     : `SAMPLE_B(addu_w_cg, instr)
       SUBU_W     : `SAMPLE_B(subu_w_cg, instr)
       SLLIU_W    : `SAMPLE_B(slliu_w_cg, instr)
+`endif // BITMANIP_V0_9_2
       `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_sample.sv")
       default: begin
         if (instr.group == RV32I) begin
@@ -2459,7 +2811,9 @@ class riscv_instr_cover_group;
         instr = riscv_instr::create_instr(instr_name);
         if ((instr.group inside {supported_isa}) &&
             (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C,
-                                 RVV, RV64B, RV32B})) begin
+                                 RVV, RV64B, RV32B,
+                                 RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
+                                 RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||
