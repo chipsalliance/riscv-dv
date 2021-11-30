@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-`ifdef BITMANIP_V1_0_0
+
 `DEFINE_ZBA_INSTR(SH1ADD, R_FORMAT, ARITHMETIC, RV32ZBA);
 `DEFINE_ZBA_INSTR(SH2ADD, R_FORMAT, ARITHMETIC, RV32ZBA);
 `DEFINE_ZBA_INSTR(SH3ADD, R_FORMAT, ARITHMETIC, RV32ZBA);
-`endif

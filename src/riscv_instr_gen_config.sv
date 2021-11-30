@@ -635,12 +635,6 @@ class riscv_instr_gen_config extends uvm_object;
       enable_zbs_extension = 0;
     end
 
-    // Disable old b-extension if any of the Zb* extensions are enabled
-    if (enable_zba_extension || enable_zbb_extension || enable_zbc_extension || enable_zbs_extension) begin
-      enable_b_extension = 0;
-      enable_bitmanip_groups = {};
-    end
-
     vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
     pmp_cfg = riscv_pmp_cfg::type_id::create("pmp_cfg");
     pmp_cfg.rand_mode(pmp_cfg.pmp_randomize);
