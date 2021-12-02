@@ -913,8 +913,7 @@ class riscv_instr_cover_group;
   `FCLASS_INSTR_CG_BEGIN(fclass_d, D)
   `CG_END
 
-  // B extension
-`ifdef BITMANIP_V1_0_0
+  // B extension instructions ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
   `ZBA_R_INSTR_CG_BEGIN(sh1add)
   `CG_END
   `ZBA_R_INSTR_CG_BEGIN(sh2add)
@@ -1083,44 +1082,8 @@ class riscv_instr_cover_group;
   `ZBS_I_INSTR_CG_BEGIN(bseti)
     `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
   `CG_END
-`endif // BITMANIP_V1_0_0
 
-`ifdef BITMANIP_V0_9_2
-  `B_R_INSTR_NO_RS2_CG_BEGIN(clz)
-    `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_NO_RS2_CG_BEGIN(ctz)
-    `CP_VALUE_RANGE(num_trailing_zeros, instr.rd_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_NO_RS2_CG_BEGIN(clzw)
-    `CP_VALUE_RANGE(num_leading_zeros, instr.rd_value, 0, XLEN/2-1)
-  `CG_END
-
-  `B_R_INSTR_NO_RS2_CG_BEGIN(ctzw)
-    `CP_VALUE_RANGE(num_trailing_zeros, instr.rd_value, 0, XLEN/2-1)
-  `CG_END
-
-  // Count Bits Set (pcnt)
-  `B_R_INSTR_NO_RS2_CG_BEGIN(pcnt)
-    `CP_VALUE_RANGE(num_set_bits, instr.rd_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_NO_RS2_CG_BEGIN(pcntw)
-    `CP_VALUE_RANGE(num_set_bits, instr.rd_value, 0, XLEN/2-1)
-  `CG_END
-
-  // Logic-with-negate (andn, orn, xnor)
-  `B_R_INSTR_CG_BEGIN(andn)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(orn)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(xnor)
-  `CG_END
-
+  // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
   // Pack two words in one register (pack, packu, packh)
   `B_R_INSTR_CG_BEGIN(pack)
   `CG_END
@@ -1135,75 +1098,6 @@ class riscv_instr_cover_group;
   `CG_END
 
   `B_R_INSTR_CG_BEGIN(packuw)
-  `CG_END
-
-  // Min/max instructions (min, max, minu, maxu)
-  `B_R_INSTR_CG_BEGIN(min)
-    cp_rs1_gt_rs2  : coverpoint (longint'(instr.rs1_value) > longint'(instr.rs2_value));
-    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
-      bins equal = {1};
-    }
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(max)
-    cp_rs1_gt_rs2  : coverpoint (longint'(instr.rs1_value) > longint'(instr.rs2_value));
-    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
-      bins equal = {1};
-    }
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(minu)
-    cp_rs1_gt_rs2  : coverpoint (instr.rs1_value > instr.rs2_value);
-    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
-      bins equal = {1};
-    }
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(maxu)
-    cp_rs1_gt_rs2  : coverpoint (instr.rs1_value > instr.rs2_value);
-    cp_rs1_eq_rs2  : coverpoint (instr.rs1_value == instr.rs2_value) {
-      bins equal = {1};
-    }
-  `CG_END
-
-  // Sign-extend instructions (sext.b, sext.h)
-  `B_R_INSTR_NO_RS2_CG_BEGIN(sext_b)
-  `CG_END
-
-  `B_R_INSTR_NO_RS2_CG_BEGIN(sext_h)
-  `CG_END
-
-  // Single-bit instructions (sbset, sbclr, sbinv, sbext)
-  `B_R_INSTR_CG_BEGIN(sbset)
-    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(sbclr)
-    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(sbinv)
-    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(sbext)
-    `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(sbseti)
-    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(sbclri)
-    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(sbinvi)
-    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(sbexti)
-    `CP_VALUE_RANGE(bit_location, instr.imm, 0, XLEN-1)
   `CG_END
 
   // Shift Ones (Left/Right) (slo, sloi, sro, sroi)
@@ -1237,31 +1131,6 @@ class riscv_instr_cover_group;
 
   `B_I_INSTR_CG_BEGIN(sroiw)
     `CP_VALUE_RANGE(num_ones_shift, instr.imm, 0, XLEN/2-1)
-  `CG_END
-
-  // Rotate (Left/Right) (rol, ror, rori)
-  `B_R_INSTR_CG_BEGIN(ror)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(rol)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(rori)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.imm, 0, XLEN-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(rorw)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN/2-1)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(rolw)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.rs2_value, 0, XLEN/2-1)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(roriw)
-    `CP_VALUE_RANGE(num_bit_rotate, instr.imm, 0, XLEN/2-1)
   `CG_END
 
   // Generalized Reverse (grev, grevi, rev)
@@ -1362,35 +1231,16 @@ class riscv_instr_cover_group;
     `CP_VALUE_RANGE(offset, instr.rs2_value[20:16], 0, XLEN/2-1)
   `CG_END
 
-  `B_R_INSTR_CG_BEGIN(bext)
+  `B_R_INSTR_CG_BEGIN(bcompress)
   `CG_END
 
-  `B_R_INSTR_CG_BEGIN(bextw)
+  `B_R_INSTR_CG_BEGIN(bcompressw)
   `CG_END
 
-  `B_R_INSTR_CG_BEGIN(bdep)
+  `B_R_INSTR_CG_BEGIN(bdecompress)
   `CG_END
 
-  `B_R_INSTR_CG_BEGIN(bdepw)
-  `CG_END
-
-  // Multiplication
-  `B_R_INSTR_CG_BEGIN(clmul)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(clmulh)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(clmulr)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(clmulw)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(clmulhw)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(clmulrw)
+  `B_R_INSTR_CG_BEGIN(bdecompressw)
   `CG_END
 
   `B_R_INSTR_NO_RS2_CG_BEGIN(crc32_b)
@@ -1457,26 +1307,6 @@ class riscv_instr_cover_group;
     cp_rs3 : coverpoint instr.rs3;
     `CP_VALUE_RANGE(num_shift, instr.imm, 0, XLEN/2-1)
   `CG_END
-
-  `B_R_INSTR_CG_BEGIN(addwu)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(subwu)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(addiwu)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(addu_w)
-  `CG_END
-
-  `B_R_INSTR_CG_BEGIN(subu_w)
-  `CG_END
-
-  `B_I_INSTR_CG_BEGIN(slliu_w)
-    `CP_VALUE_RANGE(num_shift, instr.imm, 0, XLEN-1)
-  `CG_END
-`endif // BITMANIP_V0_9_2
 
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
@@ -2200,7 +2030,6 @@ class riscv_instr_cover_group;
       fcvt_d_lu_cg = new();
     `CG_SELECTOR_END
 
-`ifdef BITMANIP_V1_0_0
     `CG_SELECTOR_BEGIN(RV32ZBA)
       sh1add_cg = new();
       sh2add_cg = new();
@@ -2241,68 +2070,38 @@ class riscv_instr_cover_group;
       bset_cg   = new();
       bseti_cg  = new();
     `CG_SELECTOR_END
-`endif // BITMANIP_V1_0_0
 
-`ifdef BITMANIP_V0_9_2
     `CG_SELECTOR_BEGIN(RV32B)
-      clz_cg      = new();
-      ctz_cg      = new();
-      pcnt_cg     = new();
-      andn_cg     = new();
-      orn_cg      = new();
-      xnor_cg     = new();
-      pack_cg     = new();
-      packh_cg    = new();
-      min_cg      = new();
-      max_cg      = new();
-      minu_cg     = new();
-      maxu_cg     = new();
-      sext_b_cg   = new();
-      sext_h_cg   = new();
-      sbset_cg    = new();
-      sbclr_cg    = new();
-      sbinv_cg    = new();
-      sbext_cg    = new();
-      sbseti_cg   = new();
-      sbclri_cg   = new();
-      sbinvi_cg   = new();
-      sbexti_cg   = new();
-      slo_cg      = new();
-      sro_cg      = new();
-      sloi_cg     = new();
-      sroi_cg     = new();
-      ror_cg      = new();
-      rol_cg      = new();
-      rori_cg     = new();
-      grev_cg     = new();
-      grevi_cg    = new();
-      shfli_cg    = new();
-      unshfli_cg  = new();
-      shfl_cg     = new();
-      unshfl_cg   = new();
-      gorc_cg     = new();
-      gorci_cg    = new();
-      bfp_cg      = new();
-      bext_cg     = new();
-      bdep_cg     = new();
-      clmul_cg    = new();
-      clmulh_cg   = new();
-      clmulr_cg   = new();
-      crc32_b_cg  = new();
-      crc32_h_cg  = new();
-      crc32_w_cg  = new();
-      crc32c_b_cg = new();
-      crc32c_h_cg = new();
-      crc32c_w_cg = new();
-      cmix_cg     = new();
-      cmov_cg     = new();
-      fsl_cg      = new();
-      fsr_cg      = new();
-      fsri_cg     = new();
+      pack_cg        = new();
+      packh_cg       = new();
+      slo_cg         = new();
+      sro_cg         = new();
+      sloi_cg        = new();
+      sroi_cg        = new();
+      grev_cg        = new();
+      grevi_cg       = new();
+      shfli_cg       = new();
+      unshfli_cg     = new();
+      shfl_cg        = new();
+      unshfl_cg      = new();
+      gorc_cg        = new();
+      gorci_cg       = new();
+      bfp_cg         = new();
+      bcompress_cg   = new();
+      bdecompress_cg = new();
+      crc32_b_cg     = new();
+      crc32_h_cg     = new();
+      crc32_w_cg     = new();
+      crc32c_b_cg    = new();
+      crc32c_h_cg    = new();
+      crc32c_w_cg    = new();
+      cmix_cg        = new();
+      cmov_cg        = new();
+      fsl_cg         = new();
+      fsr_cg         = new();
+      fsri_cg        = new();
     `CG_SELECTOR_END
-`endif
 
-`ifdef BITMANIP_V1_0_0
     `CG_SELECTOR_BEGIN(RV64ZBA)
         add_uw_cg          = new();
         sh1add_uw_cg       = new();
@@ -2318,50 +2117,32 @@ class riscv_instr_cover_group;
         rorw_cg           = new();
         roriw_cg          = new();
     `CG_SELECTOR_END
-`endif
 
-`ifdef BITMANIP_V0_9_2
     `CG_SELECTOR_BEGIN(RV64B)
-      clzw_cg     = new();
-      ctzw_cg     = new();
-      pcntw_cg    = new();
-      packw_cg    = new();
-      packuw_cg   = new();
-      slow_cg     = new();
-      srow_cg     = new();
-      sloiw_cg    = new();
-      sroiw_cg    = new();
-      rorw_cg     = new();
-      rolw_cg     = new();
-      roriw_cg    = new();
-      grevw_cg    = new();
-      greviw_cg   = new();
-      shflw_cg    = new();
-      unshflw_cg  = new();
-      gorcw_cg    = new();
-      gorciw_cg   = new();
-      bfpw_cg     = new();
-      bextw_cg    = new();
-      bdepw_cg    = new();
-      clmulw_cg   = new();
-      clmulhw_cg  = new();
-      clmulrw_cg  = new();
-      crc32_d_cg  = new();
-      crc32c_d_cg = new();
-      bmator_cg   = new();
-      bmatxor_cg  = new();
-      bmatflip_cg = new();
-      fslw_cg     = new();
-      fsrw_cg     = new();
-      fsriw_cg    = new();
-      addwu_cg    = new();
-      subwu_cg    = new();
-      addiwu_cg   = new();
-      addu_w_cg   = new();
-      subu_w_cg   = new();
-      slliu_w_cg  = new();
+      packw_cg        = new();
+      packuw_cg       = new();
+      slow_cg         = new();
+      srow_cg         = new();
+      sloiw_cg        = new();
+      sroiw_cg        = new();
+      grevw_cg        = new();
+      greviw_cg       = new();
+      shflw_cg        = new();
+      unshflw_cg      = new();
+      gorcw_cg        = new();
+      gorciw_cg       = new();
+      bfpw_cg         = new();
+      bcompressw_cg   = new();
+      bdecompressw_cg = new();
+      crc32_d_cg      = new();
+      crc32c_d_cg     = new();
+      bmator_cg       = new();
+      bmatxor_cg      = new();
+      bmatflip_cg     = new();
+      fslw_cg         = new();
+      fsrw_cg         = new();
+      fsriw_cg        = new();
     `CG_SELECTOR_END
-`endif
 
     // Ignore the exception which cannot be covered when running with ISS
     if (iss_mode) begin
@@ -2579,7 +2360,6 @@ class riscv_instr_cover_group;
       FLE_D      : `SAMPLE_F(fle_d_cg, instr)
       FCLASS_S   : `SAMPLE_F(fclass_s_cg, instr)
       FCLASS_D   : `SAMPLE_F(fclass_d_cg, instr)
-`ifdef BITMANIP_V1_0_0
       // RV32ZBA
       SH1ADD     : `SAMPLE_ZBA(sh1add_cg, instr)
       SH2ADD     : `SAMPLE_ZBA(sh2add_cg, instr)
@@ -2616,38 +2396,13 @@ class riscv_instr_cover_group;
       BINVI      : `SAMPLE_ZBS(binvi_cg, instr)
       BSET       : `SAMPLE_ZBS(bset_cg, instr)
       BSETI      : `SAMPLE_ZBS(bseti_cg, instr)
-`endif
-`ifdef BITMANIP_V0_9_2
       // RV32B
-      CLZ        : `SAMPLE_B(clz_cg, instr)
-      CTZ        : `SAMPLE_B(ctz_cg, instr)
-      PCNT       : `SAMPLE_B(pcnt_cg, instr)
-      ANDN       : `SAMPLE_B(andn_cg, instr)
-      ORN        : `SAMPLE_B(orn_cg, instr)
-      XNOR       : `SAMPLE_B(xnor_cg, instr)
       PACK       : `SAMPLE_B(pack_cg, instr)
       PACKH      : `SAMPLE_B(packh_cg, instr)
-      MIN        : `SAMPLE_B(min_cg, instr)
-      MAX        : `SAMPLE_B(max_cg, instr)
-      MINU       : `SAMPLE_B(minu_cg, instr)
-      MAXU       : `SAMPLE_B(maxu_cg, instr)
-      SEXT_B     : `SAMPLE_B(sext_b_cg, instr)
-      SEXT_H     : `SAMPLE_B(sext_h_cg, instr)
-      SBSET      : `SAMPLE_B(sbset_cg, instr)
-      SBCLR      : `SAMPLE_B(sbclr_cg, instr)
-      SBINV      : `SAMPLE_B(sbinv_cg, instr)
-      SBEXT      : `SAMPLE_B(sbext_cg, instr)
-      SBSETI     : `SAMPLE_B(sbseti_cg, instr)
-      SBCLRI     : `SAMPLE_B(sbclri_cg, instr)
-      SBINVI     : `SAMPLE_B(sbinvi_cg, instr)
-      SBEXTI     : `SAMPLE_B(sbexti_cg, instr)
       SLO        : `SAMPLE_B(slo_cg, instr)
       SRO        : `SAMPLE_B(sro_cg, instr)
       SLOI       : `SAMPLE_B(sloi_cg, instr)
       SROI       : `SAMPLE_B(sroi_cg, instr)
-      ROR        : `SAMPLE_B(ror_cg, instr)
-      ROL        : `SAMPLE_B(rol_cg, instr)
-      RORI       : `SAMPLE_B(rori_cg, instr)
       GREV       : `SAMPLE_B(grev_cg, instr)
       GREVI      : `SAMPLE_B(grevi_cg, instr)
       SHFLI      : `SAMPLE_B(shfli_cg, instr)
@@ -2657,11 +2412,8 @@ class riscv_instr_cover_group;
       GORC       : `SAMPLE_B(gorc_cg, instr)
       GORCI      : `SAMPLE_B(gorci_cg, instr)
       BFP        : `SAMPLE_B(bfp_cg, instr)
-      BEXT       : `SAMPLE_B(bext_cg, instr)
-      BDEP       : `SAMPLE_B(bdep_cg, instr)
-      CLMUL      : `SAMPLE_B(clmul_cg, instr)
-      CLMULH     : `SAMPLE_B(clmulh_cg, instr)
-      CLMULR     : `SAMPLE_B(clmulr_cg, instr)
+      BCOMPRESS  : `SAMPLE_B(bcompress_cg, instr)
+      BDECOMPRESS: `SAMPLE_B(bdecompress_cg, instr)
       CRC32_B    : `SAMPLE_B(crc32_b_cg, instr)
       CRC32_H    : `SAMPLE_B(crc32_h_cg, instr)
       CRC32_W    : `SAMPLE_B(crc32_w_cg, instr)
@@ -2673,8 +2425,6 @@ class riscv_instr_cover_group;
       FSL        : `SAMPLE_B(fsl_cg, instr)
       FSR        : `SAMPLE_B(fsr_cg, instr)
       FSRI       : `SAMPLE_B(fsri_cg, instr)
-`endif // BITMANIP_V0_9_2
-`ifdef BITMANIP_V1_0_0
       // RV64ZBA
       ADD_UW        : `SAMPLE_ZBA(add_uw_cg, instr)
       SH1ADD_UW     : `SAMPLE_ZBA(sh1add_uw_cg, instr)
@@ -2688,48 +2438,30 @@ class riscv_instr_cover_group;
       ROLW         : `SAMPLE_ZBB(rolw_cg, instr)
       RORW         : `SAMPLE_ZBB(rorw_cg, instr)
       RORIW        : `SAMPLE_ZBB(roriw_cg, instr)
-`endif // BITMANIP_V1_0_0
-`ifdef BITMANIP_V0_9_2
       // RV64B
-      CLZW       : `SAMPLE_B(clzw_cg, instr)
-      CTZW       : `SAMPLE_B(ctzw_cg, instr)
-      PCNTW      : `SAMPLE_B(pcntw_cg, instr)
-      PACKW      : `SAMPLE_B(packw_cg, instr)
-      PACKUW     : `SAMPLE_B(packuw_cg, instr)
-      SLOW       : `SAMPLE_B(slow_cg, instr)
-      SROW       : `SAMPLE_B(srow_cg, instr)
-      SLOIW      : `SAMPLE_B(sloiw_cg, instr)
-      SROIW      : `SAMPLE_B(sroiw_cg, instr)
-      RORW       : `SAMPLE_B(rorw_cg, instr)
-      ROLW       : `SAMPLE_B(rolw_cg, instr)
-      RORIW      : `SAMPLE_B(roriw_cg, instr)
-      GREVW      : `SAMPLE_B(grevw_cg, instr)
-      GREVIW     : `SAMPLE_B(greviw_cg, instr)
-      SHFLW      : `SAMPLE_B(shflw_cg, instr)
-      UNSHFLW    : `SAMPLE_B(unshflw_cg, instr)
-      GORCW      : `SAMPLE_B(gorcw_cg, instr)
-      GORCIW     : `SAMPLE_B(gorciw_cg, instr)
-      BFPW       : `SAMPLE_B(bfpw_cg, instr)
-      BEXTW      : `SAMPLE_B(bextw_cg, instr)
-      BDEPW      : `SAMPLE_B(bdepw_cg, instr)
-      CLMULW     : `SAMPLE_B(clmulw_cg, instr)
-      CLMULHW    : `SAMPLE_B(clmulhw_cg, instr)
-      CLMULRW    : `SAMPLE_B(clmulrw_cg, instr)
-      CRC32_D    : `SAMPLE_B(crc32_d_cg, instr)
-      CRC32C_D   : `SAMPLE_B(crc32c_d_cg, instr)
-      BMATOR     : `SAMPLE_B(bmator_cg, instr)
-      BMATXOR    : `SAMPLE_B(bmatxor_cg, instr)
-      BMATFLIP   : `SAMPLE_B(bmatflip_cg, instr)
-      FSLW       : `SAMPLE_B(fslw_cg, instr)
-      FSRW       : `SAMPLE_B(fsrw_cg, instr)
-      FSRIW      : `SAMPLE_B(fsriw_cg, instr)
-      ADDWU      : `SAMPLE_B(addwu_cg, instr)
-      SUBWU      : `SAMPLE_B(subwu_cg, instr)
-      ADDIWU     : `SAMPLE_B(addiwu_cg, instr)
-      ADDU_W     : `SAMPLE_B(addu_w_cg, instr)
-      SUBU_W     : `SAMPLE_B(subu_w_cg, instr)
-      SLLIU_W    : `SAMPLE_B(slliu_w_cg, instr)
-`endif // BITMANIP_V0_9_2
+      PACKW        : `SAMPLE_B(packw_cg, instr)
+      PACKUW       : `SAMPLE_B(packuw_cg, instr)
+      SLOW         : `SAMPLE_B(slow_cg, instr)
+      SROW         : `SAMPLE_B(srow_cg, instr)
+      SLOIW        : `SAMPLE_B(sloiw_cg, instr)
+      SROIW        : `SAMPLE_B(sroiw_cg, instr)
+      GREVW        : `SAMPLE_B(grevw_cg, instr)
+      GREVIW       : `SAMPLE_B(greviw_cg, instr)
+      SHFLW        : `SAMPLE_B(shflw_cg, instr)
+      UNSHFLW      : `SAMPLE_B(unshflw_cg, instr)
+      GORCW        : `SAMPLE_B(gorcw_cg, instr)
+      GORCIW       : `SAMPLE_B(gorciw_cg, instr)
+      BFPW         : `SAMPLE_B(bfpw_cg, instr)
+      BCOMPRESSW   : `SAMPLE_B(bcompressw_cg, instr)
+      BDECOMPRESSW : `SAMPLE_B(bdecompressw_cg, instr)
+      CRC32_D      : `SAMPLE_B(crc32_d_cg, instr)
+      CRC32C_D     : `SAMPLE_B(crc32c_d_cg, instr)
+      BMATOR       : `SAMPLE_B(bmator_cg, instr)
+      BMATXOR      : `SAMPLE_B(bmatxor_cg, instr)
+      BMATFLIP     : `SAMPLE_B(bmatflip_cg, instr)
+      FSLW         : `SAMPLE_B(fslw_cg, instr)
+      FSRW         : `SAMPLE_B(fsrw_cg, instr)
+      FSRIW        : `SAMPLE_B(fsriw_cg, instr)
       `VECTOR_INCLUDE("riscv_instr_cover_group_inc_cg_sample.sv")
       default: begin
         if (instr.group == RV32I) begin

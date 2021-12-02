@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-`ifdef BITMANIP_V1_0_0
+
 `DEFINE_ZBC_INSTR(CLMUL,  R_FORMAT, ARITHMETIC, RV32ZBC)
 `DEFINE_ZBC_INSTR(CLMULH, R_FORMAT, ARITHMETIC, RV32ZBC)
 `DEFINE_ZBC_INSTR(CLMULR, R_FORMAT, ARITHMETIC, RV32ZBC)
-`endif
