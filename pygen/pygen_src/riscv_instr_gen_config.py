@@ -662,6 +662,7 @@ class riscv_instr_gen_config:
         parse.add_argument("--enable_visualization", action="store_true", default=False,
                            help="Enabling coverage report visualization for pyflow")
         parse.add_argument('--trace_csv', help='List of csv traces', default="")
+        parse.add_argument('--seed', help='Seed value', default=None)
         args, unknown = parse.parse_known_args()
         # TODO
         '''
