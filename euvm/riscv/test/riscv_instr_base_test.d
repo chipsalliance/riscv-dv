@@ -92,7 +92,7 @@ class riscv_instr_base_test: uvm_test
     else {
       uvm_info("", "TEST FAILED", UVM_NONE);
     }
-    uvm_info("", "TEST GENERATION DONE", UVM_NONE);
+    uvm_trace("", "TEST GENERATION DONE", UVM_NONE);
     super.report_phase(phase);
   }
 
@@ -126,7 +126,7 @@ class riscv_instr_base_test: uvm_test
 
 int main(string[] args) {
   auto testbench = new uvm_testbench;
-  testbench.multicore(0, 8);
+  testbench.multicore(0, 1);
   testbench.elaborate("test", args);
   testbench.set_seed(1);
   testbench.set_async_mode();

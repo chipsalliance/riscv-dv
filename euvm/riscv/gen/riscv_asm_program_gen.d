@@ -634,7 +634,7 @@ class riscv_asm_program_gen : uvm_object
 	for (int e = 0; e < num_elements; e++) {
 	  if (e > 0) instr_stream ~= format("%0svmv.v.v v0, v%0d", indent, v);
 	  instr_stream ~= format("%0sli x%0d, 0x%0x",
-				 indent, cfg.gpr[0], urandom(0, 2 ^^ SEW - 1));
+				 indent, cfg.gpr[0], urandom(0, 2 ^^ SEW));
 	  if (v > 0) {
 	    instr_stream ~= format("%0svslide1up.vx v%0d, v0, x%0d",
 				   indent, v, cfg.gpr[0]);
@@ -656,7 +656,8 @@ class riscv_asm_program_gen : uvm_object
 	uvm_fatal(get_full_name(), "Couldn't find a memory region big enough to initialize the vector registers");
 
       for (int v = 0; v < NUM_VEC_GPR; v++) {
-	uint region = urandom(0, cast(uint) valid_mem_region.length - 1);
+	assert (valid_mem_region.length != 0);
+	uint region = urandom(0, cast(uint) valid_mem_region.length);
 	instr_stream ~= format("%0sla t0, %0s", indent, valid_mem_region[region]);
 	instr_stream ~= format("%0svle.v v%0d, (t0)", indent, v);
       }
@@ -1267,7 +1268,7 @@ class riscv_asm_program_gen : uvm_object
 	 format("1: la x%0d, test_done", cfg.scratch_reg),
 	 format("jalr x0, x%0d, 0", cfg.scratch_reg)];
 
-	 gen_section(get_label(format("%0smode_intr_vector_%0d", mode, i), hart), intr_handler);
+      gen_section(get_label(format("%0smode_intr_vector_%0d", mode, i), hart), intr_handler);
     }
   }
 

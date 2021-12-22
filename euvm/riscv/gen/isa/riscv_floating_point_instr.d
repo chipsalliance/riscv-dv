@@ -303,7 +303,7 @@ class riscv_floating_point_instr: riscv_instr
   // 	  break;
   //     case riscv_instr_format_t.R4_FORMAT:
   // 	  //`DV_CHECK_FATAL(operands.size() == 4)
-  // 	  assert(operands.size() == 4);
+  // 	  assert (operands.length == 4);
   // 	  fs1 = get_fpr(operands[1]);
   // 	  fs1_value = get_gpr_state(operands[1]);
   // 	  fs2 = get_fpr(operands[2]);
@@ -344,7 +344,7 @@ class riscv_floating_point_instr: riscv_instr
   //     {
   // 	fs1_sign = get_fp_operand_sign(fs1_value, 31);
   // 	fs2_sign = get_fp_operand_sign(fs2_value, 31);
-  // 	fs3_sign = get_fp_operand_sign(fs2_value, 31);
+  // 	fs3_sign = get_fp_operand_sign(fs3_value, 31);
   // 	fd_sign = get_fp_operand_sign(fd_value, 31);
   //     }
   //   else if (instr_name == riscv_instr_name_t.FCVT_S_D)
@@ -361,7 +361,7 @@ class riscv_floating_point_instr: riscv_instr
   //     {
   // 	fs1_sign = get_fp_operand_sign(fs1_value, 63);
   // 	fs2_sign = get_fp_operand_sign(fs2_value, 63);
-  // 	fs3_sign = get_fp_operand_sign(fs2_value, 63);
+  // 	fs3_sign = get_fp_operand_sign(fs3_value, 63);
   // 	fd_sign = get_fp_operand_sign(fd_value, 63);
   //     }
   // }

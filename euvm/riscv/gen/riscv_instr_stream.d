@@ -239,7 +239,7 @@ class riscv_instr_stream: uvm_object
     int new_instr_cnt = cast(int) new_instr.length;
     insert_instr_position.length = new_instr_cnt;
     foreach (ref position; insert_instr_position) {
-      position = urandom(0, current_instr_cnt);
+      position = urandom(0, current_instr_cnt+1);
     }
     if (insert_instr_position.length > 0) {
       insert_instr_position.sort();
@@ -329,6 +329,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
       // avail_regs elements have to be unique
       for (size_t n=1; n != avail_regs.length; ++n) {
 	if (allowed_regs_range.length == 0) assert (false, "Cannot randomize avail_regs");
+	assert(allowed_regs_range.length != 0);
 	auto loc = urandom(0, allowed_regs_range.length);
 	avail_regs[n] = allowed_regs_range[loc];
 	allowed_regs_range.remove(loc);

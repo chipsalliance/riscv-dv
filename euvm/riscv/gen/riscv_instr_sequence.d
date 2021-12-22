@@ -330,7 +330,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     auto zero_idx = cfg.reserved_regs.countUntil(riscv_reg_t.ZERO);
     
     // if (zero_idx >= 0) {
-      ra_idx = urandom (0, cast(uint) cfg.reserved_regs.length-1);
+      ra_idx = urandom (0, cast(uint) cfg.reserved_regs.length);
       if (ra_idx <= zero_idx) ra_idx += 1;
       ra = cfg.reserved_regs[ra_idx];
     // }
@@ -348,6 +348,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
         jump_instr ~= riscv_instr_name_t.C_JALR;
       }
     }
+    assert (jump_instr.length != 0);
     i = urandom(0, cast(uint) jump_instr.length);
     switch (jump_instr[i]) {
     case riscv_instr_name_t.C_JALR : str = prefix ~ format("c.jalr x%0d", ra); break;

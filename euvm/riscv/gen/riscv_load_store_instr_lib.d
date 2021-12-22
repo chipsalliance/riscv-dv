@@ -689,6 +689,7 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
         break;
       }
       //DV_CHECK_STD_RANDOMIZE_WITH_FATAL(data_page_id, data_page_id < max_data_page_id;)
+      assert (max_data_page_id != 0);
       data_page_id = urandom(0, max_data_page_id);
     }
 

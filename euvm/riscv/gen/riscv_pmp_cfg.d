@@ -184,8 +184,14 @@ class riscv_pmp_cfg: uvm_object {
 
   ubvec!XLEN  assign_default_addr_offset(int num_regions, int index) {
     ubvec!XLEN  offset;
-    offset = pmp_max_offset / (num_regions - 1);
-    offset = offset * index;
+    if (num_regions == 1) {
+      assert (index == 0);
+      offset = 0;
+    }
+    else {
+      offset = pmp_max_offset / (num_regions - 1);
+      offset = offset * index;
+    }
     return offset;
   }
 

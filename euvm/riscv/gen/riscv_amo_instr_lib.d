@@ -90,7 +90,8 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   override void pre_randomize() {
     data_page = cfg.amo_region;
     max_data_page_id = cast(int)data_page.length;
-    data_page_id = urandom(0, max_data_page_id - 1);
+    assert (max_data_page_id != 0);
+    data_page_id = urandom(0, max_data_page_id);
     max_offset = data_page[data_page_id].size_in_bytes;
   }
 
