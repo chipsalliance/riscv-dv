@@ -190,18 +190,20 @@ class riscv_instr_stream: uvm_object
       new_instr[0].label = instr_list[idx].label;
       new_instr[0].has_label = instr_list[idx].has_label;
       if (idx == 0) {
-	instr_list = new_instr ~ instr_list[idx+1..current_instr_cnt];
+	instr_list.removeFront();
+	instr_list.pushFront(new_instr);
       }
       else {
-	instr_list = instr_list[0..idx] ~ new_instr ~ instr_list[idx+1..current_instr_cnt];
+	instr_list.remove(idx);
+	instr_list.insert(idx, new_instr);
       }
     }
     else {
       if (idx == 0) {
-	instr_list = new_instr ~ instr_list[idx..current_instr_cnt];
+	instr_list.pushFront(new_instr);
       }
       else {
-        instr_list = instr_list[0..idx] ~ new_instr ~ instr_list[idx..current_instr_cnt];
+	instr_list.insert(idx, new_instr);
       }
     }
   }
