@@ -1,7 +1,7 @@
 MTRIPLE = -m64
 CC = gcc
 DEBUG = NONE # CSTSOLVER
-DFLAGS = $(MTRIPLE) -g -preview=intpromote -w -d-debug=$(DEBUG) -O3  # -release -boundscheck=off  -d-version=CHECK_COMPILE
+DFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -O3  -release -boundscheck=off  # -d-version=CHECK_COMPILE
 DBGDFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -g
 INSTRCOUNT = 100000
 VERBOSITY=NONE
@@ -66,7 +66,10 @@ TEST_FILES = riscv/test/riscv_instr_base_test.d
 GEN_OBJS  = $(GEN_FILES:.d=.o)
 ISA_OBJS  = $(ISA_FILES:.d=.o)
 
-all: riscv-libs
+all: riscv-libs riscv_instr_base_test
+
+clean:
+	rm -rf picobj-ldc picobj-dbg-ldc riscv_instr_base_test libriscv-dv-ldc-shared.so libriscv-dv-ldc.a
 
 riscv-libs: riscv-lib-static riscv-lib-shared
 
@@ -97,6 +100,9 @@ TAGS: $(addprefix ../,$(GEN_FILES)) \
 # 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
 
 riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
+
+riscv_instr_base_test_debug: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
 
 run: riscv_instr_base_test
