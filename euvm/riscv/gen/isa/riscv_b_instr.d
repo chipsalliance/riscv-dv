@@ -27,8 +27,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 
 import esdl.rand: rand;
-import esdl.data.bvec: ubvec, toubvec;
-import std.math: ceil, log2;
+import esdl.data.bvec: ubvec, toubvec, clog2;
 import std.algorithm: canFind;
 
 import std.string: toLower;
@@ -90,16 +89,16 @@ class riscv_b_instr: riscv_instr
 			  riscv_instr_category_t.LOGICAL)) {
         if (group == riscv_instr_group_t.RV64B &&
 	    !(instr_name.inside(riscv_instr_name_t.SLLIU_W))) {
-          imm_len = toubvec!5(cast(int) ceil(log2(XLEN)) - 1);
+          imm_len = toubvec!5(clog2(XLEN) - 1);
 	}
 	else {
-          imm_len = toubvec!5(cast(int) ceil(log2(XLEN)));
+          imm_len = toubvec!5(clog2(XLEN));
         }
       }
       // ARITHMETIC RV32B
       if (instr_name.inside(riscv_instr_name_t.SHFLI,
 			    riscv_instr_name_t.UNSHFLI)) {
-        imm_len = toubvec!5(cast(int) ceil(log2(XLEN)) - 1);
+        imm_len = toubvec!5(clog2(XLEN) - 1);
       }
       // ARITHMETIC RV64B
       if (instr_name.inside(riscv_instr_name_t.ADDIWU)) {

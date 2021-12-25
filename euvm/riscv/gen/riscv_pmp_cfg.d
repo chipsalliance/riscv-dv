@@ -23,9 +23,8 @@ import riscv.gen.riscv_instr_pkg: pmp_cfg_reg_t, pmp_addr_mode_t,
 
 import riscv.gen.riscv_core_setting: XLEN;
 import std.format: format;
-import std.math: log2, ceil;
 
-import esdl.data.bvec: ubvec, toubvec, tobvec;
+import esdl.data.bvec: ubvec, toubvec, tobvec, clog2;
 import esdl.rand: rand, constraint;
 
 import uvm;
@@ -457,9 +456,9 @@ class riscv_pmp_cfg: uvm_object {
        //
        // First calculate (loop_counter % cfg_per_csr)
        format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
-	      XLEN - cast(int) ceil(log2(cfg_per_csr))),
+	      XLEN - clog2(cfg_per_csr)),
        format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
-	      XLEN - cast(int) ceil(log2(cfg_per_csr))),
+	      XLEN - clog2(cfg_per_csr)),
        // Calculate (cfg_per_csr - modded_loop_counter - 1) to determine how many 8bit slots to
        // the left this needs to be shifted
        format("sub x%0d, x%0d, x%0d", scratch_reg[4], scratch_reg[3], scratch_reg[0]),
@@ -627,7 +626,7 @@ class riscv_pmp_cfg: uvm_object {
        //
        // Calculate XLEN - $clog2(cfg_per_csr) to give how many low order bits
        // of loop_counter we need to keep around
-       format("li x%0d, %0d", scratch_reg[4], XLEN - cast(int) ceil(log2(cfg_per_csr))),
+       format("li x%0d, %0d", scratch_reg[4], XLEN - clog2(cfg_per_csr)),
        // Now leftshift and rightshift loop_counter by this amount to clear all the upper
        // bits
        format("sll x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
@@ -640,7 +639,7 @@ class riscv_pmp_cfg: uvm_object {
        format("or x%0d, x%0d, x%0d", scratch_reg[2], scratch_reg[2], scratch_reg[3]),
        // Divide the loop counter by cfg_per_csr to determine which pmpcfg CSR to write to.
        format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
-       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], cast(int) ceil(log2(cfg_per_csr))),
+       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], clog2(cfg_per_csr)),
        // Write the updated pmpcfg[i] to the CSR bank and exit the handler.
        //
        // Don't touch scratch_reg[2], as it contains the updated pmpcfg[i] to be written.

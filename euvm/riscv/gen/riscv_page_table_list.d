@@ -36,10 +36,9 @@ import riscv.gen.riscv_page_table_exception_cfg: riscv_page_table_exception_cfg;
 import riscv.gen.riscv_page_table_entry: riscv_page_table_entry;
 import riscv.gen.riscv_page_table: riscv_page_table;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
-import std.math: log2, ceil;
 import std.string: format;
 
-import esdl.data.bvec: ubvec;
+import esdl.data.bvec: ubvec, clog2;
 import esdl.rand: constraint, rand, randomize_with, randomize;
 import uvm;
 
@@ -339,7 +338,7 @@ class riscv_page_table_list(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
 		    XLEN - riscv_page_table_entry!(MODE).VPN_WIDTH);
     // Get the actual address offset within the page table
     instr ~= format("slli x%0d, x%0d, %0d",
-		    tmp_reg, tmp_reg, cast(int) ceil(log2(XLEN/8)));
+		    tmp_reg, tmp_reg, clog2(XLEN/8));
     // Add page table starting address and PTE offset to get PTE physical address
     instr ~= format("add x%0d, x%0d, x%0d",
 		    pte_addr_reg, pte_addr_reg, tmp_reg);
@@ -517,12 +516,12 @@ class riscv_page_table_list(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
 		 cfg.gpr[0], cfg.gpr[0], XLEN - MAX_USED_VADDR_BITS)
 	~ format("srli x%0d, x%0d, %0d",
 		 cfg.gpr[0], cfg.gpr[0], XLEN - MAX_USED_VADDR_BITS + 12)
-	~ format("slli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], cast(int) ceil(log2(XLEN)))
+	~ format("slli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], clog2(XLEN))
 	~ format("slli x%0d, x%0d, %0d", cfg.gpr[1], cfg.gpr[1],
 		 XLEN - MAX_USED_VADDR_BITS)
 	~ format("srli x%0d, x%0d, %0d", cfg.gpr[1], cfg.gpr[1],
 		 XLEN - MAX_USED_VADDR_BITS + 12)
-	~ format("slli x%0d, x%0d, %0d", cfg.gpr[1], cfg.gpr[1], cast(int) ceil(log2(XLEN)))
+	~ format("slli x%0d, x%0d, %0d", cfg.gpr[1], cfg.gpr[1], clog2(XLEN))
 	// Starting from the first 4KB leaf page table
 	~ format("la x%0d, page_table_%0d", cfg.gpr[2], get_1st_4k_table_id())
 	~ format("add x%0d, x%0d, x%0d", cfg.gpr[0], cfg.gpr[2], cfg.gpr[0])
@@ -546,7 +545,7 @@ class riscv_page_table_list(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
 		 XLEN - MAX_USED_VADDR_BITS)
 	~ format("srli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0],
 		 XLEN - MAX_USED_VADDR_BITS + 12)
-	~ format("slli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], cast(int) ceil(log2(XLEN)))
+	~ format("slli x%0d, x%0d, %0d", cfg.gpr[0], cfg.gpr[0], clog2(XLEN))
 	// Starting from the first 4KB leaf page table
 	~ format("la x%0d, page_table_%0d", cfg.gpr[2], get_1st_4k_table_id())
 	~ format("add x%0d, x%0d, x%0d", cfg.gpr[0], cfg.gpr[2], cfg.gpr[0])

@@ -39,10 +39,9 @@ import std.algorithm: canFind;
 
 import std.string: format, toUpper, toLower, strip;
 import std.conv: to;
-import std.math: log2, ceil;
 
 import esdl.base.cmdl: CommandLine;
-import esdl.data.bvec: ubvec, toBit, toubvec;
+import esdl.data.bvec: ubvec, toBit, toubvec, clog2;
 import esdl.rand: constraint, rand;
 
 import uvm;
@@ -355,7 +354,7 @@ class riscv_instr_gen_config: uvm_object
      }
    } boot_privileged_mode_dist_c;
   
-  immutable int tvec_align =  cast(int) ceil(log2((XLEN*4)/8));
+  immutable int tvec_align =  clog2((XLEN*4)/8);
   
   constraint! q{
       mtvec_mode inside [supported_interrupt_mode];
