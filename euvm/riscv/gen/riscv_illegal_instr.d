@@ -213,6 +213,42 @@ class riscv_illegal_instr: uvm_object
   } b_extension_c;
 
   constraint!  q{
+    if (riscv_instr_group_t.RV32ZBA inside [supported_isa]) {
+      if (exception inside [illegal_instr_type_e.kIllegalFunc3,
+			    illegal_instr_type_e.kIllegalFunc7]) {
+        opcode !inside [0b0110011, 0b0111011, 0b0011011];
+      }
+    }
+  } zba_extension_c;
+
+  constraint! q{
+    if (riscv_instr_group_t.RV32ZBB inside [supported_isa]) {
+      if (exception inside [illegal_instr_type_e.kIllegalFunc3,
+			    illegal_instr_type_e.kIllegalFunc7]) {
+        opcode !inside [0b0110011, 0b0010011, 0b0111011, 0b0011011];
+      }
+    }
+  } zbb_extension_c;
+
+  constraint! q{
+    if (riscv_instr_group_t.RV32ZBB inside [supported_isa]) {
+      if (exception inside [illegal_instr_type_e.kIllegalFunc3,
+			    illegal_instr_type_e.kIllegalFunc7]) {
+        opcode !inside [0b0110011];
+      }
+    }
+  } zbc_extension_c;
+
+  constraint! q{
+    if (riscv_instr_group_t.RV32ZBS inside [supported_isa]) {
+      if (exception inside [illegal_instr_type_e.kIllegalFunc3,
+			    illegal_instr_type_e.kIllegalFunc7]) {
+        opcode !inside [0b0110011, 0b0010011];
+      }
+    }
+  } zbs_extension_c;
+
+  constraint!  q{
     if (exception == illegal_instr_type_e.kIllegalCompressedOpcode) {
       c_op != 0b01;
       if (legal_c00_opcode.length == 8) {

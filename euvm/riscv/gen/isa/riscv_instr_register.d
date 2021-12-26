@@ -1,4 +1,5 @@
 /*
+ * Copyright 2019 Google LLC
  * Copyright 2021 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,6 +59,12 @@ void register_isa(riscv_instr_registry registry) {
   import riscv.gen.isa.rv64f_instr;
   import riscv.gen.isa.rv64i_instr;
   import riscv.gen.isa.rv64m_instr;
+  import riscv.gen.isa.rv64zba_instr;
+  import riscv.gen.isa.rv64zbb_instr;
+  import riscv.gen.isa.rv32zba_instr;
+  import riscv.gen.isa.rv32zbb_instr;
+  import riscv.gen.isa.rv32zbc_instr;
+  import riscv.gen.isa.rv32zbs_instr;
 
   register_module!(riscv.gen.isa.rv128c_instr)(registry);
   register_module!(riscv.gen.isa.rv32a_instr)(registry);

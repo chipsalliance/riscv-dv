@@ -1,5 +1,6 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2018 Google LLC
+ * Copyright 2021 Silicon Labs, Inc.
  * Copyright 2021 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +16,15 @@
  * limitations under the License.
  */
 
-module riscv.gen.isa.rv64d_instr;
+module riscv.gen.isa.rv64zbb_instr;
 
 import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_fp_instr_mixin(FMV_X_D,   I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FMV_D_X,   I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_L_D,  I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_LU_D, I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_D_L,  I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_D_LU, I_FORMAT, ARITHMETIC, RV64D));
+mixin (riscv_zbb_instr_mixin(CLZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
+mixin (riscv_zbb_instr_mixin(CPOPW, I_FORMAT, ARITHMETIC, RV64ZBB));
+mixin (riscv_zbb_instr_mixin(CTZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
+mixin (riscv_zbb_instr_mixin(ROLW,  R_FORMAT, SHIFT,      RV64ZBB));
+mixin (riscv_zbb_instr_mixin(RORW,  R_FORMAT, SHIFT,      RV64ZBB));
+mixin (riscv_zbb_instr_mixin(RORIW, I_FORMAT, SHIFT,      RV64ZBB, UIMM));

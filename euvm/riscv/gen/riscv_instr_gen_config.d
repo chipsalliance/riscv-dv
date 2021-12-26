@@ -284,6 +284,12 @@ class riscv_instr_gen_config: uvm_object
   @UVM_DEFAULT bool                    vector_instr_only;
   // Bit manipulation extension support
   @UVM_DEFAULT bool                    enable_b_extension;
+
+  @UVM_DEFAULT bool                    enable_zba_extension;
+  @UVM_DEFAULT bool                    enable_zbb_extension;
+  @UVM_DEFAULT bool                    enable_zbc_extension;
+  @UVM_DEFAULT bool                    enable_zbs_extension;
+  
   @UVM_DEFAULT b_ext_group_t[]         enable_bitmanip_groups =
     [b_ext_group_t.ZBB, b_ext_group_t.ZBS, b_ext_group_t.ZBP, b_ext_group_t.ZBE,
      b_ext_group_t.ZBF, b_ext_group_t.ZBC, b_ext_group_t.ZBR, b_ext_group_t.ZBM,
@@ -630,6 +636,10 @@ class riscv_instr_gen_config: uvm_object
     get_bool_arg_value("+enable_floating_point=", enable_floating_point);
     get_bool_arg_value("+enable_vector_extension=", enable_vector_extension);
     get_bool_arg_value("+enable_b_extension=", enable_b_extension);
+    get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
+    get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
+    get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
+    get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     cmdline_enum_processor!(b_ext_group_t).get_array_values("+enable_bitmanip_groups=",
 							    enable_bitmanip_groups);
     if (uvm_cmdline_processor.get_inst().get_arg_value("+boot_mode=", boot_mode_opts)) {
@@ -658,6 +668,27 @@ class riscv_instr_gen_config: uvm_object
     if (!(canFind(supported_isa, riscv_instr_group_t.RV32C))) {
       disable_compressed_instr = true;
     }
+
+    if (! (supported_isa.canFind(riscv_instr_group_t.RV32ZBA) ||
+	   supported_isa.canFind(riscv_instr_group_t.RV64ZBA))) {
+      enable_zba_extension = false;
+    }
+
+    if (! (supported_isa.canFind(riscv_instr_group_t.RV32ZBB) ||
+	   supported_isa.canFind(riscv_instr_group_t.RV64ZBB))) {
+      enable_zbb_extension = false;
+    }
+
+    if (! (supported_isa.canFind(riscv_instr_group_t.RV32ZBC) ||
+	   supported_isa.canFind(riscv_instr_group_t.RV64ZBC))) {
+      enable_zbc_extension = false;
+    }
+
+    if (! (supported_isa.canFind(riscv_instr_group_t.RV32ZBS) ||
+	   supported_isa.canFind(riscv_instr_group_t.RV64ZBS))) {
+      enable_zbs_extension = false;
+    }
+
     vector_cfg = riscv_vector_cfg.type_id.create("vector_cfg");
     pmp_cfg = riscv_pmp_cfg.type_id.create("pmp_cfg");
     rand_mode!q{pmp_cfg}(pmp_cfg.pmp_randomize);

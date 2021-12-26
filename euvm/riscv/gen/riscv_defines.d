@@ -36,6 +36,11 @@ public import riscv.gen.isa.riscv_b_instr: riscv_b_instr;
 public import riscv.gen.isa.riscv_vector_instr: riscv_vector_instr;
 public import riscv.gen.isa.custom.riscv_custom_instr: riscv_custom_instr;
 
+public import riscv.gen.isa.riscv_zba_instr: riscv_zba_instr;
+public import riscv.gen.isa.riscv_zbb_instr: riscv_zbb_instr;
+public import riscv.gen.isa.riscv_zbc_instr: riscv_zbc_instr;
+public import riscv.gen.isa.riscv_zbs_instr: riscv_zbs_instr;
+
 // enum aliases
 
 static string declareEnums (alias E)()
@@ -219,3 +224,38 @@ alias RISCV_B_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_forma
   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
 		    riscv_b_instr);
 
+//Zba-extension instruction
+alias riscv_zba_instr_mixin = riscv_instr_mixin_tmpl!riscv_zba_instr;
+
+alias RISCV_ZBA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		      imm_t imm_tp = imm_t.IMM)	=
+  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+		    riscv_zba_instr);
+
+//Zbb-extension instruction
+alias riscv_zbb_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbb_instr;
+
+alias RISCV_ZBB_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		      imm_t imm_tp = imm_t.IMM)	=
+  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+		    riscv_zbb_instr);
+
+//Zbc-extension instruction
+alias riscv_zbc_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbc_instr;
+
+alias RISCV_ZBC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		      imm_t imm_tp = imm_t.IMM)	=
+  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+		    riscv_zbc_instr);
+
+//Zbs-extension instruction
+alias riscv_zbs_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbs_instr;
+
+alias RISCV_ZBS_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		      imm_t imm_tp = imm_t.IMM)	=
+  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+		    riscv_zbs_instr);

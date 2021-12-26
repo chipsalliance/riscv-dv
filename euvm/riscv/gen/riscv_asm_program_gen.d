@@ -495,27 +495,31 @@ class riscv_asm_program_gen : uvm_object
     foreach (sisa; supported_isa) {
       switch  (sisa) {
       case riscv_instr_group_t.RV32C, riscv_instr_group_t.RV64C,
-	riscv_instr_group_t.RV128C: misa[misa_ext_t.MISA_EXT_C] = toubvec!1(0b1); break;
+	riscv_instr_group_t.RV128C: misa[misa_ext_t.MISA_EXT_C] = true; break;
       case riscv_instr_group_t.RV32I, riscv_instr_group_t.RV64I,
-	riscv_instr_group_t.RV128I: misa[misa_ext_t.MISA_EXT_I] = toubvec!1(0b1); break;
+	riscv_instr_group_t.RV128I: misa[misa_ext_t.MISA_EXT_I] = true; break;
       case riscv_instr_group_t.RV32M,
-	riscv_instr_group_t.RV64M: misa[misa_ext_t.MISA_EXT_M] = toubvec!1(0b1); break;
+	riscv_instr_group_t.RV64M: misa[misa_ext_t.MISA_EXT_M] = true; break;
       case riscv_instr_group_t.RV32A,
-	riscv_instr_group_t.RV64A: misa[misa_ext_t.MISA_EXT_A] = ubvec!1(0b1); break;
+	riscv_instr_group_t.RV64A: misa[misa_ext_t.MISA_EXT_A] = true; break;
       case riscv_instr_group_t.RV32B,
-	riscv_instr_group_t.RV64B: misa[misa_ext_t.MISA_EXT_B] = ubvec!1(0b1); break;
+	riscv_instr_group_t.RV64B: misa[misa_ext_t.MISA_EXT_B] = true; break;
       case riscv_instr_group_t.RV32F, riscv_instr_group_t.RV64F,
-	riscv_instr_group_t.RV32FC: misa[misa_ext_t.MISA_EXT_F] = ubvec!1(0b1); break;
+	riscv_instr_group_t.RV32FC: misa[misa_ext_t.MISA_EXT_F] = true; break;
       case riscv_instr_group_t.RV32D, riscv_instr_group_t.RV64D,
-	riscv_instr_group_t.RV32DC: misa[misa_ext_t.MISA_EXT_D] = ubvec!1(0b1); break;
-      case riscv_instr_group_t.RVV: misa[misa_ext_t.MISA_EXT_V] = ubvec!1(0b1); break;
+	riscv_instr_group_t.RV32DC: misa[misa_ext_t.MISA_EXT_D] = true; break;
+      case riscv_instr_group_t.RVV: misa[misa_ext_t.MISA_EXT_V] = true; break;
       case riscv_instr_group_t.RV32X,
-	riscv_instr_group_t.RV64X: misa[misa_ext_t.MISA_EXT_X] = ubvec!1(0b1); break;
+	riscv_instr_group_t.RV64X: misa[misa_ext_t.MISA_EXT_X] = true; break;
+      case riscv_instr_group_t.RV32ZBA,	riscv_instr_group_t.RV32ZBB,
+	riscv_instr_group_t.RV32ZBC, riscv_instr_group_t.RV32ZBS,
+        riscv_instr_group_t.RV64ZBA, riscv_instr_group_t.RV64ZBB,
+	riscv_instr_group_t.RV64ZBC, riscv_instr_group_t.RV64ZBS: break; // No Misa bit for Zb* extensions
       default : uvm_fatal(get_full_name(), format("%0s is not yet supported", sisa));
       }
     }
     if (canFind(supported_privileged_mode, privileged_mode_t.SUPERVISOR_MODE)) {
-      misa[misa_ext_t.MISA_EXT_S] = ubvec!1(0b1);
+      misa[misa_ext_t.MISA_EXT_S] = true;
     }
     instr_stream ~= indent ~ format("li x%0d, 0x%0x", cfg.gpr[0], misa);
     instr_stream ~= indent ~ format("csrw 0x%0x, x%0d", privileged_reg_t.MISA, cfg.gpr[0]);

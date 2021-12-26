@@ -49,6 +49,11 @@ ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/riscv_instr.d riscv/gen/isa/riscv_b_instr.d	\
             riscv/gen/isa/riscv_vector_instr.d				\
             riscv/gen/isa/riscv_instr_register.d			\
+            riscv/gen/isa/riscv_zba_instr.d				\
+            riscv/gen/isa/riscv_zbb_instr.d				\
+            riscv/gen/isa/riscv_zbc_instr.d				\
+            riscv/gen/isa/riscv_zbs_instr.d				\
+            riscv/gen/isa/rv32zba_instr.d				\
             riscv/gen/isa/rv128c_instr.d riscv/gen/isa/rv32a_instr.d	\
             riscv/gen/isa/rv32b_instr.d riscv/gen/isa/rv32c_instr.d	\
             riscv/gen/isa/rv32dc_instr.d riscv/gen/isa/rv32d_instr.d	\
@@ -58,6 +63,12 @@ ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/rv64b_instr.d riscv/gen/isa/rv64c_instr.d	\
             riscv/gen/isa/rv64d_instr.d riscv/gen/isa/rv64f_instr.d	\
             riscv/gen/isa/rv64i_instr.d riscv/gen/isa/rv64m_instr.d	\
+            riscv/gen/isa/rv32zba_instr.d				\
+            riscv/gen/isa/rv32zbb_instr.d				\
+            riscv/gen/isa/rv32zbc_instr.d				\
+            riscv/gen/isa/rv32zbs_instr.d				\
+            riscv/gen/isa/rv64zba_instr.d				\
+            riscv/gen/isa/rv64zbb_instr.d				\
             riscv/gen/isa/custom/riscv_custom_instr.d			\
             riscv/gen/isa/custom/riscv_custom_instr_enum.d
 
@@ -113,6 +124,4 @@ run: riscv_instr_base_test
 	+directed_instr_3=riscv.gen.riscv_load_store_instr_lib.riscv_multi_page_load_store_instr_stream,4 \
 	+directed_instr_4=riscv.gen.riscv_load_store_instr_lib.riscv_mem_region_stress_test,4 \
 	+directed_instr_5=riscv.gen.riscv_directed_instr_lib.riscv_jal_instr,4 \
-	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4 \
-	+pmp_num_regions=5
-
+	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4
