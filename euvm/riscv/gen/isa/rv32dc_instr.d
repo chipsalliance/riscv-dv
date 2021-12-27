@@ -21,7 +21,19 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_fc_instr_mixin(C_FLD,   CL_FORMAT, LOAD, RV32DC, UIMM));
-mixin (riscv_fc_instr_mixin(C_FSD,   CS_FORMAT, STORE, RV32DC, UIMM));
-mixin (riscv_fc_instr_mixin(C_FLDSP, CI_FORMAT, LOAD, RV32DC, UIMM));
-mixin (riscv_fc_instr_mixin(C_FSDSP, CSS_FORMAT, STORE, RV32DC, UIMM));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_fc_instr_mixin(C_FLD,   CL_FORMAT, LOAD, RV32DC, UIMM));
+  mixin (riscv_fc_instr_mixin(C_FSD,   CS_FORMAT, STORE, RV32DC, UIMM));
+  mixin (riscv_fc_instr_mixin(C_FLDSP, CI_FORMAT, LOAD, RV32DC, UIMM));
+  mixin (riscv_fc_instr_mixin(C_FSDSP, CSS_FORMAT, STORE, RV32DC, UIMM));
+ }
+ else {
+   class riscv_C_FLD_INSTR: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_FLD,   CL_FORMAT, LOAD, RV32DC, UIMM); }
+   class riscv_C_FSD_INSTR: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_FSD,   CS_FORMAT, STORE, RV32DC, UIMM); }
+   class riscv_C_FLDSP_INSTR: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_FLDSP, CI_FORMAT, LOAD, RV32DC, UIMM); }
+   class riscv_C_FSDSP_INSTR: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_FSDSP, CSS_FORMAT, STORE, RV32DC, UIMM); }
+ }

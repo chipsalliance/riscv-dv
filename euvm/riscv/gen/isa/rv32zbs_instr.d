@@ -22,11 +22,31 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_zbs_instr_mixin(BCLR,  R_FORMAT, SHIFT, RV32ZBS));
-mixin (riscv_zbs_instr_mixin(BCLRI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
-mixin (riscv_zbs_instr_mixin(BEXT,  R_FORMAT, SHIFT, RV32ZBS));
-mixin (riscv_zbs_instr_mixin(BEXTI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
-mixin (riscv_zbs_instr_mixin(BINV,  R_FORMAT, SHIFT, RV32ZBS));
-mixin (riscv_zbs_instr_mixin(BINVI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
-mixin (riscv_zbs_instr_mixin(BSET,  R_FORMAT, SHIFT, RV32ZBS));
-mixin (riscv_zbs_instr_mixin(BSETI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_zbs_instr_mixin(BCLR,  R_FORMAT, SHIFT, RV32ZBS));
+  mixin (riscv_zbs_instr_mixin(BCLRI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
+  mixin (riscv_zbs_instr_mixin(BEXT,  R_FORMAT, SHIFT, RV32ZBS));
+  mixin (riscv_zbs_instr_mixin(BEXTI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
+  mixin (riscv_zbs_instr_mixin(BINV,  R_FORMAT, SHIFT, RV32ZBS));
+  mixin (riscv_zbs_instr_mixin(BINVI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
+  mixin (riscv_zbs_instr_mixin(BSET,  R_FORMAT, SHIFT, RV32ZBS));
+  mixin (riscv_zbs_instr_mixin(BSETI, I_FORMAT, SHIFT, RV32ZBS, UIMM));
+ }
+ else {
+   class riscv_BCLR_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BCLR,  R_FORMAT, SHIFT, RV32ZBS); }
+   class riscv_BCLRI_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BCLRI, I_FORMAT, SHIFT, RV32ZBS, UIMM); }
+   class riscv_BEXT_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BEXT,  R_FORMAT, SHIFT, RV32ZBS); }
+   class riscv_BEXTI_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BEXTI, I_FORMAT, SHIFT, RV32ZBS, UIMM); }
+   class riscv_BINV_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BINV,  R_FORMAT, SHIFT, RV32ZBS); }
+   class riscv_BINVI_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BINVI, I_FORMAT, SHIFT, RV32ZBS, UIMM); }
+   class riscv_BSET_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BSET,  R_FORMAT, SHIFT, RV32ZBS); }
+   class riscv_BSETI_instr: riscv_zbs_instr
+   { mixin RISCV_INSTR_MIXIN!(BSETI, I_FORMAT, SHIFT, RV32ZBS, UIMM); }
+ }

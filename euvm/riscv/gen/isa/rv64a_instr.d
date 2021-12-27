@@ -20,14 +20,40 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_amo_instr_mixin(LR_D,      R_FORMAT, LOAD, RV64A));
-mixin (riscv_amo_instr_mixin(SC_D,      R_FORMAT, STORE, RV64A));
-mixin (riscv_amo_instr_mixin(AMOSWAP_D, R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOADD_D,  R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOAND_D,  R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOOR_D,   R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOXOR_D,  R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOMIN_D,  R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOMAX_D,  R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOMINU_D, R_FORMAT, AMO, RV64A));
-mixin (riscv_amo_instr_mixin(AMOMAXU_D, R_FORMAT, AMO, RV64A));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_amo_instr_mixin(LR_D,      R_FORMAT, LOAD, RV64A));
+  mixin (riscv_amo_instr_mixin(SC_D,      R_FORMAT, STORE, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOSWAP_D, R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOADD_D,  R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOAND_D,  R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOOR_D,   R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOXOR_D,  R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOMIN_D,  R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOMAX_D,  R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOMINU_D, R_FORMAT, AMO, RV64A));
+  mixin (riscv_amo_instr_mixin(AMOMAXU_D, R_FORMAT, AMO, RV64A));
+ }
+ else {
+   class riscv_LR_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(LR_D,      R_FORMAT, LOAD, RV64A); }
+   class riscv_SC_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(SC_D,      R_FORMAT, STORE, RV64A); }
+   class riscv_AMOSWAP_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOSWAP_D, R_FORMAT, AMO, RV64A); }
+   class riscv_AMOADD_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOADD_D,  R_FORMAT, AMO, RV64A); }
+   class riscv_AMOAND_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOAND_D,  R_FORMAT, AMO, RV64A); }
+   class riscv_AMOOR_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOOR_D,   R_FORMAT, AMO, RV64A); }
+   class riscv_AMOXOR_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOXOR_D,  R_FORMAT, AMO, RV64A); }
+   class riscv_AMOMIN_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOMIN_D,  R_FORMAT, AMO, RV64A); }
+   class riscv_AMOMAX_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOMAX_D,  R_FORMAT, AMO, RV64A); }
+   class riscv_AMOMINU_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOMINU_D, R_FORMAT, AMO, RV64A); }
+   class riscv_AMOMAXU_D_instr: riscv_amo_instr
+   { mixin RISCV_INSTR_MIXIN!(AMOMAXU_D, R_FORMAT, AMO, RV64A); }
+ }

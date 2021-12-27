@@ -135,13 +135,32 @@ class RISCV_INSTR_TMPL(riscv_instr_name_t instr_n,
   }
 }
 
-class RISCV_VA_INSTR_TMPL(riscv_instr_name_t instr_n,
+mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
+				 riscv_instr_format_t instr_format,
+				 riscv_instr_category_t instr_category,
+				 riscv_instr_group_t instr_group,
+				 imm_t imm_tp=imm_t.IMM)
+{
+  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  mixin uvm_object_utils;
+  this(string name="") {
+    super(name);
+    this.instr_name = instr_n;
+    this.instr_format = instr_format;
+    this.group = instr_group;
+    this.category = instr_category;
+    this.imm_type = imm_tp;
+    set_imm_len();
+    set_rand_mode();
+  }
+}
+
+class RISCV_VA_INSTR_TMPL(string ext, riscv_instr_name_t instr_n,
 			  riscv_instr_format_t instr_format,
 			  riscv_instr_category_t instr_category,
 			  riscv_instr_group_t instr_group,
 			  imm_t imm_tp,
 			  BASE_TYPE,
-			  string ext,
 			  vav...): BASE_TYPE
 {
   enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
@@ -155,6 +174,50 @@ class RISCV_VA_INSTR_TMPL(riscv_instr_name_t instr_n,
     this.imm_type = imm_tp;
     this.allowed_va_variants = [vav];
     this.sub_extension = ext;
+    set_imm_len();
+    set_rand_mode();
+  }
+}
+
+mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
+				    riscv_instr_format_t instr_format,
+				    riscv_instr_category_t instr_category,
+				    riscv_instr_group_t instr_group,
+				    vav...)
+{
+  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  mixin uvm_object_utils;
+  this(string name="") {
+    super(name);
+    this.instr_name = instr_n;
+    this.instr_format = instr_format;
+    this.group = instr_group;
+    this.category = instr_category;
+    this.imm_type = imm_t.IMM;
+    this.allowed_va_variants = [vav];
+    this.sub_extension = ext;
+    set_imm_len();
+    set_rand_mode();
+  }
+}
+
+mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
+				    riscv_instr_format_t instr_format,
+				    riscv_instr_category_t instr_category,
+				    riscv_instr_group_t instr_group,
+				    vav...)
+{
+  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  mixin uvm_object_utils;
+  this(string name="") {
+    super(name);
+    this.instr_name = instr_n;
+    this.instr_format = instr_format;
+    this.group = instr_group;
+    this.category = instr_category;
+    this.imm_type = imm_t.IMM;
+    this.allowed_va_variants = [vav];
+    this.sub_extension = "";
     set_imm_len();
     set_rand_mode();
   }
@@ -204,9 +267,15 @@ alias riscv_va_instr_mixin = riscv_va_instr_mixin_tmpl!riscv_vector_instr;
 
 alias RISCV_VA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		     string ext, vav...) =
-  RISCV_VA_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
-		       riscv_vector_instr, ext, vav);
+		     vav...) =
+  RISCV_VA_INSTR_TMPL!("", instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
+		       riscv_vector_instr, vav);
+
+alias RISCV_VA_INSTR(string ext, riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		     vav...) =
+  RISCV_VA_INSTR_TMPL!(ext, instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
+		       riscv_vector_instr, vav);
 
 alias riscv_custom_instr_mixin = riscv_instr_mixin_tmpl!riscv_custom_instr;
 

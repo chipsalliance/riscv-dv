@@ -22,9 +22,25 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_zbb_instr_mixin(CLZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
-mixin (riscv_zbb_instr_mixin(CPOPW, I_FORMAT, ARITHMETIC, RV64ZBB));
-mixin (riscv_zbb_instr_mixin(CTZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
-mixin (riscv_zbb_instr_mixin(ROLW,  R_FORMAT, SHIFT,      RV64ZBB));
-mixin (riscv_zbb_instr_mixin(RORW,  R_FORMAT, SHIFT,      RV64ZBB));
-mixin (riscv_zbb_instr_mixin(RORIW, I_FORMAT, SHIFT,      RV64ZBB, UIMM));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_zbb_instr_mixin(CLZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
+  mixin (riscv_zbb_instr_mixin(CPOPW, I_FORMAT, ARITHMETIC, RV64ZBB));
+  mixin (riscv_zbb_instr_mixin(CTZW,  I_FORMAT, ARITHMETIC, RV64ZBB));
+  mixin (riscv_zbb_instr_mixin(ROLW,  R_FORMAT, SHIFT,      RV64ZBB));
+  mixin (riscv_zbb_instr_mixin(RORW,  R_FORMAT, SHIFT,      RV64ZBB));
+  mixin (riscv_zbb_instr_mixin(RORIW, I_FORMAT, SHIFT,      RV64ZBB, UIMM));
+ }
+ else {
+   class riscv_CLZW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CLZW,  I_FORMAT, ARITHMETIC, RV64ZBB); }
+   class riscv_CPOPW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CPOPW, I_FORMAT, ARITHMETIC, RV64ZBB); }
+   class riscv_CTZW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CTZW,  I_FORMAT, ARITHMETIC, RV64ZBB); }
+   class riscv_ROLW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ROLW,  R_FORMAT, SHIFT,      RV64ZBB); }
+   class riscv_RORW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(RORW,  R_FORMAT, SHIFT,      RV64ZBB); }
+   class riscv_RORIW_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(RORIW, I_FORMAT, SHIFT,      RV64ZBB, UIMM); }
+ }

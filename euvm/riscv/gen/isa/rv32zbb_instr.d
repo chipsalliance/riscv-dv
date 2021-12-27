@@ -22,21 +22,61 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_zbb_instr_mixin(ANDN,   R_FORMAT, LOGICAL,    RV32ZBB));
-mixin (riscv_zbb_instr_mixin(CLZ,    I_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(CPOP,   I_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(CTZ,    I_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(MAX,    R_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(MAXU,   R_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(MIN,    R_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(MINU,   R_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(ORC_B,  I_FORMAT, LOGICAL,    RV32ZBB));
-mixin (riscv_zbb_instr_mixin(ORN,    R_FORMAT, LOGICAL,    RV32ZBB));
-mixin (riscv_zbb_instr_mixin(REV8,   I_FORMAT, SHIFT,      RV32ZBB));
-mixin (riscv_zbb_instr_mixin(ROL,    R_FORMAT, SHIFT,      RV32ZBB));
-mixin (riscv_zbb_instr_mixin(ROR,    R_FORMAT, SHIFT,      RV32ZBB));
-mixin (riscv_zbb_instr_mixin(RORI,   I_FORMAT, SHIFT,      RV32ZBB, UIMM));
-mixin (riscv_zbb_instr_mixin(SEXT_B, I_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(SEXT_H, I_FORMAT, ARITHMETIC, RV32ZBB));
-mixin (riscv_zbb_instr_mixin(XNOR,   R_FORMAT, LOGICAL,    RV32ZBB));
-mixin (riscv_zbb_instr_mixin(ZEXT_H, R_FORMAT, ARITHMETIC, RV32ZBB));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_zbb_instr_mixin(ANDN,   R_FORMAT, LOGICAL,    RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(CLZ,    I_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(CPOP,   I_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(CTZ,    I_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(MAX,    R_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(MAXU,   R_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(MIN,    R_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(MINU,   R_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(ORC_B,  I_FORMAT, LOGICAL,    RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(ORN,    R_FORMAT, LOGICAL,    RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(REV8,   I_FORMAT, SHIFT,      RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(ROL,    R_FORMAT, SHIFT,      RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(ROR,    R_FORMAT, SHIFT,      RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(RORI,   I_FORMAT, SHIFT,      RV32ZBB, UIMM));
+  mixin (riscv_zbb_instr_mixin(SEXT_B, I_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(SEXT_H, I_FORMAT, ARITHMETIC, RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(XNOR,   R_FORMAT, LOGICAL,    RV32ZBB));
+  mixin (riscv_zbb_instr_mixin(ZEXT_H, R_FORMAT, ARITHMETIC, RV32ZBB));
+ }
+ else {
+   class riscv_ANDN_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ANDN,   R_FORMAT, LOGICAL,    RV32ZBB); }
+   class riscv_CLZ_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CLZ,    I_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_CPOP_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CPOP,   I_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_CTZ_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(CTZ,    I_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_MAX_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(MAX,    R_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_MAXU_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(MAXU,   R_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_MIN_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(MIN,    R_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_MINU_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(MINU,   R_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_ORC_B_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ORC_B,  I_FORMAT, LOGICAL,    RV32ZBB); }
+   class riscv_ORN_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ORN,    R_FORMAT, LOGICAL,    RV32ZBB); }
+   class riscv_REV8_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(REV8,   I_FORMAT, SHIFT,      RV32ZBB); }
+   class riscv_ROL_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ROL,    R_FORMAT, SHIFT,      RV32ZBB); }
+   class riscv_ROR_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ROR,    R_FORMAT, SHIFT,      RV32ZBB); }
+   class riscv_RORI_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(RORI,   I_FORMAT, SHIFT,      RV32ZBB, UIMM); }
+   class riscv_SEXT_B_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(SEXT_B, I_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_SEXT_H_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(SEXT_H, I_FORMAT, ARITHMETIC, RV32ZBB); }
+   class riscv_XNOR_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(XNOR,   R_FORMAT, LOGICAL,    RV32ZBB); }
+   class riscv_ZEXT_H_instr: riscv_zbb_instr
+   { mixin RISCV_INSTR_MIXIN!(ZEXT_H, R_FORMAT, ARITHMETIC, RV32ZBB); }
+ }

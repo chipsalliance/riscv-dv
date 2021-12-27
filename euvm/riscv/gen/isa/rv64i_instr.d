@@ -21,17 +21,47 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_instr_mixin(LWU,     I_FORMAT, LOAD, RV64I));
-mixin (riscv_instr_mixin(LD,      I_FORMAT, LOAD, RV64I));
-mixin (riscv_instr_mixin(SD,      S_FORMAT, STORE, RV64I));
-// SHIFT intructions
-mixin (riscv_instr_mixin(SLLW,    R_FORMAT, SHIFT, RV64I));
-mixin (riscv_instr_mixin(SLLIW,   I_FORMAT, SHIFT, RV64I));
-mixin (riscv_instr_mixin(SRLW,    R_FORMAT, SHIFT, RV64I));
-mixin (riscv_instr_mixin(SRLIW,   I_FORMAT, SHIFT, RV64I));
-mixin (riscv_instr_mixin(SRAW,    R_FORMAT, SHIFT, RV64I));
-mixin (riscv_instr_mixin(SRAIW,   I_FORMAT, SHIFT, RV64I));
-// ARITHMETIC intructions
-mixin (riscv_instr_mixin(ADDW,    R_FORMAT, ARITHMETIC, RV64I));
-mixin (riscv_instr_mixin(ADDIW,   I_FORMAT, ARITHMETIC, RV64I));
-mixin (riscv_instr_mixin(SUBW,    R_FORMAT, ARITHMETIC, RV64I));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_instr_mixin(LWU,     I_FORMAT, LOAD, RV64I));
+  mixin (riscv_instr_mixin(LD,      I_FORMAT, LOAD, RV64I));
+  mixin (riscv_instr_mixin(SD,      S_FORMAT, STORE, RV64I));
+  // SHIFT intructions
+  mixin (riscv_instr_mixin(SLLW,    R_FORMAT, SHIFT, RV64I));
+  mixin (riscv_instr_mixin(SLLIW,   I_FORMAT, SHIFT, RV64I));
+  mixin (riscv_instr_mixin(SRLW,    R_FORMAT, SHIFT, RV64I));
+  mixin (riscv_instr_mixin(SRLIW,   I_FORMAT, SHIFT, RV64I));
+  mixin (riscv_instr_mixin(SRAW,    R_FORMAT, SHIFT, RV64I));
+  mixin (riscv_instr_mixin(SRAIW,   I_FORMAT, SHIFT, RV64I));
+  // ARITHMETIC intructions
+  mixin (riscv_instr_mixin(ADDW,    R_FORMAT, ARITHMETIC, RV64I));
+  mixin (riscv_instr_mixin(ADDIW,   I_FORMAT, ARITHMETIC, RV64I));
+  mixin (riscv_instr_mixin(SUBW,    R_FORMAT, ARITHMETIC, RV64I));
+ }
+ else {
+   class riscv_LWU_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(LWU,     I_FORMAT, LOAD, RV64I); }
+   class riscv_LD_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(LD,      I_FORMAT, LOAD, RV64I); }
+   class riscv_SD_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SD,      S_FORMAT, STORE, RV64I); }
+   // SHIFT intructions
+   class riscv_SLLW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SLLW,    R_FORMAT, SHIFT, RV64I); }
+   class riscv_SLLIW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SLLIW,   I_FORMAT, SHIFT, RV64I); }
+   class riscv_SRLW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SRLW,    R_FORMAT, SHIFT, RV64I); }
+   class riscv_SRLIW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SRLIW,   I_FORMAT, SHIFT, RV64I); }
+   class riscv_SRAW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SRAW,    R_FORMAT, SHIFT, RV64I); }
+   class riscv_SRAIW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SRAIW,   I_FORMAT, SHIFT, RV64I); }
+   // ARITHMETIC intructions
+   class riscv_ADDW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(ADDW,    R_FORMAT, ARITHMETIC, RV64I); }
+   class riscv_ADDIW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(ADDIW,   I_FORMAT, ARITHMETIC, RV64I); }
+   class riscv_SUBW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SUBW,    R_FORMAT, ARITHMETIC, RV64I); }
+ }

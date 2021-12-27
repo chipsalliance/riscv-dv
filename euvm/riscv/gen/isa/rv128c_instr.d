@@ -21,10 +21,28 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_c_instr_mixin(C_SRLI64, CB_FORMAT, SHIFT, RV128C, NZUIMM));
-mixin (riscv_c_instr_mixin(C_SRAI64, CB_FORMAT, SHIFT, RV128C, NZUIMM));
-mixin (riscv_c_instr_mixin(C_SLLI64, CI_FORMAT, SHIFT, RV128C, NZUIMM));
-mixin (riscv_c_instr_mixin(C_LQ,     CL_FORMAT, LOAD, RV32DC, UIMM));
-mixin (riscv_c_instr_mixin(C_SQ,     CS_FORMAT, STORE, RV32DC, UIMM));
-mixin (riscv_c_instr_mixin(C_LQSP,   CI_FORMAT, LOAD, RV32DC, UIMM));
-mixin (riscv_c_instr_mixin(C_SQSP,   CSS_FORMAT, STORE, RV32DC, UIMM));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_c_instr_mixin(C_SRLI64, CB_FORMAT, SHIFT, RV128C, NZUIMM));
+  mixin (riscv_c_instr_mixin(C_SRAI64, CB_FORMAT, SHIFT, RV128C, NZUIMM));
+  mixin (riscv_c_instr_mixin(C_SLLI64, CI_FORMAT, SHIFT, RV128C, NZUIMM));
+  mixin (riscv_c_instr_mixin(C_LQ,     CL_FORMAT, LOAD, RV32DC, UIMM));
+  mixin (riscv_c_instr_mixin(C_SQ,     CS_FORMAT, STORE, RV32DC, UIMM));
+  mixin (riscv_c_instr_mixin(C_LQSP,   CI_FORMAT, LOAD, RV32DC, UIMM));
+  mixin (riscv_c_instr_mixin(C_SQSP,   CSS_FORMAT, STORE, RV32DC, UIMM));
+ }
+ else {
+   class riscv_C_SRLI64_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_SRLI64, CB_FORMAT, SHIFT, RV128C, NZUIMM); }
+   class riscv_C_SRAI64_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_SRAI64, CB_FORMAT, SHIFT, RV128C, NZUIMM); }
+   class riscv_C_SLLI64_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_SLLI64, CI_FORMAT, SHIFT, RV128C, NZUIMM); }
+   class riscv_C_LQ_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_LQ,     CL_FORMAT, LOAD, RV32DC, UIMM); }
+   class riscv_C_SQ_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_SQ,     CS_FORMAT, STORE, RV32DC, UIMM); }
+   class riscv_C_LQSP_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_LQSP,   CI_FORMAT, LOAD, RV32DC, UIMM); }
+   class riscv_C_SQSP_instr: riscv_compressed_instr
+   { mixin RISCV_INSTR_MIXIN!(C_SQSP,   CSS_FORMAT, STORE, RV32DC, UIMM); }
+ }

@@ -21,12 +21,34 @@ import riscv.gen.riscv_defines;
 import uvm;
 
 
-////////////  RV32M instructions  //////////////
-mixin (riscv_instr_mixin(MUL,    R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(MULH,   R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(MULHSU, R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(MULHU,  R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(DIV,    R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(DIVU,   R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(REM,    R_FORMAT, ARITHMETIC, RV32M));
-mixin (riscv_instr_mixin(REMU,   R_FORMAT, ARITHMETIC, RV32M));
+version (RISCV_INSTR_STRING_MIXIN) {
+  ////////////  RV32M instructions  //////////////
+  mixin (riscv_instr_mixin(MUL,    R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(MULH,   R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(MULHSU, R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(MULHU,  R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(DIV,    R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(DIVU,   R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(REM,    R_FORMAT, ARITHMETIC, RV32M));
+  mixin (riscv_instr_mixin(REMU,   R_FORMAT, ARITHMETIC, RV32M));
+ }
+ else {
+   ////////////  RV32M instructions  //////////////
+   class riscv_MUL_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(MUL,    R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_MULH_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(MULH,   R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_MULHSU_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(MULHSU, R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_MULHU_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(MULHU,  R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_DIV_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(DIV,    R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_DIVU_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(DIVU,   R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_REM_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(REM,    R_FORMAT, ARITHMETIC, RV32M); }
+   class riscv_REMU_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(REMU,   R_FORMAT, ARITHMETIC, RV32M); }
+ }
+   

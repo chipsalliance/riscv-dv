@@ -21,9 +21,25 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_fp_instr_mixin(FMV_X_D,   I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FMV_D_X,   I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_L_D,  I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_LU_D, I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_D_L,  I_FORMAT, ARITHMETIC, RV64D));
-mixin (riscv_fp_instr_mixin(FCVT_D_LU, I_FORMAT, ARITHMETIC, RV64D));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_fp_instr_mixin(FMV_X_D,   I_FORMAT, ARITHMETIC, RV64D));
+  mixin (riscv_fp_instr_mixin(FMV_D_X,   I_FORMAT, ARITHMETIC, RV64D));
+  mixin (riscv_fp_instr_mixin(FCVT_L_D,  I_FORMAT, ARITHMETIC, RV64D));
+  mixin (riscv_fp_instr_mixin(FCVT_LU_D, I_FORMAT, ARITHMETIC, RV64D));
+  mixin (riscv_fp_instr_mixin(FCVT_D_L,  I_FORMAT, ARITHMETIC, RV64D));
+  mixin (riscv_fp_instr_mixin(FCVT_D_LU, I_FORMAT, ARITHMETIC, RV64D));
+ }
+ else {
+   class riscv_FMV_X_D_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FMV_X_D,   I_FORMAT, ARITHMETIC, RV64D); }
+   class riscv_FMV_D_X_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FMV_D_X,   I_FORMAT, ARITHMETIC, RV64D); }
+   class riscv_FCVT_L_D_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FCVT_L_D,  I_FORMAT, ARITHMETIC, RV64D); }
+   class riscv_FCVT_LU_D_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FCVT_LU_D, I_FORMAT, ARITHMETIC, RV64D); }
+   class riscv_FCVT_D_L_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FCVT_D_L,  I_FORMAT, ARITHMETIC, RV64D); }
+   class riscv_FCVT_D_LU_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FCVT_D_LU, I_FORMAT, ARITHMETIC, RV64D); }
+ }

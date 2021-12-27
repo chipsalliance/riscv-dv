@@ -21,8 +21,22 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-mixin (riscv_instr_mixin(MULW,   R_FORMAT, ARITHMETIC, RV64M));
-mixin (riscv_instr_mixin(DIVW,   R_FORMAT, ARITHMETIC, RV64M));
-mixin (riscv_instr_mixin(DIVUW,  R_FORMAT, ARITHMETIC, RV64M));
-mixin (riscv_instr_mixin(REMW,   R_FORMAT, ARITHMETIC, RV64M));
-mixin (riscv_instr_mixin(REMUW,  R_FORMAT, ARITHMETIC, RV64M));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_instr_mixin(MULW,   R_FORMAT, ARITHMETIC, RV64M));
+  mixin (riscv_instr_mixin(DIVW,   R_FORMAT, ARITHMETIC, RV64M));
+  mixin (riscv_instr_mixin(DIVUW,  R_FORMAT, ARITHMETIC, RV64M));
+  mixin (riscv_instr_mixin(REMW,   R_FORMAT, ARITHMETIC, RV64M));
+  mixin (riscv_instr_mixin(REMUW,  R_FORMAT, ARITHMETIC, RV64M));
+ }
+ else {
+   class riscv_MULW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(MULW,   R_FORMAT, ARITHMETIC, RV64M); }
+   class riscv_DIVW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(DIVW,   R_FORMAT, ARITHMETIC, RV64M); }
+   class riscv_DIVUW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(DIVUW,  R_FORMAT, ARITHMETIC, RV64M); }
+   class riscv_REMW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(REMW,   R_FORMAT, ARITHMETIC, RV64M); }
+   class riscv_REMUW_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(REMUW,  R_FORMAT, ARITHMETIC, RV64M); }
+ }

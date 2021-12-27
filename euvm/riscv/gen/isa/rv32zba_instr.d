@@ -22,7 +22,16 @@ import riscv.gen.riscv_defines;
 
 import uvm;
 
-
-mixin (riscv_zba_instr_mixin(SH1ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
-mixin (riscv_zba_instr_mixin(SH2ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
-mixin (riscv_zba_instr_mixin(SH3ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
+version (RISCV_INSTR_STRING_MIXIN) {
+  mixin (riscv_zba_instr_mixin(SH1ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
+  mixin (riscv_zba_instr_mixin(SH2ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
+  mixin (riscv_zba_instr_mixin(SH3ADD, R_FORMAT, ARITHMETIC, RV32ZBA));
+ }
+ else {
+   class riscv_SH1ADD_instr: riscv_zba_instr
+   { mixin RISCV_INSTR_MIXIN!(SH1ADD, R_FORMAT, ARITHMETIC, RV32ZBA); }
+   class riscv_SH2ADD_instr: riscv_zba_instr
+   { mixin RISCV_INSTR_MIXIN!(SH2ADD, R_FORMAT, ARITHMETIC, RV32ZBA); }
+   class riscv_SH3ADD_instr: riscv_zba_instr
+   { mixin RISCV_INSTR_MIXIN!(SH3ADD, R_FORMAT, ARITHMETIC, RV32ZBA); }
+ }
