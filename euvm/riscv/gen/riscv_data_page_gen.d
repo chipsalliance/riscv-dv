@@ -87,29 +87,29 @@ class riscv_data_page_gen: uvm_object
     }
     foreach (setting; mem_region_setting) {
       uvm_info(get_full_name, format("Generate data section: %0s size:0x%0x  xwr:0x%0x]",
-				     setting, setting.size_in_bytes, setting.xwr), UVM_LOW);
+				     setting.name, setting.size_in_bytes, setting.xwr), UVM_LOW);
       if (amo) {
         if (cfg.use_push_data_section) {
           data_page_str ~= format(".pushsection .%0s,\"aw\",@progbits;",
-				  setting);
+				  setting.name);
 	}
 	else {
           data_page_str ~= format(".section .%0s,\"aw\",@progbits;",
-				  setting);
+				  setting.name);
         }
-        data_page_str ~= format("%0s:", setting);
+        data_page_str ~= format("%0s:", setting.name);
       }
       else {
         if (cfg.use_push_data_section) {
           data_page_str ~= format(".pushsection .%0s,\"aw\",@progbits;",
-				  (hart_prefix(hart_id) ~ setting.to!string()));
+				  (hart_prefix(hart_id) ~ setting.name));
         }
 	else {
           data_page_str ~= format(".section .%0s,\"aw\",@progbits;",
-				  (hart_prefix(hart_id) ~ setting.to!string()));
+				  (hart_prefix(hart_id) ~ setting.name));
         }
         data_page_str ~= format("%0s:",
-				(hart_prefix(hart_id) ~ setting.to!string()));
+				(hart_prefix(hart_id) ~ setting.name));
       }
       page_size = setting.size_in_bytes;
       for (int i = 0; i < page_size; i+= 32) {
