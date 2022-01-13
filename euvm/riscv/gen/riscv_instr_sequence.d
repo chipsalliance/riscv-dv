@@ -162,9 +162,10 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     uint[]  branch_idx;
     int[int] branch_target;   // '{default: 0};
     // Insert directed instructions, it's randomly mixed with the random instruction stream.
-    foreach (instr; directed_instr) {
-      instr_stream.insert_instr_stream(instr.instr_list);
-    }
+    // foreach (instr; directed_instr) {
+    //   instr_stream.insert_instr_stream(instr.instr_list);
+    // }
+    instr_stream.mixin_directed_instr_list(directed_instr);
     // Assign an index for all instructions, these indexes won't change even a new instruction
     // is injected in the post process.
     foreach (i, instr; instr_stream.instr_list) {

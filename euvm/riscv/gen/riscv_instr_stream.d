@@ -56,7 +56,8 @@ class riscv_instr_stream: uvm_object
   riscv_reg_t[]            reserved_rd;
   int                      hart;
 
-  riscv_instr_stream_elem[] instr_map;
+  // used when we mixin directed instructions into the prog instr_list
+  uint next_stream;
 
   // riscv_instr_registry     registry;
 
@@ -68,7 +69,6 @@ class riscv_instr_stream: uvm_object
   
   void initialize_instr_list(uint instr_cnt) {
     instr_list.length = 0;
-    instr_map.length = 0;
     this.instr_cnt = instr_cnt;
     create_instr_instance();
   }
@@ -470,49 +470,28 @@ class riscv_rand_instr_stream: riscv_instr_stream
   }
 }
 
-struct riscv_instr_stream_elem
-{
-  this(Queue!riscv_instr seq) {
-    _seq = seq;
-    _seq_insert_map.length = _seq.length;
-  }
-  this(riscv_instr elem) {
-    _elem = elem;
-  }
-  // when streams are getting mixed
-  Queue!riscv_instr _seq;
-  // for individual elements
-  riscv_instr       _elem;
-  // bypass to the next -- 0 means no bypass
-  uint              _next;
-  // 
-  uint[]            _seq_insert_map;
-  uint              _elem_insert_map;
-  // true if _seq or _elem is atomic
-  bool              _is_atomic;
-}
-
 
 class riscv_prog_instr_stream: riscv_rand_instr_stream
 {
   mixin uvm_object_utils;
 
+  riscv_instr_stream[] dir_instr_list;
+
+  // used in mixin_directed_instr_list
+  uint[] dir_n;
+
   this(string name = "riscv_prog_instr_stream") {
     super(name);
   }
 
-  void insert_instr_map(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
-    assert (replace == false);
-  }
-  
   // Insert an instruction to the existing instruction stream at the given index
   // When index is -1, the instruction is injected at a random location
   // When replace is 1, the original instruction at the inserted position will be replaced
-  void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
+  override void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
-      instr_list ~= new_instr;
+      instr_list = new_instr;
       return;
     }
     if (idx == -1) {
@@ -555,7 +534,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
   }
 
-  void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
+  override void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
@@ -600,6 +579,56 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
         instr_list.insert(idx, new_instr);
       }
     }
+  }
+
+  void mixin_directed_instr_list(riscv_instr_stream[] dir_list) {
+    riscv_instr[]        mixed_list;
+
+    uint instr_count = cast(uint) instr_list.length;
+    uint mixed_count = instr_count;
+
+    dir_n.length = instr_count;
+    
+    this.dir_instr_list = dir_list;
+
+    foreach (size_t dir_idx, dir_instr; dir_instr_list) {
+      mixed_count += dir_instr.instr_list.length;
+      uint rnd_idx = urandom(0, instr_count);
+      uint next_dir = dir_n[rnd_idx];
+      if (next_dir == 0)
+	dir_n[rnd_idx] = cast(uint) (dir_idx + 1);
+      else {
+	uint insert_idx = cast(uint) (dir_idx + 1);
+	riscv_instr_stream instr = dir_instr_list[next_dir-1];
+	while (instr.next_stream != 0) {
+	  if (rnd_idx % 2 == 0) { // insert at the end of linked list
+	    uint next_idx = instr.next_stream;
+	    instr.next_stream = insert_idx;
+	    insert_idx = next_idx;
+	  }
+	  instr = dir_instr_list[instr.next_stream-1];
+	}
+	instr.next_stream = cast(uint) (insert_idx);
+      }
+    }
+
+    mixed_list.length = mixed_count;
+
+    uint n = 0;
+    foreach (i, instr; instr_list) {
+      uint next_dir = dir_n[i];
+      while (next_dir != 0) {
+	uint next = dir_instr_list[next_dir-1].next_stream;
+	foreach (dinstr; dir_instr_list[next_dir-1].instr_list) {
+	  mixed_list[n++] = dinstr;
+	}
+	next_dir = next;
+      }
+      mixed_list[n++] = instr;
+    }
+    assert (mixed_count == n);
+
+    instr_list = mixed_list;
   }
 
 }
