@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module riscv.gen.riscv_privileged_common_seq;
 
 import riscv.gen.riscv_instr_pkg: privileged_mode_t, privileged_reg_t,
   format_string, indent, satp_mode_t, hart_prefix, LABEL_STR_LEN;
-import riscv.gen.riscv_core_setting: supported_privileged_mode, support_umode_trap,
+import riscv.gen.target: supported_privileged_mode, support_umode_trap,
   implemented_csr, XLEN, SATP_MODE;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.riscv_privil_reg: riscv_privil_reg;

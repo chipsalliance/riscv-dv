@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ module riscv.gen.riscv_instr_sequence;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_category_t, riscv_instr_name_t,
   format_string, riscv_reg_t, indent, LABEL_STR_LEN;
-import riscv.gen.riscv_core_setting: support_pmp, XLEN;
+import riscv.gen.target: support_pmp, XLEN;
 
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.riscv_directed_instr_lib: riscv_push_stack_instr, riscv_pop_stack_instr,

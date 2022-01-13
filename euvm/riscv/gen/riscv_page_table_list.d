@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ module riscv.gen.riscv_page_table_list;
 import riscv.gen.riscv_instr_pkg: satp_mode_t, privileged_mode_t, riscv_reg_t,
   privileged_reg_t, pte_permission_t, pop_gpr_from_kernel_stack,
   MAX_USED_VADDR_BITS, MPRV_BIT_MASK;
-import riscv.gen.riscv_core_setting: XLEN, SATP_MODE;
+import riscv.gen.target: XLEN, SATP_MODE;
 import riscv.gen.riscv_page_table_exception_cfg: riscv_page_table_exception_cfg;
 import riscv.gen.riscv_page_table_entry: riscv_page_table_entry;
 import riscv.gen.riscv_page_table: riscv_page_table;

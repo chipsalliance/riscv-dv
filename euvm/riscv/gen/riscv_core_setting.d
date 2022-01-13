@@ -1,1 +1,0 @@
-target/rv64imc/riscv_core_setting.d

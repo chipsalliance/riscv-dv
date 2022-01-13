@@ -1,7 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import riscv.gen.riscv_instr_pkg: privileged_reg_t, privileged_mode_t,
   pop_gpr_from_kernel_stack, riscv_reg_t,
   DATA_WIDTH, SINGLE_PRECISION_FRACTION_BITS, LABEL_STR_LEN,
   DOUBLE_PRECISION_FRACTION_BITS;
-import riscv.gen.riscv_core_setting: support_pmp, max_interrupt_vector_num,
+import riscv.gen.target: support_pmp, max_interrupt_vector_num,
   implemented_csr, support_debug_mode, supported_isa,
   supported_privileged_mode, support_umode_trap,
   NUM_GPR, ELEN, VLEN, NUM_VEC_GPR, NUM_FLOAT_GPR, NUM_HARTS, SATP_MODE, XLEN;

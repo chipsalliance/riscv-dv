@@ -1,7 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 module riscv.gen.riscv_instr_pkg;
 
-import riscv.gen.riscv_core_setting: XLEN, NUM_HARTS, SATP_MODE, implemented_csr;
+import riscv.gen.target: XLEN, NUM_HARTS, SATP_MODE, implemented_csr;
 import std.traits: EnumMembers;
 
 import esdl.data.bvec: bvec, ubvec;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_
 import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_instr_register: register_isa;
 
-import riscv.gen.riscv_core_setting: NUM_HARTS, XLEN, supported_privileged_mode, supported_isa,
+import riscv.gen.target: NUM_HARTS, XLEN, supported_privileged_mode, supported_isa,
   SATP_MODE, implemented_csr, support_sfence, support_debug_mode, supported_interrupt_mode;
 import riscv.gen.riscv_pmp_cfg: riscv_pmp_cfg;
 import riscv.gen.riscv_vector_cfg: riscv_vector_cfg;

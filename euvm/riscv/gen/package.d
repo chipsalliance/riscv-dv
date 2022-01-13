@@ -1,11 +1,11 @@
 module riscv.gen;
 
 public import riscv.gen.isa;
+public import riscv.gen.target;
 
 public import riscv.gen.riscv_amo_instr_lib;
 public import riscv.gen.riscv_asm_program_gen;
 public import riscv.gen.riscv_callstack_gen;
-public import riscv.gen.riscv_core_setting;
 public import riscv.gen.riscv_custom_instr_enum;
 public import riscv.gen.riscv_data_page_gen;
 public import riscv.gen.riscv_debug_rom_gen;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
 module riscv.gen.riscv_illegal_instr;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, riscv_instr_group_t;
-import riscv.gen.riscv_core_setting: supported_isa, XLEN, custom_csr;
+import riscv.gen.target: supported_isa, XLEN, custom_csr;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import std.traits: EnumMembers;
 import std.format: format;

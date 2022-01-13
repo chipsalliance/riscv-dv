@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ module riscv.gen.riscv_debug_rom_gen;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, hart_prefix, push_gpr_to_kernel_stack,
   indent, pop_gpr_from_kernel_stack, privileged_mode_t;
-import riscv.gen.riscv_core_setting: supported_privileged_mode;
+import riscv.gen.target: supported_privileged_mode;
 import riscv.gen.riscv_instr_sequence: riscv_instr_sequence;
 import riscv.gen.riscv_asm_program_gen: riscv_asm_program_gen;
 import riscv.gen.riscv_signature_pkg: core_status_t, signature_type_t, test_result_t;

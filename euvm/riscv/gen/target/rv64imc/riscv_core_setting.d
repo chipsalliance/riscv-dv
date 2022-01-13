@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,12 @@
 //-----------------------------------------------------------------------------
 // XLEN
 
-module riscv.gen.riscv_core_setting; 
+module riscv.gen.target.rv64imc.riscv_core_setting; 
 
 import riscv.gen.riscv_instr_pkg: satp_mode_t, privileged_mode_t,
   riscv_instr_name_t, mtvec_mode_t, interrupt_cause_t,
   exception_cause_t, riscv_instr_group_t, privileged_reg_t;
-import std.math: log2;
-import esdl: ubvec;
+import esdl: ubvec, flog2;
 
 enum int XLEN = 64;
 
@@ -90,7 +89,7 @@ enum int ELEN = 32;
 enum int SELEN = 8;
 
 // Maximum size of a single vector element (encoded in vsew format)
-enum int VELEN = cast(int) log2(ELEN) - 3;
+enum int VELEN = flog2(ELEN) - 3;
 
 static assert (VELEN == 2);
 
@@ -110,22 +109,22 @@ enum int NUM_HARTS = 1;
 
 // Implemented previlieged CSR list
 enum privileged_reg_t[] implemented_csr = [
-    // Machine mode mode CSR
-    privileged_reg_t.MVENDORID,  // Vendor ID
-    privileged_reg_t.MARCHID,    // Architecture ID
-    privileged_reg_t.MIMPID,     // Implementation ID
-    privileged_reg_t.MHARTID,    // Hardware thread ID
-    privileged_reg_t.MSTATUS,    // Machine status
-    privileged_reg_t.MISA,       // ISA and extensions
-    privileged_reg_t.MIE,        // Machine interrupt-enable register
-    privileged_reg_t.MTVEC,      // Machine trap-handler base address
-    privileged_reg_t.MCOUNTEREN, // Machine counter enable
-    privileged_reg_t.MSCRATCH,   // Scratch register for machine trap handlers
-    privileged_reg_t.MEPC,       // Machine exception program counter
-    privileged_reg_t.MCAUSE,     // Machine trap cause
-    privileged_reg_t.MTVAL,      // Machine bad address or instruction
-    privileged_reg_t.MIP         // Machine interrupt pending
-];
+					   // Machine mode mode CSR
+					   privileged_reg_t.MVENDORID,  // Vendor ID
+					   privileged_reg_t.MARCHID,    // Architecture ID
+					   privileged_reg_t.MIMPID,     // Implementation ID
+					   privileged_reg_t.MHARTID,    // Hardware thread ID
+					   privileged_reg_t.MSTATUS,    // Machine status
+					   privileged_reg_t.MISA,       // ISA and extensions
+					   privileged_reg_t.MIE,        // Machine interrupt-enable register
+					   privileged_reg_t.MTVEC,      // Machine trap-handler base address
+					   privileged_reg_t.MCOUNTEREN, // Machine counter enable
+					   privileged_reg_t.MSCRATCH,   // Scratch register for machine trap handlers
+					   privileged_reg_t.MEPC,       // Machine exception program counter
+					   privileged_reg_t.MCAUSE,     // Machine trap cause
+					   privileged_reg_t.MTVAL,      // Machine bad address or instruction
+					   privileged_reg_t.MIP         // Machine interrupt pending
+					   ];
 
 // Implementation-specific custom CSRs
 ubvec!12[] custom_csr = [];

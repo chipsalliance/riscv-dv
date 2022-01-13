@@ -1,6 +1,6 @@
 /*
  * Copyright 2020 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import riscv.gen.riscv_instr_pkg: pmp_cfg_reg_t, pmp_addr_mode_t,
   privileged_reg_t, riscv_reg_t, exception_cause_t, get_int_arg_value,
   get_bool_arg_value, get_hex_arg_value;
 
-import riscv.gen.riscv_core_setting: XLEN;
+import riscv.gen.target: XLEN;
 import std.format: format;
 
 import esdl.data.bvec: ubvec, toubvec, tobvec, clog2;

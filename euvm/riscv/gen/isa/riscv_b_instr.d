@@ -1,7 +1,7 @@
 /*
  * Copyright 2019 Google LLC
  * Copyright 2019 Mellanox Technologies Ltd
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module riscv.gen.isa.riscv_b_instr;
 import riscv.gen.riscv_instr_pkg: riscv_reg_t, riscv_instr_name_t, b_ext_group_t,
   riscv_instr_category_t, riscv_instr_format_t, riscv_instr_group_t,
   MAX_INSTR_STR_LEN, format_string;
-import riscv.gen.riscv_core_setting: XLEN;
+import riscv.gen.target: XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;

@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, riscv_instr_group_t,
   riscv_instr_category_t, privileged_reg_t, riscv_reg_t, privileged_mode_t;
-import riscv.gen.riscv_core_setting: unsupported_instr, supported_isa,
+import riscv.gen.target: unsupported_instr, supported_isa,
   implemented_csr, XLEN;
 
 import std.format: format;

@@ -123,14 +123,3 @@ class riscv_instr_base_test: uvm_test
   }
 
 }
-
-int main(string[] args) {
-  auto testbench = new uvm_testbench;
-  testbench.multicore(0, 1);
-  testbench.elaborate("test", args);
-  testbench.set_seed(1);
-  testbench.set_async_mode();
-
-  return testbench.start();
-}
-

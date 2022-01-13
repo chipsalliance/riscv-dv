@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import riscv.gen.riscv_pseudo_instr: riscv_pseudo_instr;
 // import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_vector_instr: riscv_vector_instr;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
-import riscv.gen.riscv_core_setting: XLEN;
+import riscv.gen.target: XLEN;
 
 import std.format: format;
 import std.algorithm: canFind, sort;

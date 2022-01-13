@@ -1,10 +1,11 @@
 MTRIPLE = -m64
+TARGET = RV64IMC
 CC = gcc
-DEBUG = NONE # CSTSOLVER
-DFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -O3  -release -boundscheck=off  # -d-version=CHECK_COMPILE
-DBGDFLAGS = $(MTRIPLE) -preview=intpromote -w -d-debug=$(DEBUG) -g
+DEBUG = NONE
+DFLAGS = $(MTRIPLE) -d-version=$(TARGET) -w -d-debug=$(DEBUG) -O3  -release -boundscheck=off # --lowmem # -d-version=CHECK_COMPILE
+DBGDFLAGS = $(MTRIPLE) -w -d-debug=$(DEBUG) -g
 INSTRCOUNT = 100000
-VERBOSITY=NONE
+VERBOSITY = NONE
 
 LDC2 = ldc2
 PICOBJDIR = picobj-ldc
@@ -18,7 +19,6 @@ PHOBOS = phobos2-ldc-shared
 
 
 GEN_FILES = riscv/gen/package.d riscv/gen/riscv_amo_instr_lib.d		\
-	    riscv/gen/riscv_core_setting.d				\
 	    riscv/gen/riscv_data_page_gen.d				\
 	    riscv/gen/riscv_directed_instr_lib.d			\
 	    riscv/gen/riscv_instr_gen_config.d				\
@@ -41,7 +41,20 @@ GEN_FILES = riscv/gen/package.d riscv/gen/riscv_amo_instr_lib.d		\
 	    riscv/gen/riscv_debug_rom_gen.d				\
 	    riscv/gen/riscv_privil_reg.d				\
 	    riscv/gen/riscv_custom_instr_enum.d				\
-	    riscv/gen/riscv_defines.d
+	    riscv/gen/riscv_defines.d					\
+	    riscv/gen/target/rv32imcb/riscv_core_setting.d		\
+	    riscv/gen/target/package.d					\
+	    riscv/gen/target/rv64gcv/riscv_core_setting.d		\
+	    riscv/gen/target/rv64gc/riscv_core_setting.d		\
+	    riscv/gen/target/rv64imcb/riscv_core_setting.d		\
+	    riscv/gen/target/rv32imafdc/riscv_core_setting.d		\
+	    riscv/gen/target/ml/riscv_core_setting.d			\
+	    riscv/gen/target/multi_harts/riscv_core_setting.d		\
+	    riscv/gen/target/rv32imc_sv32/riscv_core_setting.d		\
+	    riscv/gen/target/rv32i/riscv_core_setting.d			\
+	    riscv/gen/target/rv64imc/riscv_core_setting.d		\
+	    riscv/gen/target/rv32imc/riscv_core_setting.d
+
 
 ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/riscv_compressed_instr.d			\
@@ -72,15 +85,18 @@ ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/custom/riscv_custom_instr.d			\
             riscv/gen/isa/custom/riscv_custom_instr_enum.d
 
-TEST_FILES = riscv/test/riscv_instr_base_test.d
+TEST_FILES = riscv/test/riscv_instr_base_test.d                         \
+	     riscv/test/riscv_instr_test_lib.d                          \
+	     riscv/test/riscv_instr_test.d
 
 GEN_OBJS  = $(GEN_FILES:.d=.o)
 ISA_OBJS  = $(ISA_FILES:.d=.o)
+TEST_OBJS = $(TEST_FILES:.d=.o)
 
-all: riscv-libs riscv_instr_base_test
+all: riscv-libs riscv_instr_gen
 
 clean:
-	rm -rf picobj-ldc picobj-dbg-ldc riscv_instr_base_test libriscv-dv-ldc-shared.so libriscv-dv-ldc.a
+	rm -rf picobj-ldc picobj-dbg-ldc riscv_instr_gen libriscv-dv-ldc-shared.so libriscv-dv-ldc.a
 
 riscv-libs: riscv-lib-static riscv-lib-shared
 
@@ -92,11 +108,18 @@ $(PICOBJDIR)/%.o: ../%.d
 	$(LDC2) -c $(DFLAGS) -relocation-model=pic -of$@ -I.. $^
 
 libriscv-dv-ldc-shared.so: $(addprefix $(PICOBJDIR)/,$(GEN_OBJS)) \
-			   $(addprefix $(PICOBJDIR)/,$(ISA_OBJS))
+			   $(addprefix $(PICOBJDIR)/,$(ISA_OBJS)) \
+			   $(addprefix $(PICOBJDIR)/,$(TEST_OBJS))
+	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3
+
+libriscv-dv-ldc-shared-alt.so: $(addprefix ../,$(GEN_FILES)) \
+			       $(addprefix ../,$(ISA_FILES)) \
+			       $(addprefix $(PICOBJDIR)/,$(TEST_OBJS))
 	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3
 
 libriscv-dv-ldc.a: $(addprefix $(PICOBJDIR)/,$(GEN_OBJS)) \
-	           $(addprefix $(PICOBJDIR)/,$(ISA_OBJS))
+	           $(addprefix $(PICOBJDIR)/,$(ISA_OBJS)) \
+		   $(addprefix $(PICOBJDIR)/,$(TEST_OBJS))
 	CC=$(CC) ar rcs $@ $^
 
 TAGS: $(addprefix ../,$(GEN_FILES)) \
@@ -104,20 +127,14 @@ TAGS: $(addprefix ../,$(GEN_FILES)) \
       $(addprefix ../,$(TEST_FILES))
 	dscanner --etags $^ > $@
 
-# riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d $(addprefix ../,$(GEN_FILES)) $(addprefix ../,$(ISA_FILES))
-# 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
+riscv_instr_gen: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-shared.so
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl 
 
-# riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
-# 	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-lz3 -L-ldl $^
+riscv_instr_gen_debug: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-shared.so
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl
 
-riscv_instr_base_test: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
-	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
-
-riscv_instr_base_test_debug: ../riscv/test/riscv_instr_base_test.d libriscv-dv-ldc.a
-	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl $^
-
-run: riscv_instr_base_test
-	./riscv_instr_base_test +UVM_VERBOSITY=$(VERBOSITY) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
+run: riscv_instr_gen
+	./riscv_instr_gen +UVM_VERBOSITY=$(VERBOSITY) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
 	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
 	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
 	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \

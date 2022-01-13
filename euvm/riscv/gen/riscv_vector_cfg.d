@@ -1,7 +1,7 @@
 /*
  * Copyright 2020 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
- * Copyright 2021 Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 module riscv.gen.riscv_vector_cfg;
 
 import riscv.gen.riscv_instr_pkg: riscv_vreg_t, vxrm_t, vtype_t;
-import riscv.gen.riscv_core_setting: XLEN, VLEN, MAX_LMUL, ELEN, SELEN;
+import riscv.gen.target: XLEN, VLEN, MAX_LMUL, ELEN, SELEN;
 
 import std.string: format, toUpper, toLower, strip;
 

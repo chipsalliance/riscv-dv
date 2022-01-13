@@ -1,6 +1,6 @@
 /*
  * Copyright 2018 Google LLC
- * Copyright Coverify Systems Technology
+ * Copyright 2022 Coverify Systems Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ module riscv.gen.riscv_privil_reg;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, privileged_level_t,
   reg_field_access_t;
-import riscv.gen.riscv_core_setting: XLEN;
+import riscv.gen.target: XLEN;
 import riscv.gen.riscv_reg: riscv_reg;
 import std.format: format;
 
