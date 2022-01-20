@@ -84,10 +84,9 @@ class riscv_callstack_gen:
         for i in range(len(self.program_h)):
             self.program_h[i] = riscv_program("program_{}".format(i))
 
-# In the randomiation stage, only the stack level of each program is specified. The call stack
+# In the randomization stage, only the stack level of each program is specified. The call stack
 # generation process is to build the call relationship between different programs. This is
 # implemented with post randomize rather than constraints for performance considerations.
-# Solving a complex call stack with SV constraint could take considerable time for the solver.
 
     def post_randomize(self):
         last_level = 0
