@@ -18,10 +18,28 @@ import uvm;
 import esdl;
 
 int main(string[] args) {
+  import std.stdio: writeln;
+
+  uint random_seed;
+  uint thread_index;
+  uint thread_count;
+  
+  CommandLine cmdl = new CommandLine(args);
+
+  if (cmdl.plusArgs("random_seed=" ~ "%d", random_seed))
+    writeln("Using random_seed: ", random_seed);
+  else random_seed = 1;
+
+  if (! cmdl.plusArgs("thread_index=" ~ "%d", thread_index))
+    thread_index = 0;
+  if (! cmdl.plusArgs("thread_count=" ~ "%d", thread_count))
+    thread_count = 1;
+  
   auto testbench = new uvm_testbench;
-  testbench.multicore(0, 1);
+
+  testbench.multicore(thread_index, thread_count);
   testbench.elaborate("test", args);
-  testbench.set_seed(1);
+  testbench.set_seed(random_seed);
   testbench.set_async_mode();
 
   return testbench.start();
