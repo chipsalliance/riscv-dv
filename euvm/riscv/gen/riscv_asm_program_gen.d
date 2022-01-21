@@ -50,7 +50,6 @@ import riscv.gen.riscv_privileged_common_seq: riscv_privileged_common_seq;
 
 import std.algorithm: canFind;
 import std.string: toLower;
-import std.stdio: File;
 import std.format: format;
 
 import esdl.data.queue: Queue;
@@ -1596,7 +1595,11 @@ class riscv_asm_program_gen : uvm_object
 
   // Write the generated program to a file
   void gen_test_file(string test_name) {
+    import std.stdio: File;
+    import std.path: dirName;
+    import std.file: mkdirRecurse;
     //int fd;
+    mkdirRecurse(dirName(test_name));
     auto fd = File(test_name,"w");
     foreach (instr; instr_stream) {
       fd.writeln(instr);
