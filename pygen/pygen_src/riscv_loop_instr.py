@@ -19,7 +19,8 @@ from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.isa.riscv_instr import riscv_instr
 from pygen_src.riscv_instr_stream import riscv_rand_instr_stream
 from pygen_src.riscv_instr_pkg import (riscv_reg_t, riscv_instr_name_t, pkg_ins,
-                                       riscv_instr_format_t, riscv_instr_category_t)
+                                       riscv_instr_format_t, riscv_instr_category_t,
+                                       compressed_gpr)
 
 
 @vsc.randobj
@@ -103,6 +104,7 @@ class riscv_loop_instr(riscv_rand_instr_stream):
                                                                       riscv_instr_name_t.C_BEQZ))):
                 self.loop_limit_val[i] == 0
                 self.loop_limit_reg[i] == riscv_reg_t.ZERO
+                self.loop_cnt_reg[i].inside(vsc.rangelist(compressed_gpr))
             with vsc.else_then:
                 self.loop_limit_val[i].inside(vsc.rangelist((-20, 20)))
                 self.loop_limit_reg[i] != riscv_reg_t.ZERO
@@ -147,8 +149,11 @@ class riscv_loop_instr(riscv_rand_instr_stream):
         for i in range(self.num_of_nested_loop):
             # Instruction to init the loop counter
             try:
-                self.loop_init_instr.insert(2 * i, riscv_instr.get_rand_instr(
-                    include_instr = [riscv_instr_name_t.ADDI]))
+                self.loop_init_instr.insert(2 * i, riscv_instr.get_rand_instr())
+                # TODO
+                '''self.loop_update_instr[i] = riscv_instr.get_rand_instr(
+                include_instr = [riscv_instr_name_t.ADDI])'''
+                # Removed include_instr ADDI for now to avoid unrecognized colon
                 with self.loop_init_instr[2 * i].randomize_with():
                     self.loop_init_instr[2 * i].rd == self.loop_cnt_reg[i]
                     self.loop_init_instr[2 * i].rs1 == riscv_reg_t.ZERO
@@ -160,8 +165,11 @@ class riscv_loop_instr(riscv_rand_instr_stream):
                 sys.exit(1)
             # Instruction to init loop limit
             try:
-                self.loop_init_instr[2 * i + 1] = riscv_instr.get_rand_instr(
-                    include_instr = [riscv_instr_name_t.ADDI])
+                self.loop_init_instr[2 * i + 1] = riscv_instr.get_rand_instr()
+                # TODO
+                '''self.loop_update_instr[i] = riscv_instr.get_rand_instr(
+                include_instr = [riscv_instr_name_t.ADDI])'''
+                # Removed include_instr ADDI for now to avoid unrecognized colon
                 with self.loop_init_instr[2 * i + 1].randomize_with():
                     self.loop_init_instr[2 * i + 1].rd == self.loop_limit_reg[i]
                     self.loop_init_instr[2 * i + 1].rs1 == riscv_reg_t.ZERO
@@ -196,12 +204,16 @@ class riscv_loop_instr(riscv_rand_instr_stream):
             self.loop_branch_target_instr[i].label = pkg_ins.format_string(
                 "{}_{}_t".format(self.label, i))
             # Instruction to update loop counter
-            self.loop_update_instr[i] = riscv_instr.get_rand_instr(
-                include_instr = [riscv_instr_name_t.ADDI])
-            with self.loop_update_instr[i].randomize_with():
+            self.loop_update_instr[i] = riscv_instr.get_rand_instr()
+            # TODO
+            '''self.loop_update_instr[i] = riscv_instr.get_rand_instr(
+                include_instr = [riscv_instr_name_t.ADDI])'''
+            # Removing include_instr ADDI for now to avoid unrecognized colon
+            # Commenting for now due to key error
+            '''with self.loop_update_instr[i].randomize_with():
                 self.loop_update_instr[i].rd == self.loop_cnt_reg[i]
                 self.loop_update_instr[i].rs1 == self.loop_cnt_reg[i]
-                self.loop_update_instr[i].imm == self.loop_step_val[i]
+                self.loop_update_instr[i].imm == self.loop_step_val[i]'''
             self.loop_update_instr[i].comment = pkg_ins.format_string(
                 "update loop {} counter".format(i))
             # Backward branch instruction
