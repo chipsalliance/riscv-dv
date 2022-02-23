@@ -768,7 +768,8 @@ def parse_args(cwd):
 
     parser.add_argument("--target", type=str, default="rv32imc",
                         help="Run the generator with pre-defined targets: \
-                            rv32imc, rv32i, rv32imafdc, rv64imc, rv64gc")
+                            rv32imc, rv32i, rv32imafdc, rv64imc, rv64gc, \
+                            rv64imafdc")
     parser.add_argument("-o", "--output", type=str,
                         help="Output directory name", dest="o")
     parser.add_argument("-tl", "--testlist", type=str, default="",
@@ -960,6 +961,9 @@ def load_config(args, cwd):
         elif args.target == "ml":
             args.mabi = "lp64"
             args.isa = "rv64imc"
+        elif args.target == "rv64imafdc":
+            args.mabi = "lp64"
+            args.isa = "rv64imafdc"
         else:
             sys.exit("Unsupported pre-defined target: {}".format(args.target))
     else:
