@@ -36,7 +36,7 @@ class riscv_instr_base_test:
     def run(self):
         with multiprocessing.Pool(processes = cfg.num_of_tests) as pool:
             ret = pool.map(self.run_phase, list(range(cfg.num_of_tests)))
-        if ret.index(1) != -1:
+        if 1 in ret:
             raise Exception("Test-generation jobs failed")
 
     def run_phase(self, num):
