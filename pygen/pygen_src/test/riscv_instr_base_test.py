@@ -14,6 +14,7 @@ import sys
 import logging
 import time
 import random
+import traceback
 import multiprocessing
 sys.path.append("pygen/")
 from pygen_src.riscv_instr_pkg import *
@@ -34,9 +35,19 @@ class riscv_instr_base_test:
 
     def run(self):
         with multiprocessing.Pool(processes = cfg.num_of_tests) as pool:
-            pool.map(self.run_phase, list(range(cfg.num_of_tests)))
+            ret = pool.map(self.run_phase, list(range(cfg.num_of_tests)))
+        if ret.index(1) != -1:
+            raise Exception("Test-generation jobs failed")
 
     def run_phase(self, num):
+        try:
+            self._run_phase(num)
+            return 0
+        except Exception as e:
+            traceback.print_exc()
+            return 1
+
+    def _run_phase(self, num):
         if num == 0:
             '''Get the user specified seed value otherwise
                generate a random seed value from SeedGen method of run.py'''
