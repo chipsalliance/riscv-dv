@@ -60,10 +60,11 @@ class riscv_b_instr(riscv_instr):
             # ARITHMETIC RV32B
             if self.instr_name in [riscv_instr_name_t.SHFLI, riscv_instr_name_t.UNSHFLI]:
                 self.imm_len = math.ceil(math.log2(rcs.XLEN)) - 1
-         self.imm_mask = self.imm_mask << self.imm_len
+                self.imm_mask = self.imm_mask << self.imm_len
 
     # Convert the instruction to assembly code
     def convert2asm(self, prefix = " "):
+        asm_str_final = ""
         asm_str = pkg_ins.format_string(self.get_instr_name(), pkg_ins.MAX_INSTR_STR_LEN)
         if self.format == riscv_instr_format_t.I_FORMAT:
             if self.instr_name in [riscv_instr_name_t.FSRI,
