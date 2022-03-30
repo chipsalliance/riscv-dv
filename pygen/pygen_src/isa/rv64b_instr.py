@@ -1,6 +1,6 @@
 """
 Copyright 2019 Google LLC
-Copyright 2019 Mellanox Technologies Ltd
+Copyright 2020 PerfectVIPs Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
 
 from pygen_src.riscv_defines import DEFINE_B_INSTR
 from pygen_src.riscv_instr_pkg import (riscv_instr_name_t, riscv_instr_format_t,
