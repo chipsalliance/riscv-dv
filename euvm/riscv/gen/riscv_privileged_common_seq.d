@@ -103,7 +103,7 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
     gen_csr_instr(regs, instrs);
     // Use mret/sret to switch to the target privileged mode
     instrs ~= ret_instr[0];
-    foreach (i, instr; instrs) {
+    foreach (i, ref instr; instrs) {
       if (i != 0)		// skip indent for label
 	instr = indent ~ instr;
     }
