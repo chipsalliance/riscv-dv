@@ -4,7 +4,7 @@ eUVM is an opensource implementation of IEEE UVM-1800.2-2020 standard in the D P
 
 ## About the RISCV-DV eUVM port
 
-The RISCV-DV eUVM port is a line-by-line translation of the RTSCV-DV SystemVerilog implementation. Except for functional coverage (a work in progress), all other RISCV-DV features have been implemented in eUVM port.
+The RISCV-DV eUVM port is a line-by-line translation of the RISCV-DV SystemVerilog implementation. Except for functional coverage (a work in progress), all other RISCV-DV features have been implemented in eUVM port.
 
 ## Downloading and Installing eUVM
 
