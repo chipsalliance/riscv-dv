@@ -1,14 +1,22 @@
-## Downloading and Installing EUVM
+## About eUVM
 
-If you want to build/use the EUVM port, you need an EUVM installation. Please follow the instructions on https://github.com/coverify/euvm/releases to install and setup EUVM.
+eUVM is an opensource implementation of IEEE UVM-1800.2-2020 standard in the D Programming Language.
 
-## Building EUVM port of RISCV-DV
+## About the RISCV-DV eUVM port
 
-A makefile to build and run the EUVM port is available in the euvm/build folder. To build the code, just run:
+The RISCV-DV eUVM port is a line-by-line translation of the RTSCV-DV SystemVerilog implementation. Except for functional coverage (a work in progress), all other RISCV-DV features have been implemented in eUVM port.
+
+## Downloading and Installing eUVM
+
+If you want to build/use the eUVM port, you need an eUVM installation. Please follow the instructions on https://github.com/coverify/euvm/releases to install and setup eUVM.
+
+## Building eUVM port of RISCV-DV
+
+A makefile to build and run the eUVM port is available in the euvm/build folder. To build the code, use the following commands (assuming bash shell):
 
 ```bash
 cd euvm/build
-make -j 32
+make -j $(nproc)
 ```
 
 Makefile builds RISCV-DV for RV64IMC architecture by default. If you want to build for an alternate architecture, you need to pass that to make command as TARGET parameter:
@@ -16,12 +24,10 @@ Makefile builds RISCV-DV for RV64IMC architecture by default. If you want to bui
 ```bash
 cd euvm/build
 make clean
-make -j 32 TARGET=RV64IMCB
+make -j $(nproc) TARGET=RV64IMCB
 ```
 
 Remember to make clean before switching to a new target.
-
-The optimal number of make threads depends on the the machine you are using to build. If your machine supports only 4 threads, use `make -j 4` instead. Due to heavy use of templated code, RISCV-DV EUVM compilation takes a lot of memory. If your machine is low on RAM (< 8GB), it is prudent to use only a couple of threads to build.
 
 ## Generating RISCV-DV tests
 
