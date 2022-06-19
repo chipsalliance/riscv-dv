@@ -48,7 +48,7 @@ mtvec_mode_t[] supported_interrupt_mode  = [mtvec_mode_t.DIRECT, mtvec_mode_t.VE
 
 // The number of interrupt vectors to be generated, only used if VECTORED interrupt mode is
 // supported
-int max_interrupt_vector_num = 16;
+enum int max_interrupt_vector_num = 16;
 
 // Physical memory protection support
 enum bool support_pmp = false;
@@ -134,7 +134,6 @@ enum interrupt_cause_t[] implemented_interrupt = [ interrupt_cause_t.M_SOFTWARE_
 						   ];
 
 enum exception_cause_t[] implemented_exception = [
-
 						  exception_cause_t.INSTRUCTION_ACCESS_FAULT,
 						  exception_cause_t.ILLEGAL_INSTRUCTION,
 						  exception_cause_t.BREAKPOINT,
