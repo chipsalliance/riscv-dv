@@ -494,7 +494,7 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
 
   uint                  num_of_avail_regs = 10;
   @rand uint            num_of_instr;
-  @rand ubvec!XLEN[]    init_val; // becasue of compile error it has been commented.
+  @rand ubvec!XLEN[]    init_val;
   @rand int_numeric_e[] init_val_type;
   riscv_pseudo_instr[]  init_instr;
 

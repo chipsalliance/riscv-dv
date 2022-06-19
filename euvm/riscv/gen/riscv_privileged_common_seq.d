@@ -36,7 +36,7 @@ import esdl.rand: randomize;
 
 import uvm;
 
-class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
+class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
 {
 
   riscv_instr_gen_config  cfg;

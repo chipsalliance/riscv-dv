@@ -39,8 +39,8 @@ class riscv_instr_test: riscv_instr_base_test
     super(name, parent);
   }
 
-  override void build_phase(uvm_phase phase)
-  {  super.build_phase(phase);
+  override void build_phase(uvm_phase phase) {
+    super.build_phase(phase);
     coreservice = uvm_coreservice_t.get();
     factory = coreservice.get_factory();
     uvm_info(get_full_name(), "Create configuration instance", UVM_LOW);
@@ -48,7 +48,7 @@ class riscv_instr_test: riscv_instr_base_test
     uvm_info(get_full_name(), "Create configuration instance...done", UVM_LOW);
     uvm_info(get_full_name(), cfg.sprint(), UVM_LOW);
     uvm_config_db!(riscv_instr_gen_config).set(null, "*", "instr_cfg", cfg);
-    if(cfg.asm_test_suffix != "")
+    if (cfg.asm_test_suffix != "")
       asm_file_name = asm_file_name ~ "." ~ cfg.asm_test_suffix;
     if (support_debug_mode) {
       factory.set_inst_override_by_name("riscv_asm_program_gen",
@@ -56,8 +56,7 @@ class riscv_instr_test: riscv_instr_base_test
                                         get_full_name() ~ ".asm_gen.debug_rom");
     }
   }
-  override void run_phase(uvm_phase phase)
-  {
+  override void run_phase(uvm_phase phase) {
     riscv_instr instr;
     riscv_instr_name_t instr_name;
     string test_name = format("%0s_0.S", asm_file_name);
@@ -67,19 +66,19 @@ class riscv_instr_test: riscv_instr_base_test
     uvm_info(get_full_name(), "Randomizing instruction list now...", UVM_LOW);
 
     //10000.repeat();
-    for(int i = 0; i<100000; i++)
-      {
-	instr = cfg.instr_registry.get_rand_instr();
-	instr.randomize();
-	fd.writeln(instr.convert2asm());
-      }
+    for (int i = 0; i<100000; i++) {
+      instr = cfg.instr_registry.get_rand_instr();
+      instr.randomize();
+      fd.writeln(instr.convert2asm());
+    }
     //repeat (10000);
     instr = cfg.instr_registry.get_rand_instr([riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE]);
     instr.randomize();
     fd.writeln(instr.convert2asm());
 
     // repeat (10000);
-    instr = cfg.instr_registry.get_rand_instr(([riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE , riscv_instr_category_t.BRANCH]),
+    instr = cfg.instr_registry.get_rand_instr(([riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE,
+						riscv_instr_category_t.BRANCH]),
 					      ([riscv_instr_group_t.RV32I, riscv_instr_group_t.RV32M]));
     instr.randomize();
     fd.writeln(instr.convert2asm());
@@ -88,8 +87,7 @@ class riscv_instr_test: riscv_instr_base_test
 
   }
 
-  override void randomize_cfg()
-  {
+  override void randomize_cfg() {
     cfg.randomize();
     uvm_info(get_full_name(), format("riscv_instr_gen_config is randomized:\n%0s",
 				     cfg.sprint()), UVM_LOW);
