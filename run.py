@@ -453,7 +453,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
 
 
 def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
-                 setting_dir, debug_cmd):
+                 setting_dir, timeout_s, debug_cmd):
     """Run a directed assembly test with ISS
 
     Args:
@@ -507,14 +507,14 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
         base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
         logging.info("[{}] Running ISS simulation: {}".format(iss, elf))
         cmd = get_iss_cmd(base_cmd, elf, log)
-        run_cmd(cmd, 10, debug_cmd=debug_cmd)
+        run_cmd(cmd, timeout_s, debug_cmd=debug_cmd)
         logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
     if len(iss_list) == 2:
         compare_iss_log(iss_list, log_list, report)
 
 
 def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
-                          output_dir, setting_dir, debug_cmd):
+                          output_dir, setting_dir, timeout_s, debug_cmd):
     """Run a directed assembly test from a directory with spike
 
     Args:
@@ -536,7 +536,7 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
         for asm_file in asm_list:
             run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss,
                          output_dir,
-                         setting_dir, debug_cmd)
+                         setting_dir, timeout_s, debug_cmd)
             if "," in iss:
                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
                 save_regr_report(report)
@@ -1005,12 +1005,15 @@ def main():
                     run_assembly_from_dir(full_path, args.iss_yaml, args.isa,
                                           args.mabi,
                                           args.gcc_opts, args.iss, output_dir,
-                                          args.core_setting_dir, args.debug)
+                                          args.core_setting_dir, 
+                                          args.iss_timeout,
+                                          args.debug)
                 # path_asm_test is an assembly file
                 elif os.path.isfile(full_path) or args.debug:
                     run_assembly(full_path, args.iss_yaml, args.isa, args.mabi,
                                  args.gcc_opts,
                                  args.iss, output_dir, args.core_setting_dir,
+                                 args.iss_timeout,
                                  args.debug)
                 else:
                     logging.error('{} does not exist'.format(full_path))
@@ -1091,13 +1094,16 @@ def main():
                                                   gcc_opts, args.iss,
                                                   output_dir,
                                                   args.core_setting_dir,
+                                                  args_iss_timeout,
                                                   args.debug)
                         # path_asm_test is an assembly file
                         elif os.path.isfile(path_asm_test):
                             run_assembly(path_asm_test, args.iss_yaml, args.isa,
                                          args.mabi, gcc_opts,
                                          args.iss, output_dir,
-                                         args.core_setting_dir, args.debug)
+                                         args.core_setting_dir, 
+                                         args.iss_timeout,
+                                         args.debug)
                         else:
                             if not args.debug:
                                 logging.error(
