@@ -1523,6 +1523,7 @@ package riscv_instr_pkg;
   `include "isa/riscv_zbc_instr.sv"
   `include "isa/riscv_zbs_instr.sv"
   `include "isa/riscv_b_instr.sv"
+  `include "isa/riscv_csr_instr.sv"
   `include "isa/riscv_floating_point_instr.sv"
   `include "isa/riscv_vector_instr.sv"
   `include "isa/riscv_compressed_instr.sv"
