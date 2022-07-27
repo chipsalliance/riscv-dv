@@ -60,6 +60,36 @@ class SimpleWriteCSRField:
             val_slice = new_field_val[self.pos[0]:self.pos[1] + 1]
             csr_val.overwrite(self.mask_bitarray & val_slice, self.pos[0])
 
+class LegalizeWriteCSRField:
+    def __init__(self, mask_bitarray, pos, read_only, legalize_py):
+        self.mask_bitarray = mask_bitarray
+        self.pos = pos
+        self.read_only = read_only
+        self.legalize_py = legalize_py
+
+    def write(self, new_field_val, csr_val):
+        # only write if not read only
+        if not self.read_only:
+            val_new_slice = new_field_val[self.pos[0]:self.pos[1] + 1]
+            val_orig_slice = csr_val[self.pos[0]:self.pos[1] + 1]
+
+            legal_val_new = self._legalize_val(val_new_slice.uint, val_orig_slice.uint)
+            val_slice = bitarray(uint=legal_val_new,
+                length=self.pos[1] - self.pos[0] + 1)
+
+            csr_val.overwrite(self.mask_bitarray & val_slice, self.pos[0])
+
+    def _legalize_val(self, val_in, val_orig):
+        legalize_globals = {
+                'val_orig': val_orig,
+                'val_in' : val_in,
+                'val_out' : val_in
+        }
+
+        exec(self.legalize_py, legalize_globals)
+
+        return legalize_globals['val_out']
+
 
 def get_csr_map(csr_file, xlen):
     """
@@ -100,8 +130,14 @@ def get_csr_map(csr_file, xlen):
                     csr_read_mask.overwrite(mask_bitarray, xlen - 1 - field_msb)
                     csr_value.overwrite(val_bitarray, xlen - 1 - field_msb)
                     read_only = True if field_type == "R" else False
-                    csr_write_fields.append(SimpleWriteCSRField(mask_bitarray,
-                        (start_pos, end_pos), read_only))
+                    if field_type == "WARL" and 'warl_legalize' in csr_field_detail_dict:
+                        csr_write_fields.append(LegalizeWriteCSRField(mask_bitarray,
+                            (start_pos, end_pos), read_only,
+                            csr_field_detail_dict['warl_legalize']))
+                    else:
+                        csr_write_fields.append(SimpleWriteCSRField(mask_bitarray,
+                            (start_pos, end_pos), read_only))
+
             csrs.update({csr_name: [csr_address, csr_value, csr_write_fields,
                                     csr_read_mask]})
     return csrs
