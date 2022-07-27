@@ -48,6 +48,18 @@ TEST_RESULT = 1
 TEST_PASS = 0
 TEST_FAIL = 1
 
+class SimpleWriteCSRField:
+    def __init__(self, mask_bitarray, pos, read_only):
+        self.mask_bitarray = mask_bitarray
+        self.pos = pos
+        self.read_only = read_only
+
+    def write(self, new_field_val, csr_val):
+        # only write if not read only
+        if not self.read_only:
+            val_slice = new_field_val[self.pos[0]:self.pos[1] + 1]
+            csr_val.overwrite(self.mask_bitarray & val_slice, self.pos[0])
+
 
 def get_csr_map(csr_file, xlen):
     """
@@ -59,7 +71,7 @@ def get_csr_map(csr_file, xlen):
 
     Returns:
       A dictionary contining mappings for each CSR, of the form:
-      { csr_name : [csr_address, csr_val_bitarray, csr_write_mask_bitarray, csr_read_mask_bitarray] }
+      { csr_name : [csr_address, csr_val_bitarray, csr_write_fields, csr_read_mask_bitarray] }
     """
     rv_string = "rv{}".format(str(xlen))
     csrs = {}
@@ -71,7 +83,7 @@ def get_csr_map(csr_file, xlen):
             assert (rv_string in csr_dict), "The {} CSR must be configured for rv{}".format(
                 csr_name, str(rv))
             csr_value = bitarray(uintbe=0, length=xlen)
-            csr_write_mask = []
+            csr_write_fields = []
             csr_read_mask = bitarray(uintbe=0, length=xlen)
             csr_field_list = csr_dict.get(rv_string)
             for csr_field_detail_dict in csr_field_list:
@@ -87,10 +99,10 @@ def get_csr_map(csr_file, xlen):
                     end_pos = xlen - 1 - field_lsb
                     csr_read_mask.overwrite(mask_bitarray, xlen - 1 - field_msb)
                     csr_value.overwrite(val_bitarray, xlen - 1 - field_msb)
-                    access = True if field_type == "R" else False
-                    csr_write_mask.append(
-                        [mask_bitarray, (start_pos, end_pos), access])
-            csrs.update({csr_name: [csr_address, csr_value, csr_write_mask,
+                    read_only = True if field_type == "R" else False
+                    csr_write_fields.append(SimpleWriteCSRField(mask_bitarray,
+                        (start_pos, end_pos), read_only))
+            csrs.update({csr_name: [csr_address, csr_value, csr_write_fields,
                                     csr_read_mask]})
     return csrs
 
@@ -125,26 +137,17 @@ def get_rs1_val(iteration, xlen):
         return val
 
 
-def csr_write(val, csr_val, csr_write_mask):
+def csr_write(val, csr_val, csr_write_fields):
     """
     Performs a CSR write.
 
     Args:
       val: A bitarray containing the value to be written.
       csr_val: A bitarray containing the current CSR value.
-      csr_write_mask: A bitarray containing the CSR's mask.
+      csr_write_fields: A list of the CSR's write fields.
     """
-    for bitslice in csr_write_mask:
-        read_only = bitslice[2]
-        start_index = bitslice[1][0]
-        end_index = bitslice[1][1]
-        length = end_index - start_index + 1
-        mask_val = bitslice[0]
-        # only write if not read only
-        if not read_only:
-            val_slice = val[start_index:end_index + 1]
-            csr_val.overwrite(mask_val & val_slice, start_index)
-
+    for write_field in csr_write_fields:
+        write_field.write(val, csr_val)
 
 """
 CSR Read:
@@ -166,7 +169,7 @@ def csr_read(csr_val, csr_read_mask):
     return csr_val & csr_read_mask
 
 
-def predict_csr_val(csr_op, rs1_val, csr_val, csr_write_mask, csr_read_mask):
+def predict_csr_val(csr_op, rs1_val, csr_val, csr_write_fields, csr_read_mask):
     """
     Predicts the CSR reference value, based on the current CSR operation.
 
@@ -174,7 +177,7 @@ def predict_csr_val(csr_op, rs1_val, csr_val, csr_write_mask, csr_read_mask):
       csr_op: A string of the CSR operation being performed.
       rs1_val: A bitarray containing the value to be written to the CSR.
       csr_val: A bitarray containing the current value of the CSR.
-      csr_write_mask: A bitarray containing the CSR's write mask.
+      csr_write_field: A list containing the CSR's write fields.
       csr_read_mask: A bitarray containing the CSR's read mask
 
     Returns:
@@ -185,20 +188,20 @@ def predict_csr_val(csr_op, rs1_val, csr_val, csr_write_mask, csr_read_mask):
     zero = bitarray(uint=0, length=csr_val.len - 5)
     prediction = csr_read(csr_val, csr_read_mask)
     if csr_op == 'csrrw':
-        csr_write(rs1_val, csr_val, csr_write_mask)
+        csr_write(rs1_val, csr_val, csr_write_fields)
     elif csr_op == 'csrrs':
-        csr_write(rs1_val | prediction, csr_val, csr_write_mask)
+        csr_write(rs1_val | prediction, csr_val, csr_write_fields)
     elif csr_op == 'csrrc':
-        csr_write((~rs1_val) & prediction, csr_val, csr_write_mask)
+        csr_write((~rs1_val) & prediction, csr_val, csr_write_fields)
     elif csr_op == 'csrrwi':
         zero.append(rs1_val[-5:])
-        csr_write(zero, csr_val, csr_write_mask)
+        csr_write(zero, csr_val, csr_write_fields)
     elif csr_op == 'csrrsi':
         zero.append(rs1_val[-5:])
-        csr_write(zero | prediction, csr_val, csr_write_mask)
+        csr_write(zero | prediction, csr_val, csr_write_fields)
     elif csr_op == 'csrrci':
         zero.append(rs1_val[-5:])
-        csr_write((~zero) & prediction, csr_val, csr_write_mask)
+        csr_write((~zero) & prediction, csr_val, csr_write_fields)
     return "0x{}".format(prediction.hex)
 
 
@@ -214,6 +217,7 @@ def gen_setup(test_file):
     test_file.write(".section .text.init\n")
     test_file.write(".globl _start\n")
     test_file.write(".option norvc\n")
+    test_file.write(".org 0x80\n")
     test_file.write("_start:\n")
 
 
@@ -284,7 +288,7 @@ def gen_csr_instr(original_csr_map, csr_instructions, xlen,
                   "w") as csr_test_file:
             gen_setup(csr_test_file)
             for csr in csr_list:
-                csr_address, csr_val, csr_write_mask, csr_read_mask = csr_map.get(
+                csr_address, csr_val, csr_write_fields, csr_read_mask = csr_map.get(
                     csr)
                 csr_test_file.write("\t# {}\n".format(csr))
                 for op in csr_instructions:
@@ -306,7 +310,7 @@ def gen_csr_instr(original_csr_map, csr_instructions, xlen,
                                                         predict_csr_val(op,
                                                                         imm_val,
                                                                         csr_val,
-                                                                        csr_write_mask,
+                                                                        csr_write_fields,
                                                                         csr_read_mask)))
                         else:
                             first_li = "\tli {}, 0x{}\n".format(source_reg,
@@ -319,7 +323,7 @@ def gen_csr_instr(original_csr_map, csr_instructions, xlen,
                                                         predict_csr_val(op,
                                                                         rand_rs1_val,
                                                                         csr_val,
-                                                                        csr_write_mask,
+                                                                        csr_write_fields,
                                                                         csr_read_mask)))
                         branch_check = "\tbne {}, {}, csr_fail\n".format(
                             source_reg, dest_reg)
@@ -341,7 +345,7 @@ def gen_csr_instr(original_csr_map, csr_instructions, xlen,
                                                       predict_csr_val('csrrs',
                                                                       csrrs_read_mask,
                                                                       csr_val,
-                                                                      csr_write_mask,
+                                                                      csr_write_fields,
                                                                       csr_read_mask)))
                             final_branch_check = "\tbne {}, {}, csr_fail\n".format(
                                 source_reg, dest_reg)
