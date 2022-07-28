@@ -30,9 +30,9 @@ import esdl.rand: rand, constraint;
 import uvm;
 
 class riscv_pmp_cfg: uvm_object {
-  
+
   mixin uvm_object_utils;
- 
+
   // default to a single PMP region
   @rand @UVM_DEFAULT int pmp_num_regions = 1;
 
@@ -83,7 +83,7 @@ class riscv_pmp_cfg: uvm_object {
   // constraints - apply when pmp_randomize is 1 //
   /////////////////////////////////////////////////
 
-  
+
   constraint! q{
     pmp_num_regions inside [1 : 16];
     pmp_granularity inside [0 : XLEN + 3];
@@ -98,7 +98,6 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (cfg; pmp_cfg) {
-      (pmp_granularity == 0) ->	(cfg.a != pmp_addr_mode_t.NAPOT);
       (pmp_granularity >= 1) -> (cfg.a != pmp_addr_mode_t.NA4);
     }
   } grain_addr_mode_c;
@@ -124,15 +123,6 @@ class riscv_pmp_cfg: uvm_object {
     }
   }  addr_overlapping_c;
 
-  // Privileged spec states that in TOR mode, offset[i-1] < offset[i]
-  constraint! q{
-    foreach (cfg; pmp_cfg) {
-      if (cfg.a == pmp_addr_mode_t.TOR) {
-        pmp_allow_addr_overlap == false;
-      }
-    }
-  }  tor_addr_overlap_c;
-  
   this(string name = "") {
     string s;
     super(name);
@@ -217,11 +207,11 @@ class riscv_pmp_cfg: uvm_object {
     foreach (i, ref field; fields) {
       import std.conv: to;
       uvm_string_split(field, ':', field_vals);
-	
+
       field_type = field_vals[0];
       field_val = field_vals[1];
       field_vals.length = 0;
-	
+
       switch (field_type) {
       case "L" :
 	pmp_cfg_reg.l = field_val.to!bool;
@@ -257,7 +247,7 @@ class riscv_pmp_cfg: uvm_object {
 	uvm_fatal(get_full_name(), format("%s, Invalid PMP configuration field name!", field_val));
       }
     }
-    
+
     return pmp_cfg_reg;
   }
 
@@ -305,7 +295,7 @@ class riscv_pmp_cfg: uvm_object {
     ubvec!8       cfg_byte;
     int pmp_id;
     foreach (i, ref cfg; pmp_cfg) {
-  
+
       // TODO(udinator) condense this calculations if possible
       pmp_id = cast(int) (i/cfg_per_csr);
       if (i == 0) {
@@ -328,7 +318,7 @@ class riscv_pmp_cfg: uvm_object {
       pmp_word = pmp_word | cfg_bitmask;
       uvm_info(get_full_name(), format("pmp_word: 0x%0x", pmp_word), UVM_DEBUG);
       cfg_bitmask = 0;
-      
+
       if (i == 0)  {
         // load the address of the <main> section into pmpaddr0
         instr ~= format("la x%0d, main", scratch_reg[0]);
@@ -423,7 +413,7 @@ class riscv_pmp_cfg: uvm_object {
       ////////////////////////////////////////////////////
        format("0: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
        format("mv x%0d, x%0d", scratch_reg[4], scratch_reg[0])];
-    
+
     // Generate a sequence of loads and branches that will compare the loop index to every
     // value within [0 : pmp_num_regions] to manually check which PMP CSRs to read from
     for (int i = 1; i < pmp_num_regions + 1; i++) {
@@ -599,7 +589,7 @@ class riscv_pmp_cfg: uvm_object {
        format("la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0]),
        format("28: j 29f")];
-  
+
 
     // This case statement creates a bitmask that enables the correct access permissions
     // and ORs it with the 8-bit configuration fields.
@@ -662,7 +652,7 @@ class riscv_pmp_cfg: uvm_object {
        format("33: csrw 0x%0x, x%0d", privileged_reg_t.PMPCFG3, scratch_reg[2]),
        // End the pmp handler with a labeled nop instruction, this provides a branch target
        // for the internal routine after it has "fixed" the pmp configuration CSR.
-       format("34: nop")]; 
+       format("34: nop")];
   }
 
   // This function is used for a directed PMP test to test writes to all the pmpcfg and pmpaddr
@@ -683,7 +673,7 @@ class riscv_pmp_cfg: uvm_object {
       // `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(pmp_val, pmp_val[31] == 1'b0;)
       pmp_val = urandom!(ubvec!XLEN)();
       pmp_val[31] = false;
-      
+
       instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_val);
       instr ~= format("la x%0d, main", scratch_reg[1]);
       instr ~= format("add x%0d, x%0d, x%0d",

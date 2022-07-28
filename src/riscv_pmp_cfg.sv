@@ -88,7 +88,6 @@ class riscv_pmp_cfg extends uvm_object;
 
   constraint grain_addr_mode_c {
     foreach (pmp_cfg[i]) {
-      (pmp_granularity == 0) -> (pmp_cfg[i].a != NAPOT);
       (pmp_granularity >= 1) -> (pmp_cfg[i].a != NA4);
     }
   }
@@ -109,15 +108,6 @@ class riscv_pmp_cfg extends uvm_object;
     foreach (pmp_cfg[i]) {
       if (!pmp_allow_addr_overlap && i > 0) {
         pmp_cfg[i].offset > pmp_cfg[i-1].offset;
-      }
-    }
-  }
-
-  // Privileged spec states that in TOR mode, offset[i-1] < offset[i]
-  constraint tor_addr_overlap_c {
-    foreach (pmp_cfg[i]) {
-      if (pmp_cfg[i].a == TOR) {
-        pmp_allow_addr_overlap == 0;
       }
     }
   }
