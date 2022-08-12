@@ -161,12 +161,13 @@ class riscv_pmp_cfg extends uvm_object;
     mseccfg.mmwp = 1'b0;
     mseccfg.rlb  = 1'b1;
     foreach(pmp_cfg[i]) begin
-      pmp_cfg[i].l      = 1'b0;
-      pmp_cfg[i].a      = TOR;
-      pmp_cfg[i].x      = 1'b1;
-      pmp_cfg[i].w      = 1'b1;
-      pmp_cfg[i].r      = 1'b1;
-      pmp_cfg[i].offset = assign_default_addr_offset(pmp_num_regions, i);
+      pmp_cfg[i].l          = 1'b0;
+      pmp_cfg[i].a          = TOR;
+      pmp_cfg[i].x          = 1'b1;
+      pmp_cfg[i].w          = 1'b1;
+      pmp_cfg[i].r          = 1'b1;
+      pmp_cfg[i].addr_valid = 1'b0;
+      pmp_cfg[i].offset     = assign_default_addr_offset(pmp_num_regions, i);
     end
   endfunction
 
@@ -253,7 +254,8 @@ class riscv_pmp_cfg extends uvm_object;
         "ADDR": begin
           // Don't have to convert address to "PMP format" here,
           // since it must be masked off in hardware
-          pmp_cfg_reg.addr = format_addr(field_val.atohex());
+          pmp_cfg_reg.addr_valid = 1'b1;
+          pmp_cfg_reg.addr       = format_addr(field_val.atohex());
         end
         default: begin
           `uvm_fatal(`gfn, $sformatf("%s, Invalid PMP configuration field name!", field_val))
@@ -322,7 +324,7 @@ class riscv_pmp_cfg extends uvm_object;
         instr.push_back($sformatf("csrwi 0x%0x, %0d", MSECCFG, cfg_byte));
 
         if(pmp_randomize) begin
-          // Randomly select a PMP region to contain the code and execute permission
+          // Randomly select a PMP region to contain the code for permitting execution.
           code_entry = $urandom_range(pmp_num_regions - 1);
           // In case of full randomization we actually want the code region to cover main as well.
           pmp_word = pmp_max_offset;
@@ -348,10 +350,9 @@ class riscv_pmp_cfg extends uvm_object;
           instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + code_entry - 1,
                                     scratch_reg[0]));
           `uvm_info(`gfn, $sformatf("Offset of pmp_addr_%d to _start", code_entry - 1), UVM_LOW)
-          if (!inst.get_arg_value($sformatf("+pmp_region_%d=", code_entry - 1), arg_value)) begin
-            // Currently there is no way to know the value of _start here and address value 0 gets
-            // ignored below, which should probably be changed in the future.
-            pmp_cfg[code_entry - 1].addr = 1;
+          if (pmp_cfg[code_entry - 1].addr_valid == 1'b0) begin
+            pmp_cfg[code_entry - 1].addr_valid = 1'b1;
+            pmp_cfg[code_entry - 1].addr = 0;
           end
         end
 
@@ -441,9 +442,7 @@ class riscv_pmp_cfg extends uvm_object;
       //  This will likely require a complex assembly routine - the code below is a very simple
       //  first step towards this goal, allowing users to specify a PMP memory address
       //  from the command line instead of having to calculate an offset themselves.
-      //
-      // TODO(marnovandermaas) - It should be possible to pass addresses equal to 0.
-      if (pmp_cfg[i].addr != 0) begin
+      if (pmp_cfg[i].addr_valid) begin
         instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr));
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
         `uvm_info(`gfn, $sformatf("Address 0x%0x loaded into pmpaddr[%d] CSR", pmp_cfg[i].addr, i),
