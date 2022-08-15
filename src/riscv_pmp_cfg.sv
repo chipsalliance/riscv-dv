@@ -442,7 +442,8 @@ class riscv_pmp_cfg extends uvm_object;
       //  This will likely require a complex assembly routine - the code below is a very simple
       //  first step towards this goal, allowing users to specify a PMP memory address
       //  from the command line instead of having to calculate an offset themselves.
-      if (pmp_cfg[i].addr_valid) begin
+      if (pmp_cfg[i].addr_valid || pmp_randomize) begin
+        // In case an address was supplied by the test or full randomize is enabled.
         instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr));
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]));
         `uvm_info(`gfn, $sformatf("Address 0x%0x loaded into pmpaddr[%d] CSR", pmp_cfg[i].addr, i),
