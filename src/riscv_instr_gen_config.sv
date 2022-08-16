@@ -638,7 +638,7 @@ class riscv_instr_gen_config extends uvm_object;
     vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
     pmp_cfg = riscv_pmp_cfg::type_id::create("pmp_cfg");
     pmp_cfg.rand_mode(pmp_cfg.pmp_randomize);
-    pmp_cfg.initialize(require_signature_addr);
+    pmp_cfg.initialize(signature_addr);
     setup_instr_distribution();
     get_invalid_priv_lvl_csr();
   endfunction

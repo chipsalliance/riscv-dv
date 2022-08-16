@@ -61,6 +61,11 @@ class riscv_pmp_cfg extends uvm_object;
   // Can be manually configured from the command line.
   bit [XLEN - 1 : 0] pmp_max_offset = {XLEN{1'b1}};
 
+  // Value to hold the end signature address to that signals the end to the test environment.
+  // Currently the design assumes that the end signature is address is equal to the signature
+  // address minus 4 Bytes.
+  bit [XLEN - 1 : 0] end_signature_addr;
+
   // used to parse addr_mode configuration from cmdline
   typedef uvm_enum_wrapper#(pmp_addr_mode_t) addr_mode_wrapper;
   pmp_addr_mode_t addr_mode;
@@ -145,7 +150,8 @@ class riscv_pmp_cfg extends uvm_object;
     pmp_cfg_already_configured = new[pmp_num_regions];
   endfunction
 
-  function void initialize(bit require_signature_addr);
+  function void initialize(bit [XLEN - 1 : 0] signature_addr);
+    end_signature_addr = signature_addr - 'h4;
     if (!pmp_randomize) begin
       set_defaults();
       setup_pmp();
@@ -316,9 +322,10 @@ class riscv_pmp_cfg extends uvm_object;
   // - If MMWP, set the config of code region to LXWR=0100 and TOR.
   // - If MML or MMWP, set requested MSECCFG with RLB hardcoded to 1.
   // - Don't override code region config if corresponding `+pmp_region_` is passed.
-  // - Set default code region config in MML mode to shared execute.
-  // - Set all other addresses and configs.
+  // - If MML, set default code region config to shared execute.
+  // - If MML or MMWP, set stack and signature regions to shared read/write.
   // - Set requested MSECCFG (including RLB).
+  // - Set all other addresses and configs.
   function void gen_pmp_instr(riscv_reg_t scratch_reg[2], ref string instr[$]);
     bit [XLEN - 1 : 0] pmp_word;
     bit [XLEN - 1 : 0] cfg_bitmask;
@@ -337,9 +344,10 @@ class riscv_pmp_cfg extends uvm_object;
         cfg_byte = {1'b1, 1'b0, 1'b0};
         instr.push_back($sformatf("csrwi 0x%0x, %0d", MSECCFG, cfg_byte));
 
-        if(pmp_randomize) begin
-          // Randomly select a PMP region to contain the code for permitting execution.
-          code_entry = $urandom_range(pmp_num_regions - 1);
+        if (pmp_randomize) begin
+          // Randomly select a PMP region to contain the code for permitting execution and two
+          // extra regions to contain the stack and the signature address.
+          code_entry = $urandom_range(pmp_num_regions - 3);
           // In case of full randomization we actually want the code region to cover main as well.
           pmp_cfg[code_entry].offset = pmp_max_offset;
         end else begin
@@ -422,6 +430,64 @@ class riscv_pmp_cfg extends uvm_object;
         instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[0], cfg_bitmask));
         instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmpcfg_addr + (code_entry/cfg_per_csr),
                                   scratch_reg[0]));
+
+        // Load the address of the kernel_stack_end into PMP stack entry.
+        instr.push_back($sformatf("la x%0d, kernel_stack_end", scratch_reg[0]));
+        instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
+        instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 1,
+                                  scratch_reg[0]));
+        `uvm_info(`gfn, $sformatf("Address of pmp_addr_%d is kernel_stack_end", code_entry + 1),
+                  UVM_LOW)
+        pmp_cfg_already_configured[code_entry + 1] = 1'b1;
+        // In case the randomly selected code_entry + 1 is not also specified in the arguments,
+        // overwrite it in pmp_cfg. We use this for the stack entry.
+        if (!inst.get_arg_value($sformatf("+pmp_region_%d=", code_entry + 1), arg_value)) begin
+          if (mseccfg.mml) begin
+            // Marking the pmp stack region as shared write/read region before starting main.
+            pmp_cfg[code_entry + 1].l = 1'b0;
+            pmp_cfg[code_entry + 1].a = TOR;
+            pmp_cfg[code_entry + 1].x = 1'b1;
+            pmp_cfg[code_entry + 1].w = 1'b1;
+            pmp_cfg[code_entry + 1].r = 1'b0;
+          end else begin
+            // We must set PMP stack region to write/read before starting main. X=0 to be consistent
+            // with MML mode.
+            pmp_cfg[code_entry + 1].l = 1'b0;
+            pmp_cfg[code_entry + 1].a = TOR;
+            pmp_cfg[code_entry + 1].x = 1'b0;
+            pmp_cfg[code_entry + 1].w = 1'b1;
+            pmp_cfg[code_entry + 1].r = 1'b1;
+          end
+        end
+        // Load the signature address into PMP signature entry. This assumes the
+        // end_signature_addr = signature_addr - 4. And that both are 4 Bytes.
+        instr.push_back($sformatf("li x%0d, 0x%0x", scratch_reg[0], end_signature_addr));
+        instr.push_back($sformatf("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]));
+        instr.push_back($sformatf("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 2,
+                                  scratch_reg[0]));
+        `uvm_info(`gfn, $sformatf("Address of pmp_addr_%d is signature_addr", code_entry + 2),
+                  UVM_LOW)
+        pmp_cfg_already_configured[code_entry + 2] = 1'b1;
+        // In case the randomly selected code_entry + 2 is not also specified in the arguments,
+        // overwrite it in pmp_cfg. This is used for the signature address.
+        if (!inst.get_arg_value($sformatf("+pmp_region_%d=", code_entry + 2), arg_value)) begin
+          if (mseccfg.mml) begin
+            // Marking the PMP signature region as shared write/read region before starting main.
+            pmp_cfg[code_entry + 2].l = 1'b0;
+            pmp_cfg[code_entry + 2].a = NAPOT;
+            pmp_cfg[code_entry + 2].x = 1'b1;
+            pmp_cfg[code_entry + 2].w = 1'b1;
+            pmp_cfg[code_entry + 2].r = 1'b0;
+          end else begin
+            // We must set PMP signature region to write/read before starting main. X=0 to be
+            // consistent with MML mode.
+            pmp_cfg[code_entry + 2].l = 1'b0;
+            pmp_cfg[code_entry + 2].a = NAPOT;
+            pmp_cfg[code_entry + 2].x = 1'b0;
+            pmp_cfg[code_entry + 2].w = 1'b1;
+            pmp_cfg[code_entry + 2].r = 1'b1;
+          end
+        end
       end
 
       // Writing MSECCFG with RLB still set to 1 otherwise we cannot complete configuration.
