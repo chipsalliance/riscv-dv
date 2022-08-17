@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-// This expression is needed in multiple constraints so is expressed as a macro. It could be
-// implemented within a function but the constraint solver is unable to work with function contents.
-// So when used in a constraint it will just try different values until it finds something that
-// satisifies what it requires or it gives up. When the set of writable CSRs is small relative to
-// the set of readable CSRs such failures are common. Instead by using an expression that can be
-// directly used in constraints the solver can intelligently solve to find a useable CSR and there
-// are no constraint failures.
-`define CSR_WRITABLE (csr[11:10] == 2'b11 && allow_ro_write) || \
-  ((include_write_reg.size() > 0) && (csr inside {include_write_reg})) || \
-  ((csr[11:10] != 2'b11) && (include_write_reg.size() == 0))
-
 class riscv_csr_instr extends riscv_instr;
   // Privileged CSR filter
   static bit [11:0]  exclude_reg[$];
@@ -33,6 +22,8 @@ class riscv_csr_instr extends riscv_instr;
 
   // When set writes to read-only CSRs can be generated
   static bit allow_ro_write;
+
+  rand bit write_csr;
 
   constraint csr_addr_c {
     if (include_reg.size() > 0) {
@@ -43,28 +34,43 @@ class riscv_csr_instr extends riscv_instr;
     }
   }
 
+  constraint write_csr_c {
+    // We can only write a CSR if:
+    // - It's a read-only CSR and we're generating writes to read-only CSRs
+    // - Specific CSRs to write to are specified and this CSR is one
+    // - No specific CSRs to write to are specified and this isn't a read-only CSR
+    if(!((csr[11:10] == 2'b11 && allow_ro_write) ||
+         ((include_write_reg.size() > 0) && (csr inside {include_write_reg})) ||
+         ((csr[11:10] != 2'b11) && (include_write_reg.size() == 0)))) {
+      write_csr == 1'b0;
+    }
+  }
+
   constraint csr_csrrw {
     if (instr_name == CSRRW || instr_name == CSRRWI) {
-      `CSR_WRITABLE;
+      write_csr == 1'b1;
     }
   }
 
   constraint csr_csrrsc {
     if (instr_name == CSRRS || instr_name == CSRRC) {
-      `CSR_WRITABLE || rs1 == 0;
+      (write_csr == 1'b1) || rs1 == 0;
     }
   }
 
   constraint csr_csrrsci {
     if(instr_name == CSRRSI || instr_name == CSRRCI) {
-      `CSR_WRITABLE || imm == 0;
+      (write_csr == 1'b1) || imm == 0;
     }
   }
 
   constraint order {
-    // Choose a CSR before rs1 and imm values. This ensures read-only accesses to read-only CSRs
-    // with similar probability to other CSR accesses.
-    solve csr before rs1, imm;
+    // Choose a CSR before deciding whether we want to write to the CSR values. Then choose whether
+    // to read or write before choosing the rs1 and imm values. This ensures read-only accesses to
+    // read-only CSRs with similar probability to other CSR accesses and ensures a reasonable write
+    // vs read distribution for CSRs that can be written.
+    solve csr before write_csr, rs1, imm;
+    solve write_csr before rs1, imm;
   }
 
   `uvm_object_utils(riscv_csr_instr)
