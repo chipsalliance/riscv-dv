@@ -253,7 +253,7 @@ class riscv_instr:
                         idx = random.randrange(0, len(include_instr) - 1)
                     name = include_instr[idx]
                 elif len(allowed_instr) > 0:
-                    idx = random.randrange(0, len(allowed_instr) - 1)
+                    idx = random.randrange(0, len(allowed_instr) )
                     name = allowed_instr[idx]
                 else:
                     idx = random.randrange(0, len(cls.instr_names) - 1)
