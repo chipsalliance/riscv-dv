@@ -406,7 +406,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
   // Insert an instruction to the existing instruction stream at the given index
   // When index is -1, the instruction is injected at a random location
   // When replace is 1, the original instruction at the inserted position will be replaced
-  override void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
+  void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
@@ -453,7 +453,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
   }
 
-  override void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
+  void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
@@ -547,7 +547,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
     assert (mixed_count == n);
 
-    instr_list.assimilate(mixed_list);
+    instr_list = mixed_list;
   }
 
 }
