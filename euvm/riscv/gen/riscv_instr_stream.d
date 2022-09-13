@@ -42,28 +42,6 @@ import esdl.data.bvec: ubvec;
 
 import uvm;
 
-struct riscv_instr_stream_elem
-{
-  this(Queue!riscv_instr seq) {
-    _seq = seq;
-    _seq_insert_map.length = _seq.length;
-  }
-  this(riscv_instr elem) {
-    _elem = elem;
-  }
-  // when streams are getting mixed
-  Queue!riscv_instr _seq;
-  // for individual elements
-  riscv_instr       _elem;
-  // bypass to the next -- 0 means no bypass
-  uint              _next;
-  // 
-  uint[]            _seq_insert_map;
-  uint              _elem_insert_map;
-  // true if _seq or _elem is atomic
-  bool              _is_atomic;
-}
-
 class riscv_instr_stream: uvm_object
 {
   mixin uvm_object_utils;
@@ -127,107 +105,6 @@ class riscv_instr_stream: uvm_object
 		       instr.convert2asm(), idx));
     }
     instr_list.insert(idx, instr);
-  }
-
-  void insert_instr_map(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
-    assert (replace == false);
-  }
-
-  // Insert an instruction to the existing instruction stream at the given index
-  // When index is -1, the instruction is injected at a random location
-  // When replace is 1, the original instruction at the inserted position will be replaced
-  void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
-    int current_instr_cnt = cast(int) instr_list.length;
-    int new_instr_cnt = cast(int) new_instr.length;
-    if (current_instr_cnt == 0) {
-      instr_list ~= new_instr;
-      return;
-    }
-    if (idx == -1) {
-      idx = cast(int) urandom(0, current_instr_cnt);
-      for (int i=0; i < 10 ; i++) {
-	if (instr_list[idx].atomic) break;
-	idx = cast(int) urandom(0, current_instr_cnt);
-      }
-      if (instr_list[idx].atomic) {
-	foreach (k, instr; instr_list) {
-	  if (! instr.atomic) {
-	    idx = cast(int) k;
-	    break;
-	  }
-	}
-	if (instr_list[idx].atomic) {
-	  uvm_fatal(get_full_name, format("Cannot inject the instruction"));
-	}
-      }
-    }
-    else if((idx > current_instr_cnt) || (idx < 0)) {
-      uvm_error(get_full_name(), format("Cannot insert instr stream at idx %0d", idx));
-    }
-    //When replace is 1, the original instruction at this index will be removed. The label of the
-    //original instruction will be copied to the head of inserted instruction stream.
-    if (replace) {
-      new_instr[0].label = instr_list[idx].label;
-      new_instr[0].has_label = instr_list[idx].has_label;
-      foreach (i, instr; new_instr) {
-	instr_list[i+idx] = instr;
-      }
-    }
-    else {
-      if (idx == 0) {
-	instr_list.pushFront(new_instr[]);
-      }
-      else {
-        instr_list.insert(idx, new_instr[]);
-      }
-    }
-  }
-
-  void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
-    int current_instr_cnt = cast(int) instr_list.length;
-    int new_instr_cnt = cast(int) new_instr.length;
-    if (current_instr_cnt == 0) {
-      instr_list ~= new_instr;
-      return;
-    }
-    if (idx == -1) {
-      idx = cast(int) urandom(0, current_instr_cnt);
-      for (int i=0; i < 10 ; i++) {
-	if (instr_list[idx].atomic) break;
-	idx = cast(int) urandom(0, current_instr_cnt);
-      }
-      if (instr_list[idx].atomic) {
-	foreach (k, instr; instr_list) {
-	  if (! instr.atomic) {
-	    idx = cast(int) k;
-	    break;
-	  }
-	}
-	if (instr_list[idx].atomic) {
-	  uvm_fatal(get_full_name, format("Cannot inject the instruction"));
-	}
-      }
-    }
-    else if((idx > current_instr_cnt) || (idx < 0)) {
-      uvm_error(get_full_name(), format("Cannot insert instr stream at idx %0d", idx));
-    }
-    //When replace is 1, the original instruction at this index will be removed. The label of the
-    //original instruction will be copied to the head of inserted instruction stream.
-    if (replace) {
-      new_instr[0].label = instr_list[idx].label;
-      new_instr[0].has_label = instr_list[idx].has_label;
-      foreach (i, instr; new_instr) {
-	instr_list[i+idx] = instr;
-      }
-     }
-    else {
-      if (idx == 0) {
-	instr_list.pushFront(new_instr);
-      }
-      else {
-        instr_list.insert(idx, new_instr);
-      }
-    }
   }
 
   void append_instr(riscv_instr instr) {
