@@ -58,7 +58,7 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   } num_of_rs1_reg_c;
 
   constraint! q{
-    // solve num_of_rs1_reg before rs1_reg;
+    solve num_of_rs1_reg before rs1_reg;
     rs1_reg.length == num_of_rs1_reg;
     offset.length == num_of_rs1_reg;
     foreach (rreg; rs1_reg) {
