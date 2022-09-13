@@ -273,7 +273,7 @@ class riscv_pmp_cfg: uvm_object {
       // RV64 - pmpaddr is bits [55:2] of the whole 56 bit address, prepended by 10'b0
       // Return {10'b0, shifted_addr[53:0]}
     case  64:
-      shifted_addr[53..64] = 0;
+      shifted_addr[53..64] = 0.toubvec!11;
       return shifted_addr;
     default:
       uvm_fatal(get_full_name(), format("Unsupported XLEN %0s", XLEN));
