@@ -69,7 +69,6 @@ class riscv_instr_stream: uvm_object
 
   void initialize_instr_list(uint instr_cnt) {
     instr_list.length = 0;
-    instr_map.length = 0;
     this.instr_cnt = instr_cnt;
     create_instr_instance();
   }
@@ -525,7 +524,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
     assert (mixed_count == n);
 
-    instr_list = mixed_list;
+    instr_list.assimilate(mixed_list);
   }
 
 }
