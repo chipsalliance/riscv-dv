@@ -373,9 +373,11 @@ class riscv_rand_instr_stream: riscv_instr_stream
 		 bool is_debug_program = false) {
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
+    uvm_trace("GEN INSTR", "START", UVM_NONE);
     foreach (ref instr; instr_list) {
       randomize_instr(instr, is_debug_program);
     }
+    uvm_trace("GEN INSTR", "END", UVM_NONE);
     // Do not allow branch instruction as the last instruction because there's no
     // forward branch target
     while (instr_list[$-1].category == riscv_instr_category_t.BRANCH) {
