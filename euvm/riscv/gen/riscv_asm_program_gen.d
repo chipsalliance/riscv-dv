@@ -750,7 +750,7 @@ class riscv_asm_program_gen : uvm_object
     case 5: value[DOUBLE_PRECISION_FRACTION_BITS..63] = 0; break;
     default: break;
     }
-    return value;
+    return cast(ubvec!XLEN) value;
   }
 
   // Generate "test_done" section, test is finished by an ECALL instruction
