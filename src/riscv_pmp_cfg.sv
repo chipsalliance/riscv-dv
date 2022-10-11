@@ -314,7 +314,8 @@ class riscv_pmp_cfg extends uvm_object;
   function bit [XLEN - 1 : 0] format_addr(bit [XLEN - 1 : 0] addr);
     // For all ISAs, pmpaddr CSRs do not include the bottom two bits of the input address
     bit [XLEN - 1 : 0] shifted_addr;
-    shifted_addr = addr >> 2; case (XLEN)
+    shifted_addr = addr >> 2;
+    case (XLEN)
       // RV32 - pmpaddr is bits [33:2] of the whole 34 bit address
       // Return the input address right-shifted by 2 bits
       32: begin
