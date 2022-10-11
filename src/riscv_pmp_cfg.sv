@@ -707,9 +707,11 @@ class riscv_pmp_cfg extends uvm_object;
              // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
              // but this routine is unable to find a matching PMP region for the faulting access -
              // there is a bug somewhere.
-             // In case of MMWP mode this is expected behavior, but we still need to exit the test.
-             // The same is true for MML for execute accesses.
-             $sformatf("19: la x%0d, test_done", scratch_reg[0]),
+             // In case of MMWP mode this is expected behavior, we should try to continue.
+             $sformatf("19: csrr x%0d, 0x%0x", scratch_reg[0], MSECCFG),
+             $sformatf("andi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+             $sformatf("bnez x%0d, 27f", scratch_reg[0]),
+             $sformatf("la x%0d, test_done", scratch_reg[0]),
              $sformatf("jalr x0, x%0d, 0", scratch_reg[0])
             };
 
