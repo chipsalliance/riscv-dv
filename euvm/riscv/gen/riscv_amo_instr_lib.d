@@ -29,7 +29,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.rand: constraint, rand, randomize_with;
+import esdl.rand: constraint, rand, randomize_with, constraint_override;
 import esdl.base.rand: urandom;
 
 import uvm;
@@ -214,6 +214,7 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
     num_mixed_instr inside [0..num_amo+1];
   } reasonable_c;
 
+  @constraint_override
   constraint! q{
     solve num_amo before num_of_rs1_reg;
     num_of_rs1_reg inside [1..num_amo+1];
