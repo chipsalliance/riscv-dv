@@ -33,7 +33,9 @@ import std.algorithm.sorting: sort;
 import std.traits: EnumMembers;
 
 import esdl.base.rand: urandom;
-import esdl.data.deck: Deck;
+import esdl.experimental.allocator.mallocator: Mallocator;
+import std.container.array: Array;
+import esdl.data.vector: Vector;
 
 import uvm;
 
@@ -228,13 +230,13 @@ class riscv_instr_registry: uvm_object
     riscv_instr_name_t name;
     // riscv_instr_name_t name;
 
-    static Deck!(riscv_instr_name_t, "allowed_instr") allowed_instr;
-    static Deck!(riscv_instr_name_t, "disallowed_instr") disallowed_instr;
-    static Deck!(riscv_instr_category_t, "allowed_categories") allowed_categories;
+    static Vector!(riscv_instr_name_t, "allowed_instr") allowed_instr;
+    static Vector!(riscv_instr_name_t, "disallowed_instr") disallowed_instr;
+    static Vector!(riscv_instr_category_t, "allowed_categories") allowed_categories;
 
-    allowed_instr.reset();
-    disallowed_instr.reset();
-    allowed_categories.reset();
+    allowed_instr.length = 0;
+    disallowed_instr.length = 0;
+    allowed_categories.length = 0;
     
     foreach (icatg; include_category) {
       allowed_instr ~= instr_category[icatg];
@@ -285,17 +287,18 @@ class riscv_instr_registry: uvm_object
 	allowed_set.sort();
       }
 
-      auto inter_set =
-	setDifference(setIntersection(instr_set, include_set, allowed_set),
-		      disallowed_instr[].sort()).array();
+      static Vector!(riscv_instr_name_t, "instr_set") inter_set;
+      inter_set.length = 0;
+      inter_set ~= setDifference(setIntersection(instr_set, include_set, allowed_set),
+				 disallowed_instr[].sort());
 
       idx = urandom(0, inter_set.length);
 
       name = inter_set[idx];
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    // auto instr = instr_template[name].dup;
-    auto instr = instr_template[riscv_instr_name_t.ADD].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -323,7 +326,8 @@ class riscv_instr_registry: uvm_object
     ulong idx = urandom( 0, load_store_instr.length);
     riscv_instr_name_t name = load_store_instr[idx];
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    auto instr = instr_template[name].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -333,7 +337,8 @@ class riscv_instr_registry: uvm_object
       uvm_fatal("riscv_instr", format("Cannot get instr %0s", name));
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    auto instr = instr_template[name].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
