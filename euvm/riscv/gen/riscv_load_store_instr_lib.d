@@ -32,7 +32,7 @@ import riscv.gen.riscv_directed_instr_lib: riscv_mem_access_stream;
 import std.format: format;
 import std.algorithm.searching: canFind, minElement, maxElement;
 
-import esdl.rand: rand, constraint, randomize_with;
+import esdl.rand: rand, constraint, randomize_with, constraint_override;
 import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
@@ -479,6 +479,7 @@ class riscv_mem_region_stress_test: riscv_multi_page_load_store_instr_stream
     super(name);
   }
 
+  @constraint_override
   constraint! q{
     num_of_instr_stream inside [2..5];
     foreach (i, id; data_page_id) {
