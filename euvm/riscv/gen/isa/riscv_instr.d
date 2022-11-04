@@ -27,7 +27,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import esdl.data.bvec: bvec, ubvec, toubvec;
 import esdl.rand: rand, constraint;
 
-import std.format: format;
+import std.format: format, sformat;
 import std.algorithm.searching: canFind;
 
 import uvm;
@@ -643,8 +643,11 @@ class riscv_instr: uvm_object
     }
   }
 
+  char[16] _imm_str_buff;
+
   void update_imm_str() {
-    imm_str = format("%0d", cast(bvec!32) imm);
+    imm_str = cast(string)
+      sformat!("%0d")(_imm_str_buff, cast(int) imm);
   }
 
   //`include "isa/riscv_instr_cov.svh"
