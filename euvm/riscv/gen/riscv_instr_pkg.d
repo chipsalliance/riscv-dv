@@ -1457,6 +1457,14 @@ void get_int_arg_value(string cmdline_str, ref int val) {
   }
 }
 
+void get_uint_arg_value(string cmdline_str, ref uint val) {
+  import std.conv: to;
+  string s;
+  if (uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
+    val = s.to!uint;
+  }
+}
+
 
 // Get a bool argument from comand line
 void get_bool_arg_value(string cmdline_str, ref bool val) {
