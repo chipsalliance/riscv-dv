@@ -34,6 +34,7 @@ import riscv.gen.target: XLEN;
 
 import std.format: format;
 import std.algorithm: canFind, sort;
+import core.memory: GC;
 
 import esdl.rand: rand, constraint, randomize, randomize_with;
 import esdl.base.rand: urandom;
@@ -266,6 +267,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 
   void gen_instr(bool no_branch = false, bool no_load_store = true,
 		 bool is_debug_program = false) {
+    GC.disable();
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
     if (instr_list.length <= cfg.par_instr_threshold) {
@@ -301,6 +303,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
       instr_list.length = instr_list.length - 1;
       if (instr_list.length == 0) break;
     }
+    GC.enable();
   }
 
   void randomize_instr(out riscv_instr instr,
