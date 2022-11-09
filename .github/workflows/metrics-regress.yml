@@ -16,7 +16,7 @@ jobs:
   metrics-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: ./scripts/metrics-regress.py $METRICS_REGRESSION_NAME $METRICS_PROJECT_ID
         env:
           METRICS_CI_TOKEN: ${{ secrets.METRICS_CI_TOKEN }}
