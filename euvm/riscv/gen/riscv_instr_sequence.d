@@ -67,9 +67,10 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   bool                     is_debug_program;     // Indicates whether sequence is debug program
   string                   label_name;           // Label of the sequence (program name)
   riscv_instr_gen_config   cfg;                  // Configuration class handle
-  Queue!string             instr_string_list; // Save the instruction list in string format
+  Queue!string             instr_string_list;    // Save the instruction list in string format
+  
   int                      program_stack_len;    // Stack space allocated for this program
-  riscv_instr_stream[]     directed_instr;     // List of all directed instruction stream
+  riscv_instr_stream[]     directed_instr;       // List of all directed instruction stream
   riscv_illegal_instr      illegal_instr;        // Illegal instruction generator
   int                      illegal_instr_pct;    // Percentage of illegal instruction
   int                      hint_instr_pct;       // Percentage of HINT instruction
@@ -283,6 +284,12 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     string prefix, str;
     int i;
     instr_string_list = [];
+    // If PMP is supported, need to align <main> to a 4-byte boundary.
+    // TODO(udi) - this might interfere with multi-hart programs,
+    //             may need to specifically match hart0.
+    if (support_pmp && !uvm_re_match(uvm_glob_to_re("*main*"), label_name)) {
+      instr_string_list ~= ".align 2";
+    }
     for (i = 0; i < instr_stream.instr_list.length; i++) {
       if (i == 0) {
         if (no_label) {
@@ -308,9 +315,10 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     // If PMP is supported, need to align <main> to a 4-byte boundary.
     // TODO(udi) - this might interfere with multi-hart programs,
     //             may need to specifically match hart0.
-    if (support_pmp && !uvm_re_match(uvm_glob_to_re("*main*"), label_name)) {
-      instr_string_list.pushFront(".align 2");
-    }
+    // **** done in the beginning of the function now ****
+    // if (support_pmp && !uvm_re_match(uvm_glob_to_re("*main*"), label_name)) {
+    //   instr_string_list.pushFront(".align 2");
+    // }
     insert_illegal_hint_instr();
     prefix = format_string(format("%0d:", i), LABEL_STR_LEN);
     if(!is_main_program) {
