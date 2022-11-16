@@ -103,6 +103,7 @@ class riscv_pmp_cfg extends uvm_object;
 
   constraint xwr_c {
     foreach (pmp_cfg[i]) {
+      solve mseccfg.mml before pmp_cfg[i].w, pmp_cfg[i].r;
       !(!mseccfg.mml && pmp_cfg[i].w && !pmp_cfg[i].r);
     }
   }
