@@ -81,7 +81,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     super(name);
     if(!uvm_config_db!(riscv_instr_gen_config).get(null, "*", "instr_cfg", cfg))
       uvm_fatal(get_full_name(), "Cannot get instr_gen_cfg");
-    instr_stream = riscv_prog_instr_stream.type_id.create("instr_stream");
+    instr_stream = riscv_prog_instr_stream.type_id.create(name ~ "/instr_stream");
     instr_stack_enter = riscv_push_stack_instr.type_id.create("instr_stack_enter");
     instr_stack_exit  = riscv_pop_stack_instr.type_id.create("instr_stack_exit");
     illegal_instr = riscv_illegal_instr.type_id.create("illegal_instr");
@@ -128,7 +128,8 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     instr_stack_enter.cfg = cfg;
     instr_stack_enter.push_start_label = label_name ~ "_stack_p";
     instr_stack_enter.gen_push_stack_instr(program_stack_len, allow_branch);
-    instr_stream.prepend_instr_list(instr_stack_enter.instr_list);
+    // this is now done in merge_directed_instr_list
+    // instr_stream.prepend_instr_list(instr_stack_enter.instr_list);
   }
 
   // Recover the saved GPR from the stack
@@ -136,7 +137,8 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   void gen_stack_exit_instr() {
     instr_stack_exit.cfg = cfg;
     instr_stack_exit.gen_pop_stack_instr(program_stack_len, instr_stack_enter.saved_regs);
-    instr_stream.append_instr_list(instr_stack_exit.instr_list);
+    // this is now done in merge_directed_instr_list
+    // instr_stream.append_instr_list(instr_stack_exit.instr_list);
   }
 
   //----------------------------------------------------------------------------------------------
@@ -166,7 +168,11 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     // foreach (instr; directed_instr) {
     //   instr_stream.insert_instr_stream(instr.instr_list);
     // }
-    instr_stream.mixin_directed_instr_list(directed_instr);
+    // instr_stream.merge_directed_instr_list(directed_instr);
+    if (is_main_program) instr_stream.merge_directed_instr_list(directed_instr);
+    else
+      instr_stream.merge_directed_instr_list(directed_instr, instr_stack_enter.instr_list.toArray(),
+					     instr_stack_exit.instr_list.toArray());
     // Assign an index for all instructions, these indexes won't change even a new instruction
     // is injected in the post process.
     foreach (i, instr; instr_stream.instr_list) {
@@ -272,7 +278,9 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     jump_instr.idx = idx;
     jump_instr.use_jalr = is_main_program;
     jump_instr.randomize();
-    instr_stream.insert_instr_stream(jump_instr.instr_list);
+    directed_instr ~= jump_instr;
+    // Now done as part of merge_directed_instr_list
+    // instr_stream.insert_instr_stream(jump_instr.instr_list);
     uvm_info(get_full_name(), format("%0s -> %0s...done",
 				     jump_instr.jump.instr_name, target_label), UVM_LOW);
   }

@@ -399,7 +399,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
 
   riscv_instr_stream[] dir_instr_list;
 
-  // used in mixin_directed_instr_list
+  // used in merge_directed_instr_list
   uint[] dir_n;
 
   this(string name = "riscv_prog_instr_stream") {
@@ -503,7 +503,9 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
   }
 
-  void mixin_directed_instr_list(riscv_instr_stream[] dir_list) {
+  void merge_directed_instr_list(riscv_instr_stream[] dir_list,
+				 riscv_instr[] first_instrs = [],
+				 riscv_instr[] last_instrs = []) {
     riscv_instr[]        mixed_list;
 
     uint instr_count = cast(uint) instr_list.length;
@@ -512,6 +514,8 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     dir_n.length = instr_count;
 
     this.dir_instr_list = dir_list;
+
+    mixed_count += first_instrs.length;
 
     foreach (size_t dir_idx, dir_instr; dir_instr_list) {
       mixed_count += dir_instr.instr_list.length;
@@ -534,10 +538,16 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
       }
     }
 
+    mixed_count += last_instrs.length;
+
     mixed_list.length = mixed_count;
 
-    uint n = 0;
+    size_t n = first_instrs.length;
+    mixed_list[0..n] = first_instrs;
+    
     foreach (i, instr; instr_list) {
+      // make sure that we are not inserting inside another directed stream
+      assert (! instr.atomic, "Cannot inject the instruction");
       uint next_dir = dir_n[i];
       while (next_dir != 0) {
 	uint next = dir_instr_list[next_dir-1].next_stream;
@@ -548,6 +558,10 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
       }
       mixed_list[n++] = instr;
     }
+
+    mixed_list[n..$] = last_instrs;
+    n += last_instrs.length;
+    
     assert (mixed_count == n);
 
     instr_list = mixed_list;

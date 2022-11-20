@@ -78,7 +78,7 @@ class riscv_amo_instr: riscv_instr
       uvm_fatal(get_full_name(), format("Unexpected amo instr group: %0s / %0s",
 					group, instr_name));
     }
-    if(comment != "")
+    if (comment != "")
       asm_str ~= " #" ~ comment;
     return asm_str.toLower();
   }
