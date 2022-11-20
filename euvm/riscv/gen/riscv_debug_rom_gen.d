@@ -25,7 +25,7 @@
 module riscv.gen.riscv_debug_rom_gen;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, hart_prefix, push_gpr_to_kernel_stack,
-  indent, pop_gpr_from_kernel_stack, privileged_mode_t;
+  INDENT, pop_gpr_from_kernel_stack, privileged_mode_t;
 import riscv.gen.target: supported_privileged_mode;
 import riscv.gen.riscv_instr_sequence: riscv_instr_sequence;
 import riscv.gen.riscv_asm_program_gen: riscv_asm_program_gen;
@@ -116,8 +116,8 @@ class riscv_debug_rom_gen : riscv_asm_program_gen
       main_program[hart].post_process_instr();
       main_program[hart].generate_instr_stream(true);
       debug_main ~= main_program[hart].instr_string_list.toArray ~
-	format("%sla x%0d, debug_end", indent, cfg.scratch_reg) ~
-	format("%sjalr x0, x%0d, 0", indent, cfg.scratch_reg);
+	format("%sla x%0d, debug_end", INDENT, cfg.scratch_reg) ~
+	format("%sjalr x0, x%0d, 0", INDENT, cfg.scratch_reg);
       insert_sub_program(sub_program[hart], debug_main);
       gen_section(format("%0sdebug_rom", hart_prefix(hart)), debug_main);
       if (cfg.enable_ebreak_in_debug_rom) {

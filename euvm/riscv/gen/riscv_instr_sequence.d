@@ -36,7 +36,7 @@
 module riscv.gen.riscv_instr_sequence;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_category_t, riscv_instr_name_t,
-  riscv_reg_t, indent, LABEL_STR_LEN;
+  riscv_reg_t, INDENT, LABEL_STR_LEN;
 import riscv.gen.target: support_pmp, XLEN;
 
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -388,7 +388,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
       for(int i = 0; i != bin_instr_cnt; ++i) {
         // DV_CHECK_RANDOMIZE_WITH_FATAL(,
 	illegal_instr.randomize_with! q{ exception != illegal_instr_type_e.kHintInstr;} ();
-        str = indent ~ format(".4byte 0x%s # %0s",
+        str = INDENT ~ format(".4byte 0x%s # %0s",
 			      illegal_instr.get_bin_str(), illegal_instr.comment);
 	idx = urandom(0, cast(uint) instr_string_list.length+1);
         instr_string_list.insert(idx, str);
@@ -401,7 +401,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
       for(int i = 0; i != bin_instr_cnt; ++i) {
 	//DV_CHECK_RANDOMIZE_WITH_FATAL(illegal_instr,
 	illegal_instr.randomize_with! q{exception == illegal_instr_type_e.kHintInstr;}();
-        str = indent ~ format(".2byte 0x%s # %0s",
+        str = INDENT ~ format(".2byte 0x%s # %0s",
 			      illegal_instr.get_bin_str(), illegal_instr.comment);
         idx = urandom(0, cast(uint) instr_string_list.length+1);
         instr_string_list.insert(idx, str);

@@ -29,7 +29,7 @@ import riscv.gen.riscv_signature_pkg: core_status_t, signature_type_t, test_resu
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, privileged_mode_t,
-  exception_cause_t, interrupt_cause_t, get_label, indent, hart_prefix,
+  exception_cause_t, interrupt_cause_t, get_label, INDENT, hart_prefix,
   riscv_instr_group_t, satp_mode_t, program_id_t, misa_ext_t,
   vreg_init_method_t, mem_region_t, mtvec_mode_t, push_gpr_to_kernel_stack,
   pop_gpr_from_kernel_stack, riscv_reg_t,
@@ -160,8 +160,8 @@ class riscv_asm_program_gen : uvm_object
       instr_stream ~= main_program[hart].instr_string_list.toArray();
       // If PMP is supported, need to jump from end of main program to test_done section at the end
       // of main_program, as the test_done will have moved to the beginning of the program
-      instr_stream ~= format("%sla x%0d, test_done", indent, cfg.scratch_reg);
-      instr_stream ~= format("%sjalr x0, x%0d, 0", indent, cfg.scratch_reg);
+      instr_stream ~= format("%sla x%0d, test_done", INDENT, cfg.scratch_reg);
+      instr_stream ~= format("%sjalr x0, x%0d, 0", INDENT, cfg.scratch_reg);
       // Test done section
       // If PMP isn't supported, generate this in the normal location
       if ((hart == 0) & !support_pmp) {
@@ -471,7 +471,7 @@ class riscv_asm_program_gen : uvm_object
     }
     init_gpr();
     // Init stack pointer to point to the end of the user stack
-    str = indent ~ format("la x%0d, %0suser_stack_end", cfg.sp, hart_prefix(hart));
+    str = INDENT ~ format("la x%0d, %0suser_stack_end", cfg.sp, hart_prefix(hart));
     instr_stream ~= str;
     if (cfg.enable_vector_extension) {
       randomize_vec_gpr_and_csr();
@@ -479,7 +479,7 @@ class riscv_asm_program_gen : uvm_object
     core_is_initialized();
     gen_dummy_csr_write(); // TODO add a way to disable xStatus read
     if (support_pmp) {
-      str = indent ~  "j main";
+      str = INDENT ~  "j main";
       instr_stream ~= str;
     }
   }
@@ -490,7 +490,7 @@ class riscv_asm_program_gen : uvm_object
     misa[XLEN-2..XLEN] = (XLEN == 32) ? toubvec!2(0b01) :
       (XLEN == 64) ? toubvec!2(0b10) : toubvec!2(0b11);
     if (cfg.check_misa_init_val) {
-      instr_stream ~= indent ~ format("csrr x15, 0x%0x", privileged_reg_t.MISA);
+      instr_stream ~= INDENT ~ format("csrr x15, 0x%0x", privileged_reg_t.MISA);
     }
     foreach (sisa; supported_isa) {
       switch  (sisa) {
@@ -521,8 +521,8 @@ class riscv_asm_program_gen : uvm_object
     if (canFind(supported_privileged_mode, privileged_mode_t.SUPERVISOR_MODE)) {
       misa[misa_ext_t.MISA_EXT_S] = true;
     }
-    instr_stream ~= indent ~ format("li x%0d, 0x%0x", cfg.gpr[0], misa);
-    instr_stream ~= indent ~ format("csrw 0x%0x, x%0d", privileged_reg_t.MISA, cfg.gpr[0]);
+    instr_stream ~= INDENT ~ format("li x%0d, 0x%0x", cfg.gpr[0], misa);
+    instr_stream ~= INDENT ~ format("csrw 0x%0x, x%0d", privileged_reg_t.MISA, cfg.gpr[0]);
   }
 
   // Write to the signature_addr with values to indicate to the core testbench
@@ -606,7 +606,7 @@ class riscv_asm_program_gen : uvm_object
 							  1, false);
       }
       reg_val = _gpr_solver.urandom();
-      str = format("%0sli x%0d, 0x%0x", indent, i, reg_val);
+      str = format("%0sli x%0d, 0x%0x", INDENT, i, reg_val);
       instr_stream ~= str;
     }
   }
@@ -623,29 +623,29 @@ class riscv_asm_program_gen : uvm_object
     SEW = (ELEN <= XLEN) ? ELEN : XLEN;
     instr_stream ~= format("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl);
     instr_stream ~= format("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
-			   indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL, EDIV);
+			   INDENT, cfg.gpr[0], cfg.gpr[1], SEW, LMUL, EDIV);
     instr_stream ~= "vec_reg_init:";
 
     // Vector registers will be initialized using one of the following three methods
     switch (cfg.vreg_init_method) {
     case vreg_init_method_t.SAME_VALUES_ALL_ELEMS:
       for (int v = 0; v < NUM_VEC_GPR; v++) {
-	instr_stream ~= format("%0svmv.v.x v%0d, x%0d", indent, v, v);
+	instr_stream ~= format("%0svmv.v.x v%0d, x%0d", INDENT, v, v);
       }
       break;
     case vreg_init_method_t.RANDOM_VALUES_VMV:
       for (int v = 0; v < NUM_VEC_GPR; v++) {
 	for (int e = 0; e < num_elements; e++) {
-	  if (e > 0) instr_stream ~= format("%0svmv.v.v v0, v%0d", indent, v);
+	  if (e > 0) instr_stream ~= format("%0svmv.v.v v0, v%0d", INDENT, v);
 	  instr_stream ~= format("%0sli x%0d, 0x%0x",
-				 indent, cfg.gpr[0], urandom(0, 2 ^^ SEW));
+				 INDENT, cfg.gpr[0], urandom(0, 2 ^^ SEW));
 	  if (v > 0) {
 	    instr_stream ~= format("%0svslide1up.vx v%0d, v0, x%0d",
-				   indent, v, cfg.gpr[0]);
+				   INDENT, v, cfg.gpr[0]);
 	  }
 	  else {
 	    instr_stream ~= format("%0svslide1up.vx v%0d, v1, x%0d",
-				   indent, v, cfg.gpr[0]);
+				   INDENT, v, cfg.gpr[0]);
 	  }
 	}
       }
@@ -662,8 +662,8 @@ class riscv_asm_program_gen : uvm_object
       for (int v = 0; v < NUM_VEC_GPR; v++) {
 	assert (valid_mem_region.length != 0);
 	uint region = urandom(0, cast(uint) valid_mem_region.length);
-	instr_stream ~= format("%0sla t0, %0s", indent, valid_mem_region[region]);
-	instr_stream ~= format("%0svle.v v%0d, (t0)", indent, v);
+	instr_stream ~= format("%0sla t0, %0s", INDENT, valid_mem_region[region]);
+	instr_stream ~= format("%0svle.v v%0d, (t0)", INDENT, v);
       }
       break;
     default : break;
@@ -682,7 +682,7 @@ class riscv_asm_program_gen : uvm_object
       else init_floating_point_gpr_with_spf(i);
     }
     // Initialize rounding mode of FCSR
-    str = format("%0sfsrmi %0d", indent, cfg.fcsr_rm);
+    str = format("%0sfsrmi %0d", INDENT, cfg.fcsr_rm);
     instr_stream ~= str;
   }
 
@@ -690,9 +690,9 @@ class riscv_asm_program_gen : uvm_object
   void init_floating_point_gpr_with_spf(int int_floating_gpr) {
     string str;
     ubvec!32 imm = cast(ubvec!32) get_rand_spf_value();
-    str = format("%0sli x%0d, %0d", indent, cfg.gpr[0], imm);
+    str = format("%0sli x%0d, %0d", INDENT, cfg.gpr[0], imm);
     instr_stream ~= str;
-    str = format("%0sfmv.w.x f%0d, x%0d", indent, int_floating_gpr, cfg.gpr[0]);
+    str = format("%0sfmv.w.x f%0d, x%0d", INDENT, int_floating_gpr, cfg.gpr[0]);
     instr_stream ~= str;
   }
 
@@ -703,18 +703,18 @@ class riscv_asm_program_gen : uvm_object
     int int_gpr1 = cfg.gpr[0];
     int int_gpr2 = cfg.gpr[1];
 
-    str = format("%0sli x%0d, %0d", indent, int_gpr1, imm[32..64]);
+    str = format("%0sli x%0d, %0d", INDENT, int_gpr1, imm[32..64]);
     instr_stream ~= str;
     // shift to upper 32bits
     for(int i=0 ; i<2 ; ++i) {
-      str = format("%0sslli x%0d, x%0d, 16", indent, int_gpr1, int_gpr1);
+      str = format("%0sslli x%0d, x%0d, 16", INDENT, int_gpr1, int_gpr1);
       instr_stream ~= str;
     }
-    str = format("%0sli x%0d, %0d", indent, int_gpr2, imm[0..32]);
+    str = format("%0sli x%0d, %0d", INDENT, int_gpr2, imm[0..32]);
     instr_stream ~= str;
-    str = format("%0sor x%0d, x%0d, x%0d", indent, int_gpr2, int_gpr2, int_gpr1);
+    str = format("%0sor x%0d, x%0d, x%0d", INDENT, int_gpr2, int_gpr2, int_gpr1);
     instr_stream ~= str;
-    str = format("%0sfmv.d.x f%0d, x%0d", indent, int_floating_gpr, int_gpr2);
+    str = format("%0sfmv.d.x f%0d, x%0d", INDENT, int_floating_gpr, int_gpr2);
     instr_stream ~= str;
   }
 
@@ -760,11 +760,11 @@ class riscv_asm_program_gen : uvm_object
     enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
     string str = format!FMT("test_done:");
     instr_stream ~= str;
-    instr_stream ~= (indent ~ "li gp, 1");
+    instr_stream ~= (INDENT ~ "li gp, 1");
     if (cfg.bare_program_mode) {
-      instr_stream ~= indent ~ "j write_tohost";
+      instr_stream ~= INDENT ~ "j write_tohost";
     } else {
-      instr_stream ~= indent ~ "ecall";
+      instr_stream ~= INDENT ~ "ecall";
     }
   }
 
@@ -1566,7 +1566,7 @@ class riscv_asm_program_gen : uvm_object
       instr_stream ~= str;
     }
     foreach (ii; instr) {
-      str = indent ~ ii;
+      str = INDENT ~ ii;
       instr_stream ~= str;
     }
     instr_stream ~= "";
@@ -1580,7 +1580,7 @@ class riscv_asm_program_gen : uvm_object
       instr_stream ~= str;
     }
     foreach(i; instr) {
-      str = indent ~ i;
+      str = INDENT ~ i;
       instr_stream ~= str;
     }
     instr_stream ~= "";
@@ -1889,8 +1889,8 @@ class riscv_asm_program_gen : uvm_object
   void randomize_vec_gpr_and_csr() {
     string lmul;
     if (!(canFind(supported_isa, riscv_instr_group_t.RVV ) )) return;
-    instr_stream ~= indent ~ format("csrwi vxsat, %0d", cfg.vector_cfg.vxsat);
-    instr_stream ~= indent ~ format("csrwi vxrm, %0d", cfg.vector_cfg.vxrm);
+    instr_stream ~= INDENT ~ format("csrwi vxsat, %0d", cfg.vector_cfg.vxsat);
+    instr_stream ~= INDENT ~ format("csrwi vxrm, %0d", cfg.vector_cfg.vxrm);
     init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
     instr_stream ~= format("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl);
     if ((cfg.vector_cfg.vtype.vlmul > 1) && (cfg.vector_cfg.vtype.fractional_lmul)) {
@@ -1900,7 +1900,7 @@ class riscv_asm_program_gen : uvm_object
       lmul = format("m%0d", cfg.vector_cfg.vtype.vlmul);
     }
     instr_stream ~= format("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
-			   indent,
+			   INDENT,
 			   cfg.gpr[0],
 			   cfg.gpr[1],
 			   cfg.vector_cfg.vtype.vsew,

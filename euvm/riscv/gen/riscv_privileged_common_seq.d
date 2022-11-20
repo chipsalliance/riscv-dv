@@ -20,7 +20,7 @@
 module riscv.gen.riscv_privileged_common_seq;
 
 import riscv.gen.riscv_instr_pkg: privileged_mode_t, privileged_reg_t,
-  indent, satp_mode_t, hart_prefix, LABEL_STR_LEN;
+  INDENT, satp_mode_t, hart_prefix, LABEL_STR_LEN;
 import riscv.gen.target: supported_privileged_mode, support_umode_trap,
   implemented_csr, XLEN, SATP_MODE;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -77,7 +77,7 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     // Use mret/sret to switch to the target privileged mode
     instrs ~= ret_instr[0];
     foreach (instr; instrs) {
-      instr = indent ~ instr;
+      instr = INDENT ~ instr;
     }
     instrs.pushFront(label);
   }
@@ -107,7 +107,7 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     instrs ~= ret_instr[0];
     foreach (i, ref instr; instrs) {
       if (i != 0)		// skip indent for label
-	instr = indent ~ instr;
+	instr = INDENT ~ instr;
     }
     // instrs.pushFront(label); // do it upfront
   }
