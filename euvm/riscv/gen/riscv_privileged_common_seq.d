@@ -20,7 +20,7 @@
 module riscv.gen.riscv_privileged_common_seq;
 
 import riscv.gen.riscv_instr_pkg: privileged_mode_t, privileged_reg_t,
-  format_string, indent, satp_mode_t, hart_prefix, LABEL_STR_LEN;
+  indent, satp_mode_t, hart_prefix, LABEL_STR_LEN;
 import riscv.gen.target: supported_privileged_mode, support_umode_trap,
   implemented_csr, XLEN, SATP_MODE;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -57,8 +57,9 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out Queue!string instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:",
-					hart_prefix(hart), mode), LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string label = format!FMT(format("%0sinit_%0s:",
+				     hart_prefix(hart), mode));
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();
@@ -84,8 +85,9 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out string[] instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:",
-					hart_prefix(hart), mode), LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string label = format!FMT(format("%0sinit_%0s:",
+				     hart_prefix(hart), mode));
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();

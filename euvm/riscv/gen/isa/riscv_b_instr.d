@@ -20,7 +20,7 @@ module riscv.gen.isa.riscv_b_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_reg_t, riscv_instr_name_t, b_ext_group_t,
   riscv_instr_category_t, riscv_instr_format_t, riscv_instr_group_t,
-  MAX_INSTR_STR_LEN, format_string;
+  MAX_INSTR_STR_LEN;
 import riscv.gen.target: XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 import riscv.gen.isa.riscv_instr: riscv_instr;
@@ -99,7 +99,8 @@ class riscv_b_instr: riscv_instr
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     string asm_str_final, asm_str;
-    asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    asm_str = format!FMT(get_instr_name());
 
     switch (instr_format) {
     case riscv_instr_format_t.I_FORMAT:

@@ -36,7 +36,7 @@
 module riscv.gen.riscv_instr_sequence;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_category_t, riscv_instr_name_t,
-  format_string, riscv_reg_t, indent, LABEL_STR_LEN;
+  riscv_reg_t, indent, LABEL_STR_LEN;
 import riscv.gen.target: support_pmp, XLEN;
 
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -291,6 +291,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   void generate_instr_stream(bool no_label = false) {
     string prefix, str;
     int i;
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
     instr_string_list = [];
     // If PMP is supported, need to align <main> to a 4-byte boundary.
     // TODO(udi) - this might interfere with multi-hart programs,
@@ -301,20 +302,19 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     for (i = 0; i < instr_stream.instr_list.length; i++) {
       if (i == 0) {
         if (no_label) {
-          prefix = format_string(" ", LABEL_STR_LEN);
+          prefix = format!FMT(" ");
 	}
 	else {
-          prefix = format_string(format("%0s:", label_name), LABEL_STR_LEN);
+          prefix = format!FMT(format("%s:", label_name));
 	}
         instr_stream.instr_list[i].has_label = true;
       }
       else {
-        if(instr_stream.instr_list[i].has_label) {
-          prefix = format_string(format("%0s:", instr_stream.instr_list[i].label),
-				 LABEL_STR_LEN);
+        if (instr_stream.instr_list[i].has_label) {
+          prefix = format!FMT(format("%0s:", instr_stream.instr_list[i].label));
         }
 	else {
-          prefix = format_string(" ", LABEL_STR_LEN);
+          prefix = format!FMT(" ");
         }
       }
       str = prefix ~ instr_stream.instr_list[i].convert2asm();
@@ -328,8 +328,8 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     //   instr_string_list.pushFront(".align 2");
     // }
     insert_illegal_hint_instr();
-    prefix = format_string(format("%0d:", i), LABEL_STR_LEN);
-    if(!is_main_program) {
+    prefix = format!FMT(format("%0d:", i));
+    if (!is_main_program) {
       generate_return_routine(prefix);
     }
   }

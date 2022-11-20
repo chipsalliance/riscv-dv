@@ -18,7 +18,7 @@
 module riscv.gen.isa.riscv_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, riscv_instr_format_t,
-  riscv_instr_category_t, riscv_instr_name_t, imm_t, riscv_reg_t, format_string,
+  riscv_instr_category_t, riscv_instr_name_t, imm_t, riscv_reg_t,
   MAX_INSTR_STR_LEN;
 import riscv.gen.target: XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -190,7 +190,8 @@ class riscv_instr: uvm_object
   string convert2asm(string prefix = "") {
     import std.string: toLower;
     string asm_str;
-    asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    asm_str = format!FMT(get_instr_name());
     if (category != riscv_instr_category_t.SYSTEM) {
       switch (instr_format) {
       case riscv_instr_format_t.J_FORMAT, riscv_instr_format_t.U_FORMAT: // instr rd,imm

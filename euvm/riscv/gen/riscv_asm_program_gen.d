@@ -30,7 +30,7 @@ import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 
 import riscv.gen.riscv_instr_pkg: privileged_reg_t, privileged_mode_t,
   exception_cause_t, interrupt_cause_t, get_label, indent, hart_prefix,
-  riscv_instr_group_t, satp_mode_t, program_id_t, format_string, misa_ext_t,
+  riscv_instr_group_t, satp_mode_t, program_id_t, misa_ext_t,
   vreg_init_method_t, mem_region_t, mtvec_mode_t, push_gpr_to_kernel_stack,
   pop_gpr_from_kernel_stack, riscv_reg_t,
   DATA_WIDTH, SINGLE_PRECISION_FRACTION_BITS, LABEL_STR_LEN,
@@ -463,8 +463,8 @@ class riscv_asm_program_gen : uvm_object
   }
 
   void gen_init_section(int hart) {
-    string str;
-    str = format_string(get_label("init:", hart), LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string str = format!FMT(get_label("init:", hart));
     instr_stream ~= str;
     if (cfg.enable_floating_point) {
       init_floating_point_gpr();
@@ -757,7 +757,8 @@ class riscv_asm_program_gen : uvm_object
   // Generate "test_done" section, test is finished by an ECALL instruction
   // The ECALL trap handler will handle the clean up procedure before finishing the test.
   void gen_test_done() {
-    string str = format_string("test_done:", LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string str = format!FMT("test_done:");
     instr_stream ~= str;
     instr_stream ~= (indent ~ "li gp, 1");
     if (cfg.bare_program_mode) {
@@ -1541,14 +1542,16 @@ class riscv_asm_program_gen : uvm_object
 
   // Format a code section, without generating it
   void format_section(ref Queue!string instr) {
-    string prefix = format_string(" ", LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string prefix = format!FMT(" ");
     foreach (ii; instr) {
       ii = prefix ~ ii;
     }
   }
 
   void format_section(ref string[] instr) {
-    string prefix = format_string(" ", LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string prefix = format!FMT(" ");
     foreach (ii; instr) {
       ii = prefix ~ ii;
     }
@@ -1558,7 +1561,8 @@ class riscv_asm_program_gen : uvm_object
   void gen_section(string label, Queue!string instr) {
     string str;
     if (label != "") {
-      str = format_string(format("%0s:", label), LABEL_STR_LEN);
+      enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+      str = format!FMT(format("%0s:", label));
       instr_stream ~= str;
     }
     foreach (ii; instr) {
@@ -1571,7 +1575,8 @@ class riscv_asm_program_gen : uvm_object
   void gen_section(string label, string[] instr) {
     string str;
     if(label != "") {
-      str = format_string(format("%0s:", label), LABEL_STR_LEN);
+      enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+      str = format!FMT(format("%0s:", label));
       instr_stream ~= str;
     }
     foreach(i; instr) {

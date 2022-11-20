@@ -1342,15 +1342,15 @@ string spaces_string(uint len) {
 enum string indent = SPACES!LABEL_STR_LEN;
 
 // Format the string to a fixed length
-string format_string(string str, int len = 10) {
-  if (len < str.length) return str;
-  else {
-    static string spaces;
-    if (spaces.length == 0) spaces = spaces_string(len);
-    string formatted_str = str ~ spaces[0..len-str.length];
-    return formatted_str;
-  }
-}
+// string format_string(string str, int len = 10) {
+//   if (len < str.length) return str;
+//   else {
+//     static string spaces;
+//     if (spaces.length == 0) spaces = spaces_string(len);
+//     string formatted_str = str ~ spaces[0..len-str.length];
+//     return formatted_str;
+//   }
+// }
 
 // Print the data in the following format
 // 0xabcd, 0x1234, 0x3334 ...

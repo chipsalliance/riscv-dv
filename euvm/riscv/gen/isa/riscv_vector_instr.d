@@ -21,7 +21,7 @@
 module riscv.gen.isa.riscv_vector_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_vreg_t, va_variant_t,
-  riscv_instr_name_t, riscv_instr_format_t, format_string,
+  riscv_instr_name_t, riscv_instr_format_t,
   MAX_INSTR_STR_LEN, riscv_instr_category_t;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.isa.riscv_floating_point_instr: riscv_floating_point_instr;
@@ -448,14 +448,14 @@ class riscv_vector_instr: riscv_floating_point_instr
 	asm_str = format("vfmv.s.f %s,%s", vd, fs1);
       }
       else {
+	enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
 	if (!has_va_variant) {
-	  asm_str = format("%0s ", get_instr_name());
-	  asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
+	  asm_str = format!FMT(get_instr_name());
 	  asm_str = asm_str ~ format("%0s,%0s,%0s", vd, vs2, vs1);
 	}
 	else {
 	  asm_str = format("%0s.%0s ", get_instr_name(), va_variant);
-	  asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
+	  asm_str = format!FMT(asm_str);
 	  switch (va_variant) {
 	  case va_variant_t.WV,
 	    va_variant_t.VV,

@@ -17,7 +17,7 @@
 
 module riscv.gen.isa.riscv_compressed_instr;
 
-import riscv.gen.riscv_instr_pkg: format_string, riscv_instr_name_t, MAX_INSTR_STR_LEN,
+import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, MAX_INSTR_STR_LEN,
   riscv_instr_format_t, riscv_reg_t, riscv_instr_category_t, imm_t;
 import riscv.gen.target: XLEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
@@ -218,7 +218,8 @@ class riscv_compressed_instr: riscv_instr
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     import std.string: toLower;
-    string asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    string asm_str = format!FMT(get_instr_name());
     if (category != riscv_instr_category_t.SYSTEM) {
       switch(instr_format) {
       case riscv_instr_format_t.CI_FORMAT,

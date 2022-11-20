@@ -18,7 +18,7 @@
 module riscv.gen.isa.riscv_zbb_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, riscv_instr_name_t,
-  riscv_instr_format_t, format_string, MAX_INSTR_STR_LEN;
+  riscv_instr_format_t, MAX_INSTR_STR_LEN;
 import riscv.gen.target: XLEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -86,7 +86,8 @@ class riscv_zbb_instr: riscv_instr
     string asm_str_final;
     string asm_str;
 
-    asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    asm_str = format!FMT(get_instr_name());
 
     switch (instr_format) {
     case riscv_instr_format_t.I_FORMAT: // instr rd rs1

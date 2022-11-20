@@ -17,7 +17,7 @@
 
 module riscv.gen.isa.riscv_amo_instr;
 
-import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, format_string,
+import riscv.gen.riscv_instr_pkg: riscv_instr_group_t,
   riscv_instr_name_t, MAX_INSTR_STR_LEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
@@ -65,7 +65,8 @@ class riscv_amo_instr: riscv_instr
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     import std.string: toLower;
-    string asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    string asm_str = format!FMT(get_instr_name());
     if (group.inside(riscv_instr_group_t.RV32A, riscv_instr_group_t.RV64A))  {
       if (instr_name.inside(riscv_instr_name_t.LR_W, riscv_instr_name_t.LR_D)) {
         asm_str = format("%0s %0s, (%0s)", asm_str, rd, rs1);
