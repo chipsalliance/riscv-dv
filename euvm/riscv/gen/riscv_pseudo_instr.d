@@ -72,9 +72,34 @@ class riscv_pseudo_instr: riscv_instr
     }
   }
 
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.format: sformat;
+    import std.string: toLower, toLowerInPlace;
+    char[32] instr_buf;
+    
+    if (comment.length == 0) {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s";
+      char[] asm_str = sformat!FMT(buf, get_instr_name(instr_buf), rd, get_imm());
+      asm_str.toLowerInPlace();
+      return asm_str;
+    }
+    else {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s #%s";
+      char[] asm_str = sformat!FMT(buf, get_instr_name(instr_buf), rd, get_imm(), comment);
+      asm_str.toLowerInPlace();
+      return asm_str;
+    }
+  }
+
   override string get_instr_name() {
     import std.conv: to;
     return pseudo_instr_name.to!string();
+  }
+
+  override char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+    char[] str_instr_name = sformat!("%s")(buf, pseudo_instr_name);
+    return str_instr_name;
   }
 
 }

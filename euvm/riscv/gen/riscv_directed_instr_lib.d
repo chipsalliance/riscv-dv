@@ -93,21 +93,25 @@ class riscv_mem_access_stream : riscv_directed_instr_stream
 
   // Use "la" instruction to initialize the base regiseter
   void add_rs1_init_la_instr(riscv_reg_t gpr, int id, int base = 0) {
+    import std.format: sformat;
     riscv_pseudo_instr la_instr;
     la_instr = riscv_pseudo_instr.type_id.create("la_instr");
     la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA;
     la_instr.rd = gpr;
     if (load_store_shared_memory) {
-      la_instr.imm_str = format("%0s+%0d", cfg.amo_region[id].name, base);
+      la_instr.imm_str = cast(string)
+	sformat!("%0s+%0d")(la_instr.imm_str_buf(), cfg.amo_region[id].name, base);
 
     }
     else if(kernel_mode) {
-      la_instr.imm_str = format("%0s%0s+%0d",
-				hart_prefix(hart), cfg.s_mem_region[id].name, base);
+      la_instr.imm_str = cast(string)
+	sformat!("%0s%0s+%0d")(la_instr.imm_str_buf(),
+			       hart_prefix(hart), cfg.s_mem_region[id].name, base);
     }
     else {
-      la_instr.imm_str = format("%0s%0s+%0d",
-				hart_prefix(hart), cfg.mem_region[id].name, base);
+      la_instr.imm_str = cast(string)
+	sformat!("%0s%0s+%0d")(la_instr.imm_str_buf(),
+			       hart_prefix(hart), cfg.mem_region[id].name, base);
     }
     prepend_instr(la_instr);
   }
@@ -179,6 +183,8 @@ class riscv_jump_instr: riscv_directed_instr_stream
   }
 
   override void post_randomize() {
+    import std.format: sformat;
+
     riscv_instr[] instr;
     jump.randomize_with! q{
       if (has_rd == true) {
@@ -202,17 +208,17 @@ class riscv_jump_instr: riscv_directed_instr_stream
     if (jump.instr_name.inside(riscv_instr_name_t.JALR, riscv_instr_name_t.C_JALR)) {
       // JALR is expected to set lsb to 0
       int offset = urandom!q{[]}(0, 1);
-      addi.imm_str = format("%0d", imm + offset);
+      addi.imm_str = cast(string) sformat!("%0d")(addi.imm_str_buf(), imm + offset);
     }
     else {
-      addi.imm_str = format("%0d", imm);
+      addi.imm_str = cast(string) sformat!("%0d")(addi.imm_str_buf(), imm);
     }
     if (cfg.enable_misaligned_instr) {
       // Jump to a misaligned address
-      jump.imm_str = format("%0d", -imm + 2);
+      jump.imm_str = cast(string) sformat!("%0d")(jump.imm_str_buf(), -imm + 2);
     }
     else {
-      jump.imm_str = format("%0d", -imm);
+      jump.imm_str = cast(string) sformat!("%0d")(jump.imm_str_buf(), -imm);
     }
     // The branch instruction is always inserted right before the jump instruction to avoid
     // skipping other required instructions like restore stack, load jump base etc.
@@ -246,6 +252,8 @@ class riscv_jump_instr: riscv_directed_instr_stream
 // Stress back to back jump instruction
 class riscv_jal_instr : riscv_rand_instr_stream
 {
+  import std.format: sformat;
+  
   riscv_instr[]        jump;
   riscv_instr          jump_start;
   riscv_instr          jump_end;
@@ -263,6 +271,8 @@ class riscv_jal_instr : riscv_rand_instr_stream
   }
 
   void post_randomize() {
+    import std.format: sformat;
+
     int[]  order;
     order.length  = num_of_jump_instr;
     jump.length  = num_of_jump_instr;
@@ -282,18 +292,19 @@ class riscv_jal_instr : riscv_rand_instr_stream
     jump_start = cfg.instr_registry.get_instr(riscv_instr_name_t.JAL);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(jump_start, rd == cfg.ra;)
     jump_start.randomize_with! q{rd == $0;} (cfg.ra);
-    jump_start.imm_str = format("%0df", order[0]);
+    jump_start.imm_str = cast(string) sformat!("%0df")(jump_start.imm_str_buf(), order[0]);
     jump_start.label = label;
     // Last instruction
     randomize_instr(jump_end);
-    jump_end.label = format("%0d", num_of_jump_instr);
+    jump_end.label = format!("%0d")(num_of_jump_instr);
     foreach (i, ref jj ; jump) {
       jj = cfg.instr_registry.get_rand_instr(jal);
       //DV_CHECK_RANDOMIZE_WITH_FATAL(jump[i],
       // Giving randomization error
       jj.randomize_with! q{
 	if (has_rd == true ) {
-	  rd dist [riscv_reg_t.RA := 5, riscv_reg_t.T1 := 2, riscv_reg_t.SP..riscv_reg_t.T0 :/ 1, riscv_reg_t.T2..riscv_reg_t.T6 :/ 2];
+	  rd dist [riscv_reg_t.RA := 5, riscv_reg_t.T1 := 2,
+		   riscv_reg_t.SP..riscv_reg_t.T0 :/ 1, riscv_reg_t.T2..riscv_reg_t.T6 :/ 2];
 	  rd !inside [$0];
 	}
       } (cfg.reserved_regs);
@@ -301,14 +312,17 @@ class riscv_jal_instr : riscv_rand_instr_stream
     }
     foreach (i, rr; order) {
       if (i == num_of_jump_instr - 1) {
-	jump[rr].imm_str = format("%0df", num_of_jump_instr);
+	jump[rr].imm_str = cast(string)
+	  sformat!("%0df")(jump[rr].imm_str_buf(), num_of_jump_instr);
       }
       else {
 	if (order[i+1] > rr) {
-          jump[rr].imm_str = format("%0df", order[i+1]);
+          jump[rr].imm_str = cast(string)
+	    sformat!("%0df")(jump[rr].imm_str_buf(), order[i+1]);
 	}
 	else {
-          jump[rr].imm_str = format("%0db", order[i+1]);
+          jump[rr].imm_str = cast(string)
+	    sformat!("%0db")(jump[rr].imm_str_buf(), order[i+1]);
 	}
       }
     }
@@ -322,7 +336,7 @@ class riscv_jal_instr : riscv_rand_instr_stream
 }
 
 // Push stack instruction stream
-class riscv_push_stack_instr : riscv_rand_instr_stream
+class riscv_push_stack_instr: riscv_rand_instr_stream
 {
   int                      stack_len;
   int                      num_of_reg_to_save;
@@ -353,6 +367,8 @@ class riscv_push_stack_instr : riscv_rand_instr_stream
   }
 
   void gen_push_stack_instr(int stack_len, bool allow_branch = true) {
+    import std.format: sformat;
+
     this.stack_len = stack_len;
     init();
     gen_instr(true);
@@ -365,7 +381,8 @@ class riscv_push_stack_instr : riscv_rand_instr_stream
     //DV_CHECK_RANDOMIZE_WITH_FATAL(push_stack_instr[0],
     push_stack_instr[0].randomize_with! q{ rd == $0; rs1 == $0;
       imm == $1;} (cfg.sp, ~stack_len + 1);
-    push_stack_instr[0].imm_str = format("-%0d", stack_len);
+    push_stack_instr[0].imm_str = cast(string)
+      sformat!("-%0d")(push_stack_instr[0].imm_str_buf(), stack_len);
     foreach (i, sreg;  saved_regs) {
       if (XLEN == 32) {
         push_stack_instr[i+1] = cfg.instr_registry.get_instr(riscv_instr_name_t.SW);
@@ -441,6 +458,7 @@ class riscv_pop_stack_instr: riscv_rand_instr_stream
   }
 
   void gen_pop_stack_instr(int stack_len, riscv_reg_t[] saved_regs) {
+    import std.format: sformat;
     this.stack_len = stack_len;
     this.saved_regs = saved_regs;
     init();
@@ -472,7 +490,8 @@ class riscv_pop_stack_instr: riscv_rand_instr_stream
     pop_stack_instr[num_of_reg_to_save].randomize_with! q{
       rd == $0; rs1 == $0; imm == $1;
     } ( cfg.sp, stack_len);
-    pop_stack_instr[num_of_reg_to_save].imm_str = format("%0d", stack_len);
+    pop_stack_instr[num_of_reg_to_save].imm_str = cast(string)
+      sformat!("%0d")(pop_stack_instr[num_of_reg_to_save].imm_str_buf(), stack_len);
     mix_instr_stream(pop_stack_instr);
     foreach (instr; instr_list) {
       instr.atomic = true;
@@ -525,6 +544,7 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
   }
 
   override  void post_randomize() {
+    import std.format: sformat;
     init_instr.length = num_of_avail_regs;
     foreach (i, ref ivtype; init_val_type) {
       if (ivtype == int_numeric_e.Zero) {
@@ -539,7 +559,8 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
       init_instr[i] = new riscv_pseudo_instr;
       init_instr[i].rd = avail_regs[i];
       init_instr[i].pseudo_instr_name = riscv_pseudo_instr_name_t.LI;
-      init_instr[i].imm_str = format("0x%0x", init_val[i]);
+      init_instr[i].imm_str = cast(string)
+	sformat!("0x%0x")(init_instr[i].imm_str_buf(), init_val[i]);
       append_instr(init_instr[i]);
     }
     for (int i = 0; i < num_of_instr; i++) {

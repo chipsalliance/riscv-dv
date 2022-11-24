@@ -145,6 +145,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
 
   // Generate each load/store instruction
   void gen_load_store_instr() {
+    import std.format: sformat;
     bool enable_compressed_load_store;
     riscv_instr instr;
     randomize_avail_regs();
@@ -236,7 +237,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
       instr.has_imm = false;
       randomize_gpr(instr);
       instr.rs1 = rs1_reg;
-      instr.imm_str = format("%0d", offset[i]);  // $signed(offset[i]));
+      instr.imm_str = cast(string) sformat!("%0d")(instr.imm_str_buf(), offset[i]);  // $signed(offset[i]));
       instr.process_load_store = 0;
       append_instr(instr);
       load_store_instr ~= instr;
@@ -527,6 +528,8 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
   }
 
   override void add_rs1_init_la_instr(riscv_reg_t gpr, int id, int base = 0) {
+    import std.format: sformat;
+
     Queue!riscv_instr instr;
     riscv_pseudo_instr li_instr;
     riscv_instr store_instr;
@@ -543,7 +546,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
       rd inside [$0];
       rd != $1;
     } (cfg.gpr, gpr);
-    li_instr.imm_str = format("0x%0x", addr_offset);
+    li_instr.imm_str = cast(string) sformat!("0x%0x")(li_instr.imm_str_buf(), addr_offset);
     // Add offset to the base address
     add_instr = cfg.instr_registry.get_instr(riscv_instr_name_t.ADD);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(add_instr,

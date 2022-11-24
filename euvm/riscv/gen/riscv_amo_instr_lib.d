@@ -98,12 +98,15 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   // Use "la" instruction to initialize the offset regiseter
   void init_offset_reg() {
     import std.conv: to;
+    import std.format: sformat;
+
     foreach (i, rreg; rs1_reg) {
       riscv_pseudo_instr la_instr;
       la_instr = riscv_pseudo_instr.type_id.create("la_instr");
       la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA;
       la_instr.rd = rreg;
-      la_instr.imm_str = format("%0s+%0d", cfg.amo_region[data_page_id], offset[i]);
+      la_instr.imm_str = cast(string)
+	sformat!("%0s+%0d")(la_instr.imm_str_buf(), cfg.amo_region[data_page_id], offset[i]);
       append_instr(la_instr);
     }
   }

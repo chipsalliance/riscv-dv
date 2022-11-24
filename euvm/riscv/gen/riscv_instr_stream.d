@@ -129,7 +129,7 @@ class riscv_instr_stream: uvm_object
   // new instruction stream with the first and last instruction from the input instruction stream.
   void mix_instr_stream(riscv_instr[] new_instr, bool contained = false) {
     int current_instr_cnt = cast(int) instr_list.length;
-    int[] insert_instr_position;
+    static int[] insert_instr_position;
     int new_instr_cnt = cast(int) new_instr.length;
     insert_instr_position.length = new_instr_cnt;
     foreach (ref position; insert_instr_position) {
@@ -152,7 +152,7 @@ class riscv_instr_stream: uvm_object
   void mix_instr_stream(Queue!riscv_instr new_instr, bool contained = false) {
     import std.range: enumerate;
     int current_instr_cnt = cast(int) instr_list.length;
-    int[] insert_instr_position;
+    static int[] insert_instr_position;
     int new_instr_cnt = cast(int) new_instr.length;
     insert_instr_position.length = new_instr_cnt;
     foreach (ref position; insert_instr_position) {
@@ -270,7 +270,9 @@ class riscv_rand_instr_stream: riscv_instr_stream
     GC.disable();
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
-    if (instr_list.length <= cfg.par_instr_threshold) {
+    uvm_trace("GEN INSTR", "START", UVM_NONE);
+    if (instr_list.length <= cfg.par_instr_threshold ||
+	cfg.par_num_threads == 1) {
       foreach (ref instr; instr_list) {
 	randomize_instr(instr, is_debug_program);
       }
@@ -297,6 +299,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
       }
       foreach (f; forks) f.join();
     }
+    uvm_trace("GEN INSTR", "END", UVM_NONE);
     // Do not allow branch instruction as the last instruction because
     // there's no forward branch target
     while (instr_list[$-1].category == riscv_instr_category_t.BRANCH) {
@@ -367,13 +370,14 @@ class riscv_rand_instr_stream: riscv_instr_stream
 
 
   riscv_instr get_init_gpr_instr(riscv_reg_t gpr, ubvec!XLEN val) {
+    import std.format: sformat;
     riscv_pseudo_instr li_instr;
     li_instr = riscv_pseudo_instr.type_id.create("li_instr");
     li_instr.randomize_with! q{
       pseudo_instr_name == riscv_pseudo_instr_name_t.LI;
       rd == $0;
     } (gpr);
-    li_instr.imm_str = format("0x%0x", val);
+    li_instr.imm_str = cast(string) sformat!("0x%0x")(li_instr.imm_str_buf(), val);
     return li_instr;
   }
 

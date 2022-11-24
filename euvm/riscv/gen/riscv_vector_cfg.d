@@ -107,7 +107,7 @@ class riscv_vector_cfg : uvm_object
      if (vec_quad_widening) {
        vtype.vlmul < 4 || (vtype.fractional_lmul == true);
      }
-   } vlmul_c ;
+   } vlmul_c;
 
    constraint! q{
      vtype.vsew inside [8, 16, 32, 64, 128];

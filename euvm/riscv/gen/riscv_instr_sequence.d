@@ -49,6 +49,7 @@ import std.format: format;
 import std.algorithm.searching: canFind;
 
 import esdl.data.queue: Queue;
+import esdl.data.charbuf: ScratchPad;
 import esdl.rand: randomize, randomize_with;
 import esdl.base.rand: urandom, shuffle;
 
@@ -71,6 +72,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   
   int                      program_stack_len;    // Stack space allocated for this program
   riscv_instr_stream[]     directed_instr;       // List of all directed instruction stream
+  ScratchPad!("InstrPad")  scratch_pad;
   riscv_illegal_instr      illegal_instr;        // Illegal instruction generator
   int                      illegal_instr_pct;    // Percentage of illegal instruction
   int                      hint_instr_pct;       // Percentage of HINT instruction
@@ -159,6 +161,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   //
   //----------------------------------------------------------------------------------------------
   void post_process_instr() {
+    import std.format: sformat;
     // int i;
     int label_idx;
     int branch_cnt;
@@ -232,7 +235,7 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
 		 format("Processing branch instruction[%0d]:%0s # %0d -> %0d",
 			i, instr.convert2asm(),
 			instr.idx, branch_target_label), UVM_HIGH);
-        instr.imm_str = format("%0df", branch_target_label);
+        instr.imm_str = cast(string) sformat!("%0df")(instr.imm_str_buf(), branch_target_label);
         // Below calculation is only needed for generating the instruction stream in binary format
         for (size_t j = i + 1; j < instr_stream.instr_list.length; j++) {
           branch_byte_offset = (instr_stream.instr_list[j-1].is_compressed) ?
@@ -289,7 +292,8 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
   // Label is attached to the instruction if available, otherwise attach proper space to make
   // the code indent consistent.
   void generate_instr_stream(bool no_label = false) {
-    string prefix, str;
+    import std.format:sformat;
+    string prefix;
     int i;
     enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
     instr_string_list = [];
@@ -299,27 +303,39 @@ class riscv_instr_sequence:  uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
     if (support_pmp && !uvm_re_match(uvm_glob_to_re("*main*"), label_name)) {
       instr_string_list ~= ".align 2";
     }
+
+    uvm_trace("GEN INSTR STRINGS", "START", UVM_NONE);
     for (i = 0; i < instr_stream.instr_list.length; i++) {
+      char[] buf = scratch_pad.getBuf(256);
+      char[32] label_buf;
       if (i == 0) {
         if (no_label) {
-          prefix = format!FMT(" ");
+          prefix = cast(string) sformat!FMT(buf, " ");
 	}
 	else {
-          prefix = format!FMT(format("%s:", label_name));
+          prefix = cast(string)
+	    sformat!FMT(buf, sformat!("%s:")(label_buf, label_name));
 	}
         instr_stream.instr_list[i].has_label = true;
       }
       else {
         if (instr_stream.instr_list[i].has_label) {
-          prefix = format!FMT(format("%0s:", instr_stream.instr_list[i].label));
+          prefix = cast(string)
+	    sformat!FMT(buf, sformat!("%0s:")(label_buf,
+					      instr_stream.instr_list[i].label));
         }
 	else {
-          prefix = format!FMT(" ");
+          prefix = cast(string) sformat!FMT(buf, " ");
         }
       }
-      str = prefix ~ instr_stream.instr_list[i].convert2asm();
-      instr_string_list ~= str;
+      char[] instr_str =
+	instr_stream.instr_list[i].convert2asm(buf[prefix.length..$]);
+      
+      char[] str = buf[0..prefix.length+instr_str.length];
+      scratch_pad.register(str);
+      instr_string_list ~= cast(string) str;
     }
+    uvm_trace("GEN INSTR STRINGS", "END", UVM_NONE);
     // If PMP is supported, need to align <main> to a 4-byte boundary.
     // TODO(udi) - this might interfere with multi-hart programs,
     //             may need to specifically match hart0.

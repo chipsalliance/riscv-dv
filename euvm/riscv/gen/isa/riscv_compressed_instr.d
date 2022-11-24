@@ -285,6 +285,99 @@ class riscv_compressed_instr: riscv_instr
     return asm_str.toLower();
   }
 
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    if (category != riscv_instr_category_t.SYSTEM) {
+      switch(instr_format) {
+      case riscv_instr_format_t.CI_FORMAT,
+	riscv_instr_format_t.CIW_FORMAT :
+	if (instr_name == riscv_instr_name_t.C_NOP)
+	  asm_str = "c.nop";
+	else if (instr_name == riscv_instr_name_t.C_ADDI16SP)
+	  asm_buf = sformat!("%0ssp, %0s")(buf, instr_name_str, get_imm());
+	else if (instr_name == riscv_instr_name_t.C_ADDI4SPN)
+	  asm_buf = sformat!("%0s%0s, sp, %0s")(buf, instr_name_str, rd, get_imm());
+	else if (instr_name.inside(riscv_instr_name_t.C_LDSP, riscv_instr_name_t.C_LWSP,
+				   riscv_instr_name_t.C_LQSP))
+	  asm_buf = sformat!("%0s%0s, %0s(sp)")(buf, instr_name_str, rd, get_imm());
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, get_imm());
+	break;
+      case riscv_instr_format_t.CL_FORMAT :
+	asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, rd, get_imm(), rs1);
+	break;
+      case riscv_instr_format_t.CS_FORMAT:
+	if (category == riscv_instr_category_t.STORE)
+	  asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, rs2, get_imm(), rs1);
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs1, rs2);
+	break;
+      case riscv_instr_format_t.CA_FORMAT :
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs2);
+	break;
+      case riscv_instr_format_t.CB_FORMAT:
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs1, get_imm());
+	break;
+      case riscv_instr_format_t.CSS_FORMAT:
+	if (category == riscv_instr_category_t.STORE)
+	  asm_buf = sformat!("%0s%0s, %0s(sp)")(buf, instr_name_str, rs2, get_imm());
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs2, get_imm());
+	break;
+      case riscv_instr_format_t.CR_FORMAT:
+	if (instr_name.inside(riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR)) {
+	  asm_buf = sformat!("%0s%0s")(buf, instr_name_str, rs1);
+	}
+	else {
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs2);
+	}
+	break;
+      case riscv_instr_format_t.CJ_FORMAT:
+	asm_buf = sformat!("%0s%0s")(buf, instr_name_str, get_imm());
+	break;
+      default: uvm_info(get_full_name(),
+			format("Unsupported format %0s", instr_format), UVM_LOW);
+	break; 
+      }
+    }
+    else {
+      // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
+      // This is needed to resume execution from epc+4 after ebreak handling
+      if (instr_name == riscv_instr_name_t.C_EBREAK) {
+	asm_str = "c.ebreak; c.nop;";
+      }
+    }
+
+    if (asm_str.length > 0) {
+      assert (asm_buf.length == 0);
+      buf[0..asm_str.length] = asm_str;
+      asm_buf = buf[0..asm_str.length];
+    }
+
+    
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
+  }
+
   // Convert the instruction to assembly code
   override string convert2bin(string prefix = "") {
     string binary;

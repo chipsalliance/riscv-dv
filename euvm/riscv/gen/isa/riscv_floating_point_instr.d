@@ -136,6 +136,108 @@ class riscv_floating_point_instr: riscv_instr
     return asm_str.toLower();
   }
 
+  // Convert the instruction to assembly code
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+    import std.conv: to;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    // string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    
+    switch (instr_format) {
+    case riscv_instr_format_t.I_FORMAT:
+      if (category == riscv_instr_category_t.LOAD) {
+	asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, fd, get_imm(), rs1);
+      }
+      else if (instr_name.inside (riscv_instr_name_t.FMV_X_W,
+				  riscv_instr_name_t.FMV_X_D,
+				  riscv_instr_name_t.FCVT_W_S,
+				  riscv_instr_name_t.FCVT_WU_S,
+				  riscv_instr_name_t.FCVT_L_S,
+				  riscv_instr_name_t.FCVT_LU_S,
+				  riscv_instr_name_t.FCVT_L_D,
+				  riscv_instr_name_t.FCVT_LU_D,
+				  riscv_instr_name_t.FCVT_W_D,
+				  riscv_instr_name_t.FCVT_WU_D)) {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, fs1);
+      }
+      else if (instr_name.inside(riscv_instr_name_t.FMV_W_X,
+				 riscv_instr_name_t.FMV_D_X,
+				 riscv_instr_name_t.FCVT_S_W,
+				 riscv_instr_name_t.FCVT_S_WU,
+				 riscv_instr_name_t.FCVT_S_L,
+				 riscv_instr_name_t.FCVT_D_L,
+				 riscv_instr_name_t.FCVT_S_LU,
+				 riscv_instr_name_t.FCVT_D_W,
+				 riscv_instr_name_t.FCVT_D_LU,
+				 riscv_instr_name_t.FCVT_D_WU)) {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, fd, rs1);
+      }
+      else {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, fd, fs1);
+      }
+      break;
+    case riscv_instr_format_t.S_FORMAT:
+      asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, fs2, get_imm(), rs1);
+      break;
+    case riscv_instr_format_t.R_FORMAT:
+      if (category == riscv_instr_category_t.COMPARE) {
+	asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rd, fs1, fs2);
+      }
+      else if (instr_name.inside(riscv_instr_name_t.FCLASS_S, riscv_instr_name_t.FCLASS_D)) {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, fs1);
+      }
+      else {
+	asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, fd, fs1, fs2);
+      }
+      break;
+    case riscv_instr_format_t.R4_FORMAT:
+      asm_buf = sformat!("%0s%0s, %0s, %0s, %0s")(buf, instr_name_str, fd, fs1, fs2, fs3);
+      break;
+    case riscv_instr_format_t.CL_FORMAT:
+      asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, fd, get_imm(), rs1);
+      break;
+    case riscv_instr_format_t.CS_FORMAT:
+      asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, fs2, get_imm(), rs1);
+      break;
+    default:
+      uvm_fatal(get_full_name(), format("Unsupported floating point format: %0s", instr_format));
+    }
+    if ((category == riscv_instr_category_t.ARITHMETIC) && use_rounding_mode_from_instr &&
+        !(instr_name.inside(riscv_instr_name_t.FMIN_S, riscv_instr_name_t.FMAX_S,
+			    riscv_instr_name_t.FMIN_D, riscv_instr_name_t.FMAX_D,
+			    riscv_instr_name_t.FMV_W_X, riscv_instr_name_t.FMV_X_W,
+			    riscv_instr_name_t.FMV_D_X, riscv_instr_name_t.FMV_X_D,
+			    riscv_instr_name_t.FCLASS_S, riscv_instr_name_t.FCLASS_D,
+			    riscv_instr_name_t.FCVT_D_S, riscv_instr_name_t.FCVT_D_W,
+			    riscv_instr_name_t.FCVT_D_WU, riscv_instr_name_t.FSGNJ_S,
+			    riscv_instr_name_t.FSGNJN_S, riscv_instr_name_t.FSGNJX_S,
+			    riscv_instr_name_t.FSGNJ_D, riscv_instr_name_t.FSGNJN_D,
+			    riscv_instr_name_t.FSGNJX_D))) {
+      char[] rm_suffix = sformat!(", %s")(buf[asm_buf.length..$], rm);
+      asm_buf = buf[0..asm_buf.length+rm_suffix.length];
+    }
+
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
+  }
+
   override void do_copy(uvm_object rhs) {
     riscv_floating_point_instr rhs_;
     super.copy(rhs);

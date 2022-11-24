@@ -247,6 +247,89 @@ class riscv_instr: uvm_object
     return toLower(asm_str);
   }
 
+  // Convert the instruction to assembly code
+  char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    if (category != riscv_instr_category_t.SYSTEM) {
+      switch (instr_format) {
+      case riscv_instr_format_t.J_FORMAT, riscv_instr_format_t.U_FORMAT: // instr rd,imm
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, get_imm());
+	break;
+      case riscv_instr_format_t.I_FORMAT: // instr rd,rs1,imm
+	if (instr_name == riscv_instr_name_t.NOP)
+	  asm_str = "nop";
+	else if (instr_name == riscv_instr_name_t.WFI)
+	  asm_str = "wfi";
+	else if (instr_name == riscv_instr_name_t.FENCE)
+	  asm_str = "fence"; // format("fence"); // TODO: Support all fence combinations
+	else if (instr_name == riscv_instr_name_t.FENCE_I)
+	  asm_str = "fence.i";
+	else if (category == riscv_instr_category_t.LOAD) // Use psuedo instruction format
+	  asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf,  instr_name_str, rd, get_imm(), rs1);
+	else if (category == riscv_instr_category_t.CSR)
+	  asm_buf = sformat!("%0s%0s, 0x%0x, %0s")(buf, instr_name_str, rd, csr, get_imm());
+	else
+	  asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rd, rs1, get_imm());
+	break; 
+      case riscv_instr_format_t.S_FORMAT, riscv_instr_format_t.B_FORMAT: // instr rs1,rs2,imm
+	if (category == riscv_instr_category_t.STORE) // Use psuedo instruction format
+	  asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, rs2, get_imm(), rs1);
+	else
+	  asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rs1, rs2, get_imm());
+	break;  
+      case riscv_instr_format_t.R_FORMAT: // instr rd,rs1,rs2
+	if (category ==  riscv_instr_category_t.CSR) {
+	  asm_buf = sformat!("%0s%0s, 0x%0x, %0s")(buf, instr_name_str, rd, csr, rs1);
+	}
+	else if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
+	  asm_str = "sfence.vma x0, x0"; // TODO: Support all possible sfence
+	}
+	else {
+	  asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rd, rs1, rs2);
+	}
+	break; 
+      default: uvm_fatal(get_full_name(), format("Unsupported format %0s [%0s]",
+						   instr_format, instr_name));
+	break;
+      }
+    }
+    else {
+      // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
+      // This is needed to resume execution from epc+4 after ebreak handling
+      if (instr_name == riscv_instr_name_t.EBREAK) {
+	asm_str = ".4byte 0x00100073 # ebreak";
+      }
+    }
+
+    if (asm_str.length > 0) {
+      assert (asm_buf.length == 0);
+      buf[0..asm_str.length] = asm_str;
+      asm_buf = buf[0..asm_str.length];
+    }
+
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
+  }
+  
   ubvec!7 get_opcode() {
     switch (instr_name) {
     case riscv_instr_name_t.LUI:       return toubvec!7(0b0110111);
@@ -600,6 +683,14 @@ class riscv_instr: uvm_object
     return str_instr_name.replace( '_', '.');
   }
 
+  char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+
+    char[] str_instr_name = sformat!("%s")(buf, instr_name);
+    foreach(ref c; str_instr_name) if (c == '_') c = '.';
+    return str_instr_name;
+  }
+
   // // Get RVC register name for CIW, CL, CS, CB format
   ubvec!3  get_c_gpr(riscv_reg_t gpr) {
     ubvec!8 c_gpr = toubvec!8(gpr);
@@ -644,11 +735,15 @@ class riscv_instr: uvm_object
     }
   }
 
-  char[16] _imm_str_buff;
+  char[32] _imm_str_buf;
+
+  char[] imm_str_buf() {
+    return _imm_str_buf[];
+  }
 
   void update_imm_str() {
     imm_str = cast(string)
-      sformat!("%0d")(_imm_str_buff, cast(int) imm);
+      sformat!("%0d")(_imm_str_buf, cast(int) imm);
   }
 
   //`include "isa/riscv_instr_cov.svh"

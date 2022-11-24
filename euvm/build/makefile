@@ -12,7 +12,7 @@ MTRIPLE = -m64
 TARGET = RV64IMC
 CC = gcc
 DEBUG = NONE
-DFLAGS = $(MTRIPLE) -d-version=$(TARGET) -d-version=$(VERSION) -w -d-debug=$(DEBUG) -O3 -mcpu=native -release -boundscheck=off -flto=full # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto # --lowmem # -d-version=CHECK_COMPILE
+DFLAGS = $(MTRIPLE) -d-version=$(TARGET) -d-version=$(VERSION) -w -d-debug=$(DEBUG) -O3 -mcpu=native -release -boundscheck=off # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto # --lowmem # -d-version=CHECK_COMPILE
 DBGDFLAGS = $(MTRIPLE) -d-version=$(TARGET) -w -mcpu=native -d-debug=$(DEBUG) -g
 LDC2 = ldc2
 PICOBJDIR = picobj-ldc

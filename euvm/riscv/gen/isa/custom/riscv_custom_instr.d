@@ -48,6 +48,12 @@ class riscv_custom_instr: riscv_instr
     // TODO: Add custom instruction name encoding here
   }
 
+  override char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+    char[] str_instr_name = sformat!("%s")(buf, instr_name);
+    return str_instr_name;
+  }
+
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     string asm_str;
@@ -65,5 +71,33 @@ class riscv_custom_instr: riscv_instr
       asm_str ~= " #" ~ comment;
     }
     return asm_str.toLower();
+  }
+
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, "nop");
+
+    /* TODO: Convert custom instruction to assembly format. Example:
+       asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+       case (instr_name)
+       CUSTOM_1: asm_str = $sformatf("%0s %0s, (%0s)", asm_str, rd.name(), rs1.name());
+       CUSTOM_2: asm_str = $sformatf("%0s %0s", asm_str, r3.name());
+       endcase
+    */
+
+    asm_buf = sformat!("%s #%s %s")(buf, instr_name_str, get_instr_name(instr_buf), comment);
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
   }
 }

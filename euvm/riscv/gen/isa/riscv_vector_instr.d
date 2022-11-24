@@ -400,6 +400,25 @@ class riscv_vector_instr: riscv_floating_point_instr
     return name;
   }
 
+  override char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+    char[32] buf_;
+    char[] name = super.get_instr_name(buf_);
+    if (category.inside(riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE)) {
+      // Add eew before ".v" or "ff.v" suffix
+      if (instr_name.inside(riscv_instr_name_t.VLEFF_V, riscv_instr_name_t.VLSEGEFF_V)) {
+	name = name[0..name.length - 4];
+        name = sformat!("%0s%0dFF.V")(buf, name, eew);
+      }
+      else {
+        name = name[0..name.length - 2];
+        name = sformat!("%0s%0d.V")(buf, name, eew);
+      }
+      uvm_info(get_full_name(), format("%0s -> %0s", super.get_instr_name(), name), UVM_LOW);
+    }
+    return name;
+  }
+
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     import std.string: toLower;
@@ -589,6 +608,213 @@ class riscv_vector_instr: riscv_floating_point_instr
     return asm_str.toLower();
   }
 
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[64] instr_name_buf;
+    char[32] instr_buf;
+
+    char[64] nfields_buf;
+
+    string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+
+    switch (instr_format) {
+    case riscv_instr_format_t.VS2_FORMAT:
+      if (instr_name == riscv_instr_name_t.VID_V) {
+	asm_buf = sformat!("vid.v %s")(buf, vd);
+      }
+      else if (instr_name.inside(riscv_instr_name_t.VPOPC_M,
+				 riscv_instr_name_t.VFIRST_M)) {
+	asm_buf = sformat!("%0s %0s,%0s")(buf, get_instr_name(instr_buf), rd, vs2);
+      }
+      else {
+	asm_buf = sformat!("%0s %0s,%0s")(buf, get_instr_name(instr_buf), vd, vs2);
+      }
+      break;
+    case riscv_instr_format_t.VA_FORMAT:
+      if (instr_name == riscv_instr_name_t.VMV) {
+	switch (va_variant) {
+	case va_variant_t.VV:
+	  asm_buf = sformat!("vmv.v.v %s,%s")(buf, vd, vs1);
+	  break;
+	case va_variant_t.VX:
+	  asm_buf = sformat!("vmv.v.x %s,%s")(buf, vd, rs1);
+	  break;
+	case va_variant_t.VI:
+	  asm_buf = sformat!("vmv.v.i %s,%s")(buf, vd, imm_str);
+	  break;
+	default: uvm_info(get_full_name(), format("Unsupported va_variant %0s", va_variant), UVM_LOW);
+	}
+      }
+      else if (instr_name == riscv_instr_name_t.VFMV) {
+	asm_buf = sformat!("vfmv.v.f %s,%s")(buf, vd, fs1);
+      }
+      else if (instr_name == riscv_instr_name_t.VMV_X_S) {
+	asm_buf = sformat!("vmv.x.s %s,%s")(buf, rd, vs2);
+      }
+      else if (instr_name == riscv_instr_name_t.VMV_S_X) {
+	asm_buf = sformat!("vmv.s.x %s,%s")(buf, vd, rs1);
+      }
+      else if (instr_name == riscv_instr_name_t.VFMV_F_S) {
+	asm_buf = sformat!("vfmv.f.s %s,%s")(buf, fd, vs2);
+      }
+      else if (instr_name == riscv_instr_name_t.VFMV_S_F) {
+	asm_buf = sformat!("vfmv.s.f %s,%s")(buf, vd, fs1);
+      }
+      else {
+	if (!has_va_variant) {
+	  char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+	  asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, vs2, vs1);
+	}
+	else {
+	  char[64] instr_name_buf2;
+	  char[] instr_name_str2 = sformat!("%0s.%0s ")(instr_name_buf2, get_instr_name(instr_buf), va_variant);
+	  char[] instr_name_str = sformat!FMT(instr_name_buf, instr_name_str2);
+	  switch (va_variant) {
+	  case va_variant_t.WV, 
+	    va_variant_t.VV,
+	    va_variant_t.VVM,
+	    va_variant_t.VM:
+	    asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, vs2, vs1);
+	    break;
+	  case va_variant_t.WI,
+	    va_variant_t.VI,
+	    va_variant_t.VIM:
+	    asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, vs2, imm_str);
+	    break;
+	  case va_variant_t.VF,
+	    va_variant_t.VFM:
+	    if (instr_name.inside(riscv_instr_name_t.VFMADD,
+				  riscv_instr_name_t.VFNMADD,
+				  riscv_instr_name_t.VFMACC,
+				  riscv_instr_name_t.VFNMACC,
+				  riscv_instr_name_t.VFNMSUB,
+				  riscv_instr_name_t.VFWNMSAC,
+				  riscv_instr_name_t.VFWMACC,
+				  riscv_instr_name_t.VFMSUB,
+				  riscv_instr_name_t.VFMSAC,
+				  riscv_instr_name_t.VFNMSAC,
+				  riscv_instr_name_t.VFWNMACC,
+				  riscv_instr_name_t.VFWMSAC)) {
+	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, fs1, vs2);
+	    }
+	    else {
+	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, vs2, fs1);
+	    }
+	    break;
+	  case va_variant_t.WX,
+	    va_variant_t.VX,
+	    va_variant_t.VXM:
+	    if (instr_name.inside(riscv_instr_name_t.VMADD,
+				  riscv_instr_name_t.VNMSUB,
+				  riscv_instr_name_t.VMACC,
+				  riscv_instr_name_t.VNMSAC,
+				  riscv_instr_name_t.VWMACCSU,
+				  riscv_instr_name_t.VWMACCU,
+				  riscv_instr_name_t.VWMACCUS,
+				  riscv_instr_name_t.VWMACC)) {
+	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, rs1, vs2);
+	    }
+	    else {
+	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, vs2, rs1);
+	    }
+	    break;
+	  default: break;
+	  }
+	}
+      }
+      break;
+    case riscv_instr_format_t.VL_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %s,(%s)")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vlseg"),
+					  vd, rs1);
+      }
+      else {
+	asm_buf = sformat!("%0s %s,(%s)")(buf, get_instr_name(instr_buf), vd, rs1);
+      }
+      break;
+    case riscv_instr_format_t.VS_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %s,(%s)")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vsseg"),
+					  vs3, rs1);
+      }
+      else {
+	asm_buf = sformat!("%0s %s,(%s)")(buf, get_instr_name(instr_buf), vs3, rs1);
+      }
+      break;
+    case riscv_instr_format_t.VLS_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vlsseg"),
+						vd, rs1, rs2);
+      }
+      else {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, get_instr_name(instr_buf),
+						vd, rs1, rs2);
+      }
+      break;
+    case riscv_instr_format_t.VSS_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vssseg"),
+						vs3, rs1, rs2);
+      }
+      else {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, get_instr_name(instr_buf),
+						vs3, rs1, rs2);
+      }
+      break;
+    case riscv_instr_format_t.VLX_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vlxseg"),
+						vd, rs1, vs2);
+      }
+      else {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, get_instr_name(instr_buf),
+						vd, rs1, vs2);
+      }
+      break;
+    case riscv_instr_format_t.VSX_FORMAT:
+      if (sub_extension == "zvlsseg") {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, add_nfields(nfields_buf, get_instr_name(instr_buf), "vsxseg"),
+						vs3, rs1, vs2);
+      }
+      else {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s")(buf, get_instr_name(instr_buf),
+						vs3, rs1, vs2);
+      }
+      break;
+    case riscv_instr_format_t.VAMO_FORMAT:
+      if (wd) {
+	asm_buf = sformat!("%0s %0s,(%0s),%0s,%0s")(buf, get_instr_name(instr_buf), vd,
+						    rs1, vs2, vd);
+      }
+      else {
+	asm_buf = sformat!("%0s x0,(%0s),%0s,%0s")(buf, get_instr_name(instr_buf),
+						   rs1, vs2, vs3);
+      }
+      break;
+    default:
+      uvm_fatal(get_full_name(), format("Unsupported format %0s", instr_format));
+    }
+
+    // Add vector mask
+    string vm_str = vec_vm_str();
+    if (vm_str != "") {
+      buf[asm_buf.length..asm_buf.length+vm_str.length] = vm_str;
+      asm_buf = buf[0..asm_buf.length+vm_str.length];
+    }
+
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
+  }
+
+
   override void pre_randomize() {
     super.pre_randomize();
     rand_mode!q{vs1}(has_vs1);
@@ -665,6 +891,18 @@ class riscv_vector_instr: riscv_floating_point_instr
   string add_nfields(string instr_name, string prefix) {
     string suffix = instr_name[prefix.length..instr_name.length];
     return format("%0s%0d%0s", prefix, nfields + 1, suffix);
+  }
+
+  char[] add_nfields(char[] buf, string instr_name, string prefix) {
+    import std.format: sformat;
+    string suffix = instr_name[prefix.length..instr_name.length];
+    return sformat!("%0s%0d%0s")(buf, prefix, nfields + 1, suffix);
+  }
+
+  char[] add_nfields(char[] buf, char[] instr_name, string prefix) {
+    import std.format: sformat;
+    char[] suffix = instr_name[prefix.length..instr_name.length];
+    return sformat!("%0s%0d%0s")(buf, prefix, nfields + 1, suffix);
   }
 
   string add_eew(string instr_name, string prefix) {
