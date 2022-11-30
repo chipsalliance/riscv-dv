@@ -1810,6 +1810,8 @@ class riscv_asm_program_gen : uvm_object
       Fork[] forks;
       uint stream_length = 0;
       uint stream_idx = 0;
+      uvm_coreservice_t coreservice = uvm_coreservice_t.get();
+      uvm_factory factory = coreservice.get_factory();
       foreach (instr_stream_name, ratio; directed_instr_stream_ratio) {
 	uint  insert_cnt = original_instr_cnt * ratio / 1000;
 	if (insert_cnt <= min_insert_cnt) insert_cnt = min_insert_cnt;
@@ -1817,12 +1819,12 @@ class riscv_asm_program_gen : uvm_object
 	uvm_info(get_full_name(), format("Insert directed instr stream %0s %0d/%0d times",
 					 instr_stream_name, insert_cnt, original_instr_cnt), UVM_LOW);
 	// capture instr_stream_name, ratio, stream_idx and insert_cnt and fork
-	Fork new_fork = (string name, uint ratio, uint idx, uint cnt) {
+	Fork new_fork = (string name, uint idx, uint cnt) {
 	  return fork ({
-	      generate_directed_instr_stream_slice(hart, label, original_instr_cnt, kernel_mode,
-						   name, ratio, instr_stream, idx, cnt);
+	      generate_directed_instr_stream(hart, label, kernel_mode,
+					     name, instr_stream, idx, cnt);
 	    });
-	} (instr_stream_name, ratio, stream_idx, insert_cnt);
+	} (instr_stream_name, stream_idx, insert_cnt);
 	new_fork.set_thread_affinity(forks.length);
 	forks ~= new_fork;
 	stream_idx += insert_cnt;
@@ -1834,18 +1836,16 @@ class riscv_asm_program_gen : uvm_object
     }
   }
 
-  void generate_directed_instr_stream_slice(in int hart,
-					    in string label,
-					    in uint original_instr_cnt,
-					    in bool kernel_mode,
-					    in string instr_stream_name,
-					    in uint ratio,
-					    ref riscv_instr_stream[] instr_stream,
-					    in uint stream_idx,
-					    in uint insert_cnt) {
+  void generate_directed_instr_stream(in int hart,
+				      in string label,
+				      in bool kernel_mode,
+				      in string instr_stream_name,
+				      ref riscv_instr_stream[] instr_stream,
+				      in uint stream_idx,
+				      in uint insert_cnt) {
     uvm_coreservice_t coreservice = uvm_coreservice_t.get();
     uvm_factory factory = coreservice.get_factory();
-    for (uint i = stream_idx; i < stream_idx+insert_cnt; i++) {
+    for (uint i = 0; i < insert_cnt; i++) {
       string name = format("%0s_%0d", instr_stream_name, i);
       uvm_object object_h = factory.create_object_by_name(instr_stream_name, get_full_name(), name);
       if (object_h is null) {
@@ -1860,7 +1860,7 @@ class riscv_asm_program_gen : uvm_object
 	new_instr_stream.label = format("%0s_%0d", label, i);
 	new_instr_stream.kernel_mode = kernel_mode;
 	new_instr_stream.randomize();
-	instr_stream[i] = new_instr_stream;
+	instr_stream[stream_idx+i] = new_instr_stream;
       }
       else {
 	uvm_fatal(get_full_name(), format("Cannot cast instr stream %0s", name));
