@@ -290,11 +290,11 @@
       S_FORMAT, B_FORMAT: begin
         `DV_CHECK_FATAL(operands.size() == 3)
         if(category == STORE) begin
-          // store rs2, imm(rs1) -> rs1,rs2,imm
-          rs2 = get_gpr(operands[1]);
-          rs2_value = get_gpr_state(operands[1]);
-          rs1 = get_gpr(operands[0]);
-          rs1_value = get_gpr_state(operands[0]);
+          // store rs2, imm(rs1) -> rs2,rs1,imm
+          rs2 = get_gpr(operands[0]);
+          rs2_value = get_gpr_state(operands[0]);
+          rs1 = get_gpr(operands[1]);
+          rs1_value = get_gpr_state(operands[1]);
           get_val(operands[2], imm);
         end else begin
           // bne rs1, rs2, imm
