@@ -20,13 +20,13 @@ module riscv.gen.isa.riscv_floating_point_instr;
 import riscv.gen.riscv_instr_pkg: riscv_instr_group_t,
   riscv_instr_name_t, MAX_INSTR_STR_LEN, riscv_fpr_t,
   riscv_instr_format_t, riscv_instr_category_t,
-  f_rounding_mode_t;
+  f_rounding_mode_t, riscv_reg_t;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.string: toUpper, toLower;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.rand: rand;
+import esdl.rand: rand, constraint;
 import esdl.data.bvec: ubvec;
 import uvm;
 
@@ -51,6 +51,23 @@ class riscv_floating_point_instr: riscv_instr
     super(name);
   }
 
+  constraint! q{
+    if (instr_format inside [riscv_instr_format_t.CL_FORMAT,
+			     riscv_instr_format_t.CS_FORMAT,
+			     riscv_instr_format_t.CI_FORMAT,
+			     riscv_instr_format_t.CSS_FORMAT]) {
+      if (has_rs1) {
+        rs1 inside [riscv_reg_t.S0:riscv_reg_t.A5];
+      }
+      if (has_fs2) {
+        fs2 inside [riscv_fpr_t.FS0:riscv_fpr_t.FS1];
+      }
+      if (has_fd) {
+        fd inside [riscv_fpr_t.FA0:riscv_fpr_t.FA5];
+      }
+    }
+  } rvfc_csr_c;
+ 
 
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
@@ -113,6 +130,12 @@ class riscv_floating_point_instr: riscv_instr
       break;
     case riscv_instr_format_t.CS_FORMAT:
       asm_str = format("%0s%0s, %0s(%0s)", asm_str, fs2, get_imm(), rs1);
+      break;
+    case riscv_instr_format_t.CSS_FORMAT:
+      asm_str = format("%0s%0s, %0s(sp)", asm_str, fs2, get_imm());
+      break;
+    case riscv_instr_format_t.CI_FORMAT:
+      asm_str = format("%0s%0s, %0s", asm_str, fd, get_imm());
       break;
     default:
       uvm_fatal(get_full_name(), format("Unsupported floating point format: %0s", instr_format));
@@ -238,7 +261,17 @@ class riscv_floating_point_instr: riscv_instr
     return asm_buf;
   }
 
-  override void do_copy(uvm_object rhs) {
+  override void set_imm_len() {
+    import esdl.data.bvec: toubvec;
+    if (instr_format == riscv_instr_format_t.CL_FORMAT ||
+	instr_format == riscv_instr_format_t.CS_FORMAT)
+      imm_len = toubvec!5(5);
+    if (instr_format == riscv_instr_format_t.CI_FORMAT ||
+	instr_format == riscv_instr_format_t.CSS_FORMAT)
+      imm_len = toubvec!5(6);
+  }
+
+ override void do_copy(uvm_object rhs) {
     riscv_floating_point_instr rhs_;
     super.copy(rhs);
     rhs_ = cast(riscv_floating_point_instr) rhs;
@@ -328,6 +361,14 @@ class riscv_floating_point_instr: riscv_instr
       has_rs1 = true;
       has_fs1 = false;
       has_fd = false;
+      break;
+    case riscv_instr_format_t.CSS_FORMAT:
+      has_rs1 = false;
+      has_fd = false;
+      break;
+    case riscv_instr_format_t.CI_FORMAT:
+      has_rs1 = false;
+      has_fs2 = false;
       break;
     default: uvm_info(get_full_name() , format("Unsupported format %0s", instr_format), UVM_LOW);
     }
