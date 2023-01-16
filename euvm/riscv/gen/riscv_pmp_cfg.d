@@ -19,9 +19,9 @@ module riscv.gen.riscv_pmp_cfg;
 
 import riscv.gen.riscv_instr_pkg: pmp_cfg_reg_t, pmp_addr_mode_t,
   privileged_reg_t, riscv_reg_t, exception_cause_t, get_int_arg_value,
-  get_bool_arg_value, get_hex_arg_value;
+  get_bool_arg_value, get_hex_arg_value, mseccfg_reg_t;
 
-import riscv.gen.target: XLEN;
+import riscv.gen.target: XLEN, support_epmp;
 import std.format: format;
 
 import esdl.data.bvec: ubvec, toubvec, tobvec, clog2;
@@ -59,6 +59,10 @@ class riscv_pmp_cfg: uvm_object {
   // Setting this bit to 1'b1 enables generation of the directed stream of instructions to test
   // write accesses to all supported pmpaddr[i] CSRs.
   bool enable_write_pmp_csr;
+
+  // ePMP machine security configuration - RLB, MMWP, MML
+  @UVM_DEFAULT
+  @rand mseccfg_reg_t mseccfg = mseccfg_reg_t(true, false, false);
 
   // pmp CSR configurations
   @rand pmp_cfg_reg_t[]  pmp_cfg;
@@ -171,6 +175,9 @@ class riscv_pmp_cfg: uvm_object {
 
   void set_defaults() {
     uvm_info(get_full_name(), format("MAX OFFSET: 0x%0x", pmp_max_offset), UVM_LOW);
+    mseccfg.mml  = false;
+    mseccfg.mmwp = false;
+    mseccfg.rlb  = true;
     foreach (i, cfg; pmp_cfg) {
       cfg.l      = false;
       cfg.a      = pmp_addr_mode_t.TOR;
@@ -196,18 +203,52 @@ class riscv_pmp_cfg: uvm_object {
 
   void setup_pmp() {
     string arg_name;
-    string pmp_region;
+    string arg_value;
+    if (uvm_cmdline_processor.get_inst().get_arg_value("+mseccfg=", arg_value)) {
+      mseccfg = parse_mseccfg(arg_value, mseccfg);
+    }
     foreach (i, ref cfg; pmp_cfg) {
       arg_name = format("+pmp_region_%0d=", i);
-      if (uvm_cmdline_processor.get_inst().get_arg_value(arg_name, pmp_region)) {
-        cfg = parse_pmp_config(pmp_region, cfg);
+      if (uvm_cmdline_processor.get_inst().get_arg_value(arg_name, arg_value)) {
+        cfg = parse_pmp_config(arg_value, cfg);
         uvm_info(get_full_name(), format("Configured pmp_cfg[%0d] from command line: %p",
 					 i , cfg), UVM_LOW);
       }
     }
   }
 
-  pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
+  mseccfg_reg_t parse_mseccfg(string mseccfg, mseccfg_reg_t ref_mseccfg) {
+    import std.format: format;
+    import std.conv: to;
+
+    string field_type;
+    string field_val;
+    mseccfg_reg_t mseccfg_reg = ref_mseccfg;
+    string[] fields = uvm_string_split(mseccfg, ',');
+    foreach (field; fields) {
+      string[] field_vals = uvm_string_split(field, ':');
+      field_type = field_vals[0];
+      field_val = field_vals[1];
+      switch (field_type) {
+      case "MML":
+	mseccfg_reg.mml = field_val.to!(bool);
+	break;
+      case "MMWP":
+	mseccfg_reg.mmwp = field_val.to!(bool);
+	break;
+      case "RLB":
+	mseccfg_reg.rlb = field_val.to!(bool);
+	break;
+      default: {
+	uvm_fatal(get_full_name(), format("%s, Invalid MSECCFG field name!", field_val));
+      }
+      }
+    }
+    return mseccfg_reg;
+  }
+
+
+pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
     string [] fields;
     string [] field_vals;
     string field_type;
@@ -300,10 +341,25 @@ class riscv_pmp_cfg: uvm_object {
   // CSR, this function waits until it has reached this maximum to write to the physical CSR to
   // save some extraneous instructions from being performed.
   void gen_pmp_instr(riscv_reg_t[2] scratch_reg, ref string[] instr) {
+    import std.format: format;
+    
     ubvec!XLEN   pmp_word;
     ubvec!XLEN   cfg_bitmask;
     ubvec!8       cfg_byte;
     int pmp_id;
+
+    if (support_epmp) {
+      uvm_info(get_full_name(), format("MSECCFG: MML %0x, MMWP %0x, RLB %0x", mseccfg.mml,
+				       mseccfg.mmwp, mseccfg.rlb), UVM_LOW);
+
+      // cfg_byte = {mseccfg.rlb, mseccfg.mmwp, mseccfg.mml};
+      cfg_byte[0] = mseccfg.mml;
+      cfg_byte[1] = mseccfg.mmwp;
+      cfg_byte[2] = mseccfg.rlb;
+
+      instr ~= format("csrwi 0x%0x, %0d", privileged_reg_t.MSECCFG, cfg_byte);
+    }
+
     foreach (i, ref cfg; pmp_cfg) {
 
       // TODO(udinator) condense this calculations if possible

@@ -59,6 +59,7 @@ GEN_FILES = riscv/gen/package.d riscv/gen/riscv_amo_instr_lib.d		\
 	    riscv/gen/target/rv64gc/riscv_core_setting.d		\
 	    riscv/gen/target/rv64imcb/riscv_core_setting.d		\
 	    riscv/gen/target/rv32imafdc/riscv_core_setting.d		\
+	    riscv/gen/target/rv64imafdc/riscv_core_setting.d		\
 	    riscv/gen/target/ml/riscv_core_setting.d			\
 	    riscv/gen/target/multi_harts/riscv_core_setting.d		\
 	    riscv/gen/target/rv32imc_sv32/riscv_core_setting.d		\

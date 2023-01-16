@@ -1215,6 +1215,15 @@ enum hazard_e: ubyte {
 
 // `include "riscv_core_setting.sv"
 
+// ePMP machine security configuration
+struct mseccfg_reg_t {
+  @UVM_DEFAULT {
+    @rand bool rlb;
+    @rand bool mmwp;
+    @rand bool mml;
+  }
+}
+
 // PMP address matching mode
 enum pmp_addr_mode_t: ubyte {
   OFF   = 0b00,

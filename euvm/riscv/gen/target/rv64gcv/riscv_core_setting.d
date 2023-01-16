@@ -63,6 +63,9 @@ enum int max_interrupt_vector_num = 16;
 // Physical memory protection support
 enum bool support_pmp = false;
 
+// Enhanced physical memory protection support
+enum bool support_epmp = false;
+
 // Debug mode support
 enum bool support_debug_mode = false;
 
