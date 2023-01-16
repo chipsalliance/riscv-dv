@@ -751,10 +751,6 @@ class riscv_instr_gen_config: uvm_object
     min_stack_len_per_program = 2 * (XLEN/8);
     // Check if the setting is legal
     check_setting();
-    // WFI is not supported in umode
-    if (init_privileged_mode == privileged_mode_t.USER_MODE) {
-      no_wfi = true;
-    }
     instr_registry.create_instr_list(this);
   }
 
