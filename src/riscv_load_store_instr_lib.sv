@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,19 +120,37 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
 
   // Generate each load/store instruction
   virtual function void gen_load_store_instr();
-    bit enable_compressed_load_store;
+    bit enable_compressed_load_store, enable_zcb;
     riscv_instr instr;
     randomize_avail_regs();
     if ((rs1_reg inside {[S0 : A5], SP}) && !cfg.disable_compressed_instr) begin
       enable_compressed_load_store = 1;
     end
+    if ((RV32C inside {riscv_instr_pkg::supported_isa}) &&
+        (RV32ZCB inside {riscv_instr_pkg::supported_isa} && cfg.enable_zcb_extension)) begin
+      enable_zcb = 1;
+    end
     foreach (addr[i]) begin
       // Assign the allowed load/store instructions based on address alignment
       // This is done separately rather than a constraint to improve the randomization performance
       allowed_instr = {LB, LBU, SB};
+      if((offset[i] inside {[0:2]}) && enable_compressed_load_store &&
+        enable_zcb && rs1_reg != SP) begin
+        `uvm_info(`gfn, "Add ZCB byte load/store to allowed instr", UVM_LOW)
+        allowed_instr = {C_LBU, C_SB};
+      end
       if (!cfg.enable_unaligned_load_store) begin
         if (addr[i][0] == 1'b0) begin
           allowed_instr = {LH, LHU, SH, allowed_instr};
+          if (RV32ZFH inside {riscv_instr_pkg::supported_isa} &&
+            cfg.enable_floating_point && cfg.enable_zfh_extension) begin
+            allowed_instr = {FLH, allowed_instr};
+          end
+          if(((offset[i] == 0) || (offset[i] == 2)) && enable_compressed_load_store &&
+            enable_zcb && rs1_reg != SP) begin
+            `uvm_info(`gfn, "Add ZCB half-word load/store to allowed instr", UVM_LOW)
+            allowed_instr = {C_LHU, C_LH, C_SH};
+          end
         end
         if (addr[i] % 4 == 0) begin
           allowed_instr = {LW, SW, allowed_instr};
@@ -201,6 +220,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
       randomize_gpr(instr);
       instr.rs1 = rs1_reg;
       instr.imm_str = $sformatf("%0d", $signed(offset[i]));
+      instr.imm = bit'(offset[i]); // Needed for instructions that don't have gcc support
       instr.process_load_store = 0;
       instr_list.push_back(instr);
       load_store_instr.push_back(instr);

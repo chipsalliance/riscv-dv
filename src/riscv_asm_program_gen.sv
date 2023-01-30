@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -457,8 +458,10 @@ class riscv_asm_program_gen extends uvm_object;
         RV32D, RV64D, RV32DC : misa[MISA_EXT_D] = 1'b1;
         RVV                  : misa[MISA_EXT_V] = 1'b1;
         RV32X, RV64X         : misa[MISA_EXT_X] = 1'b1;
-        RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
-        RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS : ; // No Misa bit for Zb* extensions
+        RV32ZBA, RV32ZBB, RV32ZBKB, RV32ZBC, RV32ZBS,
+        RV64ZBA, RV64ZBB, RV64ZBKB, RV64ZBC, RV64ZBS : ; // No Misa bit for Zb* extensions
+        RV32ZCB, RV64ZCB : ;
+        RV32ZFH, RV64ZFH : ;
         default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported",
                                    supported_isa[i].name()))
       endcase
@@ -605,10 +608,20 @@ class riscv_asm_program_gen extends uvm_object;
       randcase
         1: init_floating_point_gpr_with_spf(i);
         RV64D inside {supported_isa}: init_floating_point_gpr_with_dpf(i);
+        RV64ZFH inside {supported_isa}: init_floating_point_gpr_with_hpf(i);
       endcase
     end
     // Initialize rounding mode of FCSR
     str = $sformatf("%0sfsrmi %0d", indent, cfg.fcsr_rm);
+    instr_stream.push_back(str);
+  endfunction
+
+  virtual function void init_floating_point_gpr_with_hpf(int int_floating_gpr);
+    string str;
+    bit [15:0] imm = get_rand_hpf_value();
+    str = $sformatf("%0sli x%0d, %0d", indent, cfg.gpr[0], imm);
+    instr_stream.push_back(str);
+    str = $sformatf("%0sfmv.h.x f%0d, x%0d", indent, int_floating_gpr, cfg.gpr[0]);
     instr_stream.push_back(str);
   endfunction
 
@@ -642,6 +655,33 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(str);
     str = $sformatf("%0sfmv.d.x f%0d, x%0d", indent, int_floating_gpr, int_gpr2);
     instr_stream.push_back(str);
+  endfunction
+
+  // get a random half precision floating value
+  virtual function bit [XLEN-1:0] get_rand_hpf_value();
+    bit [15:0] value;
+
+    randcase
+      // infinity
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7c00, 16'hfc00};)
+      // largest
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7bff, 16'hfbff};)
+      // zero
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h0000, 32'h8000};)
+      // NaN
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7c01, 32'h7e00};)
+      // normal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[14:HALF_PRECISION_FRACTION_BITS] > 0;)
+      // subnormal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[14:HALF_PRECISION_FRACTION_BITS] == 0;)
+    endcase
+    return value;
   endfunction
 
   // get a random single precision floating value

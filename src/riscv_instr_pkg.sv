@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +34,7 @@ package riscv_instr_pkg;
   typedef struct {
     string         name;
     int unsigned   size_in_bytes;
-    bit [2:0]      xwr; // Excutable,Writable,Readale
+    bit [2:0]      xwr; // Executable,Writable,Readable
   } mem_region_t;
 
   // Initialization of the vregs
@@ -80,7 +81,7 @@ package riscv_instr_pkg;
     MACHINE_MODE    = 2'b11
   } privileged_mode_t;
 
-  typedef enum bit [4:0] {
+  typedef enum bit [5:0] {
     RV32I,
     RV64I,
     RV32M,
@@ -93,6 +94,8 @@ package riscv_instr_pkg;
     RV32D,
     RV32DC,
     RV64D,
+    RV32Q,
+    RV64Q,
     RV32C,
     RV64C,
     RV128I,
@@ -103,11 +106,26 @@ package riscv_instr_pkg;
     RV32ZBB,
     RV32ZBC,
     RV32ZBS,
+    RV32ZBKB,
+    RV32ZBKX,
     RV64B,
     RV64ZBA,
     RV64ZBB,
     RV64ZBC,
     RV64ZBS,
+    RV64ZBKB,
+    RV64ZBKX,
+    RV32ZCB,
+    RV64ZCB, 
+    RV32ZCMP,    
+    RV32ZCMT,   
+    RV32ZISSLPCFI,
+    RV32ZMMUL,
+    RV64ZMMUL,
+    RV32ZFH, 
+    RV64ZFH,
+    RV32ZFA, 
+    RV64ZFA,
     RV32X,
     RV64X
   } riscv_instr_group_t;
@@ -198,15 +216,29 @@ package riscv_instr_pkg;
     BINVI,
     BSET,
     BSETI,
+    // RV32ZBKB (subset)
+    // These are the instructions which differ between zbb and zbkb this means
+    // that zbkb = zkbb_subset + zbb
+    // Some of the instruction which were previously defined in the 
+    // B extension has been moved here since they are ratified in the crypto
+    // standard.
+    PACK,
+    PACKH,
+    BREV8,
+    ZIP, 
+    UNZIP,
+    // RV64ZBKB (subset)
+    PACKW,
+    //RV32ZBKX
+    XPERM8,
+    XPERM4,
     // RV32B instructions
     // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
     GORC,
     GORCI,
     CMIX,
     CMOV,
-    PACK,
-    PACKU,
-    PACKH,
+    PACKU, 
     XPERM_N,
     XPERM_B,
     XPERM_H,
@@ -268,9 +300,44 @@ package riscv_instr_pkg;
     FSRIW,
     GORCW,
     GORCIW,
-    PACKW,
-    PACKUW,
+    PACKUW, 
     XPERM_W,
+    // RV32ZCB
+    C_LBU,
+    C_LHU,
+    C_LH,
+    C_SB,
+    C_SH,
+    C_ZEXT_B,
+    C_SEXT_B,
+    C_ZEXT_H,
+    C_SEXT_H,
+    C_NOT,
+    C_MUL,
+    // RV64ZCB instructions
+    C_ZEXT_W,
+    // RV32ZCMP instruction
+    CM_PUSH,
+    CM_POP,
+    CM_POPRET,
+    CM_POPRETZ,
+    CM_MVA01S,
+    CM_MVSA01,
+    // RV32ZCMT instructions
+    CM_JT,
+    CM_JALT,
+    // RV32ZISSLPCFI instructions
+    SSPUSH,
+    SSPOP,
+    SSPRR,
+    SSAMOSWAP,
+    SSCHKRA,
+    LPSLL,
+    LPCLL,
+    LPSML,
+    LPCML,
+    LPSUL,
+    LPCUL,
     // RV32M instructions
     MUL,
     MULH,
@@ -318,6 +385,79 @@ package riscv_instr_pkg;
     FCVT_LU_S,
     FCVT_S_L,
     FCVT_S_LU,
+    // RV32ZFH instructions
+    FLH,
+    FSH,
+    FMADD_H,
+    FMSUB_H,
+    FNMSUB_H,
+    FNMADD_H,
+    FADD_H,
+    FSUB_H,
+    FMUL_H,
+    FDIV_H,
+    FSQRT_H,
+    FSGNJ_H,
+    FSGNJN_H,
+    FSGNJX_H,
+    FMIN_H,
+    FMAX_H,
+    FCVT_S_H,
+    FCVT_H_S,
+    FCVT_D_H,
+    FCVT_H_D,
+    FCVT_Q_H,
+    FCVT_H_Q,
+    FEQ_H,
+    FLT_H,
+    FLE_H,
+    FCLASS_H,
+    FCVT_W_H,
+    FCVT_WU_H,
+    FMV_X_H,
+    FCVT_H_W,
+    FCVT_H_WU,
+    FMV_H_X,
+    // RV64ZFH instructions
+    FCVT_L_H,
+    FCVT_LU_H,
+    FCVT_H_L,
+    FCVT_H_LU,
+    // RV32ZFA instructions
+    FLI_H,
+    FLI_S,
+    FLI_D,
+    FLI_Q,
+    FMINM_H,
+    FMAXM_H,
+    FMINM_S,
+    FMAXM_S,
+    FMINM_D,
+    FMAXM_D,
+    FMINM_Q,
+    FMAXM_Q,
+    FROUND_H,
+    FROUNDNX_H,
+    FROUND_S,
+    FROUNDNX_S,
+    FROUND_D,
+    FROUNDNX_D,
+    FROUND_Q,
+    FROUNDNX_Q,
+    FCVTMOD_W_D,
+    FMVH_X_D,
+    FMVP_D_X,
+    FLEQ_H,
+    FLTQ_H,
+    FLEQ_S,
+    FLTQ_S,
+    FLEQ_D,
+    FLTQ_D,
+    FLEQ_Q,
+    FLTQ_Q,
+    // RV64ZFA
+    FMVH_X_Q,
+    FMVP_Q_X,
     // RV32D instructions
     FLD,
     FSD,
@@ -656,6 +796,8 @@ package riscv_instr_pkg;
   // Maximum virtual address bits used by the program
   parameter int MAX_USED_VADDR_BITS = 30;
 
+
+  parameter int HALF_PRECISION_FRACTION_BITS = 10;
   parameter int SINGLE_PRECISION_FRACTION_BITS = 23;
   parameter int DOUBLE_PRECISION_FRACTION_BITS = 52;
 
@@ -693,6 +835,15 @@ package riscv_instr_pkg;
     CS_FORMAT,
     CSS_FORMAT,
     CIW_FORMAT,
+    // Zc compressed instruction format
+    CLB_FORMAT,
+    CSB_FORMAT,
+    CLH_FORMAT,
+    CSH_FORMAT,
+    CSZN_FORMAT,
+    CMMV_FORMAT,
+    CMJT_FORMAT,
+    CMPP_FORMAT,
     // Vector instruction format
     VSET_FORMAT,
     VA_FORMAT,
@@ -1380,7 +1531,7 @@ package riscv_instr_pkg;
     string store_instr = (XLEN == 32) ? "sw" : "sd";
     if (scratch inside {implemented_csr}) begin
       // Push USP from gpr.SP onto the kernel stack
-      instr.push_back($sformatf("addi x%0d, x%0d, -4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, %d", tp, tp, -XLEN/8));
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", store_instr, sp, tp));
       // Move KSP to gpr.SP
       instr.push_back($sformatf("add x%0d, x%0d, zero", sp, tp));
@@ -1435,7 +1586,7 @@ package riscv_instr_pkg;
       instr.push_back($sformatf("add x%0d, x%0d, zero", tp, sp));
       // Pop USP from the kernel stack, move back to gpr.SP
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", load_instr, sp, tp));
-      instr.push_back($sformatf("addi x%0d, x%0d, 4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, %d", tp, tp, XLEN/8));
     end
   endfunction
 
@@ -1532,6 +1683,8 @@ package riscv_instr_pkg;
   typedef class riscv_zbb_instr;
   typedef class riscv_zbc_instr;
   typedef class riscv_zbs_instr;
+  typedef class riscv_zbkb_instr;
+  typedef class riscv_zcb_instr;
   typedef class riscv_b_instr;
   `include "riscv_instr_gen_config.sv"
   `include "isa/riscv_instr.sv"
@@ -1557,6 +1710,16 @@ package riscv_instr_pkg;
   `include "isa/rv32zbb_instr.sv"
   `include "isa/rv32zbc_instr.sv"
   `include "isa/rv32zbs_instr.sv"
+  // new additions
+  `include "isa/rv32zbkb_instr.sv"
+  `include "isa/rv64zbkb_instr.sv"
+  `include "isa/riscv_zbkb_instr.sv"
+  `include "isa/riscv_zcb_instr.sv"
+  `include "isa/rv32zcb_instr.sv"
+  `include "isa/rv64zcb_instr.sv"
+  `include "isa/rv32zfh_instr.sv"
+  `include "isa/rv64zfh_instr.sv"
+
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"
   `include "isa/rv64b_instr.sv"

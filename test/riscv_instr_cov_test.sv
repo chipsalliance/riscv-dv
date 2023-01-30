@@ -134,7 +134,9 @@ class riscv_instr_cov_test extends uvm_test;
         if ((instr.group inside {RV32I, RV32M, RV32C, RV64I, RV64M, RV64C,
                                  RV32F, RV64F, RV32D, RV64D, RV32B, RV64B,
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
-                                 RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS}) &&
+                                 RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
+                                 RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH,
+                                 RV32ZBKB, RV64ZBKB}) &&
             (instr.group inside {supported_isa})) begin
           assign_trace_info_to_instr(instr);
           instr.pre_sample();
@@ -195,6 +197,9 @@ class riscv_instr_cov_test extends uvm_test;
       "FMV_S":  instr_name = "FSGNJ_S";
       "FABS_S": instr_name = "FSGNJX_S";
       "FNEG_S": instr_name = "FSGNJN_S";
+      "FMV_H":  instr_name = "FSGNJ_H";
+      "FABS_H": instr_name = "FSGNJX_H";
+      "FNEG_H": instr_name = "FSGNJN_H";
       "FMV_D":  instr_name = "FSGNJ_D";
       "FABS_D": instr_name = "FSGNJX_D";
       "FNEG_D": instr_name = "FSGNJN_D";

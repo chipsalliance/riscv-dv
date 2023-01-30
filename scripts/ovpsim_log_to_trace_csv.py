@@ -51,9 +51,9 @@ def is_csr(r):
     """ see if r is a csr """
     if len(r) > 4:
         return True
-    elif r[0] in ["m", "u", "d"]:
+    elif r[0] in ["m", "u", "d", "h"]:
         return True
-    elif r in ["frm", "fcsr", "vl", "satp"]:
+    elif r in ["frm", "fcsr", "vl", "satp", "time", "sie", "sepc", "sip", "vsie", "vsip"]:
         return True
     else:
         return False

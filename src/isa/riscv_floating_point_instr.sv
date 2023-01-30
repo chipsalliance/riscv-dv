@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Google LLC
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,11 +54,14 @@ class riscv_floating_point_instr extends riscv_instr;
           asm_str = $sformatf("%0s%0s, %0s(%0s)", asm_str, fd.name(), get_imm(), rs1.name());
         end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
                                         FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D,
-                                        FCVT_W_D, FCVT_WU_D}) begin
+                                        FCVT_W_D, FCVT_WU_D,  FMV_X_H, FCVT_W_H,
+                                        FCVT_WU_H, FCVT_L_H, FCVT_LU_H}) begin
+
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), fs1.name());
         end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
                                         FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
-                                        FCVT_D_LU, FCVT_D_WU}) begin
+                                        FCVT_D_LU, FCVT_D_WU, FCVT_H_WU, FCVT_H_W,
+                                        FMV_H_X, FCVT_H_L, FCVT_H_LU}) begin 
           asm_str = $sformatf("%0s%0s, %0s", asm_str, fd.name(), rs1.name());
         end else begin
           asm_str = $sformatf("%0s%0s, %0s", asm_str, fd.name(), fs1.name());
@@ -67,7 +71,7 @@ class riscv_floating_point_instr extends riscv_instr;
       R_FORMAT:
         if (category == COMPARE) begin
           asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), fs1.name(), fs2.name());
-        end else if (instr_name inside {FCLASS_S, FCLASS_D}) begin
+        end else if (instr_name inside {FCLASS_H, FCLASS_S, FCLASS_D}) begin
           asm_str = $sformatf("%0s%0s, %0s", asm_str, rd.name(), fs1.name());
         end else begin
           asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, fd.name(), fs1.name(), fs2.name());
@@ -88,9 +92,11 @@ class riscv_floating_point_instr extends riscv_instr;
     endcase
     if ((category == ARITHMETIC) && use_rounding_mode_from_instr &&
         !(instr_name inside {FMIN_S, FMAX_S, FMIN_D, FMAX_D, FMV_W_X, FMV_X_W,
-                             FMV_D_X, FMV_X_D, FCLASS_S, FCLASS_D,
-                             FCVT_D_S, FCVT_D_W, FCVT_D_WU,
-                             FSGNJ_S, FSGNJN_S, FSGNJX_S, FSGNJ_D, FSGNJN_D, FSGNJX_D})) begin
+                             FMV_D_X, FMV_X_D, FCLASS_H, FCLASS_S, FCLASS_D,
+                             FCVT_D_S, FCVT_D_W, FCVT_D_WU, FSGNJ_S, FSGNJN_S,
+                             FCVT_S_H, FCVT_D_H, FCVT_Q_H, FMV_X_H, FSGNJX_S,
+                             FSGNJ_D, FSGNJN_D, FSGNJX_D, FSGNJ_H, FSGNJN_H,
+                             FSGNJX_H, FMIN_H, FMAX_H, FCLASS_H, FMV_H_X })) begin
       asm_str = {asm_str, ", ", rm.name()};
     end
     if(comment != "")
@@ -131,12 +137,14 @@ class riscv_floating_point_instr extends riscv_instr;
           has_imm = 1'b1;
         end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
                                         FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D, FCVT_LU_S,
-                                        FCVT_W_D, FCVT_WU_D}) begin
+                                        FCVT_W_D, FCVT_WU_D, FCVT_W_H, FCVT_WU_H, FMV_X_H,
+                                        FCVT_L_H, FCVT_LU_H, FCVT_H_L, FCVT_H_LU }) begin
           has_fd = 1'b0;
           has_rd = 1'b1;
         end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
                                         FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
-                                        FCVT_D_LU, FCVT_D_WU}) begin
+                                        FCVT_D_LU, FCVT_D_WU, FCVT_H_W,
+                                        FCVT_H_WU, FMV_H_X }) begin
           has_rs1 = 1'b1;
           has_fs1 = 1'b0;
         end
@@ -151,7 +159,7 @@ class riscv_floating_point_instr extends riscv_instr;
         if (category == COMPARE) begin
           has_rd = 1'b1;
           has_fd = 1'b0;
-        end else if (instr_name inside {FCLASS_S, FCLASS_D}) begin
+        end else if (instr_name inside {FCLASS_H, FCLASS_S, FCLASS_D}) begin
           has_rd = 1'b1;
           has_fd = 1'b0;
           has_fs2 = 1'b0;
@@ -222,8 +230,9 @@ class riscv_floating_point_instr extends riscv_instr;
       R_FORMAT: begin
         // convert Pseudoinstructions for ovpsim
         // fmv.s rd, rs -> fsgnj.s rd, rs, rs
-        if (operands.size() == 2 && instr_name inside {FSGNJ_S, FSGNJX_S, FSGNJN_S, FSGNJ_D,
-                                                       FSGNJX_D, FSGNJN_D}) begin
+        if (operands.size() == 2 && instr_name inside {FSGNJ_H, FSGNJX_H, FSGNJN_H,
+                                                       FSGNJ_S, FSGNJX_S, FSGNJN_S,
+                                                       FSGNJ_D, FSGNJX_D, FSGNJN_D}) begin
           operands.push_back(operands[$]);
         end
 
@@ -282,6 +291,25 @@ class riscv_floating_point_instr extends riscv_instr;
       fs2_sign = get_fp_operand_sign(fs2_value, 31);
       fs3_sign = get_fp_operand_sign(fs3_value, 31);
       fd_sign = get_fp_operand_sign(fd_value, 31);
+    // zfh introduces many new convert functions
+    end else if (instr_name == FCVT_S_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fd_sign = get_fp_operand_sign(fd_value, 31);
+    end else if (instr_name == FCVT_H_S) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 31);
+      fd_sign = get_fp_operand_sign(fd_value, 15);
+    end else if (instr_name == FCVT_D_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fd_sign = get_fp_operand_sign(fd_value, 63);
+    end else if (instr_name == FCVT_H_D) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 63);
+      fd_sign = get_fp_operand_sign(fd_value, 15);
+    end else if (instr_name == FCVT_Q_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fd_sign = get_fp_operand_sign(fd_value, 127);
+    end else if (instr_name == FCVT_H_Q) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 127);
+      fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FCVT_S_D) begin
       fs1_sign = get_fp_operand_sign(fs1_value, 63);
       fd_sign = get_fp_operand_sign(fd_value, 31);
