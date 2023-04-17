@@ -662,7 +662,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
                     prefix = ("{}/asm_test/{}_{}".format(
                         output_dir, test['test'], i))
                     elf = prefix + ".o"
-                    log = ("{}/{}.{}.log".format(log_dir, test['test'], i))
+                    log = ("{}/{}_{}.log".format(log_dir, test['test'], i))
                     cmd = get_iss_cmd(base_cmd, elf, log)
                     if 'iss_opts' in test:
                         cmd += ' '
