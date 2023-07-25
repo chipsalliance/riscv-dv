@@ -336,35 +336,70 @@ class riscv_rand_instr_stream: riscv_instr_stream
   void randomize_gpr(riscv_instr instr) {
     assert (cfg !is null);
     instr.m_cfg = cfg;
-    instr.randomize_with! q{
-      if ($0.length > 0) {
-        if (has_rs1) {
+
+    if (avail_regs.length > 0) {
+      instr.randomize_with! q{
+	if (has_rs1) {
 	  rs1 inside [$0];
 	}
-        if (has_rs2) {
-          rs2 inside [$0];
-        }
-        if (has_rd) {
-          rd  inside [$0];
-        }
-      }
-      foreach (rrd; $1) {
+	if (has_rs2) {
+	  rs2 inside [$0];
+	}
 	if (has_rd) {
-	  rd != rrd;
+	  rd  inside [$0];
+	  rd !inside [$1];
+	  rd !inside [$2];
 	}
 	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
-          rs1 != rrd;
+	  rs1 !inside [$1];
+	  rs1 !inside [$2];
 	}
-      }
-      foreach (rreg; $2) {
-        if (has_rd) {
-          rd != rreg;
-        }
-        if (instr_format == riscv_instr_format_t.CB_FORMAT) {
-          rs1 != rreg;
-        }
-      }
-    } (avail_regs, reserved_rd, cfg.reserved_regs);
+      } (avail_regs, reserved_rd, cfg.reserved_regs);
+    }
+
+    else {
+      instr.randomize_with! q{
+	if (has_rd) {
+	  rd !inside [$0];
+	  rd !inside [$1];
+	}
+	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+	  rs1 !inside [$0];
+	  rs1 !inside [$1];
+	}
+      } (reserved_rd, cfg.reserved_regs);
+    }
+      
+      
+    // instr.randomize_with! q{
+    // 	if ($0.length > 0) {
+    // 	  if (has_rs1) {
+    // 	    rs1 inside [$0];
+    // 	  }
+    // 	  if (has_rs2) {
+    // 	    rs2 inside [$0];
+    // 	  }
+    // 	  if (has_rd) {
+    // 	    rd  inside [$0];
+    // 	  }
+    // 	}
+    // foreach (rrd; $1) {
+    // 	if (has_rd) {
+    // 	  rd != rrd;
+    // 	}
+    // 	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+    //     rs1 != rrd;
+    // 	}
+    // }
+    // foreach (rreg; $2) {
+    //   if (has_rd) {
+    //     rd != rreg;
+    //   }
+    //   if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+    //     rs1 != rreg;
+    //   }
+    // }
+    // } (avail_regs, reserved_rd, cfg.reserved_regs);
     // TODO: Add constraint for CSR, floating point register
   }
 
