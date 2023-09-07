@@ -2,13 +2,11 @@
 
 name: metrics-regress
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+# Controls when the action will run. Triggers the workflow on push or pull
+# request events
 on:
   push:
-    branches: [ master ]
-#  pull_request_target:
-#    branches: [ master ]
+  pull_request:
 
 # If you fork this repository, you must create a new Metrics project for your fork
 # and set the environment variable $METRICS_PROJECT_ID accordingly
