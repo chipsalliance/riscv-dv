@@ -22,4 +22,3 @@ jobs:
           METRICS_PROJECT_ID: ${{ secrets.METRICS_PROJECT_ID }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         shell: bash
-

@@ -1,0 +1,71 @@
+name: run-tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-spike:
+    uses: ./.github/workflows/build-spike.yml
+  test-pyflow:
+    runs-on: ubuntu-latest
+    needs: [build-spike]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get -qqy update && sudo apt-get -qqy install gcc-riscv64-linux-gnu device-tree-compiler
+
+      - name: Setup python
+        # python dependencies cannot be properly downloaded with new versions of python
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1
+        with:
+          python-version: '3.9'
+
+      - name: Install python dependencies
+        run: python3 -m pip install -r requirements.txt
+
+      - name: Setup Cache Metadata
+        id: cache_metadata
+        run: |
+          date=$(date +"%Y_%m_%d")
+          time=$(date +"%Y%m%d_%H%M%S_%N")
+          cache_spike_restore_key=cache_spike_
+          cache_spike_key=${cache_spike_restore_key}d70ea67d_${date}
+
+          echo "cache_spike_restore_key=$cache_spike_restore_key" | tee -a "$GITHUB_ENV"
+          echo "cache_spike_key=$cache_spike_key" | tee -a "$GITHUB_ENV"
+
+      - name: Restore Spike cache
+        id: cache-spike-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            /opt/spike
+            /opt/spike/.cache
+          key: ${{ env.cache_spike_key }}
+          restore-keys: ${{ env.cache_spike_restore_key }}
+
+      - name: Run tests
+        run: |
+          set -x
+          export RISCV_GCC=riscv64-linux-gnu-gcc
+          export RISCV_OBJCOPY=riscv64-linux-gnu-objcopy
+          export SPIKE_PATH=/opt/spike/bin
+          export PYTHONPATH=pygen
+          # python3 run.py --test=riscv_arithmetic_basic_test --simulator=pyflow -o test
+
+          python3 run.py --simulator pyflow \
+            --test riscv_arithmetic_basic_test --iss spike \
+            --start_seed 999 --iterations 1 --batch_size 1 \
+            --isa rv32imc --mabi ilp32 --steps gen -v -o test 2>&1 | tee test/generate.log
+
+          # Patch the code
+          find test/asm_test -name "*.S" -exec python3 .github/scripts/code_fixup.py -i {} -o {} \;
+
+          # Compile, simulate
+           python3 run.py --simulator pyflow \
+             --test riscv_arithmetic_basic_test --iss spike --iss_timeout 60 \
+             --start_seed 999 --iterations 1 --batch_size 1 \
+             --isa rv32imc --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
+
