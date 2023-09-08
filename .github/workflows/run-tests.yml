@@ -87,3 +87,10 @@ jobs:
              --start_seed 999 --iterations 1 --batch_size 1 \
              --isa rv32imc --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
 
+      - name: Upload logs
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+        if: always()
+        with:
+          path: |
+            test/asm_test/*.log
+            test/*.log
