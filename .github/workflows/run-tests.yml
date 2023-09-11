@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-spike]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: sudo apt-get -qqy update && sudo apt-get -qqy install gcc-riscv64-linux-gnu device-tree-compiler
