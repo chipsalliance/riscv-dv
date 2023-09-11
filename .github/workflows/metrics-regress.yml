@@ -12,7 +12,8 @@ on:
 # and set the environment variable $METRICS_PROJECT_ID accordingly
 jobs:
   metrics-regression:
-    runs-on: ubuntu-latest
+    container: ubuntu:jammy
+    runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
     steps:
       - uses: actions/checkout@v4
       - run: ./scripts/metrics-regress.py $METRICS_REGRESSION_NAME $METRICS_PROJECT_ID

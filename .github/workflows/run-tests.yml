@@ -27,7 +27,8 @@ jobs:
           - riscv_non_compressed_instr_test
           - riscv_hint_instr_test
           - riscv_pmp_test
-    runs-on: ubuntu-latest
+    container: ubuntu:jammy
+    runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
     needs: [build-spike]
     steps:
       - uses: actions/checkout@v4
