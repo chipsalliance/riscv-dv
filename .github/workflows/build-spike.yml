@@ -40,7 +40,7 @@ jobs:
       - name: Install prerequisities
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
-          sudo apt -qqy update && sudo apt -qqy --no-install-recommends install \
+          apt -qqy update && apt -qqy --no-install-recommends install \
             git build-essential cmake ccache device-tree-compiler
 
       - name: Build Spike

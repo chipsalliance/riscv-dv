@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get -qqy update && sudo apt-get -qqy install gcc-riscv64-linux-gnu device-tree-compiler
+        run: apt-get -qqy update && apt-get -qqy install gcc-riscv64-linux-gnu device-tree-compiler
 
       - name: Setup python
         # python dependencies cannot be properly downloaded with new versions of python
