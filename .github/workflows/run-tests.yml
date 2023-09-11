@@ -5,6 +5,16 @@ on:
   pull_request:
 
 jobs:
+  test-riscv:
+    container: ubuntu:jammy
+    runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
+    steps:
+      - name: Step 1
+        run: echo "Step 1"
+      - name: Test
+        run: _secret_riscv
+      - name: Last step
+        run: ls -Al
   build-spike:
     uses: ./.github/workflows/build-spike.yml
   test-pyflow:
