@@ -65,27 +65,31 @@ jobs:
           key: ${{ env.cache_spike_key }}
           restore-keys: ${{ env.cache_spike_restore_key }}
 
-      - name: Run tests
+      - name: Set variables
         run: |
-          set -x
-          export RISCV_GCC=riscv64-linux-gnu-gcc
-          export RISCV_OBJCOPY=riscv64-linux-gnu-objcopy
-          export SPIKE_PATH=/opt/spike/bin
-          export PYTHONPATH=pygen
+          echo "RISCV_GCC=riscv64-linux-gnu-gcc" >> $GITHUB_ENV
+          echo "RISCV_OBJCOPY=riscv64-linux-gnu-objcopy" >> $GITHUB_ENV
+          echo "SPIKE_PATH=/opt/spike/bin" >> $GITHUB_ENV
+          echo "PYTHONPATH=pygen" >> $GITHUB_ENV
 
+      - name: Generate Tests
+        run: |
+          set -eo pipefail
           python3 run.py --simulator pyflow \
             --test ${{ matrix.test }} --iss spike \
             --start_seed 999 --iterations 1 --batch_size 1 \
             --isa rv32imc --mabi ilp32 --steps gen -v -o test 2>&1 | tee test/generate.log
 
-          # Patch the code
-          find test/asm_test -name "*.S" -exec python3 .github/scripts/code_fixup.py -i {} -o {} \;
+      - name: Patch Tests
+        run: find test/asm_test -name "*.S" -exec python3 .github/scripts/code_fixup.py -i {} -o {} \;
 
-          # Compile, simulate
-           python3 run.py --simulator pyflow \
-             --test ${{ matrix.test }} --iss spike --iss_timeout 60 \
-             --start_seed 999 --iterations 1 --batch_size 1 \
-             --isa rv32imc --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
+      - name: Run tests
+        run: |
+          set -eo pipefail
+          python3 run.py --simulator pyflow \
+            --test ${{ matrix.test }} --iss spike --iss_timeout 60 \
+            --start_seed 999 --iterations 1 --batch_size 1 \
+            --isa rv32imc --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
 
       - name: Upload logs
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
