@@ -16,6 +16,8 @@ jobs:
     runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
     steps:
       - uses: actions/checkout@v3
+      - name: Prepare environment
+        run: apt-get -qqy update && apt-get -qqy install python3
       - run: ./scripts/metrics-regress.py $METRICS_REGRESSION_NAME $METRICS_PROJECT_ID
         env:
           METRICS_CI_TOKEN: ${{ secrets.METRICS_CI_TOKEN }}

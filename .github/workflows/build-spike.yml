@@ -41,7 +41,7 @@ jobs:
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: |
           apt -qqy update && apt -qqy --no-install-recommends install \
-            git build-essential cmake ccache device-tree-compiler
+            git build-essential cmake ccache device-tree-compiler ca-certificates
 
       - name: Build Spike
         if: ${{ steps.cache.outputs.cache-hit != 'true' }}
