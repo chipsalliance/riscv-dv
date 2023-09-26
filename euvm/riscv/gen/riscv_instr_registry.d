@@ -29,9 +29,13 @@ import riscv.gen.target: unsupported_instr, supported_isa,
 
 import std.format: format;
 import std.algorithm: canFind, remove;
+import std.algorithm.sorting: sort;
 import std.traits: EnumMembers;
 
 import esdl.base.rand: urandom;
+import esdl.experimental.allocator.mallocator: Mallocator;
+import std.container.array: Array;
+import esdl.data.vector: Vector;
 
 import uvm;
 
@@ -44,6 +48,7 @@ class riscv_instr_registry: uvm_object
 
   // Instruction list
   riscv_instr_name_t[]                          instr_names;
+  riscv_instr_name_t[]                          instr_names_sorted;
 
   // Categorized instruction list
   riscv_instr_name_t[][riscv_instr_group_t]     instr_group;
@@ -116,6 +121,8 @@ class riscv_instr_registry: uvm_object
     }
     build_basic_instruction_list(cfg);
     create_csr_filter(cfg);
+    instr_names_sorted = instr_names.dup;
+    instr_names_sorted.sort();
   }
 
   void create_csr_filter(riscv_instr_gen_config cfg) {
@@ -222,9 +229,15 @@ class riscv_instr_registry: uvm_object
     ulong  idx;
     riscv_instr_name_t name;
     // riscv_instr_name_t name;
-    riscv_instr_name_t[] allowed_instr;
-    riscv_instr_name_t[] disallowed_instr;
-    riscv_instr_category_t[] allowed_categories;
+
+    static Vector!(riscv_instr_name_t, "allowed_instr") allowed_instr;
+    static Vector!(riscv_instr_name_t, "disallowed_instr") disallowed_instr;
+    static Vector!(riscv_instr_category_t, "allowed_categories") allowed_categories;
+
+    allowed_instr.length = 0;
+    disallowed_instr.length = 0;
+    allowed_categories.length = 0;
+    
     foreach (icatg; include_category) {
       allowed_instr ~= instr_category[icatg];
     }
@@ -258,9 +271,8 @@ class riscv_instr_registry: uvm_object
       import std.algorithm.sorting: sort;
       import std.algorithm.setops: setIntersection, setDifference;
       import std.array: array;
-
-      riscv_instr_name_t[] instr_set = instr_names.dup;
-      instr_set.sort();
+      
+      riscv_instr_name_t[] instr_set = instr_names_sorted;
 
       riscv_instr_name_t[] include_set = instr_set;
       riscv_instr_name_t[] allowed_set = instr_set;
@@ -271,20 +283,22 @@ class riscv_instr_registry: uvm_object
       }
 
       if (allowed_instr.length > 0) {
-	allowed_set = allowed_instr;
+	allowed_set = allowed_instr[];
 	allowed_set.sort();
       }
 
-      riscv_instr_name_t[] inter_set =
-	setDifference(setIntersection(instr_set, include_set, allowed_set),
-		      disallowed_instr.sort()).array();
+      static Vector!(riscv_instr_name_t, "instr_set") inter_set;
+      inter_set.length = 0;
+      inter_set ~= setDifference(setIntersection(instr_set, include_set, allowed_set),
+				 disallowed_instr[].sort());
 
       idx = urandom(0, inter_set.length);
 
       name = inter_set[idx];
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    auto instr = instr_template[name].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -312,7 +326,8 @@ class riscv_instr_registry: uvm_object
     ulong idx = urandom( 0, load_store_instr.length);
     riscv_instr_name_t name = load_store_instr[idx];
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    auto instr = instr_template[name].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -322,7 +337,8 @@ class riscv_instr_registry: uvm_object
       uvm_fatal("riscv_instr", format("Cannot get instr %0s", name));
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    auto instr = instr_template[name].dup;
+    // auto instr = instr_template[name].dup(Mallocator.instance);
+    auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }

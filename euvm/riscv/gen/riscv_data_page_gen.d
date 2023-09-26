@@ -22,7 +22,7 @@
 
 module riscv.gen.riscv_data_page_gen;
 
-import riscv.gen.riscv_instr_pkg: mem_region_t, data_pattern_t, hart_prefix, format_string,
+import riscv.gen.riscv_instr_pkg: mem_region_t, data_pattern_t, hart_prefix,
   format_data, LABEL_STR_LEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 
@@ -119,7 +119,8 @@ class riscv_data_page_gen: uvm_object
 	else {
           gen_data(i, pattern, page_size-i, tmp_data);
         }
-        tmp_str = format_string(format(".word %0s", format_data(tmp_data)), LABEL_STR_LEN);
+	enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+        tmp_str = format!FMT(format(".word %0s", format_data(tmp_data)));
         data_page_str ~= tmp_str;
       }
       if (cfg.use_push_data_section) {

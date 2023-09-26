@@ -18,7 +18,7 @@
 module riscv.gen.isa.riscv_zbb_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, riscv_instr_name_t,
-  riscv_instr_format_t, format_string, MAX_INSTR_STR_LEN;
+  riscv_instr_format_t, MAX_INSTR_STR_LEN;
 import riscv.gen.target: XLEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -86,7 +86,8 @@ class riscv_zbb_instr: riscv_instr
     string asm_str_final;
     string asm_str;
 
-    asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    asm_str = format!FMT(get_instr_name());
 
     switch (instr_format) {
     case riscv_instr_format_t.I_FORMAT: // instr rd rs1
@@ -114,6 +115,52 @@ class riscv_zbb_instr: riscv_instr
     }
 
     return asm_str_final.toLower();
+  }
+
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    switch (instr_format) {
+    case riscv_instr_format_t.I_FORMAT: // instr rd rs1
+      if (! has_imm) {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs1);
+      }
+      break;
+    case riscv_instr_format_t.R_FORMAT: // instr rd rs1
+      if (! has_rs2) {
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs1);
+      }
+      break;
+    default: uvm_info(get_full_name(),
+		      format("Unsupported format %0s", instr_format),
+		      UVM_LOW);
+      break;
+    }
+
+    if (asm_buf == "") {
+      return super.convert2asm(buf, prefix);
+    }
+
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
   }
 
   override ubvec!7 get_opcode() {

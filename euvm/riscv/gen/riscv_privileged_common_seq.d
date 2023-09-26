@@ -20,7 +20,7 @@
 module riscv.gen.riscv_privileged_common_seq;
 
 import riscv.gen.riscv_instr_pkg: privileged_mode_t, privileged_reg_t,
-  format_string, indent, satp_mode_t, hart_prefix, LABEL_STR_LEN;
+  INDENT, satp_mode_t, hart_prefix, LABEL_STR_LEN;
 import riscv.gen.target: supported_privileged_mode, support_umode_trap,
   implemented_csr, XLEN, SATP_MODE;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
@@ -36,7 +36,7 @@ import esdl.rand: randomize;
 
 import uvm;
 
-class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
+class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_item)
 {
 
   riscv_instr_gen_config  cfg;
@@ -57,8 +57,9 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out Queue!string instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:",
-					hart_prefix(hart), mode), LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string label = format!FMT(format("%0sinit_%0s:",
+				     hart_prefix(hart), mode));
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();
@@ -76,7 +77,7 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
     // Use mret/sret to switch to the target privileged mode
     instrs ~= ret_instr[0];
     foreach (instr; instrs) {
-      instr = indent ~ instr;
+      instr = INDENT ~ instr;
     }
     instrs.pushFront(label);
   }
@@ -84,8 +85,9 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
   void enter_privileged_mode(in privileged_mode_t mode,
 			     out string[] instrs) {
     import std.conv: to;
-    string label = format_string(format("%0sinit_%0s:",
-					hart_prefix(hart), mode), LABEL_STR_LEN);
+    enum string FMT = "%-" ~ LABEL_STR_LEN.stringof ~ "s";
+    string label = format!FMT(format("%0sinit_%0s:",
+				     hart_prefix(hart), mode));
     string[] ret_instr = ["mret"];
     riscv_privil_reg[] regs;
     label = label.toLower();
@@ -105,7 +107,7 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
     instrs ~= ret_instr[0];
     foreach (i, ref instr; instrs) {
       if (i != 0)		// skip indent for label
-	instr = indent ~ instr;
+	instr = INDENT ~ instr;
     }
     // instrs.pushFront(label); // do it upfront
   }
@@ -123,13 +125,13 @@ class riscv_privileged_common_seq : uvm_sequence!(uvm_sequence_item,uvm_sequence
     mstatus.set_field("TW", cfg.set_mstatus_tw);
     mstatus.set_field("FS", cfg.mstatus_fs);
     mstatus.set_field("VS", cfg.mstatus_vs);
-    if (!(canFind(supported_privileged_mode, privileged_mode_t.SUPERVISOR_MODE) && (XLEN != 32))) {
+    if (!(canFind(supported_privileged_mode, privileged_mode_t.SUPERVISOR_MODE)) && (XLEN != 32)) {
       mstatus.set_field("SXL", toubvec!2(0b00));
     }
     else if (XLEN == 64) {
       mstatus.set_field("SXL", toubvec!2(0b10));
     }
-    if (!(canFind(supported_privileged_mode, privileged_mode_t.USER_MODE) && (XLEN != 32))) {
+    if (!(canFind(supported_privileged_mode, privileged_mode_t.USER_MODE)) && (XLEN != 32)) {
       mstatus.set_field("UXL", toubvec!2(0b00));
     } else if (XLEN == 64) {
       mstatus.set_field("UXL", toubvec!2(0b10));

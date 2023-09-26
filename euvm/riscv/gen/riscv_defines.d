@@ -255,13 +255,13 @@ alias RISCV_C_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_forma
   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
 		    riscv_compressed_instr);
 
-alias riscv_fc_instr_mixin = riscv_instr_mixin_tmpl!riscv_compressed_instr;
+alias riscv_fc_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
 
 alias RISCV_FC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
 		     imm_t imm_tp = imm_t.IMM) =
   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_compressed_instr);
+		    riscv_floating_point_instr);
 
 alias riscv_va_instr_mixin = riscv_va_instr_mixin_tmpl!riscv_vector_instr;
 

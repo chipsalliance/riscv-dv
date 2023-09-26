@@ -29,7 +29,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.rand: constraint, rand, randomize_with;
+import esdl.rand: constraint, rand, randomize_with, constraint_override;
 import esdl.base.rand: urandom;
 
 import uvm;
@@ -58,7 +58,7 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   } num_of_rs1_reg_c;
 
   constraint! q{
-    // solve num_of_rs1_reg before rs1_reg;
+    solve num_of_rs1_reg before rs1_reg;
     rs1_reg.length == num_of_rs1_reg;
     offset.length == num_of_rs1_reg;
     foreach (rreg; rs1_reg) {
@@ -98,12 +98,15 @@ class riscv_amo_base_instr_stream : riscv_mem_access_stream
   // Use "la" instruction to initialize the offset regiseter
   void init_offset_reg() {
     import std.conv: to;
+    import std.format: sformat;
+
     foreach (i, rreg; rs1_reg) {
       riscv_pseudo_instr la_instr;
       la_instr = riscv_pseudo_instr.type_id.create("la_instr");
       la_instr.pseudo_instr_name = riscv_pseudo_instr_name_t.LA;
       la_instr.rd = rreg;
-      la_instr.imm_str = format("%0s+%0d", cfg.amo_region[data_page_id], offset[i]);
+      la_instr.imm_str = cast(string)
+	sformat!("%0s+%0d")(la_instr.imm_str_buf(), cfg.amo_region[data_page_id], offset[i]);
       append_instr(la_instr);
     }
   }
@@ -214,6 +217,7 @@ class riscv_amo_instr_stream: riscv_amo_base_instr_stream
     num_mixed_instr inside [0..num_amo+1];
   } reasonable_c;
 
+  @constraint_override
   constraint! q{
     solve num_amo before num_of_rs1_reg;
     num_of_rs1_reg inside [1..num_amo+1];

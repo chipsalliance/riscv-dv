@@ -1,15 +1,19 @@
 # Runtime Paramters
+GCOPTS = # --DRT-gcopt=parallel:0
 INSTRCOUNT = 100000
 VERBOSITY = NONE
+VERSION = NOVERSION
 RANDSEED = 1
+THREADS = 1
+CPU = 4
 
 # Compile Paramters
 MTRIPLE = -m64
 TARGET = RV64IMC
 CC = gcc
 DEBUG = NONE
-DFLAGS = $(MTRIPLE) -d-version=$(TARGET) -w -d-debug=$(DEBUG) -O3  -release -boundscheck=off # --lowmem # -d-version=CHECK_COMPILE
-DBGDFLAGS = $(MTRIPLE) -d-version=$(TARGET) -w -d-debug=$(DEBUG) -g
+DFLAGS = $(MTRIPLE) -d-version=$(TARGET) -d-version=$(VERSION) -w -d-debug=$(DEBUG) -O3 -mcpu=native -release -boundscheck=off # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto # --lowmem # -d-version=CHECK_COMPILE
+DBGDFLAGS = $(MTRIPLE) -d-version=$(TARGET) -w -mcpu=native -d-debug=$(DEBUG) -g
 LDC2 = ldc2
 PICOBJDIR = picobj-ldc
 DBGPICOBJDIR = picobj-dbg-ldc
@@ -20,6 +24,8 @@ PICDBGOBJDIR = picobj-dbg-ldc
 DBGOBJDIR = obj-dbg-ldc
 
 PHOBOS = phobos2-ldc-shared
+PHOBOSDBG = phobos2-ldc-debug-shared
+
 
 DATE = $(shell date '+%Y-%m-%d')
 
@@ -53,6 +59,7 @@ GEN_FILES = riscv/gen/package.d riscv/gen/riscv_amo_instr_lib.d		\
 	    riscv/gen/target/rv64gc/riscv_core_setting.d		\
 	    riscv/gen/target/rv64imcb/riscv_core_setting.d		\
 	    riscv/gen/target/rv32imafdc/riscv_core_setting.d		\
+	    riscv/gen/target/rv64imafdc/riscv_core_setting.d		\
 	    riscv/gen/target/ml/riscv_core_setting.d			\
 	    riscv/gen/target/multi_harts/riscv_core_setting.d		\
 	    riscv/gen/target/rv32imc_sv32/riscv_core_setting.d		\
@@ -123,7 +130,7 @@ libriscv-dv-ldc-shared.so: $(addprefix $(PICOBJDIR)/,$(GEN_OBJS)) \
 libriscv-dv-ldc-debug-shared.so: $(addprefix $(DBGPICOBJDIR)/,$(GEN_OBJS)) \
 			         $(addprefix $(DBGPICOBJDIR)/,$(ISA_OBJS)) \
 			         $(addprefix $(DBGPICOBJDIR)/,$(TEST_OBJS))
-	CC=$(CC) $(LDC2) -shared $(DBGDFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3
+	CC=$(CC) $(LDC2) -shared $(DBGDFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3
 
 libriscv-dv-ldc-shared-alt.so: $(addprefix ../,$(GEN_FILES)) \
 			       $(addprefix ../,$(ISA_FILES)) \
@@ -141,13 +148,13 @@ TAGS: $(addprefix ../,$(GEN_FILES)) \
 	dscanner --etags $^ > $@
 
 riscv_instr_gen: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-shared.so
-	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl 
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lz3 -L-ldl # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto
 
 riscv_instr_gen_debug: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-debug-shared.so
-	$(LDC2) -link-defaultlib-shared $(DBGDFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-debug-shared -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-shared -L-lz3 -L-ldl
+	$(LDC2) -link-defaultlib-shared $(DBGDFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-debug-shared -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3 -L-ldl
 
 run: riscv_instr_gen
-	./riscv_instr_gen +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_$(DATE)/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
+	./riscv_instr_gen $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +thread_index=$(CPU) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_$(DATE)/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
 	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
 	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
 	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \
@@ -157,7 +164,7 @@ run: riscv_instr_gen
 	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4
 
 run_debug: riscv_instr_gen_debug
-	./riscv_instr_gen_debug +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
+	./riscv_instr_gen_debug $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
 	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
 	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
 	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \
@@ -167,7 +174,22 @@ run_debug: riscv_instr_gen_debug
 	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4
 
 run_riscv_arithmetic_basic_test: riscv_instr_gen
-	./riscv_instr_gen +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_arithmetic_basic_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=0 +directed_instr_0=riscv.gen.riscv_directed_instr_lib.riscv_int_numeric_corner_stream,4 +no_fence=true +no_data_page=true +no_branch_jump=true +boot_mode=m +no_csr_instr=true 
+	./riscv_instr_gen $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_arithmetic_basic_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=0 +directed_instr_0=riscv.gen.riscv_directed_instr_lib.riscv_int_numeric_corner_stream,4 +no_fence=true +no_data_page=true +no_branch_jump=true +boot_mode=m +no_csr_instr=true 
 
 run_riscv_arithmetic_only_test: riscv_instr_gen
-	./riscv_instr_gen +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_arithmetic_basic_test +instr_cnt=$(INSTRCOUNT) +no_fence=true +no_data_page=true +num_of_sub_program=0 +no_branch_jump=true +boot_mode=m +no_csr_instr=true 
+	./riscv_instr_gen $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_2021-08-10/asm_test/riscv_arithmetic_basic_test +instr_cnt=$(INSTRCOUNT) +no_fence=true +no_data_page=true +num_of_sub_program=0 +no_branch_jump=true +boot_mode=m +no_csr_instr=true 
+
+run_pmp_test: riscv_instr_gen
+	./riscv_instr_gen $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_$(DATE)/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \
+	+directed_instr_0=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_rand_instr_stream,4 \
+	+directed_instr_1=riscv.gen.riscv_load_store_instr_lib.riscv_hazard_instr_stream,4 \
+	+directed_instr_2=riscv.gen.riscv_load_store_instr_lib.riscv_load_store_hazard_instr_stream,4 \
+	+directed_instr_3=riscv.gen.riscv_load_store_instr_lib.riscv_multi_page_load_store_instr_stream,4 \
+	+directed_instr_4=riscv.gen.riscv_load_store_instr_lib.riscv_mem_region_stress_test,4 \
+	+directed_instr_5=riscv.gen.riscv_directed_instr_lib.riscv_jal_instr,4 \
+	+directed_instr_6=riscv.gen.riscv_loop_instr.riscv_loop_instr,4 \
+	+pmp_randomize=false \
+	+pmp_num_regions=1 \
+        +pmp_granularity=1 \
+        +pmp_region_0=L:false,A:TOR,X:true,W:true,R:true,ADDR:FFFFFFFF
+

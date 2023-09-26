@@ -63,7 +63,7 @@ class riscv_instr_base_test: uvm_test
     uvm_info(get_full_name(), "Create configuration instance...done", UVM_LOW);
     uvm_info(get_full_name(), cfg.sprint(), UVM_LOW);
     uvm_config_db!(riscv_instr_gen_config).set(null, "*", "instr_cfg", cfg);
-    if(cfg.asm_test_suffix != "")
+    if (cfg.asm_test_suffix != "")
       asm_file_name = asm_file_name ~ "." ~ cfg.asm_test_suffix;
     // Override the default riscv instruction sequence
     if (cmd.plusArgs("instr_seq=%s", instr_seq)) {

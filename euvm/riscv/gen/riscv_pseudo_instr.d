@@ -19,7 +19,7 @@
 module riscv.gen.riscv_pseudo_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_pseudo_instr_name_t, riscv_instr_format_t,
-  riscv_instr_category_t, riscv_instr_group_t, format_string, MAX_INSTR_STR_LEN;
+  riscv_instr_category_t, riscv_instr_group_t, MAX_INSTR_STR_LEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 
 import std.format: format;
@@ -60,17 +60,46 @@ class riscv_pseudo_instr: riscv_instr
 
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
-    string asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
-    // instr rd,imm
-    asm_str = format("%0s%0s, %0s", asm_str, rd, get_imm());
-    if (comment != "")
-      asm_str ~= " #"~comment;
-    return asm_str.toLower();
+    if (comment.length == 0) {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s";
+      string asm_str = format!FMT(get_instr_name(), rd, get_imm());
+      return asm_str.toLower();
+    }
+    else {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s #%s";
+      string asm_str = format!FMT(get_instr_name(), rd, get_imm(), comment);
+      return asm_str.toLower();
+    }
+  }
+
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.format: sformat;
+    import std.string: toLower, toLowerInPlace;
+    char[32] instr_buf;
+    
+    if (comment.length == 0) {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s";
+      char[] asm_str = sformat!FMT(buf, get_instr_name(instr_buf), rd, get_imm());
+      asm_str.toLowerInPlace();
+      return asm_str;
+    }
+    else {
+      enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s%0s, %0s #%s";
+      char[] asm_str = sformat!FMT(buf, get_instr_name(instr_buf), rd, get_imm(), comment);
+      asm_str.toLowerInPlace();
+      return asm_str;
+    }
   }
 
   override string get_instr_name() {
     import std.conv: to;
     return pseudo_instr_name.to!string();
+  }
+
+  override char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+    char[] str_instr_name = sformat!("%s")(buf, pseudo_instr_name);
+    return str_instr_name;
   }
 
 }

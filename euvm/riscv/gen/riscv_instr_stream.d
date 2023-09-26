@@ -34,11 +34,13 @@ import riscv.gen.target: XLEN;
 
 import std.format: format;
 import std.algorithm: canFind, sort;
+import core.memory: GC;
 
 import esdl.rand: rand, constraint, randomize, randomize_with;
 import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec;
+import esdl.base.core: fork, Fork;
 
 import uvm;
 
@@ -106,112 +108,6 @@ class riscv_instr_stream: uvm_object
     instr_list.insert(idx, instr);
   }
 
-  void insert_instr_map(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
-    assert (replace == false);
-  }
-
-  // Insert an instruction to the existing instruction stream at the given index
-  // When index is -1, the instruction is injected at a random location
-  // When replace is 1, the original instruction at the inserted position will be replaced
-  void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
-    int current_instr_cnt = cast(int) instr_list.length;
-    int new_instr_cnt = cast(int) new_instr.length;
-    if (current_instr_cnt == 0) {
-      instr_list ~= new_instr;
-      return;
-    }
-    if (idx == -1) {
-      idx = cast(int) urandom(0, current_instr_cnt);
-      for (int i=0; i < 10 ; i++) {
-	if (instr_list[idx].atomic) break;
-	idx = cast(int) urandom(0, current_instr_cnt);
-      }
-      if (instr_list[idx].atomic) {
-	foreach (k, instr; instr_list) {
-	  if (! instr.atomic) {
-	    idx = cast(int) k;
-	    break;
-	  }
-	}
-	if (instr_list[idx].atomic) {
-	  uvm_fatal(get_full_name, format("Cannot inject the instruction"));
-	}
-      }
-    }
-    else if((idx > current_instr_cnt) || (idx < 0)) {
-      uvm_error(get_full_name(), format("Cannot insert instr stream at idx %0d", idx));
-    }
-    //When replace is 1, the original instruction at this index will be removed. The label of the
-    //original instruction will be copied to the head of inserted instruction stream.
-    if (replace) {
-      new_instr[0].label = instr_list[idx].label;
-      new_instr[0].has_label = instr_list[idx].has_label;
-      foreach (i, instr; new_instr) {
-	instr_list[i+idx] = instr;
-      }
-    }
-    else {
-      if (idx == 0) {
-	instr_list.pushFront(new_instr[]);
-      }
-      else {
-        instr_list.insert(idx, new_instr[]);
-      }
-    }
-  }
-
-  void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
-    int current_instr_cnt = cast(int) instr_list.length;
-    int new_instr_cnt = cast(int) new_instr.length;
-    if (current_instr_cnt == 0) {
-      instr_list ~= new_instr;
-      return;
-    }
-    if (idx == -1) {
-      idx = cast(int) urandom(0, current_instr_cnt);
-      for (int i=0; i < 10 ; i++) {
-	if (instr_list[idx].atomic) break;
-	idx = cast(int) urandom(0, current_instr_cnt);
-      }
-      if (instr_list[idx].atomic) {
-	foreach (k, instr; instr_list) {
-	  if (! instr.atomic) {
-	    idx = cast(int) k;
-	    break;
-	  }
-	}
-	if (instr_list[idx].atomic) {
-	  uvm_fatal(get_full_name, format("Cannot inject the instruction"));
-	}
-      }
-    }
-    else if((idx > current_instr_cnt) || (idx < 0)) {
-      uvm_error(get_full_name(), format("Cannot insert instr stream at idx %0d", idx));
-    }
-    //When replace is 1, the original instruction at this index will be removed. The label of the
-    //original instruction will be copied to the head of inserted instruction stream.
-    if (replace) {
-      new_instr[0].label = instr_list[idx].label;
-      new_instr[0].has_label = instr_list[idx].has_label;
-      if (idx == 0) {
-	instr_list.removeFront();
-	instr_list.pushFront(new_instr);
-      }
-      else {
-	instr_list.remove(idx);
-	instr_list.insert(idx, new_instr);
-      }
-     }
-    else {
-      if (idx == 0) {
-	instr_list.pushFront(new_instr);
-      }
-      else {
-        instr_list.insert(idx, new_instr);
-      }
-    }
-  }
-
   void append_instr(riscv_instr instr) {
     instr_list ~= instr;
   }
@@ -233,7 +129,7 @@ class riscv_instr_stream: uvm_object
   // new instruction stream with the first and last instruction from the input instruction stream.
   void mix_instr_stream(riscv_instr[] new_instr, bool contained = false) {
     int current_instr_cnt = cast(int) instr_list.length;
-    int[] insert_instr_position;
+    static int[] insert_instr_position;
     int new_instr_cnt = cast(int) new_instr.length;
     insert_instr_position.length = new_instr_cnt;
     foreach (ref position; insert_instr_position) {
@@ -256,7 +152,7 @@ class riscv_instr_stream: uvm_object
   void mix_instr_stream(Queue!riscv_instr new_instr, bool contained = false) {
     import std.range: enumerate;
     int current_instr_cnt = cast(int) instr_list.length;
-    int[] insert_instr_position;
+    static int[] insert_instr_position;
     int new_instr_cnt = cast(int) new_instr.length;
     insert_instr_position.length = new_instr_cnt;
     foreach (ref position; insert_instr_position) {
@@ -371,17 +267,46 @@ class riscv_rand_instr_stream: riscv_instr_stream
 
   void gen_instr(bool no_branch = false, bool no_load_store = true,
 		 bool is_debug_program = false) {
+    GC.disable();
     setup_allowed_instr(no_branch, no_load_store);
     assert (instr_list.length != 0);
-    foreach (ref instr; instr_list) {
-      randomize_instr(instr, is_debug_program);
+    uvm_trace("GEN INSTR", "START", UVM_NONE);
+    if (instr_list.length <= cfg.par_instr_threshold ||
+	cfg.par_num_threads == 1) {
+      foreach (ref instr; instr_list) {
+	randomize_instr(instr, is_debug_program);
+      }
     }
-    // Do not allow branch instruction as the last instruction because there's no
-    // forward branch target
+    else {	// parallelise with cfg.par_num_threads
+      Fork[] forks;
+      size_t instr_count = instr_list.length;
+      size_t instr_grp_length = instr_count / cfg.par_num_threads;
+      for (size_t i=0; i!=cfg.par_num_threads; ++i) {
+	size_t start_idx = i * instr_grp_length;
+	size_t end_idx = (i + 1) * instr_grp_length;
+	// last group
+	if (i == cfg.par_num_threads - 1) end_idx = instr_count;
+	// capture start_idx and end_idx and fork
+	Fork new_fork = (size_t start, size_t end) {
+	  return fork({
+	      for (size_t i=start; i!=end; ++i) {
+		randomize_instr(instr_list[i], is_debug_program);
+	      }
+	    });
+	} (start_idx, end_idx);
+	new_fork.set_thread_affinity(forks.length);
+	forks ~= new_fork;
+      }
+      foreach (f; forks) f.join();
+    }
+    uvm_trace("GEN INSTR", "END", UVM_NONE);
+    // Do not allow branch instruction as the last instruction because
+    // there's no forward branch target
     while (instr_list[$-1].category == riscv_instr_category_t.BRANCH) {
       instr_list.length = instr_list.length - 1;
       if (instr_list.length == 0) break;
     }
+    GC.enable();
   }
 
   void randomize_instr(out riscv_instr instr,
@@ -411,47 +336,83 @@ class riscv_rand_instr_stream: riscv_instr_stream
   void randomize_gpr(riscv_instr instr) {
     assert (cfg !is null);
     instr.m_cfg = cfg;
-    instr.randomize_with! q{
-      if ($0.length > 0) {
-        if (has_rs1) {
+
+    if (avail_regs.length > 0) {
+      instr.randomize_with! q{
+	if (has_rs1) {
 	  rs1 inside [$0];
 	}
-        if (has_rs2) {
-          rs2 inside [$0];
-        }
-        if (has_rd) {
-          rd  inside [$0];
-        }
-      }
-      foreach (rrd; $1) {
+	if (has_rs2) {
+	  rs2 inside [$0];
+	}
 	if (has_rd) {
-	  rd != rrd;
+	  rd  inside [$0];
+	  rd !inside [$1];
+	  rd !inside [$2];
 	}
 	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
-          rs1 != rrd;
+	  rs1 !inside [$1];
+	  rs1 !inside [$2];
 	}
-      }
-      foreach (rreg; $2) {
-        if (has_rd) {
-          rd != rreg;
-        }
-        if (instr_format == riscv_instr_format_t.CB_FORMAT) {
-          rs1 != rreg;
-        }
-      }
-    } (avail_regs, reserved_rd, cfg.reserved_regs);
+      } (avail_regs, reserved_rd, cfg.reserved_regs);
+    }
+
+    else {
+      instr.randomize_with! q{
+	if (has_rd) {
+	  rd !inside [$0];
+	  rd !inside [$1];
+	}
+	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+	  rs1 !inside [$0];
+	  rs1 !inside [$1];
+	}
+      } (reserved_rd, cfg.reserved_regs);
+    }
+      
+      
+    // instr.randomize_with! q{
+    // 	if ($0.length > 0) {
+    // 	  if (has_rs1) {
+    // 	    rs1 inside [$0];
+    // 	  }
+    // 	  if (has_rs2) {
+    // 	    rs2 inside [$0];
+    // 	  }
+    // 	  if (has_rd) {
+    // 	    rd  inside [$0];
+    // 	  }
+    // 	}
+    // foreach (rrd; $1) {
+    // 	if (has_rd) {
+    // 	  rd != rrd;
+    // 	}
+    // 	if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+    //     rs1 != rrd;
+    // 	}
+    // }
+    // foreach (rreg; $2) {
+    //   if (has_rd) {
+    //     rd != rreg;
+    //   }
+    //   if (instr_format == riscv_instr_format_t.CB_FORMAT) {
+    //     rs1 != rreg;
+    //   }
+    // }
+    // } (avail_regs, reserved_rd, cfg.reserved_regs);
     // TODO: Add constraint for CSR, floating point register
   }
 
 
   riscv_instr get_init_gpr_instr(riscv_reg_t gpr, ubvec!XLEN val) {
+    import std.format: sformat;
     riscv_pseudo_instr li_instr;
     li_instr = riscv_pseudo_instr.type_id.create("li_instr");
     li_instr.randomize_with! q{
       pseudo_instr_name == riscv_pseudo_instr_name_t.LI;
       rd == $0;
     } (gpr);
-    li_instr.imm_str = format("0x%0x", val);
+    li_instr.imm_str = cast(string) sformat!("0x%0x")(li_instr.imm_str_buf(), val);
     return li_instr;
   }
 
@@ -477,7 +438,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
 
   riscv_instr_stream[] dir_instr_list;
 
-  // used in mixin_directed_instr_list
+  // used in merge_directed_instr_list
   uint[] dir_n;
 
   this(string name = "riscv_prog_instr_stream") {
@@ -487,7 +448,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
   // Insert an instruction to the existing instruction stream at the given index
   // When index is -1, the instruction is injected at a random location
   // When replace is 1, the original instruction at the inserted position will be replaced
-  override void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
+  void insert_instr_stream(Queue!riscv_instr new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
@@ -534,7 +495,7 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
   }
 
-  override void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
+  void insert_instr_stream(riscv_instr[] new_instr, int idx = -1, bool replace = false) {
     int current_instr_cnt = cast(int) instr_list.length;
     int new_instr_cnt = cast(int) new_instr.length;
     if (current_instr_cnt == 0) {
@@ -581,7 +542,9 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     }
   }
 
-  void mixin_directed_instr_list(riscv_instr_stream[] dir_list) {
+  void merge_directed_instr_list(riscv_instr_stream[] dir_list,
+				 riscv_instr[] first_instrs = [],
+				 riscv_instr[] last_instrs = []) {
     riscv_instr[]        mixed_list;
 
     uint instr_count = cast(uint) instr_list.length;
@@ -590,6 +553,8 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
     dir_n.length = instr_count;
 
     this.dir_instr_list = dir_list;
+
+    mixed_count += first_instrs.length;
 
     foreach (size_t dir_idx, dir_instr; dir_instr_list) {
       mixed_count += dir_instr.instr_list.length;
@@ -612,10 +577,16 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
       }
     }
 
+    mixed_count += last_instrs.length;
+
     mixed_list.length = mixed_count;
 
-    uint n = 0;
+    size_t n = first_instrs.length;
+    mixed_list[0..n] = first_instrs;
+    
     foreach (i, instr; instr_list) {
+      // make sure that we are not inserting inside another directed stream
+      assert (! instr.atomic, "Cannot inject the instruction");
       uint next_dir = dir_n[i];
       while (next_dir != 0) {
 	uint next = dir_instr_list[next_dir-1].next_stream;
@@ -626,6 +597,10 @@ class riscv_prog_instr_stream: riscv_rand_instr_stream
       }
       mixed_list[n++] = instr;
     }
+
+    mixed_list[n..$] = last_instrs;
+    n += last_instrs.length;
+    
     assert (mixed_count == n);
 
     instr_list = mixed_list;

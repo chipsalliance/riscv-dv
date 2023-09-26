@@ -1215,6 +1215,15 @@ enum hazard_e: ubyte {
 
 // `include "riscv_core_setting.sv"
 
+// ePMP machine security configuration
+struct mseccfg_reg_t {
+  @UVM_DEFAULT {
+    @rand bool rlb;
+    @rand bool mmwp;
+    @rand bool mml;
+  }
+}
+
 // PMP address matching mode
 enum pmp_addr_mode_t: ubyte {
   OFF   = 0b00,
@@ -1332,25 +1341,27 @@ template SPACES(uint spaces) {
   else enum SPACES = SPACES!(spaces-1) ~ " ";
 }
 
-string spaces_string(uint len) {
-  import std.algorithm: fill;
-  char[] str = new char[len];
-  fill(str, ' ');
-  return cast(string) str;
-}
+enum string INDENT = SPACES!LABEL_STR_LEN;
 
-enum string indent = SPACES!LABEL_STR_LEN;
+// string spaces_string(uint len) {
+//   import std.algorithm: fill;
+//   char[] str = new char[len];
+//   fill(str, ' ');
+//   return cast(string) str;
+// }
+
+// Use format "%-10s" instead
 
 // Format the string to a fixed length
-string format_string(string str, int len = 10) {
-  if (len < str.length) return str;
-  else {
-    static string spaces;
-    if (spaces.length == 0) spaces = spaces_string(len);
-    string formatted_str = str ~ spaces[0..len-str.length];
-    return formatted_str;
-  }
-}
+// string format_string(string str, int len = 10) {
+//   if (len < str.length) return str;
+//   else {
+//     static string spaces;
+//     if (spaces.length == 0) spaces = spaces_string(len);
+//     string formatted_str = str ~ spaces[0..len-str.length];
+//     return formatted_str;
+//   }
+// }
 
 // Print the data in the following format
 // 0xabcd, 0x1234, 0x3334 ...
@@ -1454,6 +1465,14 @@ void get_int_arg_value(string cmdline_str, ref int val) {
   string s;
   if (uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
     val = s.to!int;
+  }
+}
+
+void get_uint_arg_value(string cmdline_str, ref uint val) {
+  import std.conv: to;
+  string s;
+  if (uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s)) {
+    val = s.to!uint;
   }
 }
 

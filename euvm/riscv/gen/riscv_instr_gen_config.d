@@ -23,8 +23,8 @@ module riscv.gen.riscv_instr_gen_config;
 import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_cause_t,
   interrupt_cause_t, privileged_mode_t, mtvec_mode_t, f_rounding_mode_t, riscv_reg_t,
   mem_region_t, privileged_reg_t, riscv_instr_category_t, b_ext_group_t,
-  riscv_instr_group_t, get_int_arg_value, get_bool_arg_value, get_hex_arg_value,
-  cmdline_enum_processor, satp_mode_t;
+  riscv_instr_group_t, get_int_arg_value, get_uint_arg_value,
+  get_bool_arg_value, get_hex_arg_value, cmdline_enum_processor, satp_mode_t;
 
 import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_instr_register: register_isa;
@@ -185,6 +185,10 @@ class riscv_instr_gen_config: uvm_object
   int                    num_of_sub_program = 5;
   int                    instr_cnt = 200;
   int                    num_of_tests = 1;
+
+  uint                   par_num_threads = 8;
+  uint                   par_instr_threshold = 4000;
+
   // For tests doesn't involve load/store, the data section generation could be skipped
   @UVM_DEFAULT bool                    no_data_page;
   // Options to turn off some specific types of instructions
@@ -590,6 +594,8 @@ class riscv_instr_gen_config: uvm_object
     get_bool_arg_value("+enable_nested_interrupt=", enable_nested_interrupt);
     get_bool_arg_value("+enable_timer_irq=", enable_timer_irq);
     get_int_arg_value("+num_of_sub_program=", num_of_sub_program);
+    get_uint_arg_value("+par_num_threads=", par_num_threads);
+    get_uint_arg_value("+par_instr_threshold=", par_instr_threshold);
     get_int_arg_value("+instr_cnt=", instr_cnt);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
     get_bool_arg_value("+no_dret=", no_dret);
@@ -745,10 +751,6 @@ class riscv_instr_gen_config: uvm_object
     min_stack_len_per_program = 2 * (XLEN/8);
     // Check if the setting is legal
     check_setting();
-    // WFI is not supported in umode
-    if (init_privileged_mode == privileged_mode_t.USER_MODE) {
-      no_wfi = true;
-    }
     instr_registry.create_instr_list(this);
   }
 

@@ -287,6 +287,20 @@ class riscv_privil_reg: riscv_reg!(privileged_reg_t)
       privil_level = privileged_level_t.M_LEVEL;
       add_field("VALUE",  XLEN,  reg_field_access_t.WARL);
       break;
+      // Machine security configuration
+    case privileged_reg_t.MSECCFG:
+      privil_level = privileged_level_t.M_LEVEL;
+      add_field("MML", 1, reg_field_access_t.WARL); // RW1S
+      add_field("MMWP", 1, reg_field_access_t.WARL); // RW1S
+      add_field("RLB", 1, reg_field_access_t.WARL); // RW0C
+      break;
+      // Machine security configuration, RV32 only
+    case privileged_reg_t.MSECCFGH:
+      privil_level = privileged_level_t.M_LEVEL;
+      if (XLEN!=32) {
+	uvm_fatal(get_full_name(), "CSR MSECCFGH only exists in RV32.");
+      }
+      break;
       // Physical Memory Protection Configuration Register
     case privileged_reg_t.PMPCFG0:
       privil_level = privileged_level_t.M_LEVEL;

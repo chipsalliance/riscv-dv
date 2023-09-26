@@ -32,7 +32,7 @@ import riscv.gen.riscv_directed_instr_lib: riscv_mem_access_stream;
 import std.format: format;
 import std.algorithm.searching: canFind, minElement, maxElement;
 
-import esdl.rand: rand, constraint, randomize_with;
+import esdl.rand: rand, constraint, randomize_with, constraint_override;
 import esdl.base.rand: urandom;
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
@@ -145,6 +145,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
 
   // Generate each load/store instruction
   void gen_load_store_instr() {
+    import std.format: sformat;
     bool enable_compressed_load_store;
     riscv_instr instr;
     randomize_avail_regs();
@@ -236,7 +237,7 @@ class riscv_load_store_base_instr_stream : riscv_mem_access_stream
       instr.has_imm = false;
       randomize_gpr(instr);
       instr.rs1 = rs1_reg;
-      instr.imm_str = format("%0d", offset[i]);  // $signed(offset[i]));
+      instr.imm_str = cast(string) sformat!("%0d")(instr.imm_str_buf(), offset[i]);  // $signed(offset[i]));
       instr.process_load_store = 0;
       append_instr(instr);
       load_store_instr ~= instr;
@@ -479,6 +480,7 @@ class riscv_mem_region_stress_test: riscv_multi_page_load_store_instr_stream
     super(name);
   }
 
+  @constraint_override
   constraint! q{
     num_of_instr_stream inside [2..5];
     foreach (i, id; data_page_id) {
@@ -526,6 +528,8 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
   }
 
   override void add_rs1_init_la_instr(riscv_reg_t gpr, int id, int base = 0) {
+    import std.format: sformat;
+
     Queue!riscv_instr instr;
     riscv_pseudo_instr li_instr;
     riscv_instr store_instr;
@@ -542,7 +546,7 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
       rd inside [$0];
       rd != $1;
     } (cfg.gpr, gpr);
-    li_instr.imm_str = format("0x%0x", addr_offset);
+    li_instr.imm_str = cast(string) sformat!("0x%0x")(li_instr.imm_str_buf(), addr_offset);
     // Add offset to the base address
     add_instr = cfg.instr_registry.get_instr(riscv_instr_name_t.ADD);
     //`DV_CHECK_RANDOMIZE_WITH_FATAL(add_instr,
@@ -670,11 +674,11 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
     add_mixed_instr(num_mixed_instr);
     add_rs1_init_la_instr(rs1_reg, data_page_id, base);
     if (address_mode == address_mode_e.STRIDED) {
-      this.append_instr(get_init_gpr_instr(rs2_reg, toubvec!64(stride_byte_offset)));
+      this.append_instr(get_init_gpr_instr(rs2_reg, toubvec!XLEN(stride_byte_offset)));
     }
     else if (address_mode == address_mode_e.INDEXED) {
       // TODO: Support different index address for each element
-      add_init_vector_gpr_instr(vs2_reg, toubvec!64(index_addr));
+      add_init_vector_gpr_instr(vs2_reg, toubvec!XLEN(index_addr));
     }
     super.post_randomize();
   }

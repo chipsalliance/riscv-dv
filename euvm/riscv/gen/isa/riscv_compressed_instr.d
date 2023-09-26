@@ -17,7 +17,7 @@
 
 module riscv.gen.isa.riscv_compressed_instr;
 
-import riscv.gen.riscv_instr_pkg: format_string, riscv_instr_name_t, MAX_INSTR_STR_LEN,
+import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, MAX_INSTR_STR_LEN,
   riscv_instr_format_t, riscv_reg_t, riscv_instr_category_t, imm_t;
 import riscv.gen.target: XLEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
@@ -218,7 +218,8 @@ class riscv_compressed_instr: riscv_instr
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     import std.string: toLower;
-    string asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    string asm_str = format!FMT(get_instr_name());
     if (category != riscv_instr_category_t.SYSTEM) {
       switch(instr_format) {
       case riscv_instr_format_t.CI_FORMAT,
@@ -284,6 +285,99 @@ class riscv_compressed_instr: riscv_instr
     return asm_str.toLower();
   }
 
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    string asm_str;
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    if (category != riscv_instr_category_t.SYSTEM) {
+      switch(instr_format) {
+      case riscv_instr_format_t.CI_FORMAT,
+	riscv_instr_format_t.CIW_FORMAT :
+	if (instr_name == riscv_instr_name_t.C_NOP)
+	  asm_str = "c.nop";
+	else if (instr_name == riscv_instr_name_t.C_ADDI16SP)
+	  asm_buf = sformat!("%0ssp, %0s")(buf, instr_name_str, get_imm());
+	else if (instr_name == riscv_instr_name_t.C_ADDI4SPN)
+	  asm_buf = sformat!("%0s%0s, sp, %0s")(buf, instr_name_str, rd, get_imm());
+	else if (instr_name.inside(riscv_instr_name_t.C_LDSP, riscv_instr_name_t.C_LWSP,
+				   riscv_instr_name_t.C_LQSP))
+	  asm_buf = sformat!("%0s%0s, %0s(sp)")(buf, instr_name_str, rd, get_imm());
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, get_imm());
+	break;
+      case riscv_instr_format_t.CL_FORMAT :
+	asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, rd, get_imm(), rs1);
+	break;
+      case riscv_instr_format_t.CS_FORMAT:
+	if (category == riscv_instr_category_t.STORE)
+	  asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf, instr_name_str, rs2, get_imm(), rs1);
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs1, rs2);
+	break;
+      case riscv_instr_format_t.CA_FORMAT :
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs2);
+	break;
+      case riscv_instr_format_t.CB_FORMAT:
+	asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs1, get_imm());
+	break;
+      case riscv_instr_format_t.CSS_FORMAT:
+	if (category == riscv_instr_category_t.STORE)
+	  asm_buf = sformat!("%0s%0s, %0s(sp)")(buf, instr_name_str, rs2, get_imm());
+	else
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rs2, get_imm());
+	break;
+      case riscv_instr_format_t.CR_FORMAT:
+	if (instr_name.inside(riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR)) {
+	  asm_buf = sformat!("%0s%0s")(buf, instr_name_str, rs1);
+	}
+	else {
+	  asm_buf = sformat!("%0s%0s, %0s")(buf, instr_name_str, rd, rs2);
+	}
+	break;
+      case riscv_instr_format_t.CJ_FORMAT:
+	asm_buf = sformat!("%0s%0s")(buf, instr_name_str, get_imm());
+	break;
+      default: uvm_info(get_full_name(),
+			format("Unsupported format %0s", instr_format), UVM_LOW);
+	break; 
+      }
+    }
+    else {
+      // For EBREAK,C.EBREAK, making sure pc+4 is a valid instruction boundary
+      // This is needed to resume execution from epc+4 after ebreak handling
+      if (instr_name == riscv_instr_name_t.C_EBREAK) {
+	asm_str = "c.ebreak; c.nop;";
+      }
+    }
+
+    if (asm_str.length > 0) {
+      assert (asm_buf.length == 0);
+      buf[0..asm_str.length] = asm_str;
+      asm_buf = buf[0..asm_str.length];
+    }
+
+    
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
+  }
+
   // Convert the instruction to assembly code
   override string convert2bin(string prefix = "") {
     string binary;
@@ -297,11 +391,11 @@ class riscv_compressed_instr: riscv_instr
 			      get_c_gpr(rs1) ~ cast(ubvec!2) imm[6..8] ~ get_c_gpr(rd) ~
 			      get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_FLD, riscv_instr_name_t.C_LD:
+    case riscv_instr_name_t.C_LD:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ get_c_gpr(rs1) ~
 			      cast(ubvec!2) imm[6..8] ~ get_c_gpr(rd) ~ get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_LW, riscv_instr_name_t.C_FLW:
+    case riscv_instr_name_t.C_LW:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ get_c_gpr(rs1) ~
 			      imm[2] ~ imm[6] ~ get_c_gpr(rd) ~ get_c_opcode()));
       break;
@@ -310,11 +404,11 @@ class riscv_compressed_instr: riscv_instr
 			      get_c_gpr(rs1) ~ cast(ubvec!2) imm[6..8] ~ get_c_gpr(rs2) ~
 			      get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_FSD, riscv_instr_name_t.C_SD:
+    case riscv_instr_name_t.C_SD:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ get_c_gpr(rs1) ~
 			      cast(ubvec!2) imm[6..8] ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_SW, riscv_instr_name_t.C_FSW:
+    case riscv_instr_name_t.C_SW:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ get_c_gpr(rs1) ~
 			      imm[2] ~ imm[6] ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
@@ -393,7 +487,7 @@ class riscv_compressed_instr: riscv_instr
       binary = format("%4h", (get_func3() ~ toubvec!1(0b0) ~ toubvec!5(rd) ~ toubvec!5(0b00000) ~
 			      get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_FLDSP, riscv_instr_name_t.C_LDSP:
+    case riscv_instr_name_t.C_LDSP:
       binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!2) imm[3..5] ~
 			      cast(ubvec!3) imm[6..9] ~ get_c_opcode()));
       break;
@@ -401,7 +495,7 @@ class riscv_compressed_instr: riscv_instr
       binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ imm[4] ~
 			      cast(ubvec!4) imm[6..10] ~ get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_LWSP, riscv_instr_name_t.C_FLWSP:
+    case riscv_instr_name_t.C_LWSP:
       binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!3) imm[2..5] ~
 			      cast(ubvec!2) imm[6..8]  ~ get_c_opcode()));
       break;
@@ -425,15 +519,15 @@ class riscv_compressed_instr: riscv_instr
       binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(rd) ~ toubvec!5(rs2) ~
 			      get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_FSDSP, riscv_instr_name_t.C_SDSP:
+    case riscv_instr_name_t.C_SDSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ cast(ubvec!3) imm[6..9]  ~
 			      toubvec!5(rs2) ~ get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_SQSP :
+    case riscv_instr_name_t.C_SQSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!2) imm[4..6] ~ cast(ubvec!4) imm[6..10] ~
 			      toubvec!5(rs2) ~ get_c_opcode()));
       break;
-    case riscv_instr_name_t.C_SWSP, riscv_instr_name_t.C_FSWSP  :
+    case riscv_instr_name_t.C_SWSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!4) imm[2..6] ~ cast(ubvec!2) imm[6..8] ~
 			      toubvec!5(rs2) ~ get_c_opcode()));
       break;
@@ -448,15 +542,12 @@ class riscv_compressed_instr: riscv_instr
   ubvec!2 get_c_opcode() {
     switch(instr_name) {
     case riscv_instr_name_t.C_ADDI4SPN,
-      riscv_instr_name_t.C_FLD,
       riscv_instr_name_t.C_LQ,
       riscv_instr_name_t.C_LW,
-      riscv_instr_name_t.C_FLW,
       riscv_instr_name_t.C_LD,
       riscv_instr_name_t.C_FSD,
       riscv_instr_name_t.C_SQ,
       riscv_instr_name_t.C_SW,
-      riscv_instr_name_t.C_FSW,
       riscv_instr_name_t.C_SD : return toubvec!2(0b00);
     case riscv_instr_name_t.C_NOP,
       riscv_instr_name_t.C_ADDI,
@@ -481,20 +572,16 @@ class riscv_compressed_instr: riscv_instr
       riscv_instr_name_t.C_BNEZ : return toubvec!2(0b01);
     case riscv_instr_name_t.C_SLLI,
       riscv_instr_name_t.C_SLLI64,
-      riscv_instr_name_t.C_FLDSP,
       riscv_instr_name_t.C_LQSP,
       riscv_instr_name_t.C_LWSP,
-      riscv_instr_name_t.C_FLWSP,
       riscv_instr_name_t.C_LDSP,
       riscv_instr_name_t.C_JR,
       riscv_instr_name_t.C_MV,
       riscv_instr_name_t.C_EBREAK,
       riscv_instr_name_t.C_JALR,
       riscv_instr_name_t.C_ADD,
-      riscv_instr_name_t.C_FSDSP,
       riscv_instr_name_t.C_SQSP,
       riscv_instr_name_t.C_SWSP,
-      riscv_instr_name_t.C_FSWSP,
       riscv_instr_name_t.C_SDSP : return toubvec!2(0b10);
     default :
       uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
@@ -506,15 +593,11 @@ class riscv_compressed_instr: riscv_instr
   override ubvec!3 get_func3() {
     switch(instr_name) {
     case riscv_instr_name_t.C_ADDI4SPN : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_FLD      : return toubvec!3(0b001);
     case riscv_instr_name_t.C_LQ       : return toubvec!3(0b001);
     case riscv_instr_name_t.C_LW       : return toubvec!3(0b010);
-    case riscv_instr_name_t.C_FLW      : return toubvec!3(0b011);
     case riscv_instr_name_t.C_LD       : return toubvec!3(0b011);
-    case riscv_instr_name_t.C_FSD      : return toubvec!3(0b101);
     case riscv_instr_name_t.C_SQ       : return toubvec!3(0b101);
     case riscv_instr_name_t.C_SW       : return toubvec!3(0b110);
-    case riscv_instr_name_t.C_FSW      : return toubvec!3(0b111);
     case riscv_instr_name_t.C_SD       : return toubvec!3(0b111);
     case riscv_instr_name_t.C_NOP      : return toubvec!3(0b000);
     case riscv_instr_name_t.C_ADDI     : return toubvec!3(0b000);
@@ -539,20 +622,16 @@ class riscv_compressed_instr: riscv_instr
     case riscv_instr_name_t.C_BNEZ     : return toubvec!3(0b111);
     case riscv_instr_name_t.C_SLLI     : return toubvec!3(0b000);
     case riscv_instr_name_t.C_SLLI64   : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_FLDSP    : return toubvec!3(0b001);
     case riscv_instr_name_t.C_LQSP     : return toubvec!3(0b001);
     case riscv_instr_name_t.C_LWSP     : return toubvec!3(0b010);
-    case riscv_instr_name_t.C_FLWSP    : return toubvec!3(0b011);
     case riscv_instr_name_t.C_LDSP     : return toubvec!3(0b011);
     case riscv_instr_name_t.C_JR       : return toubvec!3(0b100);
     case riscv_instr_name_t.C_MV       : return toubvec!3(0b100);
     case riscv_instr_name_t.C_EBREAK   : return toubvec!3(0b100);
     case riscv_instr_name_t.C_JALR     : return toubvec!3(0b100);
     case riscv_instr_name_t.C_ADD      : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_FSDSP    : return toubvec!3(0b101);
     case riscv_instr_name_t.C_SQSP     : return toubvec!3(0b101);
     case riscv_instr_name_t.C_SWSP     : return toubvec!3(0b110);
-    case riscv_instr_name_t.C_FSWSP    : return toubvec!3(0b111);
     case riscv_instr_name_t.C_SDSP     : return toubvec!3(0b111);
     default : uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);

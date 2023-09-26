@@ -32,7 +32,7 @@ int main(string[] args) {
 
   if (! cmdl.plusArgs("thread_index=" ~ "%d", thread_index))
     thread_index = 0;
-  if (! cmdl.plusArgs("thread_count=" ~ "%d", thread_count))
+  if (! cmdl.plusArgs("par_num_threads=" ~ "%d", thread_count))
     thread_count = 1;
 
   auto testbench = new uvm_testbench;

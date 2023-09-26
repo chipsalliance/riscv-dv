@@ -17,7 +17,7 @@
 
 module riscv.gen.isa.riscv_amo_instr;
 
-import riscv.gen.riscv_instr_pkg: riscv_instr_group_t, format_string,
+import riscv.gen.riscv_instr_pkg: riscv_instr_group_t,
   riscv_instr_name_t, MAX_INSTR_STR_LEN;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
@@ -62,10 +62,45 @@ class riscv_amo_instr: riscv_instr
     return instr_name_str;
   }
 
+  override char[] get_instr_name(char[] buf) {
+    import std.format: sformat;
+    
+    char[] instr_name_str = sformat!("%s")(buf, instr_name);
+    
+    if (group == riscv_instr_group_t.RV32A) {
+      instr_name_str[$-2..$]  = ".w";
+      if (aq) {
+	instr_name_str = buf[0..instr_name_str.length+3];
+	instr_name_str[$-3..$]  = ".aq";
+      }
+      else if(rl) {
+	instr_name_str = buf[0..instr_name_str.length+3];
+	instr_name_str[$-3..$]  = ".rl";
+      }
+    }
+    else if (group == riscv_instr_group_t.RV64A) {
+      instr_name_str[$-2..$]  = ".d";
+      if (aq) {
+	instr_name_str = buf[0..instr_name_str.length+3];
+	instr_name_str[$-3..$]  = ".aq";
+      }
+      else if(rl) {
+	instr_name_str = buf[0..instr_name_str.length+3];
+	instr_name_str[$-3..$]  = ".rl";
+      }
+    }
+    else {
+      uvm_fatal(get_full_name(), format("Unexpected amo instr group: %0s / %0s",
+					group, instr_name));
+    }
+    return instr_name_str;
+  }
+
   // Convert the instruction to assembly code
   override string convert2asm(string prefix = "") {
     import std.string: toLower;
-    string asm_str = format_string(get_instr_name(), MAX_INSTR_STR_LEN);
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    string asm_str = format!FMT(get_instr_name());
     if (group.inside(riscv_instr_group_t.RV32A, riscv_instr_group_t.RV64A))  {
       if (instr_name.inside(riscv_instr_name_t.LR_W, riscv_instr_name_t.LR_D)) {
         asm_str = format("%0s %0s, (%0s)", asm_str, rd, rs1);
@@ -78,9 +113,46 @@ class riscv_amo_instr: riscv_instr
       uvm_fatal(get_full_name(), format("Unexpected amo instr group: %0s / %0s",
 					group, instr_name));
     }
-    if(comment != "")
+    if (comment != "")
       asm_str ~= " #" ~ comment;
     return asm_str.toLower();
+  }
+
+  override char[] convert2asm(char[] buf, string prefix = "") {
+    import std.string: toLower, toLowerInPlace;
+    import std.format: sformat;
+
+    char[32] instr_buf;
+    char[MAX_INSTR_STR_LEN+8] instr_name_buf;
+
+    char[] asm_buf;
+
+    enum string FMT = "%-" ~ MAX_INSTR_STR_LEN.stringof ~ "s";
+    char[] instr_name_str = sformat!FMT(instr_name_buf, get_instr_name(instr_buf));
+
+    if (group.inside(riscv_instr_group_t.RV32A, riscv_instr_group_t.RV64A))  {
+      if (instr_name.inside(riscv_instr_name_t.LR_W, riscv_instr_name_t.LR_D)) {
+        asm_buf = sformat!("%0s %0s, (%0s)")(buf, instr_name_str, rd, rs1);
+      }
+      else {
+        asm_buf = sformat!("%0s %0s, %0s, (%0s)")(buf, instr_name_str, rd, rs2, rs1);
+      }
+    }
+    else {
+      uvm_fatal(get_full_name(), format("Unexpected amo instr group: %0s / %0s",
+					group, instr_name));
+    }
+
+    if (comment != "") {
+      buf[asm_buf.length..asm_buf.length+2] = " #";
+      buf[asm_buf.length+2..asm_buf.length+2+comment.length] = comment;
+      asm_buf = buf[0..asm_buf.length+2+comment.length];
+    }
+
+    toLowerInPlace(asm_buf);
+
+    assert(asm_buf.ptr is buf.ptr);
+    return asm_buf;
   }
 
   override void do_copy(uvm_object rhs) {
