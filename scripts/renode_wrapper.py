@@ -8,7 +8,7 @@ import tempfile
 
 REPL_TEMPLATE = """
 memory: Memory.MappedMemory @ sysbus 0x80000000
-    size: 0x10000
+    size: {mem}
 
 cpu: CPU.RiscV32 @ sysbus
     cpuType: "{isa}"
@@ -69,6 +69,12 @@ def main():
         required=True,
         help="ELF file to run",
     )
+    parser.add_argument(
+        "--mem-size",
+        type=str,
+        default="0x100000",
+        help="Memory size",
+    )
 
     args = parser.parse_args()
 
@@ -84,6 +90,7 @@ def main():
             "repl": repl,
             "resc": resc,
             "log":  args.log,
+            "mem":  args.mem_size,
         }
 
         # Render REPL template
