@@ -29,8 +29,9 @@ sysbus LoadELF @{elf}
 
 cpu MaximumBlockSize 1
 cpu SetHookAtBlockEnd "print('REGDUMP:' + ','.join(self.GetRegistersValues()))"
+cpu InstallCustomInstructionHandlerFromString "00000000000000000000000001110011" "print('ECALL:');"
 
-emulation RunFor "0.000100"
+emulation RunFor "0.001"
 
 quit
 """
