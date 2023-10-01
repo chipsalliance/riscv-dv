@@ -72,6 +72,7 @@ ISA_FILES = riscv/gen/isa/package.d riscv/gen/isa/riscv_amo_instr.d	\
             riscv/gen/isa/riscv_compressed_instr.d			\
             riscv/gen/isa/riscv_floating_point_instr.d			\
             riscv/gen/isa/riscv_instr.d riscv/gen/isa/riscv_b_instr.d	\
+            riscv/gen/isa/riscv_csr_instr.d			        \
             riscv/gen/isa/riscv_vector_instr.d				\
             riscv/gen/isa/riscv_instr_register.d			\
             riscv/gen/isa/riscv_zba_instr.d				\

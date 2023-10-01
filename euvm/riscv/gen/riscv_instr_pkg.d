@@ -1343,25 +1343,23 @@ template SPACES(uint spaces) {
 
 enum string INDENT = SPACES!LABEL_STR_LEN;
 
-// string spaces_string(uint len) {
-//   import std.algorithm: fill;
-//   char[] str = new char[len];
-//   fill(str, ' ');
-//   return cast(string) str;
-// }
+string spaces_string(uint len) {
+  import std.algorithm: fill;
+  char[] str = new char[len];
+  fill(str, ' ');
+  return cast(string) str;
+}
 
-// Use format "%-10s" instead
 
 // Format the string to a fixed length
-// string format_string(string str, int len = 10) {
-//   if (len < str.length) return str;
-//   else {
-//     static string spaces;
-//     if (spaces.length == 0) spaces = spaces_string(len);
-//     string formatted_str = str ~ spaces[0..len-str.length];
-//     return formatted_str;
-//   }
-// }
+string format_string(string str, int len = 10) {
+  if (len < str.length) return str;
+  else {
+    static string spaces;
+    if (spaces.length < len) spaces = spaces_string(len);
+    return str ~ spaces[0..len-str.length];
+  }
+}
 
 // Print the data in the following format
 // 0xabcd, 0x1234, 0x3334 ...

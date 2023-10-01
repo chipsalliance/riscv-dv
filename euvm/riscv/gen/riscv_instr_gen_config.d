@@ -751,7 +751,6 @@ class riscv_instr_gen_config: uvm_object
     min_stack_len_per_program = 2 * (XLEN/8);
     // Check if the setting is legal
     check_setting();
-    instr_registry.create_instr_list(this);
   }
 
   void check_setting() {
@@ -820,4 +819,37 @@ class riscv_instr_gen_config: uvm_object
       }
     }
   }
+
+  struct csr_config {
+    // Privileged CSR filter
+    privileged_reg_t[]                            exclude_reg;
+    privileged_reg_t[]                            include_reg;
+
+    void create_csr_filter(riscv_instr_gen_config cfg) {
+      include_reg.length = 0;
+      exclude_reg.length = 0;
+      if (cfg.enable_illegal_csr_instruction) {
+	exclude_reg = implemented_csr;
+      }
+      else if (cfg.enable_access_invalid_csr_level) {
+	include_reg = cfg.invalid_priv_mode_csrs;
+      }
+      else {
+	// Use scratch register to avoid the side effect of modifying other privileged mode CSR.
+	if (cfg.init_privileged_mode == privileged_mode_t.MACHINE_MODE) {
+	  include_reg = [privileged_reg_t.MSCRATCH];
+	}
+	else if (cfg.init_privileged_mode == privileged_mode_t.SUPERVISOR_MODE) {
+	  include_reg = [privileged_reg_t.SSCRATCH];
+	}
+	else {
+	  include_reg = [privileged_reg_t.USCRATCH];
+	}
+      }
+    }
+  }
+
+  csr_config csr_cfg;
 }
+
+  

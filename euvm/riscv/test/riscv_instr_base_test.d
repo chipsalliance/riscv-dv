@@ -104,7 +104,8 @@ class riscv_instr_base_test: uvm_test
     for (int i = 0; i < cfg.num_of_tests; i++) {
       string test_name;
       randomize_cfg();
-      // registry.create_instr_list(cfg);
+      cfg.instr_registry.create_instr_list(cfg);
+      cfg.csr_cfg.create_csr_filter(cfg);
       asm_gen = riscv_asm_program_gen.type_id.create("asm_gen", null, get_full_name());
       asm_gen.cfg = cfg;
       asm_gen.get_directed_instr_stream();

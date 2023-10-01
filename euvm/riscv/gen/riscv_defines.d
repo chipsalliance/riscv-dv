@@ -29,6 +29,7 @@ mixin(declareEnums!imm_t());
 
 
 public import riscv.gen.isa.riscv_instr: riscv_instr;
+public import riscv.gen.isa.riscv_csr_instr: riscv_csr_instr;
 public import riscv.gen.isa.riscv_floating_point_instr: riscv_floating_point_instr;
 public import riscv.gen.isa.riscv_compressed_instr: riscv_compressed_instr;
 public import riscv.gen.isa.riscv_amo_instr: riscv_amo_instr;
@@ -230,6 +231,14 @@ alias RISCV_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
 		  imm_t imm_tp = imm_t.IMM) =
   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
 		    riscv_instr);
+
+alias RISCV_CSR_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+		  riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+		  imm_t imm_tp = imm_t.IMM) =
+  RISCV_CSR_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+		    riscv_csr_instr);
+
+alias riscv_csr_instr_mixin = riscv_instr_mixin_tmpl!riscv_csr_instr;
 
 alias riscv_fp_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
 

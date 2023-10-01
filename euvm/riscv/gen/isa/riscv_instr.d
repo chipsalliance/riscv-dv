@@ -94,17 +94,6 @@ class riscv_instr: uvm_object
     }
   } imm_c;
 
-  constraint!  q{
-    if (category == riscv_instr_category_t.CSR) {
-      if (m_cfg.instr_registry.include_reg.length > 0) {
-        csr inside [m_cfg.instr_registry.include_reg];
-      }
-      if (m_cfg.instr_registry.exclude_reg.length > 0) {
-        csr !inside [m_cfg.instr_registry.exclude_reg];
-      }
-    }
-  } csr_c;
-
   this(string name = "") {
     super(name);
   }
@@ -131,12 +120,6 @@ class riscv_instr: uvm_object
       has_rs2 = false;
       break;
     default: break;
-    }
-    if (category == riscv_instr_category_t.CSR) {
-      has_rs2 = false;
-      if (instr_format ==riscv_instr_format_t.I_FORMAT) {
-	has_rs1 = false;
-      }
     }
   }
 
@@ -208,8 +191,6 @@ class riscv_instr: uvm_object
 	  asm_str = "fence.i";
 	else if (category == riscv_instr_category_t.LOAD) // Use psuedo instruction format
 	  asm_str = format("%0s%0s, %0s(%0s)", asm_str, rd, get_imm(), rs1);
-	else if (category == riscv_instr_category_t.CSR)
-	  asm_str = format("%0s%0s, 0x%0x, %0s", asm_str,rd, csr, get_imm());
 	else
 	  asm_str = format("%0s%0s, %0s, %0s", asm_str, rd, rs1, get_imm());
 	break;
@@ -220,10 +201,7 @@ class riscv_instr: uvm_object
 	  asm_str = format("%0s%0s, %0s, %0s", asm_str, rs1, rs2, get_imm());
 	break;
       case riscv_instr_format_t.R_FORMAT: // instr rd,rs1,rs2
-	if (category ==  riscv_instr_category_t.CSR) {
-	  asm_str = format("%0s%0s, 0x%0x, %0s", asm_str, rd, csr, rs1);
-	}
-	else if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
+	if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
 	  asm_str = "sfence.vma x0, x0"; // TODO: Support all possible sfence
 	}
 	else {
@@ -277,8 +255,6 @@ class riscv_instr: uvm_object
 	  asm_str = "fence.i";
 	else if (category == riscv_instr_category_t.LOAD) // Use psuedo instruction format
 	  asm_buf = sformat!("%0s%0s, %0s(%0s)")(buf,  instr_name_str, rd, get_imm(), rs1);
-	else if (category == riscv_instr_category_t.CSR)
-	  asm_buf = sformat!("%0s%0s, 0x%0x, %0s")(buf, instr_name_str, rd, csr, get_imm());
 	else
 	  asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rd, rs1, get_imm());
 	break; 
@@ -289,10 +265,7 @@ class riscv_instr: uvm_object
 	  asm_buf = sformat!("%0s%0s, %0s, %0s")(buf, instr_name_str, rs1, rs2, get_imm());
 	break;  
       case riscv_instr_format_t.R_FORMAT: // instr rd,rs1,rs2
-	if (category ==  riscv_instr_category_t.CSR) {
-	  asm_buf = sformat!("%0s%0s, 0x%0x, %0s")(buf, instr_name_str, rd, csr, rs1);
-	}
-	else if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
+	if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
 	  asm_str = "sfence.vma x0, x0"; // TODO: Support all possible sfence
 	}
 	else {
@@ -394,12 +367,6 @@ class riscv_instr: uvm_object
     //   riscv_instr_name_t.REMU: { return toubvec!0b0110011;
     case riscv_instr_name_t.FENCE,
       riscv_instr_name_t.FENCE_I:      return toubvec!7(0b0001111);
-    case riscv_instr_name_t.CSRRW,
-      riscv_instr_name_t.CSRRS,
-      riscv_instr_name_t.CSRRC,
-      riscv_instr_name_t.CSRRWI,
-      riscv_instr_name_t.CSRRSI,
-      riscv_instr_name_t.CSRRCI:       return toubvec!7(0b1110011);
     case riscv_instr_name_t.ADDW,
       riscv_instr_name_t.SUBW,
       riscv_instr_name_t.SLLW,
@@ -464,12 +431,6 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.FENCE_I:    return toubvec!3(0b001);
       // case riscv_instr_name_t.ECALL:      return toubvec!3(0b000);
       // case riscv_instr_name_t.EBREAK:     return toubvec!3(0b000);
-    case riscv_instr_name_t.CSRRW:      return toubvec!3(0b001);
-    case riscv_instr_name_t.CSRRS:      return toubvec!3(0b010);
-    case riscv_instr_name_t.CSRRC:      return toubvec!3(0b011);
-    case riscv_instr_name_t.CSRRWI:     return toubvec!3(0b101);
-    case riscv_instr_name_t.CSRRSI:     return toubvec!3(0b110);
-    case riscv_instr_name_t.CSRRCI:     return toubvec!3(0b111);
     case riscv_instr_name_t.LWU:        return toubvec!3(0b110);
     case riscv_instr_name_t.LD:         return toubvec!3(0b011);
     case riscv_instr_name_t.SD:         return toubvec!3(0b011);
@@ -584,13 +545,6 @@ class riscv_instr: uvm_object
 	  ~ toubvec!5(0b00000)
 	  ~ get_opcode();
       }  // 17 bit zero and 5 bit zero
-      else if (category == riscv_instr_category_t.CSR) {
-	vec = csr // cast(ubvec!11) csr[0..11] SV BUG?
-	  ~ cast(ubvec!5) imm[0..5]
-	  ~ get_func3()
-	  ~ toubvec!5(rd)
-	  ~ get_opcode();
-      }
       else if (instr_name == riscv_instr_name_t.ECALL) {
 	vec = get_func7()
 	  ~ toubvec!18(0b000000000000000000)
@@ -649,14 +603,7 @@ class riscv_instr: uvm_object
 	~ get_opcode();
       break;
     case riscv_instr_format_t.R_FORMAT:
-      if (category == riscv_instr_category_t.CSR) {
-	vec = csr // cast(ubvec!11) csr[0..11] -- SV BUG?
-	  ~ toubvec!5(rs1)
-	  ~ get_func3()
-	  ~ toubvec!5(rd)
-	  ~ get_opcode();
-      }
-      else if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
+      if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
 	vec = get_func7()
 	  ~ toubvec!18(0b000000000000000000)
 	  ~ get_opcode();

@@ -63,6 +63,7 @@ class riscv_instr_test: riscv_instr_base_test
     auto fd = File(test_name,"w");
     uvm_info(get_full_name(), "Creating instruction list", UVM_LOW);
     cfg.instr_registry.create_instr_list(cfg);
+    cfg.csr_cfg.create_csr_filter(cfg);
     uvm_info(get_full_name(), "Randomizing instruction list now...", UVM_LOW);
 
     //10000.repeat();

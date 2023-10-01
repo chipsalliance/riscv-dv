@@ -56,10 +56,6 @@ class riscv_instr_registry: uvm_object
   riscv_instr_name_t[]                          basic_instr;
   riscv_instr[riscv_instr_name_t]               instr_template;
 
-  // Privileged CSR filter
-  privileged_reg_t[]                            exclude_reg;
-  privileged_reg_t[]                            include_reg;
-
   riscv_instr_gen_config                        cfg;
 
   this (string name="") {
@@ -120,32 +116,8 @@ class riscv_instr_registry: uvm_object
       }
     }
     build_basic_instruction_list(cfg);
-    create_csr_filter(cfg);
     instr_names_sorted = instr_names.dup;
     instr_names_sorted.sort();
-  }
-
-  void create_csr_filter(riscv_instr_gen_config cfg) {
-    include_reg.length = 0;
-    exclude_reg.length = 0;
-    if (cfg.enable_illegal_csr_instruction) {
-      exclude_reg = implemented_csr;
-    }
-    else if (cfg.enable_access_invalid_csr_level) {
-      include_reg = cfg.invalid_priv_mode_csrs;
-    }
-    else {
-      // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
-      if (cfg.init_privileged_mode == privileged_mode_t.MACHINE_MODE) {
-	include_reg = [privileged_reg_t.MSCRATCH];
-      }
-      else if (cfg.init_privileged_mode == privileged_mode_t.SUPERVISOR_MODE) {
-	include_reg = [privileged_reg_t.SSCRATCH];
-      }
-      else {
-	include_reg = [privileged_reg_t.USCRATCH];
-      }
-    }
   }
 
   riscv_instr create_instr(riscv_instr_name_t instr_name, string instr_class_name) {

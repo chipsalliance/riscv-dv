@@ -81,12 +81,12 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_instr_mixin(DRET,    I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(WFI,     I_FORMAT, INTERRUPT, RV32I));
   // CSR instructions
-  mixin (riscv_instr_mixin(CSRRW,  R_FORMAT, CSR, RV32I, UIMM));
-  mixin (riscv_instr_mixin(CSRRS,  R_FORMAT, CSR, RV32I, UIMM));
-  mixin (riscv_instr_mixin(CSRRC,  R_FORMAT, CSR, RV32I, UIMM));
-  mixin (riscv_instr_mixin(CSRRWI, I_FORMAT, CSR, RV32I, UIMM));
-  mixin (riscv_instr_mixin(CSRRSI, I_FORMAT, CSR, RV32I, UIMM));
-  mixin (riscv_instr_mixin(CSRRCI, I_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRW,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRS,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRC,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRWI, I_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRSI, I_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(CSRRCI, I_FORMAT, CSR, RV32I, UIMM));
  }
  else {
    // LOAD instructions
@@ -196,16 +196,16 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_WFI_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(WFI,     I_FORMAT, INTERRUPT, RV32I); }
    // CSR instructions
-   class riscv_CSRRW_instr: riscv_instr
+   class riscv_CSRRW_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRW,  R_FORMAT, CSR, RV32I, UIMM); }
-   class riscv_CSRRS_instr: riscv_instr
+   class riscv_CSRRS_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRS,  R_FORMAT, CSR, RV32I, UIMM); }
-   class riscv_CSRRC_instr: riscv_instr
+   class riscv_CSRRC_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRC,  R_FORMAT, CSR, RV32I, UIMM); }
-   class riscv_CSRRWI_instr: riscv_instr
+   class riscv_CSRRWI_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRWI, I_FORMAT, CSR, RV32I, UIMM); }
-   class riscv_CSRRSI_instr: riscv_instr
+   class riscv_CSRRSI_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRSI, I_FORMAT, CSR, RV32I, UIMM); }
-   class riscv_CSRRCI_instr: riscv_instr
+   class riscv_CSRRCI_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRCI, I_FORMAT, CSR, RV32I, UIMM); }
  }
