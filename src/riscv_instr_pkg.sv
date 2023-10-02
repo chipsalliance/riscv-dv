@@ -1611,7 +1611,9 @@ package riscv_instr_pkg;
                                             ref bit [XLEN - 1 : 0] val);
     string s;
     if(inst.get_arg_value(cmdline_str, s)) begin
-      val = s.atohex();
+      //val = s.atohex();
+      $sscanf(s, "%h", val);
+
     end
   endfunction
 
@@ -1629,7 +1631,8 @@ package riscv_instr_pkg;
             logic[$bits(T)-1:0] raw_val;
 
             string raw_val_hex_digits = cmdline_list[i].substr(2, cmdline_list[i].len()-1);
-            raw_val = raw_val_hex_digits.atohex();
+            //raw_val = raw_val_hex_digits.atohex();
+            $sscanf(raw_val_hex_digits, "%h", raw_val);
             vals[i] = T'(raw_val);
           end else if (uvm_enum_wrapper#(T)::from_name(
              cmdline_list[i].toupper(), value)) begin
@@ -1658,12 +1661,14 @@ package riscv_instr_pkg;
     if (str.len() > 2) begin
       if (str.substr(0, 1) == "0x") begin
         str = str.substr(2, str.len() -1);
-        val = str.atohex();
+        //val = str.atohex();
+        $sscanf(str, "%h", val);
         return;
       end
     end
     if (hex) begin
-      val = str.atohex();
+      //val = str.atohex(); // This fails for 64-bit values
+      $sscanf(str, "%h", val);
     end else begin
       if (str.substr(0, 0) == "-") begin
         str = str.substr(1, str.len() - 1);
