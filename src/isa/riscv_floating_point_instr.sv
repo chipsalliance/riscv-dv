@@ -138,13 +138,13 @@ class riscv_floating_point_instr extends riscv_instr;
         end else if (instr_name inside {FMV_X_W, FMV_X_D, FCVT_W_S, FCVT_WU_S,
                                         FCVT_L_S, FCVT_LU_S, FCVT_L_D, FCVT_LU_D, FCVT_LU_S,
                                         FCVT_W_D, FCVT_WU_D, FCVT_W_H, FCVT_WU_H, FMV_X_H,
-                                        FCVT_L_H, FCVT_LU_H, FCVT_H_L, FCVT_H_LU }) begin
+                                        FCVT_L_H, FCVT_LU_H }) begin
           has_fd = 1'b0;
           has_rd = 1'b1;
         end else if (instr_name inside {FMV_W_X, FMV_D_X, FCVT_S_W, FCVT_S_WU,
                                         FCVT_S_L, FCVT_D_L, FCVT_S_LU, FCVT_D_W,
                                         FCVT_D_LU, FCVT_D_WU, FCVT_H_W,
-                                        FCVT_H_WU, FMV_H_X }) begin
+                                        FCVT_H_WU, FMV_H_X, FCVT_H_L, FCVT_H_LU}) begin
           has_rs1 = 1'b1;
           has_fs1 = 1'b0;
         end
@@ -276,6 +276,9 @@ class riscv_floating_point_instr extends riscv_instr;
 
   virtual function riscv_fpr_t get_fpr(input string str);
     str = str.toupper();
+    if (str == "ZERO") begin
+      str = "FT0";
+    end
     if (!uvm_enum_wrapper#(riscv_fpr_t)::from_name(str, get_fpr)) begin
       `uvm_fatal(`gfn, $sformatf("Cannot convert %0s to FPR", str))
     end
