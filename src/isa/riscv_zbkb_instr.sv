@@ -25,9 +25,25 @@ class riscv_zbkb_instr extends riscv_instr;
   virtual function void set_rand_mode();
     super.set_rand_mode();
     case (format) inside
-      I_FORMAT: begin
-        has_imm = 1'b0;
+      R_FORMAT: begin
+        if (instr_name inside { PACK, PACKH, PACKW }) begin
+          has_rs2 = 1'b1;
+          has_rs1 = 1'b1;
+          has_rd = 1'b1;
+          has_imm = 1'b0;
+        end
       end
+
+      I_FORMAT: begin
+        if (instr_name inside {BREV8, ZIP, UNZIP})
+        begin
+          has_rs2 = 1'b0;
+          has_rs1 = 1'b1;
+          has_rd = 1'b1;
+          has_imm = 1'b0;
+        end
+      end
+
     endcase
   endfunction : set_rand_mode
 
