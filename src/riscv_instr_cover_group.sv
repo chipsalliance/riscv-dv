@@ -258,7 +258,7 @@
       bins zeros[]    = {64'h0000_0000_0000_0000, 64'h8000_0000_0000_0000}; \
       bins NaN[]      = {64'h7ff0_0000_0000_0001, 64'h7ff8_0000_0000_0000}; \
     } \
-    cp_dfp_subnormal_on_``NAME`` : coverpoint VAR[62:DOUBLE_PRECISION_FRACTION_BITS-1] == 0 { \
+    cp_dfp_subnormal_on_``NAME`` : coverpoint VAR[62:DOUBLE_PRECISION_FRACTION_BITS] == 0 { \
       option.weight = (`"PRECISION`" == "D"); \
       type_option.weight = (`"PRECISION`" == "D"); \
     } \
@@ -440,7 +440,7 @@
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbs_instr) \
     cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd; \
-    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define ZBS_R_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbs_instr) \
@@ -450,11 +450,13 @@
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define ZCB_I_INSTR_CG_BEGIN(INSTR_NAME) \
-  `INSTR_CG_BEGIN(INSTR_NAME) \ 
-    cp_rs1      : coverpoint instr.rs1 { \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zcb_instr) \
+    cp_rs1       : coverpoint instr.rs1 { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
-    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+    `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
+      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
+    })
 
 // Copy of B_R_INSTR_CG_BEGIN
 `define ZBKB_R_INSTR_CG_BEGIN(INSTR_NAME) \
