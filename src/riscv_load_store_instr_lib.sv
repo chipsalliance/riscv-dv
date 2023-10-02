@@ -144,7 +144,7 @@ class riscv_load_store_base_instr_stream extends riscv_mem_access_stream;
           allowed_instr = {LH, LHU, SH, allowed_instr};
           if (RV32ZFH inside {riscv_instr_pkg::supported_isa} &&
             cfg.enable_floating_point && cfg.enable_zfh_extension) begin
-            allowed_instr = {FLH, allowed_instr};
+            allowed_instr = {FLH, FSH, allowed_instr};
           end
           if(((offset[i] == 0) || (offset[i] == 2)) && enable_compressed_load_store &&
             enable_zcb && rs1_reg != SP) begin
