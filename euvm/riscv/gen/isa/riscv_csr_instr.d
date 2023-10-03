@@ -27,7 +27,7 @@ import riscv.gen.target: supported_isa;
 import std.format: format;
 
 import esdl.data.bvec: ubvec, toubvec, clog2;
-import esdl.rand: constraint;
+import esdl.rand: constraint, rand;
 import uvm;
 
 import std.algorithm: canFind;
@@ -37,8 +37,13 @@ class riscv_csr_instr: riscv_instr
 {
   // Moved to riscv_instr_gen_config
   // Privileged CSR filter
-  // static privileged_reg_t    exclude_reg[];
-  // static privileged_reg_t    include_reg[];
+  // static ubvec!12[]    exclude_reg[];
+  // static ubvec!12[]    include_reg[];
+  // static ubvec!12[]    include_write_reg;
+  // When set writes to read-only CSRs can be generated
+  // static bit allow_ro_write;
+
+  @rand bool write_csr;
 
   // m_cfg is declared in the base class
 
@@ -51,43 +56,49 @@ class riscv_csr_instr: riscv_instr
     }
   }  csr_addr_c;
 
-  constraint! q{ 
+  constraint! q{
+    // We can only write a CSR if:
+    // - It's a read-only CSR and we're generating writes to read-only CSRs
+    // - Specific CSRs to write to are specified and this CSR is one
+    // - No specific CSRs to write to are specified and this isn't a read-only CSR
+    if (!((csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
+	  ((m_cfg.csr_cfg.include_write_reg.length > 0) &&
+	   (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
+	  ((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0)))) {
+      write_csr == false;
+    }
+  } write_csr_c;
+
+ constraint! q{ 
     if (instr_name == riscv_instr_name_t.CSRRW ||
 	instr_name == riscv_instr_name_t.CSRRWI) {
-      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
-	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
-	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
-	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0));
+      write_csr == true;
     }
   } csr_csrrw;
 
   constraint! q{
     if (instr_name == riscv_instr_name_t.CSRRS ||
 	instr_name == riscv_instr_name_t.CSRRC) {
-      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
-	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
-	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
-	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0))
-	|| rs1 == 0;
+      write_csr == true || rs1 == 0;
     }
   } csr_csrrsc;
 
   constraint! q{
     if (instr_name == riscv_instr_name_t.CSRRSI ||
 	instr_name == riscv_instr_name_t.CSRRCI) {
-      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
-	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
-	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
-	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0))
-	|| imm == 0;
+      write_csr == true || imm == 0;
     }
   } csr_csrrsci;
 
   constraint! q{
     // Choose a CSR before rs1 and imm values. This ensures read-only accesses to read-only CSRs
     // with similar probability to other CSR accesses.
+    solve csr before write_csr;
     solve csr before rs1;
     solve csr before imm;
+    // EUVM -- Uncommenting the next two results in non-converging constraints
+    // solve write_csr before rs1;
+    // solve write_csr before imm;
   } order;
 
 
