@@ -88,7 +88,7 @@ class riscv_reg(REG_T): uvm_object
 
   void init_reg(REG_T reg_name) {
     this.reg_name = reg_name;
-    offset = toubvec!12(reg_name);
+    offset = cast (riscv_csr_t) (reg_name);
   }
 
   ubvec!XLEN get_val() {

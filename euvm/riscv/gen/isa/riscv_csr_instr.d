@@ -41,16 +41,55 @@ class riscv_csr_instr: riscv_instr
   // static privileged_reg_t    include_reg[];
 
   // m_cfg is declared in the base class
-  constraint!  q{
-    if (category == riscv_instr_category_t.CSR) {
-      if (m_cfg.csr_cfg.include_reg.length > 0) {
-        csr inside [m_cfg.csr_cfg.include_reg];
-      }
-      if (m_cfg.csr_cfg.exclude_reg.length > 0) {
-        csr !inside [m_cfg.csr_cfg.exclude_reg];
-      }
+
+  constraint! q{
+    if (m_cfg.csr_cfg.include_reg.length > 0) {
+      csr inside [m_cfg.csr_cfg.include_reg];
     }
-  } csr_c;
+    if (m_cfg.csr_cfg.exclude_reg.length > 0) {
+      csr !inside [m_cfg.csr_cfg.exclude_reg];
+    }
+  }  csr_addr_c;
+
+  constraint! q{ 
+    if (instr_name == riscv_instr_name_t.CSRRW ||
+	instr_name == riscv_instr_name_t.CSRRWI) {
+      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
+	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
+	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
+	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0));
+    }
+  } csr_csrrw;
+
+  constraint! q{
+    if (instr_name == riscv_instr_name_t.CSRRS ||
+	instr_name == riscv_instr_name_t.CSRRC) {
+      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
+	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
+	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
+	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0))
+	|| rs1 == 0;
+    }
+  } csr_csrrsc;
+
+  constraint! q{
+    if (instr_name == riscv_instr_name_t.CSRRSI ||
+	instr_name == riscv_instr_name_t.CSRRCI) {
+      (csr[10..12] == 0b11 && m_cfg.csr_cfg.allow_ro_write) ||
+	((m_cfg.csr_cfg.include_write_reg.length > 0) &&
+	 (csr inside [m_cfg.csr_cfg.include_write_reg])) ||
+	((csr[10..12] != 0b11) && (m_cfg.csr_cfg.include_write_reg.length == 0))
+	|| imm == 0;
+    }
+  } csr_csrrsci;
+
+  constraint! q{
+    // Choose a CSR before rs1 and imm values. This ensures read-only accesses to read-only CSRs
+    // with similar probability to other CSR accesses.
+    solve csr before rs1;
+    solve csr before imm;
+  } order;
+
 
   mixin uvm_object_utils;
 

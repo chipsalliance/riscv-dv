@@ -22,7 +22,7 @@ module riscv.gen.riscv_instr_pkg;
 import riscv.gen.target: XLEN, NUM_HARTS, SATP_MODE, implemented_csr;
 import std.traits: EnumMembers;
 
-import esdl.data.bvec: bvec, ubvec;
+import esdl.data.bvec: bvec, ubvec, toubvec, UBVEC, isBitVector;
 import esdl.rand: rand;
 import uvm;
 
@@ -751,358 +751,358 @@ enum riscv_instr_category_t: ubyte {	// 6'b
 
 alias riscv_csr_t = ubvec!12;
 
-enum privileged_reg_t: ushort {	// 12'b
+enum privileged_reg_t: ubvec!12 {	// 12'b
     // User mode register
-    USTATUS         = 0x000,  // User status
-    UIE             = 0x004,  // User interrupt-enable register
-    UTVEC           = 0x005,  // User trap-handler base address
-    USCRATCH        = 0x040,  // Scratch register for user trap handlers
-    UEPC            = 0x041,  // User exception program counter
-    UCAUSE          = 0x042,  // User trap cause
-    UTVAL           = 0x043,  // User bad address or instruction
-    UIP             = 0x044,  // User interrupt pending
+    USTATUS         = UBVEC!(12, 0x000),  // User status
+    UIE             = UBVEC!(12, 0x004),  // User interrupt-enable register
+    UTVEC           = UBVEC!(12, 0x005),  // User trap-handler base address
+    USCRATCH        = UBVEC!(12, 0x040),  // Scratch register for user trap handlers
+    UEPC            = UBVEC!(12, 0x041),  // User exception program counter
+    UCAUSE          = UBVEC!(12, 0x042),  // User trap cause
+    UTVAL           = UBVEC!(12, 0x043),  // User bad address or instruction
+    UIP             = UBVEC!(12, 0x044),  // User interrupt pending
     // Unprivileged Floating-Point CSRs
-    FFLAGS          = 0x001,  // Floating-Point Accrued Exceptions
-    FRM             = 0x002,  // Floating-Point Dynamic Rounding Mode
-    FCSR            = 0x003,  // Floating-Point Control/Status Register (FRM + FFLAGS)
+    FFLAGS          = UBVEC!(12, 0x001),  // Floating-Point Accrued Exceptions
+    FRM             = UBVEC!(12, 0x002),  // Floating-Point Dynamic Rounding Mode
+    FCSR            = UBVEC!(12, 0x003),  // Floating-Point Control/Status Register (FRM + FFLAGS)
     // Unprivileged Counter/Timers
-    CYCLE           = 0xC00,  // Cycle counter for RDCYCLE instruction
-    TIME            = 0xC01,  // Timer for RDTIME instruction
-    INSTRET         = 0xC02,  // Instructions-retired counter for RDINSTRET instruction
-    HPMCOUNTER3     = 0xC03,  // Performance-monitoring counter
-    HPMCOUNTER4     = 0xC04,  // Performance-monitoring counter
-    HPMCOUNTER5     = 0xC05,  // Performance-monitoring counter
-    HPMCOUNTER6     = 0xC06,  // Performance-monitoring counter
-    HPMCOUNTER7     = 0xC07,  // Performance-monitoring counter
-    HPMCOUNTER8     = 0xC08,  // Performance-monitoring counter
-    HPMCOUNTER9     = 0xC09,  // Performance-monitoring counter
-    HPMCOUNTER10    = 0xC0A,  // Performance-monitoring counter
-    HPMCOUNTER11    = 0xC0B,  // Performance-monitoring counter
-    HPMCOUNTER12    = 0xC0C,  // Performance-monitoring counter
-    HPMCOUNTER13    = 0xC0D,  // Performance-monitoring counter
-    HPMCOUNTER14    = 0xC0E,  // Performance-monitoring counter
-    HPMCOUNTER15    = 0xC0F,  // Performance-monitoring counter
-    HPMCOUNTER16    = 0xC10,  // Performance-monitoring counter
-    HPMCOUNTER17    = 0xC11,  // Performance-monitoring counter
-    HPMCOUNTER18    = 0xC12,  // Performance-monitoring counter
-    HPMCOUNTER19    = 0xC13,  // Performance-monitoring counter
-    HPMCOUNTER20    = 0xC14,  // Performance-monitoring counter
-    HPMCOUNTER21    = 0xC15,  // Performance-monitoring counter
-    HPMCOUNTER22    = 0xC16,  // Performance-monitoring counter
-    HPMCOUNTER23    = 0xC17,  // Performance-monitoring counter
-    HPMCOUNTER24    = 0xC18,  // Performance-monitoring counter
-    HPMCOUNTER25    = 0xC19,  // Performance-monitoring counter
-    HPMCOUNTER26    = 0xC1A,  // Performance-monitoring counter
-    HPMCOUNTER27    = 0xC1B,  // Performance-monitoring counter
-    HPMCOUNTER28    = 0xC1C,  // Performance-monitoring counter
-    HPMCOUNTER29    = 0xC1D,  // Performance-monitoring counter
-    HPMCOUNTER30    = 0xC1E,  // Performance-monitoring counter
-    HPMCOUNTER31    = 0xC1F,  // Performance-monitoring counter
-    CYCLEH          = 0xC80,  // Upper 32 bits of CYCLE, RV32I only
-    TIMEH           = 0xC81,  // Upper 32 bits of TIME, RV32I only
-    INSTRETH        = 0xC82,  // Upper 32 bits of INSTRET, RV32I only
-    HPMCOUNTER3H    = 0xC83,  // Upper 32 bits of HPMCOUNTER3, RV32I only
-    HPMCOUNTER4H    = 0xC84,  // Upper 32 bits of HPMCOUNTER4, RV32I only
-    HPMCOUNTER5H    = 0xC85,  // Upper 32 bits of HPMCOUNTER5, RV32I only
-    HPMCOUNTER6H    = 0xC86,  // Upper 32 bits of HPMCOUNTER6, RV32I only
-    HPMCOUNTER7H    = 0xC87,  // Upper 32 bits of HPMCOUNTER7, RV32I only
-    HPMCOUNTER8H    = 0xC88,  // Upper 32 bits of HPMCOUNTER8, RV32I only
-    HPMCOUNTER9H    = 0xC89,  // Upper 32 bits of HPMCOUNTER9, RV32I only
-    HPMCOUNTER10H   = 0xC8A,  // Upper 32 bits of HPMCOUNTER10, RV32I only
-    HPMCOUNTER11H   = 0xC8B,  // Upper 32 bits of HPMCOUNTER11, RV32I only
-    HPMCOUNTER12H   = 0xC8C,  // Upper 32 bits of HPMCOUNTER12, RV32I only
-    HPMCOUNTER13H   = 0xC8D,  // Upper 32 bits of HPMCOUNTER13, RV32I only
-    HPMCOUNTER14H   = 0xC8E,  // Upper 32 bits of HPMCOUNTER14, RV32I only
-    HPMCOUNTER15H   = 0xC8F,  // Upper 32 bits of HPMCOUNTER15, RV32I only
-    HPMCOUNTER16H   = 0xC90,  // Upper 32 bits of HPMCOUNTER16, RV32I only
-    HPMCOUNTER17H   = 0xC91,  // Upper 32 bits of HPMCOUNTER17, RV32I only
-    HPMCOUNTER18H   = 0xC92,  // Upper 32 bits of HPMCOUNTER18, RV32I only
-    HPMCOUNTER19H   = 0xC93,  // Upper 32 bits of HPMCOUNTER19, RV32I only
-    HPMCOUNTER20H   = 0xC94,  // Upper 32 bits of HPMCOUNTER20, RV32I only
-    HPMCOUNTER21H   = 0xC95,  // Upper 32 bits of HPMCOUNTER21, RV32I only
-    HPMCOUNTER22H   = 0xC96,  // Upper 32 bits of HPMCOUNTER22, RV32I only
-    HPMCOUNTER23H   = 0xC97,  // Upper 32 bits of HPMCOUNTER23, RV32I only
-    HPMCOUNTER24H   = 0xC98,  // Upper 32 bits of HPMCOUNTER24, RV32I only
-    HPMCOUNTER25H   = 0xC99,  // Upper 32 bits of HPMCOUNTER25, RV32I only
-    HPMCOUNTER26H   = 0xC9A,  // Upper 32 bits of HPMCOUNTER26, RV32I only
-    HPMCOUNTER27H   = 0xC9B,  // Upper 32 bits of HPMCOUNTER27, RV32I only
-    HPMCOUNTER28H   = 0xC9C,  // Upper 32 bits of HPMCOUNTER28, RV32I only
-    HPMCOUNTER29H   = 0xC9D,  // Upper 32 bits of HPMCOUNTER29, RV32I only
-    HPMCOUNTER30H   = 0xC9E,  // Upper 32 bits of HPMCOUNTER30, RV32I only
-    HPMCOUNTER31H   = 0xC9F,  // Upper 32 bits of HPMCOUNTER31, RV32I only
+    CYCLE           = UBVEC!(12, 0xC00),  // Cycle counter for RDCYCLE instruction
+    TIME            = UBVEC!(12, 0xC01),  // Timer for RDTIME instruction
+    INSTRET         = UBVEC!(12, 0xC02),  // Instructions-retired counter for RDINSTRET instruction
+    HPMCOUNTER3     = UBVEC!(12, 0xC03),  // Performance-monitoring counter
+    HPMCOUNTER4     = UBVEC!(12, 0xC04),  // Performance-monitoring counter
+    HPMCOUNTER5     = UBVEC!(12, 0xC05),  // Performance-monitoring counter
+    HPMCOUNTER6     = UBVEC!(12, 0xC06),  // Performance-monitoring counter
+    HPMCOUNTER7     = UBVEC!(12, 0xC07),  // Performance-monitoring counter
+    HPMCOUNTER8     = UBVEC!(12, 0xC08),  // Performance-monitoring counter
+    HPMCOUNTER9     = UBVEC!(12, 0xC09),  // Performance-monitoring counter
+    HPMCOUNTER10    = UBVEC!(12, 0xC0A),  // Performance-monitoring counter
+    HPMCOUNTER11    = UBVEC!(12, 0xC0B),  // Performance-monitoring counter
+    HPMCOUNTER12    = UBVEC!(12, 0xC0C),  // Performance-monitoring counter
+    HPMCOUNTER13    = UBVEC!(12, 0xC0D),  // Performance-monitoring counter
+    HPMCOUNTER14    = UBVEC!(12, 0xC0E),  // Performance-monitoring counter
+    HPMCOUNTER15    = UBVEC!(12, 0xC0F),  // Performance-monitoring counter
+    HPMCOUNTER16    = UBVEC!(12, 0xC10),  // Performance-monitoring counter
+    HPMCOUNTER17    = UBVEC!(12, 0xC11),  // Performance-monitoring counter
+    HPMCOUNTER18    = UBVEC!(12, 0xC12),  // Performance-monitoring counter
+    HPMCOUNTER19    = UBVEC!(12, 0xC13),  // Performance-monitoring counter
+    HPMCOUNTER20    = UBVEC!(12, 0xC14),  // Performance-monitoring counter
+    HPMCOUNTER21    = UBVEC!(12, 0xC15),  // Performance-monitoring counter
+    HPMCOUNTER22    = UBVEC!(12, 0xC16),  // Performance-monitoring counter
+    HPMCOUNTER23    = UBVEC!(12, 0xC17),  // Performance-monitoring counter
+    HPMCOUNTER24    = UBVEC!(12, 0xC18),  // Performance-monitoring counter
+    HPMCOUNTER25    = UBVEC!(12, 0xC19),  // Performance-monitoring counter
+    HPMCOUNTER26    = UBVEC!(12, 0xC1A),  // Performance-monitoring counter
+    HPMCOUNTER27    = UBVEC!(12, 0xC1B),  // Performance-monitoring counter
+    HPMCOUNTER28    = UBVEC!(12, 0xC1C),  // Performance-monitoring counter
+    HPMCOUNTER29    = UBVEC!(12, 0xC1D),  // Performance-monitoring counter
+    HPMCOUNTER30    = UBVEC!(12, 0xC1E),  // Performance-monitoring counter
+    HPMCOUNTER31    = UBVEC!(12, 0xC1F),  // Performance-monitoring counter
+    CYCLEH          = UBVEC!(12, 0xC80),  // Upper 32 bits of CYCLE, RV32I only
+    TIMEH           = UBVEC!(12, 0xC81),  // Upper 32 bits of TIME, RV32I only
+    INSTRETH        = UBVEC!(12, 0xC82),  // Upper 32 bits of INSTRET, RV32I only
+    HPMCOUNTER3H    = UBVEC!(12, 0xC83),  // Upper 32 bits of HPMCOUNTER3, RV32I only
+    HPMCOUNTER4H    = UBVEC!(12, 0xC84),  // Upper 32 bits of HPMCOUNTER4, RV32I only
+    HPMCOUNTER5H    = UBVEC!(12, 0xC85),  // Upper 32 bits of HPMCOUNTER5, RV32I only
+    HPMCOUNTER6H    = UBVEC!(12, 0xC86),  // Upper 32 bits of HPMCOUNTER6, RV32I only
+    HPMCOUNTER7H    = UBVEC!(12, 0xC87),  // Upper 32 bits of HPMCOUNTER7, RV32I only
+    HPMCOUNTER8H    = UBVEC!(12, 0xC88),  // Upper 32 bits of HPMCOUNTER8, RV32I only
+    HPMCOUNTER9H    = UBVEC!(12, 0xC89),  // Upper 32 bits of HPMCOUNTER9, RV32I only
+    HPMCOUNTER10H   = UBVEC!(12, 0xC8A),  // Upper 32 bits of HPMCOUNTER10, RV32I only
+    HPMCOUNTER11H   = UBVEC!(12, 0xC8B),  // Upper 32 bits of HPMCOUNTER11, RV32I only
+    HPMCOUNTER12H   = UBVEC!(12, 0xC8C),  // Upper 32 bits of HPMCOUNTER12, RV32I only
+    HPMCOUNTER13H   = UBVEC!(12, 0xC8D),  // Upper 32 bits of HPMCOUNTER13, RV32I only
+    HPMCOUNTER14H   = UBVEC!(12, 0xC8E),  // Upper 32 bits of HPMCOUNTER14, RV32I only
+    HPMCOUNTER15H   = UBVEC!(12, 0xC8F),  // Upper 32 bits of HPMCOUNTER15, RV32I only
+    HPMCOUNTER16H   = UBVEC!(12, 0xC90),  // Upper 32 bits of HPMCOUNTER16, RV32I only
+    HPMCOUNTER17H   = UBVEC!(12, 0xC91),  // Upper 32 bits of HPMCOUNTER17, RV32I only
+    HPMCOUNTER18H   = UBVEC!(12, 0xC92),  // Upper 32 bits of HPMCOUNTER18, RV32I only
+    HPMCOUNTER19H   = UBVEC!(12, 0xC93),  // Upper 32 bits of HPMCOUNTER19, RV32I only
+    HPMCOUNTER20H   = UBVEC!(12, 0xC94),  // Upper 32 bits of HPMCOUNTER20, RV32I only
+    HPMCOUNTER21H   = UBVEC!(12, 0xC95),  // Upper 32 bits of HPMCOUNTER21, RV32I only
+    HPMCOUNTER22H   = UBVEC!(12, 0xC96),  // Upper 32 bits of HPMCOUNTER22, RV32I only
+    HPMCOUNTER23H   = UBVEC!(12, 0xC97),  // Upper 32 bits of HPMCOUNTER23, RV32I only
+    HPMCOUNTER24H   = UBVEC!(12, 0xC98),  // Upper 32 bits of HPMCOUNTER24, RV32I only
+    HPMCOUNTER25H   = UBVEC!(12, 0xC99),  // Upper 32 bits of HPMCOUNTER25, RV32I only
+    HPMCOUNTER26H   = UBVEC!(12, 0xC9A),  // Upper 32 bits of HPMCOUNTER26, RV32I only
+    HPMCOUNTER27H   = UBVEC!(12, 0xC9B),  // Upper 32 bits of HPMCOUNTER27, RV32I only
+    HPMCOUNTER28H   = UBVEC!(12, 0xC9C),  // Upper 32 bits of HPMCOUNTER28, RV32I only
+    HPMCOUNTER29H   = UBVEC!(12, 0xC9D),  // Upper 32 bits of HPMCOUNTER29, RV32I only
+    HPMCOUNTER30H   = UBVEC!(12, 0xC9E),  // Upper 32 bits of HPMCOUNTER30, RV32I only
+    HPMCOUNTER31H   = UBVEC!(12, 0xC9F),  // Upper 32 bits of HPMCOUNTER31, RV32I only
     // Supervisor mode register
     // Supervisor Trap Setup
-    SSTATUS         = 0x100,  // Supervisor status
-    SEDELEG         = 0x102,  // Supervisor exception delegation register
-    SIDELEG         = 0x103,  // Supervisor interrupt delegation register
-    SIE             = 0x104,  // Supervisor interrupt-enable register
-    STVEC           = 0x105,  // Supervisor trap-handler base address
-    SCOUNTEREN      = 0x106,  // Supervisor counter enable
+    SSTATUS         = UBVEC!(12, 0x100),  // Supervisor status
+    SEDELEG         = UBVEC!(12, 0x102),  // Supervisor exception delegation register
+    SIDELEG         = UBVEC!(12, 0x103),  // Supervisor interrupt delegation register
+    SIE             = UBVEC!(12, 0x104),  // Supervisor interrupt-enable register
+    STVEC           = UBVEC!(12, 0x105),  // Supervisor trap-handler base address
+    SCOUNTEREN      = UBVEC!(12, 0x106),  // Supervisor counter enable
     // Supervisor Configuration
-    SENVCFG         = 0x10A,  // Supervisor environment configuration register
+    SENVCFG         = UBVEC!(12, 0x10A),  // Supervisor environment configuration register
     // Supervisor Trap Handling
-    SSCRATCH        = 0x140,  // Scratch register for supervisor trap handlers
-    SEPC            = 0x141,  // Supervisor exception program counter
-    SCAUSE          = 0x142,  // Supervisor trap cause
-    STVAL           = 0x143,  // Supervisor bad address or instruction
-    SIP             = 0x144,  // Supervisor interrupt pending
+    SSCRATCH        = UBVEC!(12, 0x140),  // Scratch register for supervisor trap handlers
+    SEPC            = UBVEC!(12, 0x141),  // Supervisor exception program counter
+    SCAUSE          = UBVEC!(12, 0x142),  // Supervisor trap cause
+    STVAL           = UBVEC!(12, 0x143),  // Supervisor bad address or instruction
+    SIP             = UBVEC!(12, 0x144),  // Supervisor interrupt pending
     // Supervisor Protection and Translation
-    SATP            = 0x180,  // Supervisor address translation and protection
+    SATP            = UBVEC!(12, 0x180),  // Supervisor address translation and protection
     // Supervisor Debug/Trace Register
-    SCONTEXT        = 0x5A8,  // Supervisor environment configuration register.
+    SCONTEXT        = UBVEC!(12, 0x5A8),  // Supervisor environment configuration register.
     // Hypervisor Trap Setup register
-    HSTATUS         = 0x600,  // Hypervisor status register
-    HEDELEG         = 0x602,  // Hypervisor exception delegation register
-    HIDELEG         = 0x603,  // Hypervisor interrupt delegation register
-    HIE             = 0x604,  // Hypervisor interrupt-enable register
-    HCOUNTEREN      = 0x606,  // Hypervisor counter enable
-    HGEIE           = 0x607,  // Hypervisor guest external interrupt-enable register
+    HSTATUS         = UBVEC!(12, 0x600),  // Hypervisor status register
+    HEDELEG         = UBVEC!(12, 0x602),  // Hypervisor exception delegation register
+    HIDELEG         = UBVEC!(12, 0x603),  // Hypervisor interrupt delegation register
+    HIE             = UBVEC!(12, 0x604),  // Hypervisor interrupt-enable register
+    HCOUNTEREN      = UBVEC!(12, 0x606),  // Hypervisor counter enable
+    HGEIE           = UBVEC!(12, 0x607),  // Hypervisor guest external interrupt-enable register
     // Hypervisor Trap Handling
-    HTVAL           = 0x643,  // Hypervisor bad guest physical address
-    HIP             = 0x644,  // Hypervisor interrupt pending
-    HVIP            = 0x645,  // Hypervisor virtual interrupt pending
-    HTINST          = 0x64A,  // Hypervisor trap instruction (transformed)
-    HGEIP           = 0xE12,  // Hypervisor guest external interrupt pending
+    HTVAL           = UBVEC!(12, 0x643),  // Hypervisor bad guest physical address
+    HIP             = UBVEC!(12, 0x644),  // Hypervisor interrupt pending
+    HVIP            = UBVEC!(12, 0x645),  // Hypervisor virtual interrupt pending
+    HTINST          = UBVEC!(12, 0x64A),  // Hypervisor trap instruction (transformed)
+    HGEIP           = UBVEC!(12, 0xE12),  // Hypervisor guest external interrupt pending
     // Hypervisor configuration
-    HENVCFG         = 0x60A,  // Hypervisor environment configuration register
-    HENVCFGH        = 0x61A,  // Additional hypervisor env. conf. register, RV32 only
+    HENVCFG         = UBVEC!(12, 0x60A),  // Hypervisor environment configuration register
+    HENVCFGH        = UBVEC!(12, 0x61A),  // Additional hypervisor env. conf. register, RV32 only
     // Hypervisor guest address translation and protection
-    HGATP           = 0x680,  // Hypervisor guest address translation and protection
+    HGATP           = UBVEC!(12, 0x680),  // Hypervisor guest address translation and protection
     // Hypervisor Debug/Trace registers
-    HCONTEXT        = 0x6A8,  // Hypervisor-mode context register
+    HCONTEXT        = UBVEC!(12, 0x6A8),  // Hypervisor-mode context register
     // Hypervisor Counter/Timer Virtualization Registers
-    HTIMEDELTA      = 0x605,  // Delta for VS/VU-mode timer
-    HTIMEDELTAH     = 0x615,  // Upper 32 bits of htimedelta, HSXLEN=32 only
+    HTIMEDELTA      = UBVEC!(12, 0x605),  // Delta for VS/VU-mode timer
+    HTIMEDELTAH     = UBVEC!(12, 0x615),  // Upper 32 bits of htimedelta, HSXLEN=32 only
     // Virtual Supervisor Registers
-    VSSTATUS        = 0x200,  // Virtual supervisor status register
-    VSIE            = 0x204,  // Virtual supervisor interrupt-enable register
-    VSTVEC          = 0x205,  // Virtual supervisor trap handler base address
-    VSSCRATCH       = 0x240,  // Virtual supervisor scratch register
-    VSEPC           = 0x241,  // Virtual supervisor exception program counter
-    VSCAUSE         = 0x242,  // Virtual supervisor trap cause
-    VSTVAL          = 0x243,  // Virtual supervisor bad address or instruction
-    VSIP            = 0x244,  // Virtual supervisor interrupt pending
-    VSATP           = 0x280,  // Virtual supervisor address translation and protection
+    VSSTATUS        = UBVEC!(12, 0x200),  // Virtual supervisor status register
+    VSIE            = UBVEC!(12, 0x204),  // Virtual supervisor interrupt-enable register
+    VSTVEC          = UBVEC!(12, 0x205),  // Virtual supervisor trap handler base address
+    VSSCRATCH       = UBVEC!(12, 0x240),  // Virtual supervisor scratch register
+    VSEPC           = UBVEC!(12, 0x241),  // Virtual supervisor exception program counter
+    VSCAUSE         = UBVEC!(12, 0x242),  // Virtual supervisor trap cause
+    VSTVAL          = UBVEC!(12, 0x243),  // Virtual supervisor bad address or instruction
+    VSIP            = UBVEC!(12, 0x244),  // Virtual supervisor interrupt pending
+    VSATP           = UBVEC!(12, 0x280),  // Virtual supervisor address translation and protection
     // Machine mode registers
     // Machine Information Registers
-    MVENDORID       = 0xF11,  // Vendor ID
-    MARCHID         = 0xF12,  // Architecture ID
-    MIMPID          = 0xF13,  // Implementation ID
-    MHARTID         = 0xF14,  // Hardware thread ID
-    MCONFIGPTR      = 0xF15,  // Pointer to configuration data structure
+    MVENDORID       = UBVEC!(12, 0xF11),  // Vendor ID
+    MARCHID         = UBVEC!(12, 0xF12),  // Architecture ID
+    MIMPID          = UBVEC!(12, 0xF13),  // Implementation ID
+    MHARTID         = UBVEC!(12, 0xF14),  // Hardware thread ID
+    MCONFIGPTR      = UBVEC!(12, 0xF15),  // Pointer to configuration data structure
     // Machine Trap Setup
-    MSTATUS         = 0x300,  // Machine status
-    MISA            = 0x301,  // ISA and extensions
-    MEDELEG         = 0x302,  // Machine exception delegation register
-    MIDELEG         = 0x303,  // Machine interrupt delegation register
-    MIE             = 0x304,  // Machine interrupt-enable register
-    MTVEC           = 0x305,  // Machine trap-handler base address
-    MCOUNTEREN      = 0x306,  // Machine counter enable
-    MSTATUSH        = 0x310,  // Additional machine status register, RV32 only
+    MSTATUS         = UBVEC!(12, 0x300),  // Machine status
+    MISA            = UBVEC!(12, 0x301),  // ISA and extensions
+    MEDELEG         = UBVEC!(12, 0x302),  // Machine exception delegation register
+    MIDELEG         = UBVEC!(12, 0x303),  // Machine interrupt delegation register
+    MIE             = UBVEC!(12, 0x304),  // Machine interrupt-enable register
+    MTVEC           = UBVEC!(12, 0x305),  // Machine trap-handler base address
+    MCOUNTEREN      = UBVEC!(12, 0x306),  // Machine counter enable
+    MSTATUSH        = UBVEC!(12, 0x310),  // Additional machine status register, RV32 only
     // Machine Trap Handling
-    MSCRATCH        = 0x340,  // Scratch register for machine trap handlers
-    MEPC            = 0x341,  // Machine exception program counter
-    MCAUSE          = 0x342,  // Machine trap cause
-    MTVAL           = 0x343,  // Machine bad address or instruction
-    MIP             = 0x344,  // Machine interrupt pending
+    MSCRATCH        = UBVEC!(12, 0x340),  // Scratch register for machine trap handlers
+    MEPC            = UBVEC!(12, 0x341),  // Machine exception program counter
+    MCAUSE          = UBVEC!(12, 0x342),  // Machine trap cause
+    MTVAL           = UBVEC!(12, 0x343),  // Machine bad address or instruction
+    MIP             = UBVEC!(12, 0x344),  // Machine interrupt pending
     // Machine Configuration
-    MENVCFG         = 0x30A,  // Machine environment configuration register
-    MENVCFGH        = 0x31A,  // Additional machine env. conf. register, RV32 only
-    MSECCFG         = 0x747,  // Machine security configuration register
-    MSECCFGH        = 0x757,  // Additional machine security conf. register, RV32 only
+    MENVCFG         = UBVEC!(12, 0x30A),  // Machine environment configuration register
+    MENVCFGH        = UBVEC!(12, 0x31A),  // Additional machine env. conf. register, RV32 only
+    MSECCFG         = UBVEC!(12, 0x747),  // Machine security configuration register
+    MSECCFGH        = UBVEC!(12, 0x757),  // Additional machine security conf. register, RV32 only
     // Machine Memory Protection
-    PMPCFG0         = 0x3A0,  // Physical memory protection configuration
-    PMPCFG1         = 0x3A1,  // Physical memory protection configuration, RV32 only
-    PMPCFG2         = 0x3A2,  // Physical memory protection configuration
-    PMPCFG3         = 0x3A3,  // Physical memory protection configuration, RV32 only
-    PMPCFG4         = 0x3A4,  // Physical memory protection configuration
-    PMPCFG5         = 0x3A5,  // Physical memory protection configuration, RV32 only
-    PMPCFG6         = 0x3A6,  // Physical memory protection configuration
-    PMPCFG7         = 0x3A7,  // Physical memory protection configuration, RV32 only
-    PMPCFG8         = 0x3A8,  // Physical memory protection configuration
-    PMPCFG9         = 0x3A9,  // Physical memory protection configuration, RV32 only
-    PMPCFG10        = 0x3AA,  // Physical memory protection configuration
-    PMPCFG11        = 0x3AB,  // Physical memory protection configuration, RV32 only
-    PMPCFG12        = 0x3AC,  // Physical memory protection configuration
-    PMPCFG13        = 0x3AD,  // Physical memory protection configuration, RV32 only
-    PMPCFG14        = 0x3AE,  // Physical memory protection configuration
-    PMPCFG15        = 0x3AF,  // Physical memory protection configuration, RV32 only
-    PMPADDR0        = 0x3B0,  // Physical memory protection address register
-    PMPADDR1        = 0x3B1,  // Physical memory protection address register
-    PMPADDR2        = 0x3B2,  // Physical memory protection address register
-    PMPADDR3        = 0x3B3,  // Physical memory protection address register
-    PMPADDR4        = 0x3B4,  // Physical memory protection address register
-    PMPADDR5        = 0x3B5,  // Physical memory protection address register
-    PMPADDR6        = 0x3B6,  // Physical memory protection address register
-    PMPADDR7        = 0x3B7,  // Physical memory protection address register
-    PMPADDR8        = 0x3B8,  // Physical memory protection address register
-    PMPADDR9        = 0x3B9,  // Physical memory protection address register
-    PMPADDR10       = 0x3BA,  // Physical memory protection address register
-    PMPADDR11       = 0x3BB,  // Physical memory protection address register
-    PMPADDR12       = 0x3BC,  // Physical memory protection address register
-    PMPADDR13       = 0x3BD,  // Physical memory protection address register
-    PMPADDR14       = 0x3BE,  // Physical memory protection address register
-    PMPADDR15       = 0x3BF,  // Physical memory protection address register
-    PMPADDR16       = 0x4C0,  // Physical memory protection address register
-    PMPADDR17       = 0x3C1,  // Physical memory protection address register
-    PMPADDR18       = 0x3C2,  // Physical memory protection address register
-    PMPADDR19       = 0x3C3,  // Physical memory protection address register
-    PMPADDR20       = 0x3C4,  // Physical memory protection address register
-    PMPADDR21       = 0x3C5,  // Physical memory protection address register
-    PMPADDR22       = 0x3C6,  // Physical memory protection address register
-    PMPADDR23       = 0x3C7,  // Physical memory protection address register
-    PMPADDR24       = 0x3C8,  // Physical memory protection address register
-    PMPADDR25       = 0x3C9,  // Physical memory protection address register
-    PMPADDR26       = 0x3CA,  // Physical memory protection address register
-    PMPADDR27       = 0x3CB,  // Physical memory protection address register
-    PMPADDR28       = 0x3CC,  // Physical memory protection address register
-    PMPADDR29       = 0x3CD,  // Physical memory protection address register
-    PMPADDR30       = 0x3CE,  // Physical memory protection address register
-    PMPADDR31       = 0x3CF,  // Physical memory protection address register
-    PMPADDR32       = 0x4D0,  // Physical memory protection address register
-    PMPADDR33       = 0x3D1,  // Physical memory protection address register
-    PMPADDR34       = 0x3D2,  // Physical memory protection address register
-    PMPADDR35       = 0x3D3,  // Physical memory protection address register
-    PMPADDR36       = 0x3D4,  // Physical memory protection address register
-    PMPADDR37       = 0x3D5,  // Physical memory protection address register
-    PMPADDR38       = 0x3D6,  // Physical memory protection address register
-    PMPADDR39       = 0x3D7,  // Physical memory protection address register
-    PMPADDR40       = 0x3D8,  // Physical memory protection address register
-    PMPADDR41       = 0x3D9,  // Physical memory protection address register
-    PMPADDR42       = 0x3DA,  // Physical memory protection address register
-    PMPADDR43       = 0x3DB,  // Physical memory protection address register
-    PMPADDR44       = 0x3DC,  // Physical memory protection address register
-    PMPADDR45       = 0x3DD,  // Physical memory protection address register
-    PMPADDR46       = 0x3DE,  // Physical memory protection address register
-    PMPADDR47       = 0x3DF,  // Physical memory protection address register
-    PMPADDR48       = 0x4E0,  // Physical memory protection address register
-    PMPADDR49       = 0x3E1,  // Physical memory protection address register
-    PMPADDR50       = 0x3E2,  // Physical memory protection address register
-    PMPADDR51       = 0x3E3,  // Physical memory protection address register
-    PMPADDR52       = 0x3E4,  // Physical memory protection address register
-    PMPADDR53       = 0x3E5,  // Physical memory protection address register
-    PMPADDR54       = 0x3E6,  // Physical memory protection address register
-    PMPADDR55       = 0x3E7,  // Physical memory protection address register
-    PMPADDR56       = 0x3E8,  // Physical memory protection address register
-    PMPADDR57       = 0x3E9,  // Physical memory protection address register
-    PMPADDR58       = 0x3EA,  // Physical memory protection address register
-    PMPADDR59       = 0x3EB,  // Physical memory protection address register
-    PMPADDR60       = 0x3EC,  // Physical memory protection address register
-    PMPADDR61       = 0x3ED,  // Physical memory protection address register
-    PMPADDR62       = 0x3EE,  // Physical memory protection address register
-    PMPADDR63       = 0x3EF,  // Physical memory protection address register
-    MCYCLE          = 0xB00,  // Machine cycle counter
-    MINSTRET        = 0xB02,  // Machine instructions-retired counter
-    MHPMCOUNTER3    = 0xB03,  // Machine performance-monitoring counter
-    MHPMCOUNTER4    = 0xB04,  // Machine performance-monitoring counter
-    MHPMCOUNTER5    = 0xB05,  // Machine performance-monitoring counter
-    MHPMCOUNTER6    = 0xB06,  // Machine performance-monitoring counter
-    MHPMCOUNTER7    = 0xB07,  // Machine performance-monitoring counter
-    MHPMCOUNTER8    = 0xB08,  // Machine performance-monitoring counter
-    MHPMCOUNTER9    = 0xB09,  // Machine performance-monitoring counter
-    MHPMCOUNTER10   = 0xB0A,  // Machine performance-monitoring counter
-    MHPMCOUNTER11   = 0xB0B,  // Machine performance-monitoring counter
-    MHPMCOUNTER12   = 0xB0C,  // Machine performance-monitoring counter
-    MHPMCOUNTER13   = 0xB0D,  // Machine performance-monitoring counter
-    MHPMCOUNTER14   = 0xB0E,  // Machine performance-monitoring counter
-    MHPMCOUNTER15   = 0xB0F,  // Machine performance-monitoring counter
-    MHPMCOUNTER16   = 0xB10,  // Machine performance-monitoring counter
-    MHPMCOUNTER17   = 0xB11,  // Machine performance-monitoring counter
-    MHPMCOUNTER18   = 0xB12,  // Machine performance-monitoring counter
-    MHPMCOUNTER19   = 0xB13,  // Machine performance-monitoring counter
-    MHPMCOUNTER20   = 0xB14,  // Machine performance-monitoring counter
-    MHPMCOUNTER21   = 0xB15,  // Machine performance-monitoring counter
-    MHPMCOUNTER22   = 0xB16,  // Machine performance-monitoring counter
-    MHPMCOUNTER23   = 0xB17,  // Machine performance-monitoring counter
-    MHPMCOUNTER24   = 0xB18,  // Machine performance-monitoring counter
-    MHPMCOUNTER25   = 0xB19,  // Machine performance-monitoring counter
-    MHPMCOUNTER26   = 0xB1A,  // Machine performance-monitoring counter
-    MHPMCOUNTER27   = 0xB1B,  // Machine performance-monitoring counter
-    MHPMCOUNTER28   = 0xB1C,  // Machine performance-monitoring counter
-    MHPMCOUNTER29   = 0xB1D,  // Machine performance-monitoring counter
-    MHPMCOUNTER30   = 0xB1E,  // Machine performance-monitoring counter
-    MHPMCOUNTER31   = 0xB1F,  // Machine performance-monitoring counter
-    MCYCLEH         = 0xB80,  // Upper 32 bits of MCYCLE, RV32I only
-    MINSTRETH       = 0xB82,  // Upper 32 bits of MINSTRET, RV32I only
-    MHPMCOUNTER3H   = 0xB83,  // Upper 32 bits of HPMCOUNTER3, RV32I only
-    MHPMCOUNTER4H   = 0xB84,  // Upper 32 bits of HPMCOUNTER4, RV32I only
-    MHPMCOUNTER5H   = 0xB85,  // Upper 32 bits of HPMCOUNTER5, RV32I only
-    MHPMCOUNTER6H   = 0xB86,  // Upper 32 bits of HPMCOUNTER6, RV32I only
-    MHPMCOUNTER7H   = 0xB87,  // Upper 32 bits of HPMCOUNTER7, RV32I only
-    MHPMCOUNTER8H   = 0xB88,  // Upper 32 bits of HPMCOUNTER8, RV32I only
-    MHPMCOUNTER9H   = 0xB89,  // Upper 32 bits of HPMCOUNTER9, RV32I only
-    MHPMCOUNTER10H  = 0xB8A,  // Upper 32 bits of HPMCOUNTER10, RV32I only
-    MHPMCOUNTER11H  = 0xB8B,  // Upper 32 bits of HPMCOUNTER11, RV32I only
-    MHPMCOUNTER12H  = 0xB8C,  // Upper 32 bits of HPMCOUNTER12, RV32I only
-    MHPMCOUNTER13H  = 0xB8D,  // Upper 32 bits of HPMCOUNTER13, RV32I only
-    MHPMCOUNTER14H  = 0xB8E,  // Upper 32 bits of HPMCOUNTER14, RV32I only
-    MHPMCOUNTER15H  = 0xB8F,  // Upper 32 bits of HPMCOUNTER15, RV32I only
-    MHPMCOUNTER16H  = 0xB90,  // Upper 32 bits of HPMCOUNTER16, RV32I only
-    MHPMCOUNTER17H  = 0xB91,  // Upper 32 bits of HPMCOUNTER17, RV32I only
-    MHPMCOUNTER18H  = 0xB92,  // Upper 32 bits of HPMCOUNTER18, RV32I only
-    MHPMCOUNTER19H  = 0xB93,  // Upper 32 bits of HPMCOUNTER19, RV32I only
-    MHPMCOUNTER20H  = 0xB94,  // Upper 32 bits of HPMCOUNTER20, RV32I only
-    MHPMCOUNTER21H  = 0xB95,  // Upper 32 bits of HPMCOUNTER21, RV32I only
-    MHPMCOUNTER22H  = 0xB96,  // Upper 32 bits of HPMCOUNTER22, RV32I only
-    MHPMCOUNTER23H  = 0xB97,  // Upper 32 bits of HPMCOUNTER23, RV32I only
-    MHPMCOUNTER24H  = 0xB98,  // Upper 32 bits of HPMCOUNTER24, RV32I only
-    MHPMCOUNTER25H  = 0xB99,  // Upper 32 bits of HPMCOUNTER25, RV32I only
-    MHPMCOUNTER26H  = 0xB9A,  // Upper 32 bits of HPMCOUNTER26, RV32I only
-    MHPMCOUNTER27H  = 0xB9B,  // Upper 32 bits of HPMCOUNTER27, RV32I only
-    MHPMCOUNTER28H  = 0xB9C,  // Upper 32 bits of HPMCOUNTER28, RV32I only
-    MHPMCOUNTER29H  = 0xB9D,  // Upper 32 bits of HPMCOUNTER29, RV32I only
-    MHPMCOUNTER30H  = 0xB9E,  // Upper 32 bits of HPMCOUNTER30, RV32I only
-    MHPMCOUNTER31H  = 0xB9F,  // Upper 32 bits of HPMCOUNTER31, RV32I only
-    MCOUNTINHIBIT   = 0x320,  // Machine counter-inhibit register
-    MHPMEVENT3      = 0x323,  // Machine performance-monitoring event selector
-    MHPMEVENT4      = 0x324,  // Machine performance-monitoring event selector
-    MHPMEVENT5      = 0x325,  // Machine performance-monitoring event selector
-    MHPMEVENT6      = 0x326,  // Machine performance-monitoring event selector
-    MHPMEVENT7      = 0x327,  // Machine performance-monitoring event selector
-    MHPMEVENT8      = 0x328,  // Machine performance-monitoring event selector
-    MHPMEVENT9      = 0x329,  // Machine performance-monitoring event selector
-    MHPMEVENT10     = 0x32A,  // Machine performance-monitoring event selector
-    MHPMEVENT11     = 0x32B,  // Machine performance-monitoring event selector
-    MHPMEVENT12     = 0x32C,  // Machine performance-monitoring event selector
-    MHPMEVENT13     = 0x32D,  // Machine performance-monitoring event selector
-    MHPMEVENT14     = 0x32E,  // Machine performance-monitoring event selector
-    MHPMEVENT15     = 0x32F,  // Machine performance-monitoring event selector
-    MHPMEVENT16     = 0x330,  // Machine performance-monitoring event selector
-    MHPMEVENT17     = 0x331,  // Machine performance-monitoring event selector
-    MHPMEVENT18     = 0x332,  // Machine performance-monitoring event selector
-    MHPMEVENT19     = 0x333,  // Machine performance-monitoring event selector
-    MHPMEVENT20     = 0x334,  // Machine performance-monitoring event selector
-    MHPMEVENT21     = 0x335,  // Machine performance-monitoring event selector
-    MHPMEVENT22     = 0x336,  // Machine performance-monitoring event selector
-    MHPMEVENT23     = 0x337,  // Machine performance-monitoring event selector
-    MHPMEVENT24     = 0x338,  // Machine performance-monitoring event selector
-    MHPMEVENT25     = 0x339,  // Machine performance-monitoring event selector
-    MHPMEVENT26     = 0x33A,  // Machine performance-monitoring event selector
-    MHPMEVENT27     = 0x33B,  // Machine performance-monitoring event selector
-    MHPMEVENT28     = 0x33C,  // Machine performance-monitoring event selector
-    MHPMEVENT29     = 0x33D,  // Machine performance-monitoring event selector
-    MHPMEVENT30     = 0x33E,  // Machine performance-monitoring event selector
-    MHPMEVENT31     = 0x33F,  // Machine performance-monitoring event selector
+    PMPCFG0         = UBVEC!(12, 0x3A0),  // Physical memory protection configuration
+    PMPCFG1         = UBVEC!(12, 0x3A1),  // Physical memory protection configuration, RV32 only
+    PMPCFG2         = UBVEC!(12, 0x3A2),  // Physical memory protection configuration
+    PMPCFG3         = UBVEC!(12, 0x3A3),  // Physical memory protection configuration, RV32 only
+    PMPCFG4         = UBVEC!(12, 0x3A4),  // Physical memory protection configuration
+    PMPCFG5         = UBVEC!(12, 0x3A5),  // Physical memory protection configuration, RV32 only
+    PMPCFG6         = UBVEC!(12, 0x3A6),  // Physical memory protection configuration
+    PMPCFG7         = UBVEC!(12, 0x3A7),  // Physical memory protection configuration, RV32 only
+    PMPCFG8         = UBVEC!(12, 0x3A8),  // Physical memory protection configuration
+    PMPCFG9         = UBVEC!(12, 0x3A9),  // Physical memory protection configuration, RV32 only
+    PMPCFG10        = UBVEC!(12, 0x3AA),  // Physical memory protection configuration
+    PMPCFG11        = UBVEC!(12, 0x3AB),  // Physical memory protection configuration, RV32 only
+    PMPCFG12        = UBVEC!(12, 0x3AC),  // Physical memory protection configuration
+    PMPCFG13        = UBVEC!(12, 0x3AD),  // Physical memory protection configuration, RV32 only
+    PMPCFG14        = UBVEC!(12, 0x3AE),  // Physical memory protection configuration
+    PMPCFG15        = UBVEC!(12, 0x3AF),  // Physical memory protection configuration, RV32 only
+    PMPADDR0        = UBVEC!(12, 0x3B0),  // Physical memory protection address register
+    PMPADDR1        = UBVEC!(12, 0x3B1),  // Physical memory protection address register
+    PMPADDR2        = UBVEC!(12, 0x3B2),  // Physical memory protection address register
+    PMPADDR3        = UBVEC!(12, 0x3B3),  // Physical memory protection address register
+    PMPADDR4        = UBVEC!(12, 0x3B4),  // Physical memory protection address register
+    PMPADDR5        = UBVEC!(12, 0x3B5),  // Physical memory protection address register
+    PMPADDR6        = UBVEC!(12, 0x3B6),  // Physical memory protection address register
+    PMPADDR7        = UBVEC!(12, 0x3B7),  // Physical memory protection address register
+    PMPADDR8        = UBVEC!(12, 0x3B8),  // Physical memory protection address register
+    PMPADDR9        = UBVEC!(12, 0x3B9),  // Physical memory protection address register
+    PMPADDR10       = UBVEC!(12, 0x3BA),  // Physical memory protection address register
+    PMPADDR11       = UBVEC!(12, 0x3BB),  // Physical memory protection address register
+    PMPADDR12       = UBVEC!(12, 0x3BC),  // Physical memory protection address register
+    PMPADDR13       = UBVEC!(12, 0x3BD),  // Physical memory protection address register
+    PMPADDR14       = UBVEC!(12, 0x3BE),  // Physical memory protection address register
+    PMPADDR15       = UBVEC!(12, 0x3BF),  // Physical memory protection address register
+    PMPADDR16       = UBVEC!(12, 0x4C0),  // Physical memory protection address register
+    PMPADDR17       = UBVEC!(12, 0x3C1),  // Physical memory protection address register
+    PMPADDR18       = UBVEC!(12, 0x3C2),  // Physical memory protection address register
+    PMPADDR19       = UBVEC!(12, 0x3C3),  // Physical memory protection address register
+    PMPADDR20       = UBVEC!(12, 0x3C4),  // Physical memory protection address register
+    PMPADDR21       = UBVEC!(12, 0x3C5),  // Physical memory protection address register
+    PMPADDR22       = UBVEC!(12, 0x3C6),  // Physical memory protection address register
+    PMPADDR23       = UBVEC!(12, 0x3C7),  // Physical memory protection address register
+    PMPADDR24       = UBVEC!(12, 0x3C8),  // Physical memory protection address register
+    PMPADDR25       = UBVEC!(12, 0x3C9),  // Physical memory protection address register
+    PMPADDR26       = UBVEC!(12, 0x3CA),  // Physical memory protection address register
+    PMPADDR27       = UBVEC!(12, 0x3CB),  // Physical memory protection address register
+    PMPADDR28       = UBVEC!(12, 0x3CC),  // Physical memory protection address register
+    PMPADDR29       = UBVEC!(12, 0x3CD),  // Physical memory protection address register
+    PMPADDR30       = UBVEC!(12, 0x3CE),  // Physical memory protection address register
+    PMPADDR31       = UBVEC!(12, 0x3CF),  // Physical memory protection address register
+    PMPADDR32       = UBVEC!(12, 0x4D0),  // Physical memory protection address register
+    PMPADDR33       = UBVEC!(12, 0x3D1),  // Physical memory protection address register
+    PMPADDR34       = UBVEC!(12, 0x3D2),  // Physical memory protection address register
+    PMPADDR35       = UBVEC!(12, 0x3D3),  // Physical memory protection address register
+    PMPADDR36       = UBVEC!(12, 0x3D4),  // Physical memory protection address register
+    PMPADDR37       = UBVEC!(12, 0x3D5),  // Physical memory protection address register
+    PMPADDR38       = UBVEC!(12, 0x3D6),  // Physical memory protection address register
+    PMPADDR39       = UBVEC!(12, 0x3D7),  // Physical memory protection address register
+    PMPADDR40       = UBVEC!(12, 0x3D8),  // Physical memory protection address register
+    PMPADDR41       = UBVEC!(12, 0x3D9),  // Physical memory protection address register
+    PMPADDR42       = UBVEC!(12, 0x3DA),  // Physical memory protection address register
+    PMPADDR43       = UBVEC!(12, 0x3DB),  // Physical memory protection address register
+    PMPADDR44       = UBVEC!(12, 0x3DC),  // Physical memory protection address register
+    PMPADDR45       = UBVEC!(12, 0x3DD),  // Physical memory protection address register
+    PMPADDR46       = UBVEC!(12, 0x3DE),  // Physical memory protection address register
+    PMPADDR47       = UBVEC!(12, 0x3DF),  // Physical memory protection address register
+    PMPADDR48       = UBVEC!(12, 0x4E0),  // Physical memory protection address register
+    PMPADDR49       = UBVEC!(12, 0x3E1),  // Physical memory protection address register
+    PMPADDR50       = UBVEC!(12, 0x3E2),  // Physical memory protection address register
+    PMPADDR51       = UBVEC!(12, 0x3E3),  // Physical memory protection address register
+    PMPADDR52       = UBVEC!(12, 0x3E4),  // Physical memory protection address register
+    PMPADDR53       = UBVEC!(12, 0x3E5),  // Physical memory protection address register
+    PMPADDR54       = UBVEC!(12, 0x3E6),  // Physical memory protection address register
+    PMPADDR55       = UBVEC!(12, 0x3E7),  // Physical memory protection address register
+    PMPADDR56       = UBVEC!(12, 0x3E8),  // Physical memory protection address register
+    PMPADDR57       = UBVEC!(12, 0x3E9),  // Physical memory protection address register
+    PMPADDR58       = UBVEC!(12, 0x3EA),  // Physical memory protection address register
+    PMPADDR59       = UBVEC!(12, 0x3EB),  // Physical memory protection address register
+    PMPADDR60       = UBVEC!(12, 0x3EC),  // Physical memory protection address register
+    PMPADDR61       = UBVEC!(12, 0x3ED),  // Physical memory protection address register
+    PMPADDR62       = UBVEC!(12, 0x3EE),  // Physical memory protection address register
+    PMPADDR63       = UBVEC!(12, 0x3EF),  // Physical memory protection address register
+    MCYCLE          = UBVEC!(12, 0xB00),  // Machine cycle counter
+    MINSTRET        = UBVEC!(12, 0xB02),  // Machine instructions-retired counter
+    MHPMCOUNTER3    = UBVEC!(12, 0xB03),  // Machine performance-monitoring counter
+    MHPMCOUNTER4    = UBVEC!(12, 0xB04),  // Machine performance-monitoring counter
+    MHPMCOUNTER5    = UBVEC!(12, 0xB05),  // Machine performance-monitoring counter
+    MHPMCOUNTER6    = UBVEC!(12, 0xB06),  // Machine performance-monitoring counter
+    MHPMCOUNTER7    = UBVEC!(12, 0xB07),  // Machine performance-monitoring counter
+    MHPMCOUNTER8    = UBVEC!(12, 0xB08),  // Machine performance-monitoring counter
+    MHPMCOUNTER9    = UBVEC!(12, 0xB09),  // Machine performance-monitoring counter
+    MHPMCOUNTER10   = UBVEC!(12, 0xB0A),  // Machine performance-monitoring counter
+    MHPMCOUNTER11   = UBVEC!(12, 0xB0B),  // Machine performance-monitoring counter
+    MHPMCOUNTER12   = UBVEC!(12, 0xB0C),  // Machine performance-monitoring counter
+    MHPMCOUNTER13   = UBVEC!(12, 0xB0D),  // Machine performance-monitoring counter
+    MHPMCOUNTER14   = UBVEC!(12, 0xB0E),  // Machine performance-monitoring counter
+    MHPMCOUNTER15   = UBVEC!(12, 0xB0F),  // Machine performance-monitoring counter
+    MHPMCOUNTER16   = UBVEC!(12, 0xB10),  // Machine performance-monitoring counter
+    MHPMCOUNTER17   = UBVEC!(12, 0xB11),  // Machine performance-monitoring counter
+    MHPMCOUNTER18   = UBVEC!(12, 0xB12),  // Machine performance-monitoring counter
+    MHPMCOUNTER19   = UBVEC!(12, 0xB13),  // Machine performance-monitoring counter
+    MHPMCOUNTER20   = UBVEC!(12, 0xB14),  // Machine performance-monitoring counter
+    MHPMCOUNTER21   = UBVEC!(12, 0xB15),  // Machine performance-monitoring counter
+    MHPMCOUNTER22   = UBVEC!(12, 0xB16),  // Machine performance-monitoring counter
+    MHPMCOUNTER23   = UBVEC!(12, 0xB17),  // Machine performance-monitoring counter
+    MHPMCOUNTER24   = UBVEC!(12, 0xB18),  // Machine performance-monitoring counter
+    MHPMCOUNTER25   = UBVEC!(12, 0xB19),  // Machine performance-monitoring counter
+    MHPMCOUNTER26   = UBVEC!(12, 0xB1A),  // Machine performance-monitoring counter
+    MHPMCOUNTER27   = UBVEC!(12, 0xB1B),  // Machine performance-monitoring counter
+    MHPMCOUNTER28   = UBVEC!(12, 0xB1C),  // Machine performance-monitoring counter
+    MHPMCOUNTER29   = UBVEC!(12, 0xB1D),  // Machine performance-monitoring counter
+    MHPMCOUNTER30   = UBVEC!(12, 0xB1E),  // Machine performance-monitoring counter
+    MHPMCOUNTER31   = UBVEC!(12, 0xB1F),  // Machine performance-monitoring counter
+    MCYCLEH         = UBVEC!(12, 0xB80),  // Upper 32 bits of MCYCLE, RV32I only
+    MINSTRETH       = UBVEC!(12, 0xB82),  // Upper 32 bits of MINSTRET, RV32I only
+    MHPMCOUNTER3H   = UBVEC!(12, 0xB83),  // Upper 32 bits of HPMCOUNTER3, RV32I only
+    MHPMCOUNTER4H   = UBVEC!(12, 0xB84),  // Upper 32 bits of HPMCOUNTER4, RV32I only
+    MHPMCOUNTER5H   = UBVEC!(12, 0xB85),  // Upper 32 bits of HPMCOUNTER5, RV32I only
+    MHPMCOUNTER6H   = UBVEC!(12, 0xB86),  // Upper 32 bits of HPMCOUNTER6, RV32I only
+    MHPMCOUNTER7H   = UBVEC!(12, 0xB87),  // Upper 32 bits of HPMCOUNTER7, RV32I only
+    MHPMCOUNTER8H   = UBVEC!(12, 0xB88),  // Upper 32 bits of HPMCOUNTER8, RV32I only
+    MHPMCOUNTER9H   = UBVEC!(12, 0xB89),  // Upper 32 bits of HPMCOUNTER9, RV32I only
+    MHPMCOUNTER10H  = UBVEC!(12, 0xB8A),  // Upper 32 bits of HPMCOUNTER10, RV32I only
+    MHPMCOUNTER11H  = UBVEC!(12, 0xB8B),  // Upper 32 bits of HPMCOUNTER11, RV32I only
+    MHPMCOUNTER12H  = UBVEC!(12, 0xB8C),  // Upper 32 bits of HPMCOUNTER12, RV32I only
+    MHPMCOUNTER13H  = UBVEC!(12, 0xB8D),  // Upper 32 bits of HPMCOUNTER13, RV32I only
+    MHPMCOUNTER14H  = UBVEC!(12, 0xB8E),  // Upper 32 bits of HPMCOUNTER14, RV32I only
+    MHPMCOUNTER15H  = UBVEC!(12, 0xB8F),  // Upper 32 bits of HPMCOUNTER15, RV32I only
+    MHPMCOUNTER16H  = UBVEC!(12, 0xB90),  // Upper 32 bits of HPMCOUNTER16, RV32I only
+    MHPMCOUNTER17H  = UBVEC!(12, 0xB91),  // Upper 32 bits of HPMCOUNTER17, RV32I only
+    MHPMCOUNTER18H  = UBVEC!(12, 0xB92),  // Upper 32 bits of HPMCOUNTER18, RV32I only
+    MHPMCOUNTER19H  = UBVEC!(12, 0xB93),  // Upper 32 bits of HPMCOUNTER19, RV32I only
+    MHPMCOUNTER20H  = UBVEC!(12, 0xB94),  // Upper 32 bits of HPMCOUNTER20, RV32I only
+    MHPMCOUNTER21H  = UBVEC!(12, 0xB95),  // Upper 32 bits of HPMCOUNTER21, RV32I only
+    MHPMCOUNTER22H  = UBVEC!(12, 0xB96),  // Upper 32 bits of HPMCOUNTER22, RV32I only
+    MHPMCOUNTER23H  = UBVEC!(12, 0xB97),  // Upper 32 bits of HPMCOUNTER23, RV32I only
+    MHPMCOUNTER24H  = UBVEC!(12, 0xB98),  // Upper 32 bits of HPMCOUNTER24, RV32I only
+    MHPMCOUNTER25H  = UBVEC!(12, 0xB99),  // Upper 32 bits of HPMCOUNTER25, RV32I only
+    MHPMCOUNTER26H  = UBVEC!(12, 0xB9A),  // Upper 32 bits of HPMCOUNTER26, RV32I only
+    MHPMCOUNTER27H  = UBVEC!(12, 0xB9B),  // Upper 32 bits of HPMCOUNTER27, RV32I only
+    MHPMCOUNTER28H  = UBVEC!(12, 0xB9C),  // Upper 32 bits of HPMCOUNTER28, RV32I only
+    MHPMCOUNTER29H  = UBVEC!(12, 0xB9D),  // Upper 32 bits of HPMCOUNTER29, RV32I only
+    MHPMCOUNTER30H  = UBVEC!(12, 0xB9E),  // Upper 32 bits of HPMCOUNTER30, RV32I only
+    MHPMCOUNTER31H  = UBVEC!(12, 0xB9F),  // Upper 32 bits of HPMCOUNTER31, RV32I only
+    MCOUNTINHIBIT   = UBVEC!(12, 0x320),  // Machine counter-inhibit register
+    MHPMEVENT3      = UBVEC!(12, 0x323),  // Machine performance-monitoring event selector
+    MHPMEVENT4      = UBVEC!(12, 0x324),  // Machine performance-monitoring event selector
+    MHPMEVENT5      = UBVEC!(12, 0x325),  // Machine performance-monitoring event selector
+    MHPMEVENT6      = UBVEC!(12, 0x326),  // Machine performance-monitoring event selector
+    MHPMEVENT7      = UBVEC!(12, 0x327),  // Machine performance-monitoring event selector
+    MHPMEVENT8      = UBVEC!(12, 0x328),  // Machine performance-monitoring event selector
+    MHPMEVENT9      = UBVEC!(12, 0x329),  // Machine performance-monitoring event selector
+    MHPMEVENT10     = UBVEC!(12, 0x32A),  // Machine performance-monitoring event selector
+    MHPMEVENT11     = UBVEC!(12, 0x32B),  // Machine performance-monitoring event selector
+    MHPMEVENT12     = UBVEC!(12, 0x32C),  // Machine performance-monitoring event selector
+    MHPMEVENT13     = UBVEC!(12, 0x32D),  // Machine performance-monitoring event selector
+    MHPMEVENT14     = UBVEC!(12, 0x32E),  // Machine performance-monitoring event selector
+    MHPMEVENT15     = UBVEC!(12, 0x32F),  // Machine performance-monitoring event selector
+    MHPMEVENT16     = UBVEC!(12, 0x330),  // Machine performance-monitoring event selector
+    MHPMEVENT17     = UBVEC!(12, 0x331),  // Machine performance-monitoring event selector
+    MHPMEVENT18     = UBVEC!(12, 0x332),  // Machine performance-monitoring event selector
+    MHPMEVENT19     = UBVEC!(12, 0x333),  // Machine performance-monitoring event selector
+    MHPMEVENT20     = UBVEC!(12, 0x334),  // Machine performance-monitoring event selector
+    MHPMEVENT21     = UBVEC!(12, 0x335),  // Machine performance-monitoring event selector
+    MHPMEVENT22     = UBVEC!(12, 0x336),  // Machine performance-monitoring event selector
+    MHPMEVENT23     = UBVEC!(12, 0x337),  // Machine performance-monitoring event selector
+    MHPMEVENT24     = UBVEC!(12, 0x338),  // Machine performance-monitoring event selector
+    MHPMEVENT25     = UBVEC!(12, 0x339),  // Machine performance-monitoring event selector
+    MHPMEVENT26     = UBVEC!(12, 0x33A),  // Machine performance-monitoring event selector
+    MHPMEVENT27     = UBVEC!(12, 0x33B),  // Machine performance-monitoring event selector
+    MHPMEVENT28     = UBVEC!(12, 0x33C),  // Machine performance-monitoring event selector
+    MHPMEVENT29     = UBVEC!(12, 0x33D),  // Machine performance-monitoring event selector
+    MHPMEVENT30     = UBVEC!(12, 0x33E),  // Machine performance-monitoring event selector
+    MHPMEVENT31     = UBVEC!(12, 0x33F),  // Machine performance-monitoring event selector
     // Debug/Trace Registers (shared with Debug Mode)
-    TSELECT         = 0x7A0,  // Debug/Trace trigger register select
-    TDATA1          = 0x7A1,  // First Debug/Trace trigger data register
-    TDATA2          = 0x7A2,  // Second Debug/Trace trigger data register
-    TDATA3          = 0x7A3,  // Third Debug/Trace trigger data register
-    TINFO           = 0x7A4,  // Debug trigger info register
-    TCONTROL        = 0x7A5,  // Debug trigger control register
-    MCONTEXT        = 0x7A8,  // Machine mode trigger context register
-    MSCONTEXT       = 0x7AA,  // Supervisor mode trigger context register
+    TSELECT         = UBVEC!(12, 0x7A0),  // Debug/Trace trigger register select
+    TDATA1          = UBVEC!(12, 0x7A1),  // First Debug/Trace trigger data register
+    TDATA2          = UBVEC!(12, 0x7A2),  // Second Debug/Trace trigger data register
+    TDATA3          = UBVEC!(12, 0x7A3),  // Third Debug/Trace trigger data register
+    TINFO           = UBVEC!(12, 0x7A4),  // Debug trigger info register
+    TCONTROL        = UBVEC!(12, 0x7A5),  // Debug trigger control register
+    MCONTEXT        = UBVEC!(12, 0x7A8),  // Machine mode trigger context register
+    MSCONTEXT       = UBVEC!(12, 0x7AA),  // Supervisor mode trigger context register
     // Debug Mode Registers
-    DCSR            = 0x7B0,  // Debug control and status register
-    DPC             = 0x7B1,  // Debug PC
-    DSCRATCH0       = 0x7B2,  // Debug scratch register
-    DSCRATCH1       = 0x7B3,  // Debug scratch register (last one)
-    VSTART          = 0x008,  // Vector start position
-    VXSTAT          = 0x009,  // Fixed point saturate flag
-    VXRM            = 0x00A,  // Fixed point rounding mode
-    VL              = 0xC20,  // Vector length
-    VTYPE           = 0xC21,  // Vector data type register
-    VLENB           = 0xC22   // VLEN/8 (vector register length in bytes)
+    DCSR            = UBVEC!(12, 0x7B0),  // Debug control and status register
+    DPC             = UBVEC!(12, 0x7B1),  // Debug PC
+    DSCRATCH0       = UBVEC!(12, 0x7B2),  // Debug scratch register
+    DSCRATCH1       = UBVEC!(12, 0x7B3),  // Debug scratch register (last one)
+    VSTART          = UBVEC!(12, 0x008),  // Vector start position
+    VXSTAT          = UBVEC!(12, 0x009),  // Fixed point saturate flag
+    VXRM            = UBVEC!(12, 0x00A),  // Fixed point rounding mode
+    VL              = UBVEC!(12, 0xC20),  // Vector length
+    VTYPE           = UBVEC!(12, 0xC21),  // Vector data type register
+    VLENB           = UBVEC!(12, 0xC22),   // VLEN/8 (vector register length in bytes)
 }
 
 enum privileged_reg_fld_t: ubyte {
@@ -1212,6 +1212,8 @@ enum hazard_e: ubyte {
   WAR_HAZARD,
   WAW_HAZARD
 }
+
+ubvec!12[] default_include_csr_write = [privileged_reg_t.MSCRATCH];
 
 // `include "riscv_core_setting.sv"
 
@@ -1496,8 +1498,10 @@ void get_hex_arg_value(string cmdline_str, ref int val) {
 
 class cmdline_enum_processor(T)
 {
-  static void get_array_values(string cmdline_str, ref T[] vals) {
+  static void get_array_values(string cmdline_str, bool allow_raw_vals, ref T[] vals) {
     import std.format: format;
+    import std.conv: parse;
+    import std.traits: OriginalType;
     string s;
     uvm_cmdline_processor.get_inst().get_arg_value(cmdline_str, s);
     if (s != "") {
@@ -1507,7 +1511,23 @@ class cmdline_enum_processor(T)
       vals.length = cmdline_list.length;
       foreach (i, str; cmdline_list) {
 	import std.string: toUpper;
-	if (uvm_enum_wrapper!T.from_name(toUpper(str), value)) {
+	if (allow_raw_vals && str[0..2] == "0x") {
+	  // SV version declares a logic vec and then uses atohex
+	  // atohex always returns an int though -- so let us use int
+	  // enum C = bits!T;
+	  // ulvec!C raw_val;
+	  string valstr = str[2..$].dup;
+	  int raw_val = parse!(int, string)(valstr, 16);
+	  static if (isBitVector!T) {
+	    alias U = ubvec!32;
+	    U raw_bvec = raw_val.toubvec!32;
+	    vals[i] = cast(T) raw_bvec; // cast to enum
+	  }
+	  else {
+	    vals[i] = cast(T) raw_val; // cast to enum
+	  }
+	}
+	else if (uvm_enum_wrapper!T.from_name(toUpper(str), value)) {
 	  vals[i] = value;
 	}
 	else {

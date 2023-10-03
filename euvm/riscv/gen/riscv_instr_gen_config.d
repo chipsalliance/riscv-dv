@@ -24,13 +24,13 @@ import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_
   interrupt_cause_t, privileged_mode_t, mtvec_mode_t, f_rounding_mode_t, riscv_reg_t,
   mem_region_t, privileged_reg_t, riscv_instr_category_t, b_ext_group_t,
   riscv_instr_group_t, get_int_arg_value, get_uint_arg_value,
-  get_bool_arg_value, get_hex_arg_value, cmdline_enum_processor, satp_mode_t;
+  get_bool_arg_value, get_hex_arg_value, cmdline_enum_processor, satp_mode_t, default_include_csr_write;
 
 import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_instr_register: register_isa;
 
 import riscv.gen.target: NUM_HARTS, XLEN, supported_privileged_mode, supported_isa,
-  SATP_MODE, implemented_csr, support_sfence, support_debug_mode, supported_interrupt_mode;
+  SATP_MODE, implemented_csr, support_sfence, support_debug_mode, supported_interrupt_mode, custom_csr;
 import riscv.gen.riscv_pmp_cfg: riscv_pmp_cfg;
 import riscv.gen.riscv_vector_cfg: riscv_vector_cfg;
 
@@ -202,6 +202,13 @@ class riscv_instr_gen_config: uvm_object
   @UVM_DEFAULT bool                    enable_unaligned_load_store;
   @UVM_DEFAULT int                     illegal_instr_ratio;
   @UVM_DEFAULT int                     hint_instr_ratio;
+
+  // CSR instruction control
+  @UVM_DEFAULT bool                    gen_all_csrs_by_default = false; // Generate CSR instructions that use all supported CSRs. Other options below only take effect if this is enabled.
+  @UVM_DEFAULT bool                    gen_csr_ro_write = false;        // Generate CSR writes to read-only CSRs
+  @UVM_DEFAULT privileged_reg_t[]       add_csr_write = [];        // CSRs to add to the set of writeable CSRs
+  @UVM_DEFAULT privileged_reg_t[]       remove_csr_write = [];     // CSRs to remove from the set of writeable CSRs
+
   // Number of harts to be simulated, must be <= NUM_HARTS
   @UVM_DEFAULT int                     num_of_harts = NUM_HARTS;
   // Use SP as stack pointer
@@ -616,6 +623,13 @@ class riscv_instr_gen_config: uvm_object
     get_bool_arg_value("+no_delegation=", no_delegation);
     get_int_arg_value("+illegal_instr_ratio=", illegal_instr_ratio);
     get_int_arg_value("+hint_instr_ratio=", hint_instr_ratio);
+    get_bool_arg_value("+gen_all_csrs_by_default=", gen_all_csrs_by_default);
+    get_bool_arg_value("+gen_csr_ro_write=", gen_csr_ro_write);
+    cmdline_enum_processor!(privileged_reg_t).get_array_values("+add_csr_write=",
+							       true, add_csr_write);
+    cmdline_enum_processor!(privileged_reg_t).get_array_values("+remove_csr_write=",
+							       true, remove_csr_write);
+   
     get_int_arg_value("+num_of_harts=", num_of_harts);
     get_bool_arg_value("+enable_unaligned_load_store=", enable_unaligned_load_store);
     get_bool_arg_value("+force_m_delegation=", force_m_delegation);
@@ -647,7 +661,7 @@ class riscv_instr_gen_config: uvm_object
     get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     cmdline_enum_processor!(b_ext_group_t).get_array_values("+enable_bitmanip_groups=",
-							    enable_bitmanip_groups);
+							    false, enable_bitmanip_groups);
     if (uvm_cmdline_processor.get_inst().get_arg_value("+boot_mode=", boot_mode_opts)) {
       uvm_info(get_full_name(), format("Got boot mode option - %0s", boot_mode_opts), UVM_LOW);
       switch(boot_mode_opts) {
@@ -668,7 +682,7 @@ class riscv_instr_gen_config: uvm_object
 				     supported_privileged_mode.length), UVM_LOW);
     uvm_cmdline_processor.get_inst().get_arg_value("+asm_test_suffix=", asm_test_suffix);
     // Directed march list from the runtime options, ex. RV32I, RV32M etc.
-    cmdline_enum_processor !(riscv_instr_group_t).get_array_values("+march=", march_isa);
+    cmdline_enum_processor !(riscv_instr_group_t).get_array_values("+march=", false, march_isa);
     if (march_isa.length != 0) supported_isa = march_isa;
 
     if (!(canFind(supported_isa, riscv_instr_group_t.RV32C))) {
@@ -822,17 +836,27 @@ class riscv_instr_gen_config: uvm_object
 
   struct csr_config {
     // Privileged CSR filter
-    privileged_reg_t[]                            exclude_reg;
-    privileged_reg_t[]                            include_reg;
+    ubvec!12[]                            exclude_reg;
+    ubvec!12[]                            include_reg;
+    ubvec!12[]                            include_write_reg;
+
+    bool allow_ro_write;
 
     void create_csr_filter(riscv_instr_gen_config cfg) {
       include_reg.length = 0;
       exclude_reg.length = 0;
+      allow_ro_write = true;
+      
       if (cfg.enable_illegal_csr_instruction) {
-	exclude_reg = implemented_csr;
+	exclude_reg = cast(ubvec!12[]) implemented_csr;
       }
       else if (cfg.enable_access_invalid_csr_level) {
-	include_reg = cfg.invalid_priv_mode_csrs;
+	include_reg = cast(ubvec!12[]) cfg.invalid_priv_mode_csrs;
+      }
+      else if (cfg.gen_all_csrs_by_default) {
+	allow_ro_write = cfg.gen_csr_ro_write;
+	include_reg = cast(ubvec!12[]) implemented_csr ~ custom_csr;
+	create_include_write_reg(cfg.add_csr_write, cfg.remove_csr_write, default_include_csr_write);
       }
       else {
 	// Use scratch register to avoid the side effect of modifying other privileged mode CSR.
@@ -845,6 +869,24 @@ class riscv_instr_gen_config: uvm_object
 	else {
 	  include_reg = [privileged_reg_t.USCRATCH];
 	}
+      }
+    }
+
+    void create_include_write_reg(privileged_reg_t[] add_csr,
+				  privileged_reg_t[] remove_csr,
+				  ubvec!12[] initial_csrs) {
+      import std.algorithm.searching: canFind;
+      
+      include_write_reg.length = 0;
+
+      foreach (icsr; initial_csrs) {
+	if (!(remove_csr.canFind(initial_csrs))) {
+	  include_write_reg ~= icsr;
+	}
+      }
+
+      foreach (acsr; add_csr) {
+	include_write_reg ~= cast(ubvec!12) acsr;
       }
     }
   }
