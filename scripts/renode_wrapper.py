@@ -14,6 +14,7 @@ cpu: CPU.RiscV32 @ sysbus
     cpuType: "{isa}"
     timeProvider: clint
     hartId: 0
+    allowUnalignedAccesses: true
 
 clint: IRQControllers.CoreLevelInterruptor  @ sysbus 0x02000000
     [0,1] -> cpu@[3,7]
