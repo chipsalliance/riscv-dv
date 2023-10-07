@@ -79,6 +79,11 @@ class riscv_pmp_cfg: uvm_object {
   // Can be manually configured from the command line.
   @UVM_DEFAULT ubvec!(XLEN) pmp_max_offset = ubvec!(XLEN).max();
 
+  // Value to hold the end signature address to that signals the end to the test environment.
+  // Currently the design assumes that the end signature is address is equal to the signature
+  // address minus 4 Bytes.
+  ubvec!XLEN end_signature_addr;
+
   // used to parse addr_mode configuration from cmdline
   alias addr_mode_wrapper = uvm_enum_wrapper!(pmp_addr_mode_t);
   pmp_addr_mode_t addr_mode;
@@ -163,7 +168,8 @@ class riscv_pmp_cfg: uvm_object {
     pmp_cfg_already_configured.length = pmp_num_regions;
   }
 
-  void initialize(bool require_signature_addr) {
+  void initialize(ubvec!XLEN signature_addr) {
+    end_signature_addr = signature_addr - 0x04;
     if (!pmp_randomize) {
       set_defaults();
       setup_pmp();
@@ -366,9 +372,10 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
   // - If MMWP, set the config of code region to LXWR=0100 and TOR.
   // - If MML or MMWP, set requested MSECCFG with RLB hardcoded to 1.
   // - Don't override code region config if corresponding `+pmp_region_` is passed.
-  // - Set default code region config in MML mode to shared execute.
-  // - Set all other addresses and configs.
+  // - If MML, set default code region config to shared execute.
+  // - If MML or MMWP, set stack and signature regions to shared read/write.
   // - Set requested MSECCFG (including RLB).
+  // - Set all other addresses and configs.
   void gen_pmp_instr(riscv_reg_t[2] scratch_reg, ref string[] instr) {
     import std.format: format;
     import esdl.base.rand: urandom;
@@ -392,8 +399,10 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         instr ~= format("csrwi 0x%0x, %0d", privileged_reg_t.MSECCFG, cfg_byte);
 
         if (pmp_randomize) {
+          // Randomly select a PMP region to contain the code for permitting execution and two
+          // extra regions to contain the stack and the signature address.
+	  code_entry = urandom(0, pmp_num_regions - 2);
 	  // Randomly select a PMP region to contain the code for permitting execution.
-          code_entry = urandom(0, pmp_num_regions);
           // In case of full randomization we actually want the code region to cover main as well.
           pmp_cfg[code_entry].offset = pmp_max_offset;
         }
@@ -494,7 +503,68 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg_bitmask);
         instr ~= format("csrw 0x%0x, x%0d", base_pmpcfg_addr + (code_entry/cfg_per_csr),
 			scratch_reg[0]);
+
+        // Load the address of the kernel_stack_end into PMP stack entry.
+        instr ~= format("la x%0d, kernel_stack_end", scratch_reg[0]);
+        instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 1,
+			scratch_reg[0]);
+        uvm_info(get_full_name(), format("Address of pmp_addr_%d is kernel_stack_end", code_entry + 1),
+		 UVM_LOW);
+        pmp_cfg_already_configured[code_entry + 1] = true;
+        // In case the randomly selected code_entry + 1 is not also specified in the arguments,
+        // overwrite it in pmp_cfg. We use this for the stack entry.
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry + 1), arg_value)) {
+          if (mseccfg.mml) {
+            // Marking the pmp stack region as shared write/read region before starting main.
+            pmp_cfg[code_entry + 1].l = false;
+            pmp_cfg[code_entry + 1].a = pmp_addr_mode_t.TOR;
+            pmp_cfg[code_entry + 1].x = true;
+            pmp_cfg[code_entry + 1].w = true;
+            pmp_cfg[code_entry + 1].r = false;
+          }
+	  else {
+            // We must set PMP stack region to write/read before starting main. X=0 to be consistent
+            // with MML mode.
+            pmp_cfg[code_entry + 1].l = false;
+            pmp_cfg[code_entry + 1].a = pmp_addr_mode_t.TOR;
+            pmp_cfg[code_entry + 1].x = false;
+            pmp_cfg[code_entry + 1].w = true;
+            pmp_cfg[code_entry + 1].r = true;
+          }
+        }
+        // Load the signature address into PMP signature entry. This assumes the
+        // end_signature_addr = signature_addr - 4. And that both are 4 Bytes.
+        instr ~= format("li x%0d, 0x%0x", scratch_reg[0], end_signature_addr);
+        instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 2,
+			scratch_reg[0]);
+        uvm_info(get_full_name(), format("Address of pmp_addr_%d is signature_addr", code_entry + 2),
+		 UVM_LOW);
+        pmp_cfg_already_configured[code_entry + 2] = true;
+        // In case the randomly selected code_entry + 2 is not also specified in the arguments,
+        // overwrite it in pmp_cfg. This is used for the signature address.
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry + 2), arg_value)) {
+          if (mseccfg.mml) {
+            // Marking the PMP signature region as shared write/read region before starting main.
+            pmp_cfg[code_entry + 2].l = false;
+            pmp_cfg[code_entry + 2].a = pmp_addr_mode_t.NAPOT;
+            pmp_cfg[code_entry + 2].x = true;
+            pmp_cfg[code_entry + 2].w = true;
+            pmp_cfg[code_entry + 2].r = false;
+          }
+	  else {
+            // We must set PMP signature region to write/read before starting main. X=0 to be
+            // consistent with MML mode.
+            pmp_cfg[code_entry + 2].l = false;
+            pmp_cfg[code_entry + 2].a = pmp_addr_mode_t.NAPOT;
+            pmp_cfg[code_entry + 2].x = false;
+            pmp_cfg[code_entry + 2].w = true;
+            pmp_cfg[code_entry + 2].r = true;
+          }
+        }
       }
+
       // Writing MSECCFG with RLB still set to 1 otherwise we cannot complete configuration.
       uvm_info(get_full_name(), format("MSECCFG: MML %0x, MMWP %0x, RLB 1", mseccfg.mml, mseccfg.mmwp),
 	       UVM_LOW);
