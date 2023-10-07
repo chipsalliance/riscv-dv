@@ -914,8 +914,16 @@ class riscv_asm_program_gen : uvm_object
   void setup_pmp(int hart) {
     string[] instr;
     if (support_pmp) {
-      cfg.pmp_cfg.setup_pmp();
-      cfg.pmp_cfg.gen_pmp_instr([cfg.scratch_reg, cfg.gpr[0]], instr);
+      if(cfg.pmp_cfg.suppress_pmp_setup) {
+        // When PMP setup is suppressed generate a configuration that gives unrestricted access to
+        // all memory for both M and U mode
+        cfg.pmp_cfg.gen_pmp_enable_all(cfg.scratch_reg, instr);
+      }
+      else {
+        cfg.pmp_cfg.setup_pmp();
+        cfg.pmp_cfg.gen_pmp_instr([cfg.scratch_reg, cfg.gpr[0]], instr);
+      }
+
       gen_section(get_label("pmp_setup", hart), instr);
     }
   }

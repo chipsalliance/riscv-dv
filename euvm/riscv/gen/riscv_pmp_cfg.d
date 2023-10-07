@@ -56,6 +56,10 @@ class riscv_pmp_cfg: uvm_object {
   // allowing all access restrictions to be enforced.
   bool enable_pmp_exception_handler = true;
 
+  // Don't generate the usual PMP setup section, instead generate a setup that provides a single
+  // region allowing full access to all of memory from both U mode and M mode.
+  bool suppress_pmp_setup = false;
+
   // Setting this bit to 1'b1 enables generation of the directed stream of instructions to test
   // write accesses to all supported pmpaddr[i] CSRs.
   bool enable_write_pmp_csr;
@@ -158,6 +162,7 @@ class riscv_pmp_cfg: uvm_object {
     get_int_arg_value("+pmp_granularity=", pmp_granularity);
     get_bool_arg_value("+pmp_randomize=", pmp_randomize);
     get_bool_arg_value("+pmp_allow_addr_overlap=", pmp_allow_addr_overlap);
+    get_bool_arg_value("+suppress_pmp_setup=", suppress_pmp_setup);
     get_bool_arg_value("+enable_write_pmp_csr=", enable_write_pmp_csr);
     get_hex_arg_value("+pmp_max_offset=", pmp_max_offset_int);
     pmp_max_offset = toubvec!XLEN(pmp_max_offset_int);
@@ -355,6 +360,15 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       return 0b1.toubvec!1;
     else
       return 0b0.toubvec!1;
+  }
+
+  // Generates code to setup a single PMP region allowing full access to all memory
+  void gen_pmp_enable_all(riscv_reg_t scratch_reg, ref string[] instr) {
+    // Setup region 0 to NAPOT covering the whole 32-bit address space, with RWX permissions and no
+    // lock.
+    instr ~= format("li x%0d, 0x1fffffff", scratch_reg);
+    instr ~= format("csrw 0x%0x, x%0d", privileged_reg_t.PMPADDR0, scratch_reg);
+    instr ~= format("csrw 0x%0x, 0x1f", privileged_reg_t.PMPCFG0);
   }
 
   // This function parses the pmp_cfg[] array to generate the actual instructions to set up
