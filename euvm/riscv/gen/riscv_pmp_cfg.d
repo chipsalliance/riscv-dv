@@ -112,7 +112,6 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (cfg; pmp_cfg) {
-      (pmp_granularity == 0) ->	(cfg.a != pmp_addr_mode_t.NAPOT);
       (pmp_granularity >= 1) -> (cfg.a != pmp_addr_mode_t.NA4);
     }
   } grain_addr_mode_c;
