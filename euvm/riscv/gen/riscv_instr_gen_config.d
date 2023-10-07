@@ -196,6 +196,8 @@ class riscv_instr_gen_config: uvm_object
   @UVM_DEFAULT bool                    no_load_store;      // No load/store instruction
   @UVM_DEFAULT bool                    no_csr_instr;       // No csr instruction
   @UVM_DEFAULT bool                    no_ebreak = true;      // No ebreak instruction
+  // Only enable ecall if you have overriden the test_done mechanism.
+  @UVM_DEFAULT bool                    no_ecall = true;       // No ecall instruction
   @UVM_DEFAULT bool                    no_dret = true;        // No dret instruction
   @UVM_DEFAULT bool                    no_fence;           // No fence instruction
   @UVM_DEFAULT bool                    no_wfi = true;         // No WFI instruction
@@ -605,6 +607,7 @@ class riscv_instr_gen_config: uvm_object
     get_uint_arg_value("+par_instr_threshold=", par_instr_threshold);
     get_int_arg_value("+instr_cnt=", instr_cnt);
     get_bool_arg_value("+no_ebreak=", no_ebreak);
+    get_bool_arg_value("+no_ecall=", no_ecall);
     get_bool_arg_value("+no_dret=", no_dret);
     get_bool_arg_value("+no_wfi=", no_wfi);
     get_bool_arg_value("+no_branch_jump=", no_branch_jump);

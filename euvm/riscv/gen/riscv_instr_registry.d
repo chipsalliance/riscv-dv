@@ -152,6 +152,9 @@ class riscv_instr_registry: uvm_object
 	}
       }
     }
+    if (cfg.no_ecall == 0) {
+      basic_instr ~= riscv_instr_name_t.ECALL;
+    }
     if (cfg.no_dret == 0) {
       basic_instr ~= riscv_instr_name_t.DRET;
     }
