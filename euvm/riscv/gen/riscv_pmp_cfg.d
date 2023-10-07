@@ -97,6 +97,7 @@ class riscv_pmp_cfg: uvm_object {
   constraint! q{
     foreach (cfg; pmp_cfg) {
       !(cfg.w && !cfg.r);
+      !(!mseccfg.mml && cfg.w && !cfg.r);
     }
   } xwr_c;
 
@@ -914,7 +915,13 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
       // If we're writing to the pmpcfg CSR that contains region0 config information,
       // ensure that the "safe" region remains fully accessible.
       if (pmpcfg_addr == base_pmpcfg_addr) {
-	pmp_val[0..8] = cast(ubyte) 0x0f;
+	if (mseccfg.mml) {
+          // In case of MML make this a shared code region with LXWR='b1010.
+          pmp_val[0..8] = 0x8a;
+	}
+	else {
+          pmp_val[0..8] = 0x0f;
+        }
       }
       instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_val);
       // Write the randomized address to pmpcfg[i].
