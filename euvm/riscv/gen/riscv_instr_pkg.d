@@ -1261,7 +1261,8 @@ struct pmp_cfg_reg_t {
   @rand bool                   r;
   // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
   // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
-  ubvec!XLEN    addr;
+  bool                addr_valid;
+  ubvec!XLEN          addr;
   // The offset from the address of <main> - automatically populated by the
   // PMP generation routine.
   @rand ubvec!XLEN    offset;
