@@ -109,8 +109,7 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (i, cfg; pmp_cfg) {
-      // Offset of pmp_cfg[0] does not matter, since it will be set to <main>,
-      // so we do not constrain it here, as it will be overridden during generation
+      // Offset of pmp_cfg[0] is always set to 0 from main.
       if (i != 0) {
         cfg.offset inside [1 : pmp_max_offset];
       }
@@ -342,17 +341,19 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
   // save some extraneous instructions from being performed.
   //
   // The general flow of this function:
-  // - Set address of region 0 before setting MSECCFG
-  // - If  MML, initially set MSECCFG to MML=0, MMWP=0, RLB=1
-  // - If  MML, set the config of region 0 to LXWR=1100 and TOR
-  // - If MMWP, set the config of region 0 to LXWR=0100 and TOR
-  // - If MML or MMWP, set requested MSECCFG with RLB hardcoded to 1
-  // - Don't override region 0 config if `+pmp_region_0` is passed
-  // - Set default region 0 config in MML mode to shared execute
-  // - Set all other addresses and configs
-  // - Set requested MSECCFG (including RLB)
+  // - If randomization, generate code region, otherwise select region 0.
+  // - Set address of code region before setting MSECCFG.
+  // - If  MML, initially set MSECCFG to MML=0, MMWP=0, RLB=1.
+  // - If  MML, set the config of code region to LXWR=1100 and TOR.
+  // - If MMWP, set the config of code region to LXWR=0100 and TOR.
+  // - If MML or MMWP, set requested MSECCFG with RLB hardcoded to 1.
+  // - Don't override code region config if corresponding `+pmp_region_` is passed.
+  // - Set default code region config in MML mode to shared execute.
+  // - Set all other addresses and configs.
+  // - Set requested MSECCFG (including RLB).
   void gen_pmp_instr(riscv_reg_t[2] scratch_reg, ref string[] instr) {
     import std.format: format;
+    import esdl.base.rand: urandom;
     
     ubvec!XLEN   pmp_word;
     ubvec!XLEN   cfg_bitmask;
@@ -360,49 +361,124 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
     int pmp_id;
     string arg_value;
 
-    // Load the address of the <main> section into pmpaddr0.
-    // This needs to be done before setting MSECCFG in the case of MML or MMWP.
-    instr ~= format("la x%0d, main", scratch_reg[0]);
-    instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
-    instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr, scratch_reg[0]);
-    uvm_info(get_full_name(), "Loaded the address of <main> section into pmpaddr0", UVM_LOW);
-
+    int code_entry;
+    pmp_cfg_reg_t tmp_pmp_cfg;
 
     if (support_epmp) {
-      // In case of MML or MMWP we need to set region 0 to executable before setting MSECCFG.
-      if (mseccfg.mml == true || mseccfg.mmwp == true) {
-        if (mseccfg.mml == true) {
-          // Writing MSECCFG with RLB set to 1 to stop the config with L enabled from locking
-          // everything before configuration is done.
-          uvm_info(get_full_name(), format("MSECCFG: MML 0, MMWP 0, RLB 1"), UVM_LOW);
-          cfg_byte = toubvec!8(0b100); // {1'b1, 1'b0, 1'b0};
-          instr ~= format("csrwi 0x%0x, %0d", privileged_reg_t.MSECCFG, cfg_byte);
+      // In case of MML or MMWP we need to set code region to executable before setting MSECCFG.
+      if (mseccfg.mml || mseccfg.mmwp) {
+        // Writing MSECCFG with RLB set to 1 to stop the config with L enabled from locking
+        // everything before configuration is done.
+        uvm_info(get_full_name(), format("MSECCFG: MML 0, MMWP 0, RLB 1"), UVM_LOW);
+        cfg_byte = 0b00000100; // {1'b1, 1'b0, 1'b0};
+        instr ~= format("csrwi 0x%0x, %0d", privileged_reg_t.MSECCFG, cfg_byte);
+
+        if (pmp_randomize) {
+          // Randomly select a PMP region to contain the code and execute permission
+          code_entry = urandom(0, pmp_num_regions);
+          // In case of full randomization we actually want the code region to cover main as well.
+          pmp_word = pmp_max_offset;
+        }
+	else {
+          code_entry = 0;
+          // This is the default offset.
+          pmp_word = assign_default_addr_offset(pmp_num_regions, 0);
+        }
+
+        // Load the address of the <main> + offset into code PMP code entry.
+        instr ~= format("la x%0d, main", scratch_reg[0]);
+	instr ~= format("li x%0d, 0x%0x", scratch_reg[1], pmp_word);
+        instr ~= format("add x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0],
+			scratch_reg[1]);
+        instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry, scratch_reg[0]);
+        uvm_info(get_full_name(), format("Offset of pmp_addr_%d from main: 0x%0x", code_entry, pmp_word),
+		 UVM_LOW);
+        if (code_entry > 0) {
+          // Load _start into PMP address of previous entry to complete TOR region.
+          instr ~= format("la x%0d, _start", scratch_reg[0]);
+          instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
+          instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry - 1,
+			  scratch_reg[0]);
+          uvm_info(get_full_name(), format("Offset of pmp_addr_%d to _start", code_entry - 1), UVM_LOW);
+          if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry - 1), arg_value)) {
+            // Currently there is no way to know the value of _start here and address value 0 gets
+            // ignored below, which should probably be changed in the future.
+            pmp_cfg[code_entry - 1].addr = 1;
+          }
+        }
+
+        if (mseccfg.mml) {
+          // This value is different from below (M-mode execute only) because we need code region
+          // to be executable in both M-mode and U-mode, since RISCV-DV switches priviledge before
+          // <main> but after <pmp_setup>. We choose not to use the shared code region that also
+          // allows read in M-mode because that is inconsistent with the execute-only in other
+          // modes.
+          tmp_pmp_cfg.l = true;
+          tmp_pmp_cfg.a = pmp_addr_mode_t.TOR;
+          tmp_pmp_cfg.x = false;
+          tmp_pmp_cfg.w = true;
+          tmp_pmp_cfg.r = false;
           // This configuration needs to be executable in M-mode both before and after writing to
           // MSECCFG. It will deny execution for U-Mode, but this is necessary because RWX=111 in
           // MML means read only, and RW=01 is not allowed before MML is enabled.
-	  // cfg_byte = {1'b1, pmp_cfg[0].zero, TOR, 1'b1, 1'b0, 1'b0};
-	  cfg_byte[0] = false;
+          // cfg_byte = {tmp_pmp_cfg.l, tmp_pmp_cfg.zero, tmp_pmp_cfg.a, 1'b1,
+          //             1'b0, tmp_pmp_cfg.r};
+	  cfg_byte[0] = tmp_pmp_cfg.r;
 	  cfg_byte[1] = false;
 	  cfg_byte[2] = true;
-	  cfg_byte[3..5] = pmp_addr_mode_t.TOR;
-	  cfg_byte[5..7] = pmp_cfg[0].zero;
-	  cfg_byte[7] = true;
+	  cfg_byte[3..5] = tmp_pmp_cfg.a;
+	  cfg_byte[5..7] = tmp_pmp_cfg.zero;
+	  cfg_byte[7] = tmp_pmp_cfg.l;
 	}
 	else {
-          // We must set pmp region 0 to executable before enabling MMWP. RW=00 to be consistend
+          // We must set pmp code region to executable before enabling MMWP. RW=00 to be consistent
           // with MML configuration as much as possible.
-          // cfg_byte = {1'b0, pmp_cfg[0].zero, TOR, 1'b1, 1'b0, 1'b0};
-	  cfg_byte[0] = false;
-	  cfg_byte[1] = false;
-	  cfg_byte[2] = true;
-	  cfg_byte[3..5] = pmp_addr_mode_t.TOR;
-	  cfg_byte[5..7] = pmp_cfg[0].zero;
-	  cfg_byte[7] = false;
-        }
-        // Enable the selected config on region 0.
-        uvm_info(get_full_name(), format("temporary pmp_word: 0x%0x", cfg_byte), UVM_DEBUG);
-        instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg_byte);
-        instr ~= format("csrw 0x%0x, x%0d", base_pmpcfg_addr, scratch_reg[0]);
+          tmp_pmp_cfg.l = false;
+          tmp_pmp_cfg.a = pmp_addr_mode_t.TOR;
+          tmp_pmp_cfg.x = true;
+          tmp_pmp_cfg.w = false;
+          tmp_pmp_cfg.r = false;
+
+          // cfg_byte      = {tmp_pmp_cfg.l, tmp_pmp_cfg.zero, tmp_pmp_cfg.a,
+          //                  tmp_pmp_cfg.x, tmp_pmp_cfg.w,    tmp_pmp_cfg.r};
+	  cfg_byte[0] = tmp_pmp_cfg.r;
+	  cfg_byte[1] = tmp_pmp_cfg.w;
+	  cfg_byte[2] = tmp_pmp_cfg.x;
+	  cfg_byte[3..5] = tmp_pmp_cfg.a;
+	  cfg_byte[5..7] = tmp_pmp_cfg.zero;
+	  cfg_byte[7] = tmp_pmp_cfg.l;
+	}
+        // In case the randomly selected code entry is not also configured in the arguments,
+        // overwrite it in pmp_cfg.
+        // The pmp_config has value LXWR = 1010, which means it is executable in both M and U mode.
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry),
+				arg_value)) {
+          pmp_cfg[code_entry].l      = tmp_pmp_cfg.l;
+          pmp_cfg[code_entry].a      = tmp_pmp_cfg.a;
+          pmp_cfg[code_entry].x      = tmp_pmp_cfg.x;
+          pmp_cfg[code_entry].w      = tmp_pmp_cfg.w;
+          pmp_cfg[code_entry].r      = tmp_pmp_cfg.r;
+	}
+        // Offset cannot be specified with the plus argument, so we can do this outside the if.
+        pmp_cfg[code_entry].offset = pmp_word;
+
+        if (code_entry > 0) {
+	  // Disable all configs before the code entry because PMP regions can be initialized with
+	  // any value and we need to make sure that the code entry is the first valid entry during
+	  // PMP setup.
+	  cfg_bitmask = 0;
+	  instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg_bitmask);
+	  for (int i = 0; i < (code_entry / cfg_per_csr); i++) {
+	    instr ~= format("csrw 0x%0x, x%0d", base_pmpcfg_addr + i, scratch_reg[0]);
+	  }
+	}
+	  // Enable the selected config on region code_entry.
+	cfg_bitmask = cfg_byte << ((code_entry % cfg_per_csr) * 8);
+        uvm_info(get_full_name(), format("temporary code config: 0x%0x", cfg_bitmask), UVM_DEBUG);
+        instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg_bitmask);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmpcfg_addr + (code_entry/cfg_per_csr),
+			scratch_reg[0]);
       }
       // Writing MSECCFG with RLB still set to 1 otherwise we cannot complete configuration.
       uvm_info(get_full_name(), format("MSECCFG: MML %0x, MMWP %0x, RLB 1", mseccfg.mml, mseccfg.mmwp),
@@ -413,40 +489,13 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
 
     foreach (i, ref cfg; pmp_cfg) {
       pmp_id = cast(int) (i/cfg_per_csr);
-      // In case an argument is give, we want to allow the test writer to change region 0 to
-      // anything they like even if it means that a trap occurs on the next instruction. If no
-      // argument is given, we should set region 0 to have a configuration with execute enabled.
-      if (i == 0 && !uvm_cmdline_processor.get_inst().get_arg_value("+pmp_region_0=", arg_value)) {
-        if (support_epmp && mseccfg.mml) {
-          // This value is different from above (M-mode execute only) because we need region 0 to
-          // be executable in both M-mode and U-mode, since RISCV-DV switches privledge before
-          // <main> but after <pmp_setup>. We choose not to use the shared code region that also
-          // allows read in M-mode because that is inconsitente with the execute-only in other
-          // modes.
-	  
-          // cfg_byte = {1'b1, pmp_cfg[i].zero, TOR, 1'b0, 1'b1, 1'b0}; // Shared execute only.
-	  cfg_byte[0] = false;
-	  cfg_byte[1] = true;
-	  cfg_byte[2] = false;
-	  cfg_byte[3..5] = pmp_addr_mode_t.TOR;
-	  cfg_byte[5..7] = pmp_cfg[0].zero;
-	  cfg_byte[7] = true;
-        }
-	else {
-          // cfg_byte = {1'b0, pmp_cfg[i].zero, TOR, 1'b1, 1'b0, 1'b0}; // Execute only to match MML.
-	  cfg_byte[0] = false;
-	  cfg_byte[1] = false;
-	  cfg_byte[2] = true;
-	  cfg_byte[3..5] = pmp_addr_mode_t.TOR;
-	  cfg_byte[6..7] = pmp_cfg[0].zero;
-	  cfg_byte[7] = false;
-        }
-     }
-      else {
-	cfg_byte = booltobit(cfg.l) ~ cfg.zero ~ tobvec!2(cfg.a)
-	  ~ booltobit(cfg.x) ~ booltobit(cfg.w) ~ booltobit(cfg.r);
-      }
-      uvm_info(get_full_name(), format("cfg_byte: 0x%0x", cfg_byte), UVM_DEBUG);
+      cfg_byte[0] = pmp_cfg[i].r;
+      cfg_byte[1] = pmp_cfg[i].w;
+      cfg_byte[2] = pmp_cfg[i].x;
+      cfg_byte[3..5] = pmp_cfg[i].a;
+      cfg_byte[5..7] = pmp_cfg[i].zero;
+      cfg_byte[7] = pmp_cfg[i].l;
+      uvm_info(get_full_name(), format("cfg_byte: 0x%0x", cfg_byte), UVM_LOW);
       // First write to the appropriate pmpaddr CSR.
       cfg_bitmask = cfg_byte << ((i % cfg_per_csr) * 8);
       uvm_info(get_full_name(), format("cfg_bitmask: 0x%0x", cfg_bitmask), UVM_DEBUG);
@@ -454,35 +503,34 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
       uvm_info(get_full_name(), format("pmp_word: 0x%0x", pmp_word), UVM_DEBUG);
       cfg_bitmask = 0;
 
-      if (i != 0) {
-	// If an actual address has been set from the command line, use this address,
-        // otherwise use the default offset+<main> address.
-        //
-        // TODO(udinator) - The practice of passing in a max offset from the command line
-        //  is somewhat unintuitive, and is just an initial step. Eventually a max address
-        //  should be passed in from the command line and this routine do all of the
-        //  calculations to split the address range formed by [<main> : pmp_max_addr].
-        //  This will likely require a complex assembly routine - the code below is a very simple
-        //  first step towards this goal, allowing users to specify a PMP memory address
-        //  from the command line instead of having to calculate an offset themselves.
-        if (cfg.addr != 0) {
-	  instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg.addr);
-	  instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
-	  uvm_info(get_full_name(),
-		   format("Address 0x%0x loaded into pmpaddr[%d] CSR", base_pmp_addr + i, i),
-		   UVM_LOW);
-	}
-	else {
-          // Add the offset to the base address to get the other pmpaddr values.
-          instr ~= format("la x%0d, main", scratch_reg[0]);
-          instr ~= format("li x%0d, 0x%0x", scratch_reg[1], cfg.offset);
-          instr ~= format("add x%0d, x%0d, x%0d",
-				scratch_reg[0], scratch_reg[0], scratch_reg[1]);
-          instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
-	  instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
-	  uvm_info(get_full_name(), format("Offset of pmp_addr_%d from pmpaddr0: 0x%0x",
-					   i, cfg.offset), UVM_LOW);
-        }
+      // If an actual address has been set from the command line, use this address,
+      // otherwise use the default <main> + offset.
+      //
+      // TODO(udinator) - The practice of passing in a max offset from the command line
+      //  is somewhat unintuitive, and is just an initial step. Eventually a max address
+      //  should be passed in from the command line and this routine do all of the
+      //  calculations to split the address range formed by [<main> : pmp_max_addr].
+      //  This will likely require a complex assembly routine - the code below is a very simple
+      //  first step towards this goal, allowing users to specify a PMP memory address
+      //  from the command line instead of having to calculate an offset themselves.
+      //
+      // TODO(marnovandermaas) - It should be possible to pass addresses equal to 0.
+      if (pmp_cfg[i].addr != 0) {
+        instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
+        uvm_info(get_full_name(), format("Address 0x%0x loaded into pmpaddr[%d] CSR", pmp_cfg[i].addr, i),
+		 UVM_LOW);
+      }
+      else {
+        // Add the offset to the base address to get the other pmpaddr values.
+        instr ~= format("la x%0d, main", scratch_reg[0]);
+        instr ~= format("li x%0d, 0x%0x", scratch_reg[1], pmp_cfg[i].offset);
+        instr ~= format("add x%0d, x%0d, x%0d",
+			scratch_reg[0], scratch_reg[0], scratch_reg[1]);
+        instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
+        uvm_info(get_full_name(), format("Offset of pmp_addr_%d from main: 0x%0x", i,
+					 pmp_cfg[i].offset), UVM_LOW);
       }
 
       // Now, check if we have to write to the appropriate pmpcfg CSR.
@@ -502,6 +550,7 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
         pmp_word = 0;
       }
     }
+
     // Unsetting RLB if that was requested.
     if (support_epmp && !mseccfg.rlb) {
       uvm_info(get_full_name(), format("MSECCFG: MML %0x, MMWP %0x, RLB %0x",
