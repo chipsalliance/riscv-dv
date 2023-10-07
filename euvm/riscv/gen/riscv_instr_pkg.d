@@ -1213,7 +1213,7 @@ enum hazard_e: ubyte {
   WAW_HAZARD
 }
 
-ubvec!12[] default_include_csr_write = [privileged_reg_t.MSCRATCH];
+riscv_csr_t[] default_include_csr_write = [privileged_reg_t.MSCRATCH];
 
 // `include "riscv_core_setting.sv"
 

@@ -24,7 +24,8 @@ import riscv.gen.riscv_instr_pkg: data_pattern_t, vreg_init_method_t, exception_
   interrupt_cause_t, privileged_mode_t, mtvec_mode_t, f_rounding_mode_t, riscv_reg_t,
   mem_region_t, privileged_reg_t, riscv_instr_category_t, b_ext_group_t,
   riscv_instr_group_t, get_int_arg_value, get_uint_arg_value,
-  get_bool_arg_value, get_hex_arg_value, cmdline_enum_processor, satp_mode_t, default_include_csr_write;
+  get_bool_arg_value, get_hex_arg_value, cmdline_enum_processor, satp_mode_t,
+  default_include_csr_write, riscv_csr_t;
 
 import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 import riscv.gen.isa.riscv_instr_register: register_isa;
@@ -839,9 +840,9 @@ class riscv_instr_gen_config: uvm_object
 
   struct csr_config {
     // Privileged CSR filter
-    ubvec!12[]                            exclude_reg;
-    ubvec!12[]                            include_reg;
-    ubvec!12[]                            include_write_reg;
+    privileged_reg_t[]         exclude_reg;
+    privileged_reg_t[]         include_reg;
+    privileged_reg_t[]         include_write_reg;
 
     bool allow_ro_write;
 
@@ -851,14 +852,18 @@ class riscv_instr_gen_config: uvm_object
       allow_ro_write = true;
       
       if (cfg.enable_illegal_csr_instruction) {
-	exclude_reg = cast(ubvec!12[]) implemented_csr;
+	exclude_reg = implemented_csr;
       }
       else if (cfg.enable_access_invalid_csr_level) {
-	include_reg = cast(ubvec!12[]) cfg.invalid_priv_mode_csrs;
+	include_reg = cfg.invalid_priv_mode_csrs;
       }
       else if (cfg.gen_all_csrs_by_default) {
 	allow_ro_write = cfg.gen_csr_ro_write;
-	include_reg = cast(ubvec!12[]) implemented_csr ~ custom_csr;
+	include_reg = implemented_csr;
+	foreach (i, ccsr; custom_csr) {
+	  default_include_csr_write ~= cast(riscv_csr_t) ccsr;
+	}
+
 	create_include_write_reg(cfg.add_csr_write, cfg.remove_csr_write, default_include_csr_write);
       }
       else {
@@ -877,19 +882,19 @@ class riscv_instr_gen_config: uvm_object
 
     void create_include_write_reg(privileged_reg_t[] add_csr,
 				  privileged_reg_t[] remove_csr,
-				  ubvec!12[] initial_csrs) {
+				  riscv_csr_t[] initial_csrs) {
       import std.algorithm.searching: canFind;
       
       include_write_reg.length = 0;
 
       foreach (icsr; initial_csrs) {
 	if (!(remove_csr.canFind(initial_csrs))) {
-	  include_write_reg ~= icsr;
+	  include_write_reg ~= cast(privileged_reg_t) icsr;
 	}
       }
 
       foreach (acsr; add_csr) {
-	include_write_reg ~= cast(ubvec!12) acsr;
+	include_write_reg ~= acsr;
       }
     }
   }
