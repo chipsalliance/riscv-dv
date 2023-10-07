@@ -515,7 +515,8 @@ pmp_cfg_reg_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg) {
       //  This will likely require a complex assembly routine - the code below is a very simple
       //  first step towards this goal, allowing users to specify a PMP memory address
       //  from the command line instead of having to calculate an offset themselves.
-      if (pmp_cfg[i].addr_valid) {
+      if (pmp_cfg[i].addr_valid || pmp_randomize) {
+	// In case an address was supplied by the test or full randomize is enabled.
         instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr);
         instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
         uvm_info(get_full_name(), format("Address 0x%0x loaded into pmpaddr[%d] CSR", pmp_cfg[i].addr, i),
