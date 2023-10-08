@@ -189,7 +189,7 @@ class riscv_pmp_cfg: uvm_object {
     get_bool_arg_value("+enable_write_pmp_csr=", enable_write_pmp_csr);
     get_hex_arg_value("+pmp_max_offset=", pmp_max_offset_int);
     pmp_max_offset = toubvec!XLEN(pmp_max_offset_int);
-    uvm_info(get_full_name(), format("pmp max offset: 0x%0x", pmp_max_offset), UVM_LOW);
+    uvm_info(get_full_name(), format("pmp max offset: 0x%08x", pmp_max_offset), UVM_LOW);
     pmp_cfg.length = pmp_num_regions;
     pmp_cfg_addr_valid.length = pmp_num_regions;
     pmp_cfg_already_configured.length = pmp_num_regions;
@@ -213,7 +213,7 @@ class riscv_pmp_cfg: uvm_object {
   }
 
   void set_defaults() {
-    uvm_info(get_full_name(), format("MAX OFFSET: 0x%0x", pmp_max_offset), UVM_LOW);
+    uvm_info(get_full_name(), format("MAX OFFSET: 0x%08x", pmp_max_offset), UVM_LOW);
     mseccfg.mml  = false;
     mseccfg.mmwp = false;
     mseccfg.rlb  = true;
@@ -536,7 +536,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 	}
 	  // Enable the selected config on region code_entry.
 	cfg_bitmask = cfg_byte << ((code_entry % cfg_per_csr) * 8);
-        uvm_info(get_full_name(), format("temporary code config: 0x%0x", cfg_bitmask), UVM_DEBUG);
+        uvm_info(get_full_name(), format("temporary code config: 0x%08x", cfg_bitmask), UVM_DEBUG);
         instr ~= format("li x%0d, 0x%0x", scratch_reg[0], cfg_bitmask);
         instr ~= format("csrw 0x%0x, x%0d", base_pmpcfg_addr + (code_entry/cfg_per_csr),
 			scratch_reg[0]);
@@ -619,12 +619,12 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       cfg_byte[3..5] = pmp_cfg[i].a;
       cfg_byte[5..7] = pmp_cfg[i].zero;
       cfg_byte[7] = pmp_cfg[i].l;
-      uvm_info(get_full_name(), format("cfg_byte: 0x%0x", cfg_byte), UVM_LOW);
+      uvm_info(get_full_name(), format("cfg_byte: 0x%02x", cfg_byte), UVM_LOW);
       // First write to the appropriate pmpaddr CSR.
       cfg_bitmask = cfg_byte << ((i % cfg_per_csr) * 8);
-      uvm_info(get_full_name(), format("cfg_bitmask: 0x%0x", cfg_bitmask), UVM_DEBUG);
+      uvm_info(get_full_name(), format("cfg_bitmask: 0x%08x", cfg_bitmask), UVM_DEBUG);
       pmp_word = pmp_word | cfg_bitmask;
-      uvm_info(get_full_name(), format("pmp_word: 0x%0x", pmp_word), UVM_DEBUG);
+      uvm_info(get_full_name(), format("pmp_word: 0x%08x", pmp_word), UVM_DEBUG);
       cfg_bitmask = 0;
 
       // If an actual address has been set from the command line, use this address,
@@ -644,7 +644,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
           // In case an address was supplied by the test or full randomize is enabled.
           instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr);
           instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
-          uvm_info(get_full_name(), format("Address 0x%0x loaded into pmpaddr[%d] CSR", pmp_cfg[i].addr, i),
+          uvm_info(get_full_name(), format("Value 0x%08x loaded into pmpaddr[%d] CSR, corresponding to address 0x%0x", pmp_cfg[i].addr, i, pmp_cfg[i].addr << 2),
 		   UVM_LOW);
 	}
 	else {
@@ -655,7 +655,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 			  scratch_reg[0], scratch_reg[0], scratch_reg[1]);
           instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
           instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + i, scratch_reg[0]);
-          uvm_info(get_full_name(), format("Offset of pmp_addr_%d from main: 0x%0x", i,
+          uvm_info(get_full_name(), format("Offset of pmp_addr_%d from main: 0x%08x", i,
 					   pmp_cfg[i].offset), UVM_LOW);
         }
       }
