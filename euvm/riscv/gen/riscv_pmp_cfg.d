@@ -524,6 +524,8 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 
         // Load the address of the kernel_stack_end into PMP stack entry.
         instr ~= format("la x%0d, kernel_stack_end", scratch_reg[0]);
+	// Add 4 to also include the final address of the kernel stack.
+	instr ~= format("addi x%0d, x%0d, 4", scratch_reg[0], scratch_reg[0]);
         instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
         instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + stack_entry,
 			scratch_reg[0]);
