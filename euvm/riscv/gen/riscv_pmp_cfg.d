@@ -449,7 +449,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 	  stack_entry = pmp_num_regions - 2;
 	  sig_entry = pmp_num_regions - 1;
           // This is the default offset.
-          pmp_cfg[code_entry].offset = assign_default_addr_offset(pmp_num_regions, 0);
+          pmp_cfg[code_entry].offset = assign_default_addr_offset(pmp_num_regions, code_entry);
 	  pmp_cfg[pmp_num_regions - 3].offset = pmp_max_offset;
         }
 
@@ -515,7 +515,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         // In case the randomly selected code entry is not also configured in the arguments,
         // overwrite it in pmp_cfg.
         // The pmp_config has value LXWR = 1010, which means it is executable in both M and U mode.
-        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry),
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%0d=", code_entry),
 				arg_value)) {
           pmp_cfg[code_entry].l      = tmp_pmp_cfg.l;
           pmp_cfg[code_entry].a      = tmp_pmp_cfg.a;
@@ -553,7 +553,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         pmp_cfg_already_configured[stack_entry] = true;
         // In case the randomly selected stack_entry is not also specified in the arguments,
         // overwrite it in pmp_cfg. We use this for the stack entry.
-        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", stack_entry), arg_value)) {
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%0d=", stack_entry), arg_value)) {
           if (mseccfg.mml) {
             // Marking the pmp stack region as shared write/read region before starting main.
             pmp_cfg[stack_entry].l = false;
@@ -578,12 +578,12 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
         instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + sig_entry,
 			scratch_reg[0]);
-        uvm_info(get_full_name(), format("Address of pmp_addr_%d is signature_addr", sig_entry),
+        uvm_info(get_full_name(), format("Address of pmp_addr_%0d is signature_addr", sig_entry),
 		 UVM_LOW);
         pmp_cfg_already_configured[sig_entry] = true;
         // In case the randomly selected sig_entry is not also specified in the arguments,
         // overwrite it in pmp_cfg. This is used for the signature address.
-        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", sig_entry), arg_value)) {
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%0d=", sig_entry), arg_value)) {
           if (mseccfg.mml) {
             // Marking the PMP signature region as shared write/read region before starting main.
             pmp_cfg[sig_entry].l = false;
