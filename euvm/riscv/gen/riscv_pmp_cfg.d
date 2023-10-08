@@ -46,7 +46,7 @@ class riscv_pmp_cfg: uvm_object {
   bool pmp_randomize = false;
 
   // allow pmp randomization to cause address range overlap
-  @rand bool pmp_allow_addr_overlap = false;
+  bool pmp_allow_illegal_tor = false;
 
   // By default, after returning from a PMP exception, we return to the exact same instruction that
   // resulted in a PMP exception to begin with, creating an infinite loop of taking an exception.
@@ -116,6 +116,13 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (cfg; pmp_cfg) {
+      cfg.addr_mode >= 0;
+      cfg.addr_mode <= XLEN;
+    }
+  } address_modes_c;
+
+  constraint! q{
+    foreach (cfg; pmp_cfg) {
       (pmp_granularity >= 1) -> (cfg.a != pmp_addr_mode_t.NA4);
     }
   } grain_addr_mode_c;
@@ -133,21 +140,37 @@ class riscv_pmp_cfg: uvm_object {
   }  addr_range_c;
 
   constraint! q{
+    foreach (cfg; pmp_cfg) {
+      solve cfg.a before cfg.addr;
+      solve cfg.addr_mode before cfg.addr;
+    }
+  }  modes_before_addr_c;
+
+
+  constraint! q{
     foreach (i, cfg; pmp_cfg) {
-      if (!pmp_allow_addr_overlap && i > 0) {
-        cfg.offset > pmp_cfg[i-1].offset;
+      // In case illegal TOR regions are disallowed always add the constraint, otherwise make the
+      // remove the constraint for 1 in every XLEN entries.
+      if (i > 0 && cfg.a == pmp_addr_mode_t.TOR && (!pmp_allow_illegal_tor || cfg.addr_mode > 0)) {
+        cfg.addr > pmp_cfg[i-1].addr;
       }
     }
-  }  addr_overlapping_c;
+  } addr_legal_tor_c;
 
-  // Privileged spec states that in TOR mode, offset[i-1] < offset[i]
   constraint! q{
     foreach (cfg; pmp_cfg) {
-      if (cfg.a == pmp_addr_mode_t.TOR) {
-        pmp_allow_addr_overlap == false;
+      // In case NAPOT is selected make sure that we randomly select a region mode and force the
+      // address to match that mode.
+      if (cfg.a == pmp_addr_mode_t.NAPOT) {
+	// Make sure the bottom addr_mode - 1 bits are set to 1.
+	(cfg.addr & ((1 << cfg.addr_mode) - 1)) == ((1 << cfg.addr_mode) - 1);
+	if (cfg.addr_mode < XLEN) {
+	  // Unless the largest region is selected make sure the bit just before the ones is set to 0.
+	  (cfg.addr & (1 << cfg.addr_mode)) == 0;
+       }
       }
     }
-  }  tor_addr_overlap_c;
+  } addr_napot_mode_c;
 
   this(string name = "") {
     string s;
@@ -161,7 +184,7 @@ class riscv_pmp_cfg: uvm_object {
     }
     get_int_arg_value("+pmp_granularity=", pmp_granularity);
     get_bool_arg_value("+pmp_randomize=", pmp_randomize);
-    get_bool_arg_value("+pmp_allow_addr_overlap=", pmp_allow_addr_overlap);
+    get_bool_arg_value("+pmp_allow_illegal_tor=", pmp_allow_illegal_tor);
     get_bool_arg_value("+suppress_pmp_setup=", suppress_pmp_setup);
     get_bool_arg_value("+enable_write_pmp_csr=", enable_write_pmp_csr);
     get_hex_arg_value("+pmp_max_offset=", pmp_max_offset_int);

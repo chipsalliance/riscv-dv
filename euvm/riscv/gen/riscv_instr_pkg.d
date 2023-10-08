@@ -1265,6 +1265,8 @@ struct pmp_cfg_reg_t {
   // The offset from the address of <main> - automatically populated by the
   // PMP generation routine.
   @rand ubvec!XLEN    offset;
+  // The size of the region in case of NAPOT and overlap in case of TOR.
+  @rand int addr_mode;
 }
 
 
