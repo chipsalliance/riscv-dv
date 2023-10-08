@@ -617,7 +617,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       //  from the command line instead of having to calculate an offset themselves.
       //
       // Only set the address if it has not already been configured in the above routine.
-      if (pmp_cfg_already_configured[i] == false) {
+      if (pmp_cfg_already_configured[i] == false || pmp_cfg_addr_valid[i]) {
         if (pmp_cfg_addr_valid[i] || pmp_randomize) {
           // In case an address was supplied by the test or full randomize is enabled.
           instr ~= format("li x%0d, 0x%0x", scratch_reg[0], pmp_cfg[i].addr);
