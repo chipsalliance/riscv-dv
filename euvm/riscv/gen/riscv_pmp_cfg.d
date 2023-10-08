@@ -704,25 +704,25 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
   void gen_pmp_exception_routine(riscv_reg_t[] scratch_reg,
 				 exception_cause_t fault_type,
 				 ref string[] instr) {
-    assert (scratch_reg.length == 6);
-    // mscratch       : loop counter
+    assert (scratch_reg.length == 7);
     // scratch_reg[0] : temporary storage
     // scratch_reg[1] : &pmpaddr[i]
     // scratch_reg[2] : &pmpcfg[i]
     // scratch_reg[3] : 8-bit configuration fields
     // scratch_reg[4] : 2-bit pmpcfg[i].A address matching mode
     // scratch_reg[5] : holds the previous pmpaddr[i] value (necessary for TOR matching)
+    // scratch_reg[6] : loop counter
     instr ~=
-      //////////////////////////////////////////////////
-      // Initialize loop counter and save to mscratch //
-      //////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////
+      // Initialize loop counter and save to scratch_reg[6] //
+      ////////////////////////////////////////////////////////
       [format("li x%0d, 0", scratch_reg[0]),
-       format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0]),
+       format("mv x%0d, x%0d", scratch_reg[6], scratch_reg[0]),
        format("li x%0d, 0", scratch_reg[5]),
       ////////////////////////////////////////////////////
       // calculate next pmpaddr and pmpcfg CSRs to read //
       ////////////////////////////////////////////////////
-       format("0: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("0: mv x%0d, x%0d", scratch_reg[0], scratch_reg[6]),
        format("mv x%0d, x%0d", scratch_reg[4], scratch_reg[0])];
 
     // Generate a sequence of loads and branches that will compare the loop index to every
@@ -751,14 +751,13 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       // get correct 8-bit configuration fields //
       ////////////////////////////////////////////
       [format("17: li x%0d, %0d", scratch_reg[3], cfg_per_csr),
-       format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
        // calculate offset to left-shift pmpcfg[i] (scratch_reg[2]),
        // use scratch_reg[4] as temporary storage
        //
        // First calculate (loop_counter % cfg_per_csr)
        format("slli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
 	      XLEN - clog2(cfg_per_csr)),
-       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0],
+       format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[6],
 	      XLEN - clog2(cfg_per_csr)),
        // Calculate (cfg_per_csr - modded_loop_counter - 1) to determine how many 8bit slots to
        // the left this needs to be shifted
@@ -802,13 +801,13 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        /////////////////////////////////////////////////////////////////
        // increment loop counter and branch back to beginning of loop //
        /////////////////////////////////////////////////////////////////
-       format("18: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("18: mv x%0d, x%0d", scratch_reg[0], scratch_reg[6]),
        // load pmpaddr[i] into scratch_reg[5] to store for iteration [i+1]
        format("mv x%0d, x%0d", scratch_reg[5], scratch_reg[1]),
        // increment loop counter by 1
        format("addi x%0d, x%0d, 1", scratch_reg[0], scratch_reg[0]),
-       // store loop counter to MSCRATCH
-       format("csrw 0x%0x, x%0d", privileged_reg_t.MSCRATCH, scratch_reg[0]),
+       // store loop counter to scratch_reg[6]
+       format("mv x%0d, x%0d", scratch_reg[6], scratch_reg[0]),
        // load number of pmp regions - loop limit
        format("li x%0d, %0d", scratch_reg[1], pmp_num_regions),
        // if counter < pmp_num_regions => branch to beginning of loop,
@@ -842,7 +841,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 
     // Sub-section to handle address matching mode TOR.
     instr ~=
-      [format("21: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+      [format("21: mv x%0d, x%0d", scratch_reg[0], scratch_reg[6]),
        format("csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MTVAL),
        format("srli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[4]),
        // If loop_counter==0, compare fault_addr to 0
@@ -986,7 +985,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       break;
     }
     instr ~=
-      [format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+      [
        // Calculate (loop_counter % cfg_per_csr) to find the index of the correct
        // entry in pmpcfg[i].
        //
@@ -995,7 +994,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        format("li x%0d, %0d", scratch_reg[4], XLEN - clog2(cfg_per_csr)),
        // Now leftshift and rightshift loop_counter by this amount to clear all the upper
        // bits
-       format("sll x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
+       format("sll x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[6], scratch_reg[4]),
        format("srl x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
        // Multiply the index by 8 to get the shift amount.
        format("slli x%0d, x%0d, 3", scratch_reg[4], scratch_reg[0]),
@@ -1004,7 +1003,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        // OR pmpcfg[i] with the updated configuration byte
        format("or x%0d, x%0d, x%0d", scratch_reg[2], scratch_reg[2], scratch_reg[3]),
        // Divide the loop counter by cfg_per_csr to determine which pmpcfg CSR to write to.
-       format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSCRATCH),
+       format("mv x%0d, x%0d", scratch_reg[0], scratch_reg[6]),
        format("srli x%0d, x%0d, %0d", scratch_reg[0], scratch_reg[0], clog2(cfg_per_csr)),
        // Write the updated pmpcfg[i] to the CSR bank and exit the handler.
        //

@@ -934,7 +934,7 @@ class riscv_asm_program_gen : uvm_object
   void gen_pmp_csr_write(int hart) {
     string[] instr;
     if (support_pmp && cfg.pmp_cfg.enable_write_pmp_csr) {
-      cfg.pmp_cfg.gen_pmp_write_test([cfg.scratch_reg, cfg.pmp_reg], instr);
+      cfg.pmp_cfg.gen_pmp_write_test([cfg.scratch_reg, cfg.pmp_reg[0]], instr);
       gen_section(get_label("pmp_csr_write_test", hart), instr);
     }
   }
@@ -1358,7 +1358,8 @@ class riscv_asm_program_gen : uvm_object
     gen_signature_handshake(instr, signature_type_t.WRITE_CSR, core_status_t.INITIALIZED,
 			    test_result_t.TEST_FAIL, privileged_reg_t.MCAUSE);
     if (cfg.pmp_cfg.enable_pmp_exception_handler) {
-      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~ cfg.pmp_reg,
+      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~
+					    cfg.pmp_reg[0] ~ cfg.pmp_reg[1],
                                             exception_cause_t.INSTRUCTION_ACCESS_FAULT,
                                             instr);
     }
@@ -1377,7 +1378,8 @@ class riscv_asm_program_gen : uvm_object
 			    test_result_t.TEST_FAIL,
 			    privileged_reg_t.MCAUSE);
     if (cfg.pmp_cfg.enable_pmp_exception_handler) {
-      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~ cfg.pmp_reg,
+      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~
+					    cfg.pmp_reg[0] ~ cfg.pmp_reg[1],
                                             exception_cause_t.LOAD_ACCESS_FAULT,
                                             instr);
     }
@@ -1396,7 +1398,8 @@ class riscv_asm_program_gen : uvm_object
 			    test_result_t.TEST_FAIL,
 			    privileged_reg_t.MCAUSE);
     if (cfg.pmp_cfg.enable_pmp_exception_handler) {
-      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~ cfg.pmp_reg,
+      cfg.pmp_cfg.gen_pmp_exception_routine(cfg.gpr ~ cfg.scratch_reg ~
+					    cfg.pmp_reg[0] ~ cfg.pmp_reg[1],
                                             exception_cause_t.STORE_AMO_ACCESS_FAULT,
                                             instr);
     }
