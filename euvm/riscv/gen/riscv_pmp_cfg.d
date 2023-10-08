@@ -452,12 +452,12 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         if (mseccfg.mml) {
           // This value is different from below (M-mode execute only) because we need code region
           // to be executable in both M-mode and U-mode, since RISCV-DV switches priviledge before
-          // <main> but after <pmp_setup>. We choose not to use the shared code region that also
-          // allows read in M-mode because that is inconsistent with the execute-only in other
-          // modes.
+          // <main> but after <pmp_setup>. We choose to allow M-mode reads to allows checking
+          // whether instructions are compressed in the trap handler in order to recover from load
+          // and store access faults.
           tmp_pmp_cfg.l = true;
           tmp_pmp_cfg.a = pmp_addr_mode_t.TOR;
-          tmp_pmp_cfg.x = false;
+          tmp_pmp_cfg.x = true;
           tmp_pmp_cfg.w = true;
           tmp_pmp_cfg.r = false;
           // This configuration needs to be executable in M-mode both before and after writing to
@@ -467,14 +467,13 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
           //             1'b0, tmp_pmp_cfg.r};
 	  cfg_byte[0] = tmp_pmp_cfg.r;
 	  cfg_byte[1] = false;
-	  cfg_byte[2] = true;
+	  cfg_byte[2] = tmp_pmp_cfg.x;
 	  cfg_byte[3..5] = tmp_pmp_cfg.a;
 	  cfg_byte[5..7] = tmp_pmp_cfg.zero;
 	  cfg_byte[7] = tmp_pmp_cfg.l;
 	}
 	else {
-          // We must set pmp code region to executable before enabling MMWP. RW=00 to be consistent
-          // with MML configuration as much as possible.
+          // We must set pmp code region to executable before enabling MMWP.
           tmp_pmp_cfg.l = false;
           tmp_pmp_cfg.a = pmp_addr_mode_t.TOR;
           tmp_pmp_cfg.x = true;
@@ -869,18 +868,12 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       [
        // If we get here there is an address match.
        // First check whether we are in MML mode.
-       format("csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MSECCFG),
+       format("26: csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MSECCFG),
        format("andi x%0d, x%0d, 1", scratch_reg[4], scratch_reg[4]),
-       format("bnez x%0d, 26f", scratch_reg[4]),
+       format("bnez x%0d, 27f", scratch_reg[4]),
        // Then check whether the lock bit is set.
        format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
-       format("bnez x%0d, 26f", scratch_reg[4]),
-       // If MML or locked just quit the test.
-       // TODO (marnovandermaas) Can we do something smarter here like continue to the next
-       //   instruction in case of a load or store?
-       format("26: la x%0d, test_done", scratch_reg[0]),
-       format("jalr x0, x%0d, 0", scratch_reg[0]),
-       // If neither is true then try to modify the PMP permission bits.
+       format("bnez x%0d, 27f", scratch_reg[4]),
        format("j 29f")];
 
 
@@ -888,17 +881,80 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
     // and ORs it with the 8-bit configuration fields.
     switch  (fault_type) {
     case  exception_cause_t.INSTRUCTION_ACCESS_FAULT:
-      // The X bit is bit 2, and 1 << 2 = 2
-      instr ~= format("29: ori x%0d, x%0d, 4", scratch_reg[3], scratch_reg[3]);
+      instr ~= 
+	[ // If MML or locked just quit the test.
+	  format("27: la x%0d, test_done", scratch_reg[0]),
+	  format("jalr x0, x%0d, 0", scratch_reg[0]),
+	  // If neither is true then try to modify the PMP permission bits.
+	  // The X bit is bit 2, and 1 << 2 = 2.
+	  format("29: ori x%0d, x%0d, 4", scratch_reg[3], scratch_reg[3])
+	  ];
       break;
     case  exception_cause_t.STORE_AMO_ACCESS_FAULT:
-      // The combination of W:1 and R:0 is reserved, so if we are enabling write
-      // permissions, also enable read permissions to adhere to the spec.
-      instr ~= format("29: ori x%0d, x%0d, 3", scratch_reg[3], scratch_reg[3]);
+      instr ~=
+	[ // If MML or locked try to load the instruction and see if it is compressed so
+	  // the MEPC can be advanced appropriately.
+	  format("27: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // This might cause a load access fault, which we much handle in the load trap
+	  // handler.
+	  format("lw x%0d, 0(x%0d)", scratch_reg[0], scratch_reg[0]),
+	  // Non-compressed instructions have two least significant bits set to one.
+	  format("li x%0d, 3", scratch_reg[4]),
+	  format("and x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
+	  // Check whether instruction is compressed.
+	  format("beq x%0d, x%0d, 28f", scratch_reg[0], scratch_reg[4]),
+	  format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // Increase MEPC by 2 in case instruction is compressed.
+	  format("addi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+	  format("csrw 0x%0x, x%0d", privileged_reg_t.MEPC, scratch_reg[0]),
+	  format("j 34f"),
+	  format("28: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // Increase MEPC by 4 in case instruction is compressed.
+	  format("addi x%0d, x%0d, 4", scratch_reg[0], scratch_reg[0]),
+	  format("csrw 0x%0x, x%0d", privileged_reg_t.MEPC, scratch_reg[0]),
+	  format("j 34f"),
+	  // If neither is true then try to modify the PMP permission bits.
+	  // The combination of W:1 and R:0 is reserved, so if we are enabling write
+	  // permissions, also enable read permissions to adhere to the spec.
+	  format("29: ori x%0d, x%0d, 3", scratch_reg[3], scratch_reg[3])
+	  ];
       break;
     case exception_cause_t.LOAD_ACCESS_FAULT:
-      // The R bit is bit 0, and 1 << 0 = 1
-      instr ~= format("29: ori x%0d, x%0d, 1", scratch_reg[3], scratch_reg[3]);
+      instr ~=
+	[ // If MML or locked try to load the instruction and see if it is compressed so
+	  // the MEPC can be advanced appropriately.
+	  format("27: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // We must first check whether the access fault was in the trap handler in case
+	  // we previously tried to load an instruction in a PMP entry that did not have
+	  // read permissions.
+	  format("la x%0d, main", scratch_reg[4]),
+	  format("bge x%0d, x%0d, 40f", scratch_reg[0], scratch_reg[4]),
+	  // In case MEPC is before main, then the load access fault probably happened in a
+	  // trap handler and we should just quit the test.
+	  format("la x%0d, test_done", scratch_reg[0]),
+	  format("jalr x0, x%0d, 0", scratch_reg[0]),
+	  // This might cause a load access fault, which we much handle in the load trap
+	  // handler.
+	  format("40: lw x%0d, 0(x%0d)", scratch_reg[0], scratch_reg[0]),
+	  // Non-compressed instructions have two least significant bits set to one.
+	  format("li x%0d, 3", scratch_reg[4]),
+	  format("and x%0d, x%0d, x%0d", scratch_reg[0], scratch_reg[0], scratch_reg[4]),
+	  // Check whether instruction is compressed.
+	  format("beq x%0d, x%0d, 28f", scratch_reg[0], scratch_reg[4]),
+	  format("csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // Increase MEPC by 2 in case instruction is compressed.
+	  format("addi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+	  format("csrw 0x%0x, x%0d", privileged_reg_t.MEPC, scratch_reg[0]),
+	  format("j 34f"),
+	  format("28: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MEPC),
+	  // Increase MEPC by 4 in case instruction is compressed.
+	  format("addi x%0d, x%0d, 4", scratch_reg[0], scratch_reg[0]),
+	  format("csrw 0x%0x, x%0d", privileged_reg_t.MEPC, scratch_reg[0]),
+	  format("j 34f"),
+	  // If neither is true then try to modify the PMP permission bits.
+	  // The R bit is bit 0, and 1 << 0 = 1.
+	  format("29: ori x%0d, x%0d, 1", scratch_reg[3], scratch_reg[3])
+	  ];
       break;
     default:
       uvm_fatal(get_full_name(), "Invalid PMP fault type");
