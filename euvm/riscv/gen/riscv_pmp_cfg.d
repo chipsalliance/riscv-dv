@@ -770,10 +770,10 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        format("beq x%0d, x%0d, 21f", scratch_reg[4], scratch_reg[0]),
        // pmpcfg[i].A == NA4
        format("li x%0d, 2", scratch_reg[0]),
-       format("beq x%0d, x%0d, 25f", scratch_reg[4], scratch_reg[0]),
+       format("beq x%0d, x%0d, 24f", scratch_reg[4], scratch_reg[0]),
        // pmpcfg[i].A == NAPOT
        format("li x%0d, 3", scratch_reg[0]),
-       format("beq x%0d, x%0d, 27f", scratch_reg[4], scratch_reg[0]),
+       format("beq x%0d, x%0d, 25f", scratch_reg[4], scratch_reg[0]),
        // Error check, if no address modes match, something has gone wrong
        format("la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0]),
@@ -797,6 +797,8 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
        // but this routine is unable to find a matching PMP region for the faulting access -
        // there is a bug somewhere.
+       // In case of MMWP mode this is expected behavior, but we still need to exit the test.
+       // The same is true for MML for execute accesses.
        format("19: la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0])];
 
@@ -828,18 +830,12 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        format("22: bgtu x%0d, x%0d, 18b", scratch_reg[5], scratch_reg[4]),
        // If fault_addr >= pmpaddr[i] : continue looping
        format("23: bleu x%0d, x%0d, 18b", scratch_reg[1], scratch_reg[4]),
-       // If we get here, there is a TOR match, if the entry is locked jump to
-       // <test_done>, otherwise modify access bits and return
-       format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
-       format("beqz x%0d, 24f", scratch_reg[4]),
-       format("la x%0d, test_done", scratch_reg[0]),
-       format("jalr x0, x%0d, 0", scratch_reg[0]),
-       format("24: j 29f")];
+       format("j 26f")];
 
     // Sub-section to handle address matching mode NA4.
     // TODO(udinator) : add rv64 support
     instr ~=
-      [format("25: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
+      [format("24: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
        format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
        // Zero out pmpaddr[i][31:30]
        format("slli x%0d, x%0d, 2", scratch_reg[4], scratch_reg[1]),
@@ -847,17 +843,11 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        // If fault_addr[31:2] != pmpaddr[i][29:0] => there is a mismatch,
        // so continue looping
        format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4]),
-       // If we get here, there is an NA4 address match, jump to <test_done> if the
-       // entry is locked, otherwise modify access bits
-       format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
-       format("beqz x%0d, 26f", scratch_reg[4]),
-       format("la x%0d, test_done", scratch_reg[0]),
-       format("jalr x0, x%0d, 0", scratch_reg[0]),
-       format("26: j 29f")];
+       format("j 26f")];
 
     // Sub-section to handle address matching mode NAPOT.
     instr ~=
-      [format("27: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
+      [format("25: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MTVAL),
        // get fault_addr[31:2]
        format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
        // mask the bottom pmp_granularity bits of fault_addr
@@ -871,19 +861,34 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        format("slli x%0d, x%0d, %0d", scratch_reg[4], scratch_reg[4], pmp_granularity),
        // If masked_fault_addr != masked_pmpaddr[i] : mismatch, so continue looping
        format("bne x%0d, x%0d, 18b", scratch_reg[0], scratch_reg[4]),
-       // If we get here there is an NAPOT address match, jump to <test_done> if
-       // the entry is locked, otherwise modify access bits
+       format("j 26f")];
+
+    // Sub-section that is common to the address modes deciding what to do what to do when hitting
+    // a locked region
+    instr ~=
+      [
+       // If we get here there is an address match.
+       // First check whether we are in MML mode.
+       format("csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MSECCFG),
+       format("andi x%0d, x%0d, 1", scratch_reg[4], scratch_reg[4]),
+       format("bnez x%0d, 26f", scratch_reg[4]),
+       // Then check whether the lock bit is set.
        format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
-       format("beqz x%0d, 29f", scratch_reg[4]),
-       format("la x%0d, test_done", scratch_reg[0]),
+       format("bnez x%0d, 26f", scratch_reg[4]),
+       // If MML or locked just quit the test.
+       // TODO (marnovandermaas) Can we do something smarter here like continue to the next
+       //   instruction in case of a load or store?
+       format("26: la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0]),
-       format("28: j 29f")];
+       // If neither is true then try to modify the PMP permission bits.
+       format("j 29f")];
 
 
     // This case statement creates a bitmask that enables the correct access permissions
     // and ORs it with the 8-bit configuration fields.
     switch  (fault_type) {
     case  exception_cause_t.INSTRUCTION_ACCESS_FAULT:
+      // The X bit is bit 2, and 1 << 2 = 2
       instr ~= format("29: ori x%0d, x%0d, 4", scratch_reg[3], scratch_reg[3]);
       break;
     case  exception_cause_t.STORE_AMO_ACCESS_FAULT:
@@ -892,6 +897,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       instr ~= format("29: ori x%0d, x%0d, 3", scratch_reg[3], scratch_reg[3]);
       break;
     case exception_cause_t.LOAD_ACCESS_FAULT:
+      // The R bit is bit 0, and 1 << 0 = 1
       instr ~= format("29: ori x%0d, x%0d, 1", scratch_reg[3], scratch_reg[3]);
       break;
     default:
