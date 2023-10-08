@@ -796,9 +796,11 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
        // but this routine is unable to find a matching PMP region for the faulting access -
        // there is a bug somewhere.
-       // In case of MMWP mode this is expected behavior, but we still need to exit the test.
-       // The same is true for MML for execute accesses.
-       format("19: la x%0d, test_done", scratch_reg[0]),
+       // In case of MMWP mode this is expected behavior, we should try to continue.
+       format("19: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSECCFG),
+       format("andi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+       format("bnez x%0d, 27f", scratch_reg[0]),
+       format("la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0])];
 
     /////////////////////////////////////////////////
