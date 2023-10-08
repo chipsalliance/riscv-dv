@@ -399,7 +399,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
     int pmp_id;
     string arg_value;
 
-    int code_entry;
+    int code_entry, stack_entry, sig_entry;
     pmp_cfg_reg_t tmp_pmp_cfg;
 
     if (support_epmp) {
@@ -418,11 +418,16 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 	  // Randomly select a PMP region to contain the code for permitting execution.
           // In case of full randomization we actually want the code region to cover main as well.
           pmp_cfg[code_entry].offset = pmp_max_offset;
+	  stack_entry = code_entry + 1;
+	  sig_entry = code_entry + 2;
         }
 	else {
           code_entry = 0;
+	  stack_entry = pmp_num_regions - 2;
+	  sig_entry = pmp_num_regions - 1;
           // This is the default offset.
           pmp_cfg[code_entry].offset = assign_default_addr_offset(pmp_num_regions, 0);
+	  pmp_cfg[pmp_num_regions - 3].offset = pmp_max_offset;
         }
 
         if (code_entry > 0) {
@@ -520,60 +525,60 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
         // Load the address of the kernel_stack_end into PMP stack entry.
         instr ~= format("la x%0d, kernel_stack_end", scratch_reg[0]);
         instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
-        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 1,
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + stack_entry,
 			scratch_reg[0]);
-        uvm_info(get_full_name(), format("Address of pmp_addr_%d is kernel_stack_end", code_entry + 1),
+        uvm_info(get_full_name(), format("Address of pmp_addr_%d is kernel_stack_end", stack_entry),
 		 UVM_LOW);
-        pmp_cfg_already_configured[code_entry + 1] = true;
-        // In case the randomly selected code_entry + 1 is not also specified in the arguments,
+        pmp_cfg_already_configured[stack_entry] = true;
+        // In case the randomly selected stack_entry is not also specified in the arguments,
         // overwrite it in pmp_cfg. We use this for the stack entry.
-        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry + 1), arg_value)) {
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", stack_entry), arg_value)) {
           if (mseccfg.mml) {
             // Marking the pmp stack region as shared write/read region before starting main.
-            pmp_cfg[code_entry + 1].l = false;
-            pmp_cfg[code_entry + 1].a = pmp_addr_mode_t.TOR;
-            pmp_cfg[code_entry + 1].x = true;
-            pmp_cfg[code_entry + 1].w = true;
-            pmp_cfg[code_entry + 1].r = false;
+            pmp_cfg[stack_entry].l = false;
+            pmp_cfg[stack_entry].a = pmp_addr_mode_t.TOR;
+            pmp_cfg[stack_entry].x = true;
+            pmp_cfg[stack_entry].w = true;
+            pmp_cfg[stack_entry].r = false;
           }
 	  else {
             // We must set PMP stack region to write/read before starting main. X=0 to be consistent
             // with MML mode.
-            pmp_cfg[code_entry + 1].l = false;
-            pmp_cfg[code_entry + 1].a = pmp_addr_mode_t.TOR;
-            pmp_cfg[code_entry + 1].x = false;
-            pmp_cfg[code_entry + 1].w = true;
-            pmp_cfg[code_entry + 1].r = true;
+            pmp_cfg[stack_entry].l = false;
+            pmp_cfg[stack_entry].a = pmp_addr_mode_t.TOR;
+            pmp_cfg[stack_entry].x = false;
+            pmp_cfg[stack_entry].w = true;
+            pmp_cfg[stack_entry].r = true;
           }
         }
         // Load the signature address into PMP signature entry. This assumes the
         // end_signature_addr = signature_addr - 4. And that both are 4 Bytes.
         instr ~= format("li x%0d, 0x%0x", scratch_reg[0], end_signature_addr);
         instr ~= format("srli x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]);
-        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + code_entry + 2,
+        instr ~= format("csrw 0x%0x, x%0d", base_pmp_addr + sig_entry,
 			scratch_reg[0]);
-        uvm_info(get_full_name(), format("Address of pmp_addr_%d is signature_addr", code_entry + 2),
+        uvm_info(get_full_name(), format("Address of pmp_addr_%d is signature_addr", sig_entry),
 		 UVM_LOW);
-        pmp_cfg_already_configured[code_entry + 2] = true;
-        // In case the randomly selected code_entry + 2 is not also specified in the arguments,
+        pmp_cfg_already_configured[sig_entry] = true;
+        // In case the randomly selected sig_entry is not also specified in the arguments,
         // overwrite it in pmp_cfg. This is used for the signature address.
-        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", code_entry + 2), arg_value)) {
+        if (! uvm_cmdline_processor.get_inst().get_arg_value(format("+pmp_region_%d=", sig_entry), arg_value)) {
           if (mseccfg.mml) {
             // Marking the PMP signature region as shared write/read region before starting main.
-            pmp_cfg[code_entry + 2].l = false;
-            pmp_cfg[code_entry + 2].a = pmp_addr_mode_t.NAPOT;
-            pmp_cfg[code_entry + 2].x = true;
-            pmp_cfg[code_entry + 2].w = true;
-            pmp_cfg[code_entry + 2].r = false;
+            pmp_cfg[sig_entry].l = false;
+            pmp_cfg[sig_entry].a = pmp_addr_mode_t.NAPOT;
+            pmp_cfg[sig_entry].x = true;
+            pmp_cfg[sig_entry].w = true;
+            pmp_cfg[sig_entry].r = false;
           }
 	  else {
             // We must set PMP signature region to write/read before starting main. X=0 to be
             // consistent with MML mode.
-            pmp_cfg[code_entry + 2].l = false;
-            pmp_cfg[code_entry + 2].a = pmp_addr_mode_t.NAPOT;
-            pmp_cfg[code_entry + 2].x = false;
-            pmp_cfg[code_entry + 2].w = true;
-            pmp_cfg[code_entry + 2].r = true;
+            pmp_cfg[sig_entry].l = false;
+            pmp_cfg[sig_entry].a = pmp_addr_mode_t.NAPOT;
+            pmp_cfg[sig_entry].x = false;
+            pmp_cfg[sig_entry].w = true;
+            pmp_cfg[sig_entry].r = true;
           }
         }
       }
