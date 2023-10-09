@@ -1405,18 +1405,18 @@ void push_gpr_to_kernel_stack(privileged_reg_t status,
 
   string store_instr = (XLEN == 32) ? "sw" : "sd";
   if (canFind(implemented_csr, scratch)) {
-    // Use kernal stack for handling exceptions
-    // Save the user mode stack pointer to the scratch register
-    instr ~= format("csrrw x%0d, 0x%0x, x%0d", sp, scratch, sp);
-    // Move TP to SP
+    // Push USP from gpr.SP onto the kernel stack
+    instr ~= format("addi x%0d, x%0d, -4", tp, tp);
+    instr ~= format("%0s  x%0d, (x%0d)", store_instr, sp, tp);
+    // Move KSP to gpr.SP
     instr ~= format("add x%0d, x%0d, zero", sp, tp);
   }
   // If MPRV is set and MPP is S/U mode, it means the address translation and memory protection
   // for load/store instruction is the same as the mode indicated by MPP. In this case, we
   // need to use the virtual address to access the kernel stack.
   if ((status == privileged_reg_t.MSTATUS) && (SATP_MODE != satp_mode_t.BARE)) {
-    // We temporarily use tp to check mstatus to avoid changing other GPR. The value of sp has
-    // been saved to xScratch and can be restored later.
+    // We temporarily use tp to check mstatus to avoid changing other GPR.
+    // (The value of sp has been pushed to the kernel stack, so can be recovered later)
     if (mprv) {
       instr ~= format("csrr x%0d, 0x%0x // MSTATUS", tp, status);
       instr ~= format("srli x%0d, x%0d, 11", tp, tp);  // Move MPP to bit 0
@@ -1427,14 +1427,18 @@ void push_gpr_to_kernel_stack(privileged_reg_t status,
       // Use virtual address for stack pointer
       instr ~= format("slli x%0d, x%0d, %0d", sp, sp, XLEN - MAX_USED_VADDR_BITS);
       instr ~= format("srli x%0d, x%0d, %0d", sp, sp, XLEN - MAX_USED_VADDR_BITS);
+      instr ~= "1: nop";
     }
   }
-  // Reserve space from kernel stack to save all 32 GPR except for x0
-  instr ~= format("1: addi x%0d, x%0d, -%0d", sp, sp, 31 * (XLEN/8));
-  // Push all GPRs to kernel stack
+  // Push all GPRs (except for x0) to kernel stack
+  // (gpr.SP currently holds the KSP)
+  instr ~= format("addi x%0d, x%0d, -%0d", sp, sp, 31 * (XLEN/8));
   for (int i = 1; i < 32; i++) {
     instr ~= format("%0s  x%0d, %0d(x%0d)", store_instr, i, i * (XLEN/8), sp);
   }
+  // Move KSP back to gpr.TP
+  // (this is needed if we again take a interrupt (nested) before restoring our USP)
+  instr ~= format("add x%0d, x%0d, zero", tp, sp);
 }
 
 // Pop general purpose register from stack, this is needed before returning to user program
@@ -1448,17 +1452,19 @@ void pop_gpr_from_kernel_stack(privileged_reg_t status,
   import std.string: format;
 
   string load_instr = (XLEN == 32) ? "lw" : "ld";
-  // Pop user mode GPRs from kernel stack
+  // Move KSP to gpr.SP
+  instr ~= format("add x%0d, x%0d, zero", sp, tp);
+  // Pop GPRs from kernel stack
   for (int i = 1; i < 32; i++) {
     instr ~= format("%0s  x%0d, %0d(x%0d)", load_instr, i, i * (XLEN/8), sp);
   }
-  // Restore kernel stack pointer
   instr ~= format("addi x%0d, x%0d, %0d", sp, sp, 31 * (XLEN/8));
   if (canFind(implemented_csr, scratch)) {
-    // Move SP to TP
+    // Move KSP back to gpr.TP
     instr ~= format("add x%0d, x%0d, zero", tp, sp);
-    // Restore user mode stack pointer
-    instr ~= format("csrrw x%0d, 0x%0x, x%0d", sp, scratch, sp);
+    // Pop USP from the kernel stack, move back to gpr.SP
+    instr ~= format("%0s  x%0d, (x%0d)", load_instr, sp, tp);
+    instr ~= format("addi x%0d, x%0d, 4", tp, tp);
   }
 }
 
