@@ -32,7 +32,7 @@ import std.string: toLower;
 
 import esdl.data.queue: Queue;
 import esdl.data.bvec: ubvec, toubvec;
-import esdl.rand: randomize;
+import esdl.rand: randomize, rand;
 
 import uvm;
 
@@ -42,6 +42,7 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
   riscv_instr_gen_config  cfg;
   int                     hart;
   riscv_privil_reg        mstatus;
+  @rand bool              mstatus_mie;
   riscv_privil_reg        mie;
   riscv_privil_reg        sstatus;
   riscv_privil_reg        sie;
@@ -145,7 +146,13 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     mstatus.set_field("MPP", mode);
     mstatus.set_field("SPP", 0);
     // Enable interrupt
-    mstatus.set_field("MPIE", cfg.enable_interrupt);
+    // Only machine mode requires mstatus.MIE to be 1 for enabling interrupt
+    if (mode == privileged_mode_t.MACHINE_MODE) {
+      mstatus.set_field("MPIE", cfg.enable_interrupt);
+    }
+    else {
+      mstatus.set_field("MPIE", cfg.enable_interrupt & mstatus_mie);
+    }
     // MIE is set when returning with mret, avoids trapping before returning
     mstatus.set_field("MIE", 0);
     mstatus.set_field("SPIE", cfg.enable_interrupt);
