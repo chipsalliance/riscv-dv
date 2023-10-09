@@ -212,6 +212,9 @@ class riscv_page_table_list(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
     valid_data_leaf_pte = cast (riscv_page_table_entry!(MODE)) valid_leaf_pte.clone;
     illegal_pte.turn_off_default_constraint();
     valid_link_pte.xwr = pte_permission_t.NEXT_LEVEL_PAGE;
+    valid_link_pte.a = false;
+    valid_link_pte.d = false;
+    valid_link_pte.u = false;
     valid_link_pte.pack_entry();
     // Set data page to read/write, but not executable
     valid_data_leaf_pte.xwr = pte_permission_t.READ_WRITE_PAGE;
