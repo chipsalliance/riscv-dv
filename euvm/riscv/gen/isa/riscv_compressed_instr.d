@@ -508,11 +508,11 @@ class riscv_compressed_instr: riscv_instr
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_EBREAK:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!10(0b0) ~
+      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(rs1) ~ toubvec!5(0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_JALR:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!10(0b0) ~
+      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_ADD:
