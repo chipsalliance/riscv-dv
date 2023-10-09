@@ -146,7 +146,8 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     mstatus.set_field("SPP", 0);
     // Enable interrupt
     mstatus.set_field("MPIE", cfg.enable_interrupt);
-    mstatus.set_field("MIE", cfg.enable_interrupt);
+    // MIE is set when returning with mret, avoids trapping before returning
+    mstatus.set_field("MIE", 0);
     mstatus.set_field("SPIE", cfg.enable_interrupt);
     mstatus.set_field("SIE",  cfg.enable_interrupt);
     mstatus.set_field("UPIE", cfg.enable_interrupt);
