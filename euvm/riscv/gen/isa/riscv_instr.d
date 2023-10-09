@@ -145,7 +145,7 @@ class riscv_instr: uvm_object
 	imm_len = toubvec!5(5);
       }
       else {
-	imm_len = toubvec!5(11);
+	imm_len = toubvec!5(12);
       }
     }
     imm_mask = imm_mask << imm_len;
