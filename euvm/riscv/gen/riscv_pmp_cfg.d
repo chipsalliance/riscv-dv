@@ -68,6 +68,14 @@ class riscv_pmp_cfg: uvm_object {
   @UVM_DEFAULT
   @rand mseccfg_reg_t mseccfg = mseccfg_reg_t(true, false, false);
 
+  // allow regions that start above 32-bit address space when XLEN == 32
+  @rand bool allow_high_addrs;
+
+  // percentage of configs that will allow high address regions. Set low by default as for cores
+  // where physical addresses do not go beyond 32 bits high regions don't do anything interesting
+  // (though you want some to ensure they're handled correctly).
+  int high_addr_proportion = 10;
+
   // pmp CSR configurations
   @rand pmp_cfg_reg_t[]  pmp_cfg;
 
@@ -115,9 +123,24 @@ class riscv_pmp_cfg: uvm_object {
   } xwr_c;
 
   constraint! q{
+    allow_high_addrs dist [ false := 100 - high_addr_proportion,
+			    true  := high_addr_proportion];
+    if (XLEN == 64) {
+      allow_high_addrs == true;
+    }
+  } allow_high_addrs_c;
+
+
+
+  constraint! q{
     foreach (cfg; pmp_cfg) {
       cfg.addr_mode >= 0;
-      cfg.addr_mode <= XLEN;
+      if (allow_high_addrs) {
+        cfg.addr_mode <= XLEN;
+      }
+      else {
+        cfg.addr_mode <= XLEN - 3;
+      }
     }
   } address_modes_c;
 
@@ -141,6 +164,8 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (cfg; pmp_cfg) {
+      solve allow_high_addrs before cfg.addr;
+      solve allow_high_addrs before cfg.addr_mode;
       solve cfg.a before cfg.addr;
       solve cfg.addr_mode before cfg.addr;
     }
@@ -153,6 +178,10 @@ class riscv_pmp_cfg: uvm_object {
       // remove the constraint for 1 in every XLEN entries.
       if (i > 0 && cfg.a == pmp_addr_mode_t.TOR && (!pmp_allow_illegal_tor || cfg.addr_mode > 0)) {
         cfg.addr > pmp_cfg[i-1].addr;
+      }
+
+      if (!allow_high_addrs) {
+        cfg.addr[29..32] == 0;
       }
     }
   } addr_legal_tor_c;
@@ -168,9 +197,23 @@ class riscv_pmp_cfg: uvm_object {
 	  // Unless the largest region is selected make sure the bit just before the ones is set to 0.
 	  (cfg.addr & (1 << cfg.addr_mode)) == 0;
        }
+
+        if (!allow_high_addrs) {
+          cfg.addr[29..32] == 0;
+        }
       }
     }
   } addr_napot_mode_c;
+
+  constraint! q{
+    foreach (cfg; pmp_cfg) {
+      if (cfg.a == pmp_addr_mode_t.NA4) {
+        if (!allow_high_addrs) {
+          cfg.addr[29..32] == 0;
+        }
+      }
+    }
+  } addr_na4_mode_c;
 
   this(string name = "") {
     string s;
