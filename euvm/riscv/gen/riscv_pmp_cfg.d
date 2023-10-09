@@ -857,16 +857,27 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
        // if counter < pmp_num_regions => branch to beginning of loop,
        // otherwise jump to the end of the loop
        format("ble x%0d, x%0d, 19f", scratch_reg[1], scratch_reg[0]),
-       format("j 0b"),
-       // If we reach here, it means that no PMP entry has matched the request.
-       // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
-       // but this routine is unable to find a matching PMP region for the faulting access -
-       // there is a bug somewhere.
-       // In case of MMWP mode this is expected behavior, we should try to continue.
-       format("19: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSECCFG),
-       format("andi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
-       format("bnez x%0d, 27f", scratch_reg[0]),
-       format("la x%0d, test_done", scratch_reg[0]),
+       format("j 0b")
+       ];
+
+    // If we reach here, it means that no PMP entry has matched the request.
+    // We must immediately jump to <test_done> since the CPU is taking a PMP exception,
+    // but this routine is unable to find a matching PMP region for the faulting access -
+    // there is a bug somewhere.
+    // In case of MMWP mode this is expected behavior, we should try to continue.
+    if (support_epmp) {
+      instr ~=
+	[format("19: csrr x%0d, 0x%0x", scratch_reg[0], privileged_reg_t.MSECCFG),
+	 format("andi x%0d, x%0d, 2", scratch_reg[0], scratch_reg[0]),
+	 format("bnez x%0d, 27f", scratch_reg[0])
+	 ];
+    }
+    else {
+      instr ~=
+	[format("19: nop")];
+    }
+    instr ~= 
+      [format("la x%0d, test_done", scratch_reg[0]),
        format("jalr x0, x%0d, 0", scratch_reg[0])];
 
     /////////////////////////////////////////////////
@@ -932,13 +943,22 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 
     // Sub-section that is common to the address modes deciding what to do what to do when hitting
     // a locked region
+    if (support_epmp) {
+      instr ~=
+	[
+	 // If we get here there is an address match.
+	 // First check whether we are in MML mode.
+	 format("26: csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MSECCFG),
+	 format("andi x%0d, x%0d, 1", scratch_reg[4], scratch_reg[4]),
+	 format("bnez x%0d, 27f", scratch_reg[4])
+	 ];
+    }
+    else {
+      instr ~=
+	[format("26: nop")];
+    }
     instr ~=
       [
-       // If we get here there is an address match.
-       // First check whether we are in MML mode.
-       format("26: csrr x%0d, 0x%0x", scratch_reg[4], privileged_reg_t.MSECCFG),
-       format("andi x%0d, x%0d, 1", scratch_reg[4], scratch_reg[4]),
-       format("bnez x%0d, 27f", scratch_reg[4]),
        // Then check whether the lock bit is set.
        format("andi x%0d, x%0d, 128", scratch_reg[4], scratch_reg[3]),
        format("bnez x%0d, 27f", scratch_reg[4]),
