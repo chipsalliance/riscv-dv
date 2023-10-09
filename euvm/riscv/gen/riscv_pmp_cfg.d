@@ -117,7 +117,8 @@ class riscv_pmp_cfg: uvm_object {
 
   constraint! q{
     foreach (cfg; pmp_cfg) {
-      !(cfg.w && !cfg.r);
+      solve mseccfg.mml before cfg.w;
+      solve mseccfg.mml before cfg.r;
       !(!mseccfg.mml && cfg.w && !cfg.r);
     }
   } xwr_c;
