@@ -140,6 +140,9 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd):
     logging.info("Processing ISS setup file : {}".format(iss_yaml))
     yaml_data = read_yaml(iss_yaml)
 
+    # Path to the "yaml" subdirectory
+    yaml_dir = os.path.dirname(iss_yaml)
+
     # Path to the "scripts" subdirectory
     my_path = os.path.dirname(os.path.realpath(__file__))
     scripts_dir = os.path.join(my_path, "scripts")   # Search for matched ISS
@@ -167,6 +170,7 @@ def parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd):
             else:
                 cmd = re.sub("\<variant\>", isa, cmd)
             cmd = re.sub("\<scripts_path\>", scripts_dir, cmd)
+            cmd = re.sub("\<config_path\>", yaml_dir, cmd)
             return cmd
     logging.error("Cannot find ISS {}".format(iss))
     sys.exit(RET_FAIL)

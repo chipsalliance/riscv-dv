@@ -35,7 +35,7 @@
 - iss: whisper
   path_var: WHISPER_ISS
   cmd: >
-    <path_var> <elf> --log --xlen <xlen> --isa <variant>
+    <path_var> <elf> --log --xlen <xlen> --isa <variant> --configfile <config_path>/whisper.json --iccmrw
 
 - iss: renode
   path_var: RENODE_PATH
