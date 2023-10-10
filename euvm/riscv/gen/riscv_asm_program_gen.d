@@ -53,7 +53,7 @@ import std.string: toLower;
 import std.format: format;
 
 import esdl.data.queue: Queue;
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec, toubvec, UBVEC;
 import esdl.rand: randomize;
 import esdl.base.rand: urandom, shuffle;
 import esdl.solver: CstVecDistSolver, CstVecDistRange;
@@ -492,8 +492,8 @@ class riscv_asm_program_gen : uvm_object
   // Setup MISA based on supported extensions
   void setup_misa() {
     ubvec!XLEN   misa;
-    misa[XLEN-2..XLEN] = (XLEN == 32) ? toubvec!2(0b01) :
-      (XLEN == 64) ? toubvec!2(0b10) : toubvec!2(0b11);
+    misa[XLEN-2..XLEN] = (XLEN == 32) ? UBVEC!(2, 0b01) :
+      (XLEN == 64) ? UBVEC!(2, 0b10) : UBVEC!(2, 0b11);
     if (cfg.check_misa_init_val) {
       instr_stream ~= INDENT ~ format("csrr x15, 0x%0x", privileged_reg_t.MISA);
     }

@@ -24,7 +24,7 @@
 module riscv.gen.riscv_reg;
 
 
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec;
 import riscv.gen.riscv_instr_pkg: reg_field_access_t, privileged_reg_t,
   privileged_level_t, riscv_csr_t;
 import riscv.gen.target: XLEN;

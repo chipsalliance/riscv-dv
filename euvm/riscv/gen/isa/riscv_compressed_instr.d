@@ -24,7 +24,7 @@ import riscv.gen.isa.riscv_instr: riscv_instr;
 import std.format: format;
 
 import esdl.rand: constraint, rand;
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec, UBVEC;
 
 import uvm;
 
@@ -116,24 +116,24 @@ class riscv_compressed_instr: riscv_instr
 
   override void set_imm_len() {
     if ( instr_format.inside(riscv_instr_format_t.CI_FORMAT, riscv_instr_format_t.CSS_FORMAT)) {
-      imm_len = toubvec!5(6);
+      imm_len = UBVEC!(5, 6);
     }
     else if (instr_format.inside(riscv_instr_format_t.CL_FORMAT, riscv_instr_format_t.CS_FORMAT)) {
-      imm_len = toubvec!5(5);
+      imm_len = UBVEC!(5, 5);
     }
     else if (instr_format == riscv_instr_format_t.CJ_FORMAT) {
-      imm_len = toubvec!5(11);
+      imm_len = UBVEC!(5, 11);
     }
     else if (instr_format == riscv_instr_format_t.CB_FORMAT) {
       if (instr_name == riscv_instr_name_t.C_ANDI) {
-        imm_len = toubvec!5(6);
+        imm_len = UBVEC!(5, 6);
       }
       else {
-        imm_len = toubvec!5(7);
+        imm_len = UBVEC!(5, 7);
       }
     }
     else if (instr_format.inside(riscv_instr_format_t.CB_FORMAT, riscv_instr_format_t.CIW_FORMAT)) {
-      imm_len = toubvec!5(8);
+      imm_len = UBVEC!(5, 8);
     }
     if (instr_name.inside(riscv_instr_name_t.C_SQ, riscv_instr_name_t.C_LQ,
 			  riscv_instr_name_t.C_LQSP, riscv_instr_name_t.C_SQSP,
@@ -414,7 +414,7 @@ class riscv_compressed_instr: riscv_instr
       break;
     case riscv_instr_name_t.C_NOP, riscv_instr_name_t.C_ADDI,
       riscv_instr_name_t.C_LI, riscv_instr_name_t.C_ADDIW:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!5) imm[0..5] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ cast(ubvec!5) imm[0..5] ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_JAL, riscv_instr_name_t.C_J:
@@ -423,56 +423,56 @@ class riscv_compressed_instr: riscv_instr
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_ADDI16SP:
-      binary = format("%4h", (get_func3() ~ imm[9] ~ toubvec!5(0b10) ~
+      binary = format("%4h", (get_func3() ~ imm[9] ~ UBVEC!(5, 0b10) ~
 			      imm[4] ~ imm[6] ~ cast(ubvec!2) imm[7..9] ~ imm[5] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_LUI:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!5) imm[0..5] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ cast(ubvec!5) imm[0..5] ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SRLI:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!2(0b0) ~ get_c_gpr(rd) ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ UBVEC!(2, 0b0) ~ get_c_gpr(rd) ~
 			      cast(ubvec!5) imm[0..5] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SRLI64:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b0) ~ get_c_gpr(rd) ~ toubvec!5(0b0) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b0) ~ get_c_gpr(rd) ~ UBVEC!(5, 0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SRAI:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!2(0b01) ~ get_c_gpr(rd) ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ UBVEC!(2, 0b01) ~ get_c_gpr(rd) ~
 			      cast(ubvec!5) imm[0..5] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SRAI64:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b001) ~
-			      get_c_gpr(rd) ~ toubvec!5(0b0) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b001) ~
+			      get_c_gpr(rd) ~ UBVEC!(5, 0b0) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_ANDI:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!2(0b10) ~ get_c_gpr(rd) ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ UBVEC!(2, 0b10) ~ get_c_gpr(rd) ~
 			      cast(ubvec!5) imm[0..5] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SUB:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b011) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b00) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b011) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b00) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_XOR:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b011) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b01) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b011) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b01) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_OR:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b011) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b10) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b011) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b10) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_AND:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b011) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b11) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b011) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b11) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SUBW:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b111) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b00) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b111) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b00) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_ADDW:
-      binary = format("%4h", (get_func3() ~ toubvec!3(0b111) ~ get_c_gpr(rd) ~
-			      toubvec!2(0b01) ~ get_c_gpr(rs2) ~ get_c_opcode()));
+      binary = format("%4h", (get_func3() ~ UBVEC!(3, 0b111) ~ get_c_gpr(rd) ~
+			      UBVEC!(2, 0b01) ~ get_c_gpr(rs2) ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_BEQZ, riscv_instr_name_t.C_BNEZ:
       binary = format("%4h", (get_func3() ~ imm[8] ~ cast(ubvec!2) imm[3..5] ~
@@ -480,56 +480,56 @@ class riscv_compressed_instr: riscv_instr
 			      imm[5] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SLLI:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!5) imm[0..5] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ cast(ubvec!5) imm[0..5] ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SLLI64:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b0) ~ toubvec!5(rd) ~ toubvec!5(0b00000) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b0) ~ rd ~ UBVEC!(5, 0b00000) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_LDSP:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!2) imm[3..5] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ cast(ubvec!2) imm[3..5] ~
 			      cast(ubvec!3) imm[6..9] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_LQSP:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ imm[4] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ imm[4] ~
 			      cast(ubvec!4) imm[6..10] ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_LWSP:
-      binary = format("%4h", (get_func3() ~ imm[5] ~ toubvec!5(rd) ~ cast(ubvec!3) imm[2..5] ~
+      binary = format("%4h", (get_func3() ~ imm[5] ~ rd ~ cast(ubvec!3) imm[2..5] ~
 			      cast(ubvec!2) imm[6..8]  ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_JR:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b0) ~ toubvec!5(rs1) ~ toubvec!5(0b0) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b0) ~ rs1 ~ UBVEC!(5, 0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_MV:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b0) ~ toubvec!5(rd) ~ toubvec!5(rs2) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b0) ~ rd ~ rs2 ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_EBREAK:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(rs1) ~ toubvec!5(0b0) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b1) ~ rs1 ~ UBVEC!(5, 0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_JALR:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(0b0) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b1) ~ UBVEC!(5, 0b0) ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_ADD:
-      binary = format("%4h", (get_func3() ~ toubvec!1(0b1) ~ toubvec!5(rd) ~ toubvec!5(rs2) ~
+      binary = format("%4h", (get_func3() ~ UBVEC!(1, 0b1) ~ rd ~ rs2 ~
 			      get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SDSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!3) imm[3..6] ~ cast(ubvec!3) imm[6..9]  ~
-			      toubvec!5(rs2) ~ get_c_opcode()));
+			      rs2 ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SQSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!2) imm[4..6] ~ cast(ubvec!4) imm[6..10] ~
-			      toubvec!5(rs2) ~ get_c_opcode()));
+			      rs2 ~ get_c_opcode()));
       break;
     case riscv_instr_name_t.C_SWSP:
       binary = format("%4h", (get_func3() ~ cast(ubvec!4) imm[2..6] ~ cast(ubvec!2) imm[6..8] ~
-			      toubvec!5(rs2) ~ get_c_opcode()));
+			      rs2 ~ get_c_opcode()));
       break;
     default : uvm_fatal(get_full_name(),
 			format("Unsupported instruction %0s", instr_name));
@@ -548,7 +548,7 @@ class riscv_compressed_instr: riscv_instr
       riscv_instr_name_t.C_FSD,
       riscv_instr_name_t.C_SQ,
       riscv_instr_name_t.C_SW,
-      riscv_instr_name_t.C_SD : return toubvec!2(0b00);
+      riscv_instr_name_t.C_SD : return UBVEC!(2, 0b00);
     case riscv_instr_name_t.C_NOP,
       riscv_instr_name_t.C_ADDI,
       riscv_instr_name_t.C_JAL,
@@ -569,7 +569,7 @@ class riscv_compressed_instr: riscv_instr
       riscv_instr_name_t.C_ADDW,
       riscv_instr_name_t.C_J,
       riscv_instr_name_t.C_BEQZ,
-      riscv_instr_name_t.C_BNEZ : return toubvec!2(0b01);
+      riscv_instr_name_t.C_BNEZ : return UBVEC!(2, 0b01);
     case riscv_instr_name_t.C_SLLI,
       riscv_instr_name_t.C_SLLI64,
       riscv_instr_name_t.C_LQSP,
@@ -582,7 +582,7 @@ class riscv_compressed_instr: riscv_instr
       riscv_instr_name_t.C_ADD,
       riscv_instr_name_t.C_SQSP,
       riscv_instr_name_t.C_SWSP,
-      riscv_instr_name_t.C_SDSP : return toubvec!2(0b10);
+      riscv_instr_name_t.C_SDSP : return UBVEC!(2, 0b10);
     default :
       uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
@@ -592,47 +592,47 @@ class riscv_compressed_instr: riscv_instr
   //ubvec!3 get_func3()
   override ubvec!3 get_func3() {
     switch(instr_name) {
-    case riscv_instr_name_t.C_ADDI4SPN : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_LQ       : return toubvec!3(0b001);
-    case riscv_instr_name_t.C_LW       : return toubvec!3(0b010);
-    case riscv_instr_name_t.C_LD       : return toubvec!3(0b011);
-    case riscv_instr_name_t.C_SQ       : return toubvec!3(0b101);
-    case riscv_instr_name_t.C_SW       : return toubvec!3(0b110);
-    case riscv_instr_name_t.C_SD       : return toubvec!3(0b111);
-    case riscv_instr_name_t.C_NOP      : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_ADDI     : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_JAL      : return toubvec!3(0b001);
-    case riscv_instr_name_t.C_ADDIW    : return toubvec!3(0b001);
-    case riscv_instr_name_t.C_LI       : return toubvec!3(0b010);
-    case riscv_instr_name_t.C_ADDI16SP : return toubvec!3(0b011);
-    case riscv_instr_name_t.C_LUI      : return toubvec!3(0b011);
-    case riscv_instr_name_t.C_SRLI     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SRLI64   : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SRAI     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SRAI64   : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_ANDI     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SUB      : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_XOR      : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_OR       : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_AND      : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SUBW     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_ADDW     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_J        : return toubvec!3(0b101);
-    case riscv_instr_name_t.C_BEQZ     : return toubvec!3(0b110);
-    case riscv_instr_name_t.C_BNEZ     : return toubvec!3(0b111);
-    case riscv_instr_name_t.C_SLLI     : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_SLLI64   : return toubvec!3(0b000);
-    case riscv_instr_name_t.C_LQSP     : return toubvec!3(0b001);
-    case riscv_instr_name_t.C_LWSP     : return toubvec!3(0b010);
-    case riscv_instr_name_t.C_LDSP     : return toubvec!3(0b011);
-    case riscv_instr_name_t.C_JR       : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_MV       : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_EBREAK   : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_JALR     : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_ADD      : return toubvec!3(0b100);
-    case riscv_instr_name_t.C_SQSP     : return toubvec!3(0b101);
-    case riscv_instr_name_t.C_SWSP     : return toubvec!3(0b110);
-    case riscv_instr_name_t.C_SDSP     : return toubvec!3(0b111);
+    case riscv_instr_name_t.C_ADDI4SPN : return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.C_LQ       : return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.C_LW       : return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.C_LD       : return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.C_SQ       : return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.C_SW       : return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.C_SD       : return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.C_NOP      : return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.C_ADDI     : return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.C_JAL      : return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.C_ADDIW    : return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.C_LI       : return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.C_ADDI16SP : return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.C_LUI      : return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.C_SRLI     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SRLI64   : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SRAI     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SRAI64   : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_ANDI     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SUB      : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_XOR      : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_OR       : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_AND      : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SUBW     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_ADDW     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_J        : return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.C_BEQZ     : return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.C_BNEZ     : return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.C_SLLI     : return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.C_SLLI64   : return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.C_LQSP     : return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.C_LWSP     : return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.C_LDSP     : return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.C_JR       : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_MV       : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_EBREAK   : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_JALR     : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_ADD      : return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.C_SQSP     : return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.C_SWSP     : return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.C_SDSP     : return UBVEC!(3, 0b111);
     default : uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
     }

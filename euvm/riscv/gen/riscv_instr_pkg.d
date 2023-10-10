@@ -45,41 +45,41 @@ enum vreg_init_method_t: ubyte {
   RANDOM_VALUES_LOAD
 }
 
-enum satp_mode_t: ubyte {
-  BARE = 0b0000,
-  SV32 = 0b0001,
-  SV39 = 0b1000,
-  SV48 = 0b1001,
-  SV57 = 0b1010,
-  SV64 = 0b1011
+enum satp_mode_t: ubvec!4 {
+  BARE = UBVEC!(4, 0b0000),
+  SV32 = UBVEC!(4, 0b0001),
+  SV39 = UBVEC!(4, 0b1000),
+  SV48 = UBVEC!(4, 0b1001),
+  SV57 = UBVEC!(4, 0b1010),
+  SV64 = UBVEC!(4, 0b1011)
 }
 
-enum f_rounding_mode_t: ubyte {
-  RNE = 0b000,
-  RTZ = 0b001,
-  RDN = 0b010,
-  RUP = 0b011,
-  RMM = 0b100
+enum f_rounding_mode_t: ubvec!3 {
+  RNE = UBVEC!(3, 0b000),
+  RTZ = UBVEC!(3, 0b001),
+  RDN = UBVEC!(3, 0b010),
+  RUP = UBVEC!(3, 0b011),
+  RMM = UBVEC!(3, 0b100)
 }
 
-enum mtvec_mode_t: ubyte {
-  DIRECT   = 0b00,
-  VECTORED = 0b01
+enum mtvec_mode_t: ubvec!2 {
+  DIRECT   = UBVEC!(2, 0b00),
+  VECTORED = UBVEC!(2, 0b01)
 }
 
-enum imm_t: ubyte {
-  IMM,    // Signed immediate
-  UIMM,   // Unsigned immediate
-  NZUIMM, // Non-zero unsigned immediate
-  NZIMM   // Non-zero signed immediate
+enum imm_t: ubvec!3 {
+  IMM    = UBVEC!(3, 0b000),    // Signed immediate
+  UIMM   = UBVEC!(3, 0b001),   // Unsigned immediate
+  NZUIMM = UBVEC!(3, 0b010), // Non-zero unsigned immediate
+  NZIMM  = UBVEC!(3, 0b011)   // Non-zero signed immediate
 }
 
 // Privileged mode
-enum privileged_mode_t: ubyte {
-  USER_MODE       = 0b00,
-  SUPERVISOR_MODE = 0b01,
-  RESERVED_MODE   = 0b10,
-  MACHINE_MODE    = 0b11
+enum privileged_mode_t: ubvec!2 {
+  USER_MODE       = UBVEC!(2, 0b00),
+  SUPERVISOR_MODE = UBVEC!(2, 0b01),
+  RESERVED_MODE   = UBVEC!(2, 0b10),
+  MACHINE_MODE    = UBVEC!(2, 0b11)
 }
 
 enum riscv_instr_group_t: ubyte {
@@ -115,7 +115,7 @@ enum riscv_instr_group_t: ubyte {
 }
 
 
-enum riscv_instr_name_t: ushort  {
+enum riscv_instr_name_t: ushort {
   // RV32I instructions
   LUI,
   AUIPC,
@@ -663,22 +663,110 @@ enum uint SINGLE_PRECISION_FRACTION_BITS = 23;
 enum uint DOUBLE_PRECISION_FRACTION_BITS = 52;
 
 
-enum riscv_reg_t: ubyte {	// 5'b
-  ZERO = 0b00000,
-  RA, SP, GP, TP, T0, T1, T2, S0, S1, A0, A1, A2, A3, A4, A5, A6, A7,
-  S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
+enum riscv_reg_t: ubvec!5 {	// 5'b
+  ZERO = UBVEC!(5, 0),
+  RA   = UBVEC!(5, 1),  
+  SP   = UBVEC!(5, 2),  
+  GP   = UBVEC!(5, 3),  
+  TP   = UBVEC!(5, 4),  
+  T0   = UBVEC!(5, 5),  
+  T1   = UBVEC!(5, 6),  
+  T2   = UBVEC!(5, 7),  
+  S0   = UBVEC!(5, 8),  
+  S1   = UBVEC!(5, 9),  
+  A0   = UBVEC!(5, 10),  
+  A1   = UBVEC!(5, 11),  
+  A2   = UBVEC!(5, 12),  
+  A3   = UBVEC!(5, 13),  
+  A4   = UBVEC!(5, 14),  
+  A5   = UBVEC!(5, 15),  
+  A6   = UBVEC!(5, 16),  
+  A7   = UBVEC!(5, 17),  
+  S2   = UBVEC!(5, 18),  
+  S3   = UBVEC!(5, 19),  
+  S4   = UBVEC!(5, 20),  
+  S5   = UBVEC!(5, 21),  
+  S6   = UBVEC!(5, 22),  
+  S7   = UBVEC!(5, 23),  
+  S8   = UBVEC!(5, 24),  
+  S9   = UBVEC!(5, 25),  
+  S10  = UBVEC!(5, 26),  
+  S11  = UBVEC!(5, 27),  
+  T3   = UBVEC!(5, 28),  
+  T4   = UBVEC!(5, 29),  
+  T5   = UBVEC!(5, 30),  
+  T6   = UBVEC!(5, 31) 
+}
+ 
+enum riscv_fpr_t: ubvec!5 { 	// 5'b
+  FT0  = UBVEC!(5, 0), 
+  FT1  = UBVEC!(5, 1), 
+  FT2  = UBVEC!(5, 2), 
+  FT3  = UBVEC!(5, 3), 
+  FT4  = UBVEC!(5, 4), 
+  FT5  = UBVEC!(5, 5), 
+  FT6  = UBVEC!(5, 6), 
+  FT7  = UBVEC!(5, 7), 
+  FS0  = UBVEC!(5, 8), 
+  FS1  = UBVEC!(5, 9), 
+  FA0  = UBVEC!(5, 10),
+  FA1  = UBVEC!(5, 11),
+  FA2  = UBVEC!(5, 12),
+  FA3  = UBVEC!(5, 13),
+  FA4  = UBVEC!(5, 14),
+  FA5  = UBVEC!(5, 15),
+  FA6  = UBVEC!(5, 16),
+  FA7  = UBVEC!(5, 17),
+  FS2  = UBVEC!(5, 18),
+  FS3  = UBVEC!(5, 19),
+  FS4  = UBVEC!(5, 20),
+  FS5  = UBVEC!(5, 21),
+  FS6  = UBVEC!(5, 22),
+  FS7  = UBVEC!(5, 23),
+  FS8  = UBVEC!(5, 24),
+  FS9  = UBVEC!(5, 25),
+  FS10 = UBVEC!(5, 26), 
+  FS11 = UBVEC!(5, 27), 
+  FT8  = UBVEC!(5, 28),
+  FT9  = UBVEC!(5, 29),
+  FT10 = UBVEC!(5, 30), 
+  FT11 = UBVEC!(5, 31)
 }
 
-enum riscv_fpr_t: ubyte { 	// 5'b
-  FT0, FT1, FT2, FT3, FT4, FT5, FT6, FT7, FS0, FS1, FA0, FA1, FA2, FA3, FA4, FA5,
-  FA6, FA7, FS2, FS3, FS4, FS5, FS6, FS7, FS8, FS9, FS10, FS11, FT8, FT9, FT10, FT11
+enum riscv_vreg_t: ubvec!5 {
+  V0  = UBVEC!(5, 0), 
+  V1  = UBVEC!(5, 1), 
+  V2  = UBVEC!(5, 2), 
+  V3  = UBVEC!(5, 3), 
+  V4  = UBVEC!(5, 4), 
+  V5  = UBVEC!(5, 5), 
+  V6  = UBVEC!(5, 6), 
+  V7  = UBVEC!(5, 7), 
+  V8  = UBVEC!(5, 8), 
+  V9  = UBVEC!(5, 9), 
+  V10 = UBVEC!(5, 10), 
+  V11 = UBVEC!(5, 11), 
+  V12 = UBVEC!(5, 12), 
+  V13 = UBVEC!(5, 13), 
+  V14 = UBVEC!(5, 14), 
+  V15 = UBVEC!(5, 15), 
+  V16 = UBVEC!(5, 16), 
+  V17 = UBVEC!(5, 17), 
+  V18 = UBVEC!(5, 18), 
+  V19 = UBVEC!(5, 19), 
+  V20 = UBVEC!(5, 20), 
+  V21 = UBVEC!(5, 21), 
+  V22 = UBVEC!(5, 22), 
+  V23 = UBVEC!(5, 23), 
+  V24 = UBVEC!(5, 24), 
+  V25 = UBVEC!(5, 25), 
+  V26 = UBVEC!(5, 26), 
+  V27 = UBVEC!(5, 27), 
+  V28 = UBVEC!(5, 28), 
+  V29 = UBVEC!(5, 29), 
+  V30 = UBVEC!(5, 30), 
+  V31 = UBVEC!(5, 31)
 }
-
-enum riscv_vreg_t: ubyte {
-  V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11, V12, V13, V14, V15,
-  V16, V17, V18, V19, V20, V21, V22, V23, V24, V25, V26, V27, V28, V29, V30, V31
-}
-
 
 enum riscv_instr_format_t: ubyte {	// 6'b
   J_FORMAT = 0,
@@ -713,20 +801,20 @@ enum riscv_instr_format_t: ubyte {	// 6'b
 
 
 // Vector arithmetic instruction variant
-enum va_variant_t: ubyte {
-  VV,
-  VI,
-  VX,
-  VF,
-  WV,
-  WI,
-  WX,
-  VVM,
-  VIM,
-  VXM,
-  VFM,
-  VS,
-  VM
+enum va_variant_t: ubvec!4 {
+  VV  = UBVEC!(4, 0),  
+  VI  = UBVEC!(4, 1),  
+  VX  = UBVEC!(4, 2),  
+  VF  = UBVEC!(4, 3),  
+  WV  = UBVEC!(4, 4),  
+  WI  = UBVEC!(4, 5),  
+  WX  = UBVEC!(4, 6),  
+  VVM = UBVEC!(4, 7),  
+  VIM = UBVEC!(4, 8),  
+  VXM = UBVEC!(4, 9),  
+  VFM = UBVEC!(4, 10), 
+  VS  = UBVEC!(4, 11), 
+  VM  = UBVEC!(4, 12)
 }
 
 enum riscv_instr_category_t: ubyte {	// 6'b
@@ -1105,25 +1193,25 @@ enum privileged_reg_t: ubvec!12 {	// 12'b
     VLENB           = UBVEC!(12, 0xC22),   // VLEN/8 (vector register length in bytes)
 }
 
-enum privileged_reg_fld_t: ubyte {
-  RSVD,       // Reserved field
-  MXL,        // mis.mxl
-  EXTENSION,  // mis.extension
-  MODE,       // satp.mode
-  ASID,       // satp.asid
-  PPN         // satp.ppn
+enum privileged_reg_fld_t: ubvec!5 {
+  RSVD       = UBVEC!(5, 0),  // Reserved field
+  MXL        = UBVEC!(5, 1),  // mis.mxl
+  EXTENSION  = UBVEC!(5, 2),  // mis.extension
+  MODE       = UBVEC!(5, 3),  // satp.mode
+  ASID       = UBVEC!(5, 4),  // satp.asid
+  PPN        = UBVEC!(5, 5)   // satp.ppn
 }
 
-enum privileged_level_t: ubyte {
-  M_LEVEL = 0b11,  // Machine mode
-  S_LEVEL = 0b01,  // Supervisor mode
-  U_LEVEL = 0b00   // User mode
+enum privileged_level_t: ubvec!2 {
+  M_LEVEL = UBVEC!(2, 0b11),  // Machine mode
+  S_LEVEL = UBVEC!(2, 0b01),  // Supervisor mode
+  U_LEVEL = UBVEC!(2, 0b00)   // User mode
 }
 
-enum reg_field_access_t: ubyte {
-  WPRI, // Reserved Writes Preserve Values, Reads Ignore Value
-  WLRL, // Write/Read Only Legal Values
-  WARL  // Write Any Values, Reads Legal Values
+enum reg_field_access_t: ubvec!2 {
+  WPRI = UBVEC!(2, 0b00), // Reserved Writes Preserve Values, Reads Ignore Value
+  WLRL = UBVEC!(2, 0b01), // Write/Read Only Legal Values
+  WARL = UBVEC!(2, 0b10)  // Write Any Values, Reads Legal Values
 }
 
 //Pseudo instructions
@@ -1133,19 +1221,19 @@ enum riscv_pseudo_instr_name_t: ubyte {
 }
 
 // Data pattern of the memory model
-enum data_pattern_t: ubyte {
-  RAND_DATA = 0,
-  ALL_ZERO,
-  INCR_VAL
+enum data_pattern_t: ubvec!2 {
+  RAND_DATA = UBVEC!(2, 0b00),
+  ALL_ZERO  = UBVEC!(2, 0b01),
+  INCR_VAL  = UBVEC!(2, 0b10)
 }
 
-enum pte_permission_t: ubyte {
-  NEXT_LEVEL_PAGE   = 0b000, // Pointer to next level of page table.
-  READ_ONLY_PAGE    = 0b001, // Read-only page.
-  READ_WRITE_PAGE   = 0b011, // Read-write page.
-  EXECUTE_ONLY_PAGE = 0b100, // Execute-only page.
-  READ_EXECUTE_PAGE = 0b101, // Read-execute page.
-  R_W_EXECUTE_PAGE  = 0b111  // Read-write-execute page
+enum pte_permission_t: ubvec!3 {
+  NEXT_LEVEL_PAGE   = UBVEC!(3, 0b000), // Pointer to next level of page table.
+  READ_ONLY_PAGE    = UBVEC!(3, 0b001), // Read-only page.
+  READ_WRITE_PAGE   = UBVEC!(3, 0b011), // Read-write page.
+  EXECUTE_ONLY_PAGE = UBVEC!(3, 0b100), // Execute-only page.
+  READ_EXECUTE_PAGE = UBVEC!(3, 0b101), // Read-execute page.
+  R_W_EXECUTE_PAGE  = UBVEC!(3, 0b111)  // Read-write-execute page
 }
 
 enum interrupt_cause_t: ubyte {
@@ -1206,11 +1294,11 @@ enum  misa_ext_t: int {
   MISA_EXT_Z
 }
 
-enum hazard_e: ubyte {
-  NO_HAZARD,
-  RAW_HAZARD,
-  WAR_HAZARD,
-  WAW_HAZARD
+enum hazard_e: ubvec!2 {
+  NO_HAZARD   = UBVEC!(2, 0b00),
+  RAW_HAZARD  = UBVEC!(2, 0b01),
+  WAR_HAZARD  = UBVEC!(2, 0b10),
+  WAW_HAZARD  = UBVEC!(2, 0b11)
 }
 
 riscv_csr_t[] default_include_csr_write = [privileged_reg_t.MSCRATCH];
@@ -1227,11 +1315,11 @@ struct mseccfg_reg_t {
 }
 
 // PMP address matching mode
-enum pmp_addr_mode_t: ubyte {
-  OFF   = 0b00,
-  TOR   = 0b01,
-  NA4   = 0b10,
-  NAPOT = 0b11
+enum pmp_addr_mode_t: ubvec!2 {
+  OFF   = UBVEC!(2, 0b00),
+  TOR   = UBVEC!(2, 0b01),
+  NA4   = UBVEC!(2, 0b10),
+  NAPOT = UBVEC!(2, 0b11)
 }
 
 //   // PMP configuration register layout
@@ -1296,11 +1384,11 @@ struct vtype_t {
 }
 
 
-enum vxrm_t: ubyte {
-  RoundToNearestUp,
-  RoundToNearestEven,
-  RoundDown,
-  RoundToOdd
+enum vxrm_t: ubvec!2 {
+  RoundToNearestUp    = UBVEC!(2, 0b00),
+  RoundToNearestEven  = UBVEC!(2, 0b01),
+  RoundDown           = UBVEC!(2, 0b10),
+  RoundToOdd          = UBVEC!(2, 0b11)
 }
 
 enum  b_ext_group_t: int {
@@ -1527,8 +1615,7 @@ class cmdline_enum_processor(T)
 	  string valstr = str[2..$].dup;
 	  int raw_val = parse!(int, string)(valstr, 16);
 	  static if (isBitVector!T) {
-	    alias U = ubvec!32;
-	    U raw_bvec = raw_val.toubvec!32;
+	    ubvec!32 raw_bvec = raw_val.toubvec!32;
 	    vals[i] = cast(T) raw_bvec; // cast to enum
 	  }
 	  else {

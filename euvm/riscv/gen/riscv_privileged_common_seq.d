@@ -31,7 +31,7 @@ import std.format: format;
 import std.string: toLower;
 
 import esdl.data.queue: Queue;
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec, UBVEC;
 import esdl.rand: randomize, rand;
 
 import uvm;
@@ -128,15 +128,15 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     mstatus.set_field("VS", cfg.mstatus_vs);
     if (XLEN != 32) {
       if (!(canFind(supported_privileged_mode, privileged_mode_t.SUPERVISOR_MODE))) {
-        mstatus.set_field("SXL", toubvec!2(0b00));
+        mstatus.set_field("SXL", UBVEC!(2, 0b00));
       }
       else if (XLEN == 64) {
-        mstatus.set_field("SXL", toubvec!2(0b10));
+        mstatus.set_field("SXL", UBVEC!(2, 0b10));
       }
       if (!(canFind(supported_privileged_mode, privileged_mode_t.USER_MODE))) {
-        mstatus.set_field("UXL", toubvec!2(0b00));
+        mstatus.set_field("UXL", UBVEC!(2, 0b00));
       } else if (XLEN == 64) {
-        mstatus.set_field("UXL", toubvec!2(0b10));
+        mstatus.set_field("UXL", UBVEC!(2, 0b10));
       }
     }
     mstatus.set_field("XS", 0);
@@ -193,7 +193,7 @@ class riscv_privileged_common_seq: uvm_sequence!(uvm_sequence_item,uvm_sequence_
     sstatus.set_field("UPIE", cfg.enable_interrupt);
     sstatus.set_field("UIE", support_umode_trap);
     if(XLEN==64) {
-      sstatus.set_field("UXL", toubvec!2(0b10));
+      sstatus.set_field("UXL", UBVEC!(2, 0b10));
     }
     sstatus.set_field("FS", cfg.mstatus_fs);
     sstatus.set_field("XS", 0);

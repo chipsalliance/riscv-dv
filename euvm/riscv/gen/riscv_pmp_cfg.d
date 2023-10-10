@@ -24,7 +24,7 @@ import riscv.gen.riscv_instr_pkg: pmp_cfg_reg_t, pmp_addr_mode_t,
 import riscv.gen.target: XLEN, support_epmp;
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec, tobvec, clog2;
+import esdl.data.bvec: ubvec, toubvec, tobvec, clog2, UBVEC;
 import esdl.rand: rand, constraint;
 
 import uvm;
@@ -408,7 +408,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
       // RV64 - pmpaddr is bits [55:2] of the whole 56 bit address, prepended by 10'b0
       // Return {10'b0, shifted_addr[53:0]}
     case  64:
-      shifted_addr[53..64] = 0.toubvec!11;
+      shifted_addr[53..64] = 0;
       return shifted_addr;
     default:
       uvm_fatal(get_full_name(), format("Unsupported XLEN %0s", XLEN));
@@ -422,11 +422,11 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
     return addr;
   }
 
-  ubvec!1  booltobit( bool x) {
+  ubvec!1 booltobit( bool x) {
     if ( x == true)
-      return 0b1.toubvec!1;
+      return UBVEC!(1, 1);
     else
-      return 0b0.toubvec!1;
+      return UBVEC!(1, 0);
   }
 
   // Generates code to setup a single PMP region allowing full access to all memory
@@ -1144,7 +1144,7 @@ parse_pmp_config_t parse_pmp_config(string pmp_region, pmp_cfg_reg_t ref_pmp_cfg
 
       for (size_t j=0; j!=XLEN/8; ++j) {
 	pmp_val[j*8+7] = false;
-	ubvec!XLEN mask = ~ (toubvec!XLEN(0b11));
+	ubvec!XLEN mask = ~ UBVEC!(XLEN, 0b11);
 	ubvec!XLEN bits;
 	uint r;
 

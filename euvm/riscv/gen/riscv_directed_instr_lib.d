@@ -31,7 +31,7 @@ import std.algorithm: canFind;
 
 import esdl.rand: rand, constraint, randomize_with, randomize;
 import esdl.base.rand: urandom, shuffle;
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec, UBVEC;
 import uvm;
 
 class riscv_directed_instr_stream: riscv_rand_instr_stream
@@ -548,13 +548,13 @@ class riscv_int_numeric_corner_stream: riscv_directed_instr_stream
     init_instr.length = num_of_avail_regs;
     foreach (i, ref ivtype; init_val_type) {
       if (ivtype == int_numeric_e.Zero) {
-        init_val[i] = toubvec!XLEN(0);
+        init_val[i] = UBVEC!(XLEN, 0);
       }
       else if (ivtype == int_numeric_e.AllOne) {
-        init_val[i] = toubvec!XLEN(-1);
+        init_val[i] = UBVEC!(XLEN, -1);
       }
       else if (ivtype == int_numeric_e.NegativeMax) {
-        init_val[i] = toubvec!XLEN(1UL << (XLEN-1));
+        init_val[i] = UBVEC!(XLEN, 1UL << (XLEN-1));
       }
       init_instr[i] = new riscv_pseudo_instr;
       init_instr[i].rd = avail_regs[i];

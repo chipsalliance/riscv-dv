@@ -25,7 +25,7 @@ import riscv.gen.target: supported_isa;
 
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec, clog2;
+import esdl.data.bvec: ubvec, UBVEC, clog2;
 import uvm;
 
 import std.algorithm: canFind;
@@ -44,10 +44,10 @@ class riscv_zba_instr: riscv_instr
 
   override void set_imm_len() {
     if (instr_name != riscv_instr_name_t.SLLI_UW) {
-      imm_len = toubvec!5(clog2(XLEN) - 1);
+      imm_len = UBVEC!(5, clog2(XLEN) - 1);
     }
     else {
-      imm_len = toubvec!5(clog2(XLEN));
+      imm_len = UBVEC!(5, clog2(XLEN));
     }
     imm_mask = imm_mask << imm_len;
   }
@@ -56,39 +56,39 @@ class riscv_zba_instr: riscv_instr
     switch (instr_name) {
     case riscv_instr_name_t.SH1ADD,
       riscv_instr_name_t.SH2ADD,
-      riscv_instr_name_t.SH3ADD:     return toubvec!7(0b0110011);
+      riscv_instr_name_t.SH3ADD:     return UBVEC!(7, 0b0110011);
     case riscv_instr_name_t.SH1ADD_UW,
       riscv_instr_name_t.SH2ADD_UW,
-      riscv_instr_name_t.SH3ADD_UW:    return toubvec!7(0b0111011);
-    case riscv_instr_name_t.SLLI_UW:   return toubvec!7(0b0011011);
+      riscv_instr_name_t.SH3ADD_UW:    return UBVEC!(7, 0b0111011);
+    case riscv_instr_name_t.SLLI_UW:   return UBVEC!(7, 0b0011011);
     default:                           return super.get_opcode();
     }
   }
 
   override ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.ADD_UW:    return toubvec!3(0b000);
-    case riscv_instr_name_t.SH1ADD:    return toubvec!3(0b010);
-    case riscv_instr_name_t.SH2ADD:    return toubvec!3(0b100);
-    case riscv_instr_name_t.SH3ADD:    return toubvec!3(0b110);
-    case riscv_instr_name_t.SH1ADD_UW: return toubvec!3(0b010);
-    case riscv_instr_name_t.SH2ADD_UW: return toubvec!3(0b100);
-    case riscv_instr_name_t.SH3ADD_UW: return toubvec!3(0b110);
-    case riscv_instr_name_t.SLLI_UW:   return toubvec!3(0b001);
+    case riscv_instr_name_t.ADD_UW:    return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SH1ADD:    return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.SH2ADD:    return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.SH3ADD:    return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.SH1ADD_UW: return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.SH2ADD_UW: return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.SH3ADD_UW: return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.SLLI_UW:   return UBVEC!(3, 0b001);
     default:                           return super.get_func3();
     }
   }
 
   override ubvec!7 get_func7() {
     switch (instr_name) {
-    case riscv_instr_name_t.ADD_UW:    return toubvec!7(0b0000100);
-    case riscv_instr_name_t.SH1ADD:    return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SH2ADD:    return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SH3ADD:    return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SH1ADD_UW: return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SH2ADD_UW: return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SH3ADD_UW: return toubvec!7(0b0010000);
-    case riscv_instr_name_t.SLLI_UW:   return toubvec!7(0b0010000);
+    case riscv_instr_name_t.ADD_UW:    return UBVEC!(7, 0b0000100);
+    case riscv_instr_name_t.SH1ADD:    return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SH2ADD:    return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SH3ADD:    return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SH1ADD_UW: return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SH2ADD_UW: return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SH3ADD_UW: return UBVEC!(7, 0b0010000);
+    case riscv_instr_name_t.SLLI_UW:   return UBVEC!(7, 0b0010000);
     default:                           return super.get_func7();
     }
   }
@@ -96,7 +96,7 @@ class riscv_zba_instr: riscv_instr
   override string convert2bin(string prefix = "") {
     string binary = "";
     if (instr_name == riscv_instr_name_t.SLLI_UW) {
-      binary = format("%8h", toubvec!5(0b0_0001) ~ cast(ubvec!7)(imm[0..6]) ~
+      binary = format("%8h", UBVEC!(5, 0b0_0001) ~ cast(ubvec!7)(imm[0..6]) ~
 		      rs1 ~ get_func3() ~ rd ~ get_opcode());
     }
     else {

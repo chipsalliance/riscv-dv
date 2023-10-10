@@ -24,7 +24,7 @@ import riscv.gen.target: XLEN;
 import riscv.gen.riscv_instr_gen_config: riscv_instr_gen_config;
 // import riscv.gen.riscv_instr_registry: riscv_instr_registry;
 
-import esdl.data.bvec: bvec, ubvec, toubvec;
+import esdl.data.bvec: bvec, ubvec, UBVEC;
 import esdl.rand: rand, constraint;
 
 import std.format: format, sformat;
@@ -136,16 +136,16 @@ class riscv_instr: uvm_object
   void set_imm_len() {
     if (instr_format == riscv_instr_format_t.U_FORMAT ||
 	instr_format == riscv_instr_format_t.J_FORMAT) {
-      imm_len = toubvec!5(20);
+      imm_len = UBVEC!(5, 20);
     }
     else if (instr_format == riscv_instr_format_t.I_FORMAT ||
 	     instr_format == riscv_instr_format_t.S_FORMAT ||
 	     instr_format == riscv_instr_format_t.B_FORMAT) {
       if (imm_type == imm_t.UIMM) {
-	imm_len = toubvec!5(5);
+	imm_len = UBVEC!(5, 5);
       }
       else {
-	imm_len = toubvec!5(12);
+	imm_len = UBVEC!(5, 12);
       }
     }
     imm_mask = imm_mask << imm_len;
@@ -305,27 +305,27 @@ class riscv_instr: uvm_object
   
   ubvec!7 get_opcode() {
     switch (instr_name) {
-    case riscv_instr_name_t.LUI:       return toubvec!7(0b0110111);
-    case riscv_instr_name_t.AUIPC:     return toubvec!7(0b0010111);
-    case riscv_instr_name_t.JAL:       return toubvec!7(0b1101111);
-    case riscv_instr_name_t.JALR:      return toubvec!7(0b1100111);
+    case riscv_instr_name_t.LUI:       return UBVEC!(7, 0b0110111);
+    case riscv_instr_name_t.AUIPC:     return UBVEC!(7, 0b0010111);
+    case riscv_instr_name_t.JAL:       return UBVEC!(7, 0b1101111);
+    case riscv_instr_name_t.JALR:      return UBVEC!(7, 0b1100111);
     case riscv_instr_name_t.BEQ,
       riscv_instr_name_t.BNE,
       riscv_instr_name_t.BLT,
       riscv_instr_name_t.BGE,
       riscv_instr_name_t.BLTU,
-      riscv_instr_name_t.BGEU:         return toubvec!7(0b1100011);
+      riscv_instr_name_t.BGEU:         return UBVEC!(7, 0b1100011);
     case riscv_instr_name_t.LB,
       riscv_instr_name_t.LH,
       riscv_instr_name_t.LW,
       riscv_instr_name_t.LBU,
       riscv_instr_name_t.LHU,
       riscv_instr_name_t.LWU,
-      riscv_instr_name_t.LD:           return toubvec!7(0b0000011);
+      riscv_instr_name_t.LD:           return UBVEC!(7, 0b0000011);
     case riscv_instr_name_t.SB,
       riscv_instr_name_t.SH,
       riscv_instr_name_t.SW,
-      riscv_instr_name_t.SD:           return toubvec!7(0b0100011);
+      riscv_instr_name_t.SD:           return UBVEC!(7, 0b0100011);
     case riscv_instr_name_t.ADDI,
       riscv_instr_name_t.SLTI,
       riscv_instr_name_t.SLTIU,
@@ -335,7 +335,7 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.SLLI,
       riscv_instr_name_t.SRLI,
       riscv_instr_name_t.SRAI,
-      riscv_instr_name_t.NOP:          return toubvec!7(0b0010011);
+      riscv_instr_name_t.NOP:          return UBVEC!(7, 0b0010011);
     case riscv_instr_name_t.ADD,
       riscv_instr_name_t.SUB,
       riscv_instr_name_t.SLL,
@@ -353,20 +353,20 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.DIV,
       riscv_instr_name_t.DIVU,
       riscv_instr_name_t.REM,
-      riscv_instr_name_t.REMU:         return toubvec!7(0b0110011);
+      riscv_instr_name_t.REMU:         return UBVEC!(7, 0b0110011);
     case riscv_instr_name_t.ADDIW,
       riscv_instr_name_t.SLLIW,
       riscv_instr_name_t.SRLIW,
-      riscv_instr_name_t.SRAIW:        return toubvec!7(0b0011011);
+      riscv_instr_name_t.SRAIW:        return UBVEC!(7, 0b0011011);
     // case riscv_instr_name_t.MULH,
     //   riscv_instr_name_t.MULHSU,
     //   riscv_instr_name_t.MULHU,
     //   riscv_instr_name_t.DIV,
     //   riscv_instr_name_t.DIVU,
     //   riscv_instr_name_t.REM,
-    //   riscv_instr_name_t.REMU: { return toubvec!0b0110011;
+    //   riscv_instr_name_t.REMU: return UBVEC!(7, 0b0110011);
     case riscv_instr_name_t.FENCE,
-      riscv_instr_name_t.FENCE_I:      return toubvec!7(0b0001111);
+      riscv_instr_name_t.FENCE_I:      return UBVEC!(7, 0b0001111);
     case riscv_instr_name_t.ADDW,
       riscv_instr_name_t.SUBW,
       riscv_instr_name_t.SLLW,
@@ -376,7 +376,7 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.DIVW,
       riscv_instr_name_t.DIVUW,
       riscv_instr_name_t.REMW,
-      riscv_instr_name_t.REMUW:        return toubvec!7(0b0111011);
+      riscv_instr_name_t.REMUW:        return UBVEC!(7, 0b0111011);
     case riscv_instr_name_t.ECALL,
       riscv_instr_name_t.EBREAK,
       riscv_instr_name_t.URET,
@@ -384,7 +384,7 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.MRET,
       riscv_instr_name_t.DRET,
       riscv_instr_name_t.WFI,
-      riscv_instr_name_t.SFENCE_VMA:   return toubvec!7(0b1110011);
+      riscv_instr_name_t.SFENCE_VMA:   return UBVEC!(7, 0b1110011);
     default: uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
     }
@@ -392,70 +392,70 @@ class riscv_instr: uvm_object
 
   ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.JALR:       return toubvec!3(0b000);
-    case riscv_instr_name_t.BEQ:        return toubvec!3(0b000);
-    case riscv_instr_name_t.BNE:        return toubvec!3(0b001);
-    case riscv_instr_name_t.BLT:        return toubvec!3(0b100);
-    case riscv_instr_name_t.BGE:        return toubvec!3(0b101);
-    case riscv_instr_name_t.BLTU:       return toubvec!3(0b110);
-    case riscv_instr_name_t.BGEU:       return toubvec!3(0b111);
-    case riscv_instr_name_t.LB:         return toubvec!3(0b000);
-    case riscv_instr_name_t.LH:         return toubvec!3(0b001);
-    case riscv_instr_name_t.LW:         return toubvec!3(0b010);
-    case riscv_instr_name_t.LBU:        return toubvec!3(0b100);
-    case riscv_instr_name_t.LHU:        return toubvec!3(0b101);
-    case riscv_instr_name_t.SB:         return toubvec!3(0b000);
-    case riscv_instr_name_t.SH:         return toubvec!3(0b001);
-    case riscv_instr_name_t.SW:         return toubvec!3(0b010);
-    case riscv_instr_name_t.ADDI:       return toubvec!3(0b000);
-    case riscv_instr_name_t.NOP:        return toubvec!3(0b000);
-    case riscv_instr_name_t.SLTI:       return toubvec!3(0b010);
-    case riscv_instr_name_t.SLTIU:      return toubvec!3(0b011);
-    case riscv_instr_name_t.XORI:       return toubvec!3(0b100);
-    case riscv_instr_name_t.ORI:        return toubvec!3(0b110);
-    case riscv_instr_name_t.ANDI:       return toubvec!3(0b111);
-    case riscv_instr_name_t.SLLI:       return toubvec!3(0b001);
-    case riscv_instr_name_t.SRLI:       return toubvec!3(0b101);
-    case riscv_instr_name_t.SRAI:       return toubvec!3(0b101);
-    case riscv_instr_name_t.ADD:        return toubvec!3(0b000);
-    case riscv_instr_name_t.SUB:        return toubvec!3(0b000);
-    case riscv_instr_name_t.SLL:        return toubvec!3(0b001);
-    case riscv_instr_name_t.SLT:        return toubvec!3(0b010);
-    case riscv_instr_name_t.SLTU:       return toubvec!3(0b011);
-    case riscv_instr_name_t.XOR:        return toubvec!3(0b100);
-    case riscv_instr_name_t.SRL:        return toubvec!3(0b101);
-    case riscv_instr_name_t.SRA:        return toubvec!3(0b101);
-    case riscv_instr_name_t.OR:         return toubvec!3(0b110);
-    case riscv_instr_name_t.AND:        return toubvec!3(0b111);
-    case riscv_instr_name_t.FENCE:      return toubvec!3(0b000);
-    case riscv_instr_name_t.FENCE_I:    return toubvec!3(0b001);
-      // case riscv_instr_name_t.ECALL:      return toubvec!3(0b000);
-      // case riscv_instr_name_t.EBREAK:     return toubvec!3(0b000);
-    case riscv_instr_name_t.LWU:        return toubvec!3(0b110);
-    case riscv_instr_name_t.LD:         return toubvec!3(0b011);
-    case riscv_instr_name_t.SD:         return toubvec!3(0b011);
-    case riscv_instr_name_t.ADDIW:      return toubvec!3(0b000);
-    case riscv_instr_name_t.SLLIW:      return toubvec!3(0b001);
-    case riscv_instr_name_t.SRLIW:      return toubvec!3(0b101);
-    case riscv_instr_name_t.SRAIW:      return toubvec!3(0b101);
-    case riscv_instr_name_t.ADDW:       return toubvec!3(0b000);
-    case riscv_instr_name_t.SUBW:       return toubvec!3(0b000);
-    case riscv_instr_name_t.SLLW:       return toubvec!3(0b001);
-    case riscv_instr_name_t.SRLW:       return toubvec!3(0b101);
-    case riscv_instr_name_t.SRAW:       return toubvec!3(0b101);
-    case riscv_instr_name_t.MUL:        return toubvec!3(0b000);
-    case riscv_instr_name_t.MULH:       return toubvec!3(0b001);
-    case riscv_instr_name_t.MULHSU:     return toubvec!3(0b010);
-    case riscv_instr_name_t.MULHU:      return toubvec!3(0b011);
-    case riscv_instr_name_t.DIV:        return toubvec!3(0b100);
-    case riscv_instr_name_t.DIVU:       return toubvec!3(0b101);
-    case riscv_instr_name_t.REM:        return toubvec!3(0b110);
-    case riscv_instr_name_t.REMU:       return toubvec!3(0b111);
-    case riscv_instr_name_t.MULW:       return toubvec!3(0b000);
-    case riscv_instr_name_t.DIVW:       return toubvec!3(0b100);
-    case riscv_instr_name_t.DIVUW:      return toubvec!3(0b101);
-    case riscv_instr_name_t.REMW:       return toubvec!3(0b110);
-    case riscv_instr_name_t.REMUW:      return toubvec!3(0b111);
+    case riscv_instr_name_t.JALR:       return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.BEQ:        return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.BNE:        return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BLT:        return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.BGE:        return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.BLTU:       return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.BGEU:       return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.LB:         return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.LH:         return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.LW:         return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.LBU:        return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.LHU:        return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SB:         return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SH:         return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SW:         return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.ADDI:       return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.NOP:        return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SLTI:       return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.SLTIU:      return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.XORI:       return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.ORI:        return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.ANDI:       return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.SLLI:       return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SRLI:       return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SRAI:       return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.ADD:        return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SUB:        return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SLL:        return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SLT:        return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.SLTU:       return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.XOR:        return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.SRL:        return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SRA:        return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.OR:         return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.AND:        return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.FENCE:      return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.FENCE_I:    return UBVEC!(3, 0b001);
+      // case riscv_instr_name_t.ECALL:      return UBVEC!(3, 0b000);
+      // case riscv_instr_name_t.EBREAK:     return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.LWU:        return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.LD:         return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.SD:         return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.ADDIW:      return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SLLIW:      return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SRLIW:      return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SRAIW:      return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.ADDW:       return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SUBW:       return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.SLLW:       return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SRLW:       return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SRAW:       return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.MUL:        return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.MULH:       return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.MULHSU:     return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.MULHU:      return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.DIV:        return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.DIVU:       return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.REM:        return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.REMU:       return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.MULW:       return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.DIVW:       return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.DIVUW:      return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.REMW:       return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.REMUW:      return UBVEC!(3, 0b111);
     case riscv_instr_name_t.ECALL,
       riscv_instr_name_t.EBREAK,
       riscv_instr_name_t.URET,
@@ -463,7 +463,7 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.MRET,
       riscv_instr_name_t.DRET,
       riscv_instr_name_t.WFI,
-      riscv_instr_name_t.SFENCE_VMA: return toubvec!3(0b000);
+      riscv_instr_name_t.SFENCE_VMA: return UBVEC!(3, 0b000);
     default: uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
     }
@@ -471,50 +471,50 @@ class riscv_instr: uvm_object
 
   ubvec!7 get_func7() {
     switch (instr_name) {
-    case riscv_instr_name_t.SLLI:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRLI:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRAI:       return toubvec!7(0b0100000);
-    case riscv_instr_name_t.ADD:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SUB:        return toubvec!7(0b0100000);
-    case riscv_instr_name_t.SLL:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SLT:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SLTU:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.XOR:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRL:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRA:        return toubvec!7(0b0100000);
-    case riscv_instr_name_t.OR:         return toubvec!7(0b0000000);
-    case riscv_instr_name_t.AND:        return toubvec!7(0b0000000);
-    case riscv_instr_name_t.FENCE:      return toubvec!7(0b0000000);
-    case riscv_instr_name_t.FENCE_I:    return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SLLIW:      return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRLIW:      return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRAIW:      return toubvec!7(0b0100000);
-    case riscv_instr_name_t.ADDW:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SUBW:       return toubvec!7(0b0100000);
-    case riscv_instr_name_t.SLLW:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRLW:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRAW:       return toubvec!7(0b0100000);
-    case riscv_instr_name_t.MUL:        return toubvec!7(0b0000001);
-    case riscv_instr_name_t.MULH:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.MULHSU:     return toubvec!7(0b0000001);
-    case riscv_instr_name_t.MULHU:      return toubvec!7(0b0000001);
-    case riscv_instr_name_t.DIV:        return toubvec!7(0b0000001);
-    case riscv_instr_name_t.DIVU:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.REM:        return toubvec!7(0b0000001);
-    case riscv_instr_name_t.REMU:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.MULW:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.DIVW:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.DIVUW:      return toubvec!7(0b0000001);
-    case riscv_instr_name_t.REMW:       return toubvec!7(0b0000001);
-    case riscv_instr_name_t.REMUW:      return toubvec!7(0b0000001);
-    case riscv_instr_name_t.ECALL:      return toubvec!7(0b0000000);
-    case riscv_instr_name_t.EBREAK:     return toubvec!7(0b0000000);
-    case riscv_instr_name_t.URET:       return toubvec!7(0b0000000);
-    case riscv_instr_name_t.SRET:       return toubvec!7(0b0001000);
-    case riscv_instr_name_t.MRET:       return toubvec!7(0b0011000);
-    case riscv_instr_name_t.DRET:       return toubvec!7(0b0111101);
-    case riscv_instr_name_t.WFI:        return toubvec!7(0b0001000);
-    case riscv_instr_name_t.SFENCE_VMA: return toubvec!7(0b0001001);
+    case riscv_instr_name_t.SLLI:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRLI:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRAI:       return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.ADD:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SUB:        return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.SLL:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SLT:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SLTU:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.XOR:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRL:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRA:        return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.OR:         return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.AND:        return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.FENCE:      return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.FENCE_I:    return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SLLIW:      return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRLIW:      return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRAIW:      return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.ADDW:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SUBW:       return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.SLLW:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRLW:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRAW:       return UBVEC!(7, 0b0100000);
+    case riscv_instr_name_t.MUL:        return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.MULH:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.MULHSU:     return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.MULHU:      return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.DIV:        return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.DIVU:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.REM:        return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.REMU:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.MULW:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.DIVW:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.DIVUW:      return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.REMW:       return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.REMUW:      return UBVEC!(7, 0b0000001);
+    case riscv_instr_name_t.ECALL:      return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.EBREAK:     return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.URET:       return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.SRET:       return UBVEC!(7, 0b0001000);
+    case riscv_instr_name_t.MRET:       return UBVEC!(7, 0b0011000);
+    case riscv_instr_name_t.DRET:       return UBVEC!(7, 0b0111101);
+    case riscv_instr_name_t.WFI:        return UBVEC!(7, 0b0001000);
+    case riscv_instr_name_t.SFENCE_VMA: return UBVEC!(7, 0b0001001);
     default: uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
     }
@@ -530,64 +530,64 @@ class riscv_instr: uvm_object
 	~ cast(ubvec!10) imm[1..11]
 	~ cast(ubvec!1) imm[11]
 	~ cast(ubvec!8) imm[12..20]
-	~ toubvec!5(rd)
+	~ rd
 	~ get_opcode();
       break;
     case riscv_instr_format_t.U_FORMAT:
       vec = cast(ubvec!20) imm[12..32]
-	~ toubvec!5(rd)
+	~ rd
 	~ get_opcode();
       break;
     case riscv_instr_format_t.I_FORMAT:
       if (canFind( [riscv_instr_name_t.FENCE, riscv_instr_name_t.FENCE_I], instr_name)) {
-	vec = toubvec!17(0b00000000000000000)
+	vec = UBVEC!(17, 0b00000000000000000)
 	  ~ get_func3()
-	  ~ toubvec!5(0b00000)
+	  ~ UBVEC!(5, 0b00000)
 	  ~ get_opcode();
       }  // 17 bit zero and 5 bit zero
       else if (instr_name == riscv_instr_name_t.ECALL) {
 	vec = get_func7()
-	  ~ toubvec!18(0b000000000000000000)
+	  ~ UBVEC!(18, 0b000000000000000000)
 	  ~ get_opcode();
       } //  18 bit zero
       else if (canFind([riscv_instr_name_t.URET,
 			riscv_instr_name_t.SRET,
 			riscv_instr_name_t.MRET], instr_name )) {
 	vec = get_func7()
-	  ~ toubvec!5(0b00010)
-	  ~ toubvec!13(0b0000000000000)
+	  ~ UBVEC!(5, 0b00010)
+	  ~ UBVEC!(13, 0b0000000000000)
 	  ~ get_opcode();
       } // 13 bit zero
       else if (instr_name  ==  riscv_instr_name_t.DRET) {
 	vec = get_func7()
-	  ~ toubvec!5(0b10010)
-	  ~ toubvec!13(0b0000000000000)
+	  ~ UBVEC!(5, 0b10010)
+	  ~ UBVEC!(13, 0b0000000000000)
 	  ~ get_opcode();
       }  // 13 bit zero
       else if (instr_name ==  riscv_instr_name_t.EBREAK) {
 	vec = get_func7()
-	  ~ toubvec!5(0b00001)
-	  ~ toubvec!13(0b0000000000000)
+	  ~ UBVEC!(5, 0b00001)
+	  ~ UBVEC!(13, 0b0000000000000)
 	  ~ get_opcode();
       }  // 13 bit zero
       else if (instr_name == riscv_instr_name_t.WFI) {
 	vec = get_func7()
-	  ~ toubvec!5(0b00101)
-	  ~ toubvec!13(0b0000000000000)
+	  ~ UBVEC!(5, 0b00101)
+	  ~ UBVEC!(13, 0b0000000000000)
 	  ~ get_opcode();
       }
       else {
 	vec = cast(ubvec!12) imm[0..12]
-	  ~ toubvec!5(rs1)
+	  ~ rs1
 	  ~ get_func3()
-	  ~ toubvec!5(rd)
+	  ~ rd
 	  ~ get_opcode();
       }
       break;
     case riscv_instr_format_t.S_FORMAT:
       vec = cast(ubvec!7) imm[5..12]
-	~ toubvec!5(rs2)
-	~ toubvec!5(rs1)
+	~ rs2
+	~ rs1
 	~ get_func3()
 	~ cast(ubvec!5) imm[0..5]
 	~ get_opcode();
@@ -595,8 +595,8 @@ class riscv_instr: uvm_object
     case riscv_instr_format_t.B_FORMAT:
       vec = cast(ubvec!1) imm[12]
 	~ cast(ubvec!6) imm[5..11]
-	~ toubvec!5(rs2)
-	~ toubvec!5(rs1)
+	~ rs2
+	~ rs1
 	~ get_func3()
 	~ cast(ubvec!4) imm[1..5]
 	~ cast(ubvec!1) imm[11]
@@ -605,15 +605,15 @@ class riscv_instr: uvm_object
     case riscv_instr_format_t.R_FORMAT:
       if (instr_name == riscv_instr_name_t.SFENCE_VMA) {
 	vec = get_func7()
-	  ~ toubvec!18(0b000000000000000000)
+	  ~ UBVEC!(18, 0b000000000000000000)
 	  ~ get_opcode();
       } // 18 bits zero
       else {
 	vec = get_func7()
-	  ~ toubvec!5(rs2)
-	  ~ toubvec!5(rs1)
+	  ~ rs2
+	  ~ rs1
 	  ~ get_func3()
-	  ~ toubvec!5(rd)
+	  ~ rd
 	  ~ get_opcode();
       }
       break;
@@ -640,8 +640,7 @@ class riscv_instr: uvm_object
 
   // // Get RVC register name for CIW, CL, CS, CB format
   ubvec!3  get_c_gpr(riscv_reg_t gpr) {
-    ubvec!8 c_gpr = toubvec!8(gpr);
-    return cast(ubvec!3) c_gpr[0..3];
+    return cast(ubvec!3) gpr[0..3];
   }
 
   // // Default return imm value directly, can be overriden to use labels and symbols

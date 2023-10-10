@@ -568,10 +568,11 @@ class riscv_load_store_rand_addr_instr_stream : riscv_load_store_base_instr_stre
     // Initialize the location which used by load instruction later
     foreach (i, lsinstr; load_store_instr) {
       if (lsinstr.category == riscv_instr_category_t.LOAD) {
+	import esdl.data.bvec: to;
         riscv_instr store;
         store = riscv_instr.type_id.create("store");
         store.copy(store_instr);
-        store.rs2 = cast(riscv_reg_t) ((cast(int) i) % 32);
+        store.rs2 = ((cast(int) i) % 32).to!riscv_reg_t;
         store.imm_str = lsinstr.imm_str;
         // TODO: C_FLDSP is in both rv32 and rv64 ISA
 	switch (lsinstr.instr_name) {

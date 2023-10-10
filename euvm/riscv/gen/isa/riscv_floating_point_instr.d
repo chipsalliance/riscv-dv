@@ -262,13 +262,13 @@ class riscv_floating_point_instr: riscv_instr
   }
 
   override void set_imm_len() {
-    import esdl.data.bvec: toubvec;
+    import esdl.data.bvec: UBVEC;
     if (instr_format == riscv_instr_format_t.CL_FORMAT ||
 	instr_format == riscv_instr_format_t.CS_FORMAT)
-      imm_len = toubvec!5(5);
+      imm_len = UBVEC!(5, 5);
     if (instr_format == riscv_instr_format_t.CI_FORMAT ||
 	instr_format == riscv_instr_format_t.CSS_FORMAT)
-      imm_len = toubvec!5(6);
+      imm_len = UBVEC!(5, 6);
   }
 
  override void do_copy(uvm_object rhs) {

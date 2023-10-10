@@ -26,7 +26,7 @@ import riscv.gen.target: supported_isa, XLEN;
 
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec, clog2;
+import esdl.data.bvec: ubvec, UBVEC, clog2;
 import uvm;
 
 import std.algorithm: canFind;
@@ -51,7 +51,7 @@ class riscv_zbs_instr: riscv_instr
     if (instr_format == riscv_instr_format_t.I_FORMAT) {
       if ([riscv_instr_name_t.BCLRI, riscv_instr_name_t.BEXTI,
 	   riscv_instr_name_t.BINVI, riscv_instr_name_t.BSETI].canFind(instr_name)) {
-	imm_len = toubvec!5(clog2(XLEN));
+	imm_len = UBVEC!(5, clog2(XLEN));
       }
     }
     imm_mask = imm_mask << imm_len;
@@ -66,35 +66,35 @@ class riscv_zbs_instr: riscv_instr
       riscv_instr_name_t.BCLRI,
       riscv_instr_name_t.BEXTI,
       riscv_instr_name_t.BINVI,
-      riscv_instr_name_t.BSETI: return toubvec!7(0b0010011);
+      riscv_instr_name_t.BSETI: return UBVEC!(7, 0b0010011);
     default : return super.get_opcode();
     }
   }
 
   override ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.BCLR:  return toubvec!3(0b001);
-    case riscv_instr_name_t.BCLRI: return toubvec!3(0b001);
-    case riscv_instr_name_t.BEXT:  return toubvec!3(0b101);
-    case riscv_instr_name_t.BEXTI: return toubvec!3(0b101);
-    case riscv_instr_name_t.BINV:  return toubvec!3(0b001);
-    case riscv_instr_name_t.BINVI: return toubvec!3(0b001);
-    case riscv_instr_name_t.BSET:  return toubvec!3(0b001);
-    case riscv_instr_name_t.BSETI: return toubvec!3(0b001);
+    case riscv_instr_name_t.BCLR:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BCLRI: return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BEXT:  return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.BEXTI: return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.BINV:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BINVI: return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BSET:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.BSETI: return UBVEC!(3, 0b001);
     default: return super.get_func3();
     }
   }
 
   override ubvec!7 get_func7() {
     switch (instr_name) {
-    case riscv_instr_name_t.BCLR:  return toubvec!7(0b0100100);
-    case riscv_instr_name_t.BCLRI: return toubvec!7(0b0100100);
-    case riscv_instr_name_t.BEXT:  return toubvec!7(0b0100100);
-    case riscv_instr_name_t.BEXTI: return toubvec!7(0b0100100);
-    case riscv_instr_name_t.BINV:  return toubvec!7(0b0110100);
-    case riscv_instr_name_t.BINVI: return toubvec!7(0b0110100);
-    case riscv_instr_name_t.BSET:  return toubvec!7(0b0010100);
-    case riscv_instr_name_t.BSETI: return toubvec!7(0b0010100);
+    case riscv_instr_name_t.BCLR:  return UBVEC!(7, 0b0100100);
+    case riscv_instr_name_t.BCLRI: return UBVEC!(7, 0b0100100);
+    case riscv_instr_name_t.BEXT:  return UBVEC!(7, 0b0100100);
+    case riscv_instr_name_t.BEXTI: return UBVEC!(7, 0b0100100);
+    case riscv_instr_name_t.BINV:  return UBVEC!(7, 0b0110100);
+    case riscv_instr_name_t.BINVI: return UBVEC!(7, 0b0110100);
+    case riscv_instr_name_t.BSET:  return UBVEC!(7, 0b0010100);
+    case riscv_instr_name_t.BSETI: return UBVEC!(7, 0b0010100);
     default : return super.get_func7();
     }
   }

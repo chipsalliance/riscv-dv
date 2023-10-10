@@ -27,7 +27,7 @@ import riscv.gen.target: supported_isa;
 import std.format: format;
 import std.string: toLower;
 
-import esdl.data.bvec: ubvec, toubvec, clog2;
+import esdl.data.bvec: ubvec, toubvec, clog2, UBVEC;
 import uvm;
 
 import std.algorithm: canFind;
@@ -73,10 +73,10 @@ class riscv_zbb_instr: riscv_instr
   override void set_imm_len() {
     if (instr_format == riscv_instr_format_t.I_FORMAT) {
       if (instr_name == riscv_instr_name_t.RORI) {
-        imm_len = toubvec!5(clog2(XLEN));
+        imm_len = UBVEC!(5, clog2(XLEN));
       }
       else {
-        imm_len = toubvec!5(5);
+        imm_len = UBVEC!(5, 5);
       }
     }
     imm_mask = imm_mask << imm_len;
@@ -173,11 +173,11 @@ class riscv_zbb_instr: riscv_instr
       riscv_instr_name_t.ORN,
       riscv_instr_name_t.ROL,
       riscv_instr_name_t.ROR,
-      riscv_instr_name_t.XNOR:      return toubvec!7(0b011_0011);
+      riscv_instr_name_t.XNOR:      return UBVEC!(7, 0b011_0011);
     case riscv_instr_name_t.ZEXT_H:
-      return toubvec!7(0b011_0011 | (toubvec!7(is_rv64()) << 3));
+      return (UBVEC!(7, 0b011_0011) | (toubvec!7(is_rv64()) << 3));
     case riscv_instr_name_t.ROLW,
-      riscv_instr_name_t.RORW:      return toubvec!7(0b011_1011);
+      riscv_instr_name_t.RORW:      return UBVEC!(7, 0b011_1011);
     case riscv_instr_name_t.CLZ,
       riscv_instr_name_t.CPOP,
       riscv_instr_name_t.CTZ,
@@ -185,57 +185,57 @@ class riscv_zbb_instr: riscv_instr
       riscv_instr_name_t.CLZW,
       riscv_instr_name_t.CPOPW,
       riscv_instr_name_t.CTZW,
-      riscv_instr_name_t.RORIW:     return toubvec!7(0b001_1011);
+      riscv_instr_name_t.RORIW:     return UBVEC!(7, 0b001_1011);
     case riscv_instr_name_t.REV8,
       riscv_instr_name_t.RORI,
       riscv_instr_name_t.SEXT_B,
-      riscv_instr_name_t.SEXT_H:    return toubvec!7(0b001_0011);
+      riscv_instr_name_t.SEXT_H:    return UBVEC!(7, 0b001_0011);
     default:                        return super.get_opcode();
     }
   }
 
   override ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.ANDN:   return toubvec!3(0b111);
-    case riscv_instr_name_t.CLZ:    return toubvec!3(0b001);
-    case riscv_instr_name_t.CLZW:   return toubvec!3(0b001);
-    case riscv_instr_name_t.CPOP:   return toubvec!3(0b001);
-    case riscv_instr_name_t.CPOPW:  return toubvec!3(0b001);
-    case riscv_instr_name_t.CTZ:    return toubvec!3(0b001);
-    case riscv_instr_name_t.CTZW:   return toubvec!3(0b001);
-    case riscv_instr_name_t.MAX:    return toubvec!3(0b110);
-    case riscv_instr_name_t.MAXU:   return toubvec!3(0b111);
-    case riscv_instr_name_t.MIN:    return toubvec!3(0b100);
-    case riscv_instr_name_t.MINU:   return toubvec!3(0b101);
-    case riscv_instr_name_t.ORC_B:  return toubvec!3(0b101);
-    case riscv_instr_name_t.ORN:    return toubvec!3(0b110);
-    case riscv_instr_name_t.REV8:   return toubvec!3(0b101);
-    case riscv_instr_name_t.ROL:    return toubvec!3(0b001);
-    case riscv_instr_name_t.ROLW:   return toubvec!3(0b001);
-    case riscv_instr_name_t.ROR:    return toubvec!3(0b101);
-    case riscv_instr_name_t.RORW:   return toubvec!3(0b101);
-    case riscv_instr_name_t.RORI:   return toubvec!3(0b101);
-    case riscv_instr_name_t.RORIW:  return toubvec!3(0b101);
-    case riscv_instr_name_t.SEXT_B: return toubvec!3(0b001);
-    case riscv_instr_name_t.SEXT_H: return toubvec!3(0b001);
-    case riscv_instr_name_t.XNOR:   return toubvec!3(0b100);
-    case riscv_instr_name_t.ZEXT_H: return toubvec!3(0b100);
+    case riscv_instr_name_t.ANDN:   return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.CLZ:    return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CLZW:   return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CPOP:   return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CPOPW:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CTZ:    return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CTZW:   return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.MAX:    return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.MAXU:   return UBVEC!(3, 0b111);
+    case riscv_instr_name_t.MIN:    return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.MINU:   return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.ORC_B:  return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.ORN:    return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.REV8:   return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.ROL:    return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.ROLW:   return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.ROR:    return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.RORW:   return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.RORI:   return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.RORIW:  return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.SEXT_B: return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.SEXT_H: return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.XNOR:   return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.ZEXT_H: return UBVEC!(3, 0b100);
     default:                        return super.get_func3();
     }
   }
 
   ubvec!5 get_func5() {
     switch (instr_name) {
-    case riscv_instr_name_t.CLZ:    return toubvec!5(0b0_0000);
-    case riscv_instr_name_t.CLZW:   return toubvec!5(0b0_0000);
-    case riscv_instr_name_t.CPOP:   return toubvec!5(0b0_0010);
-    case riscv_instr_name_t.CPOPW:  return toubvec!5(0b0_0010);
-    case riscv_instr_name_t.CTZ:    return toubvec!5(0b0_0001);
-    case riscv_instr_name_t.CTZW:   return toubvec!5(0b0_0001);
-    case riscv_instr_name_t.ORC_B:  return toubvec!5(0b0_0111);
-    case riscv_instr_name_t.REV8:   return toubvec!5(0b1_1000);
-    case riscv_instr_name_t.SEXT_B: return toubvec!5(0b0_0100);
-    case riscv_instr_name_t.SEXT_H: return toubvec!5(0b0_0101);
+    case riscv_instr_name_t.CLZ:    return UBVEC!(5, 0b0_0000);
+    case riscv_instr_name_t.CLZW:   return UBVEC!(5, 0b0_0000);
+    case riscv_instr_name_t.CPOP:   return UBVEC!(5, 0b0_0010);
+    case riscv_instr_name_t.CPOPW:  return UBVEC!(5, 0b0_0010);
+    case riscv_instr_name_t.CTZ:    return UBVEC!(5, 0b0_0001);
+    case riscv_instr_name_t.CTZW:   return UBVEC!(5, 0b0_0001);
+    case riscv_instr_name_t.ORC_B:  return UBVEC!(5, 0b0_0111);
+    case riscv_instr_name_t.REV8:   return UBVEC!(5, 0b1_1000);
+    case riscv_instr_name_t.SEXT_B: return UBVEC!(5, 0b0_0100);
+    case riscv_instr_name_t.SEXT_H: return UBVEC!(5, 0b0_0101);
     default: uvm_fatal(get_full_name(), format("Unsupported instruction %0s", instr_name));
       assert (false);
     }
@@ -243,31 +243,31 @@ class riscv_zbb_instr: riscv_instr
 
   override ubvec!7 get_func7() {
     switch (instr_name) {
-    case riscv_instr_name_t.ANDN:   return toubvec!7(0b010_0000);
-    case riscv_instr_name_t.CLZ:    return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.CLZW:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.CPOP:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.CPOPW:  return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.CTZ:    return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.CTZW:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.MAX:    return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.MAXU:   return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.MIN:    return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.MINU:   return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.ORC_B:  return toubvec!7(0b001_0100);
-    case riscv_instr_name_t.ORN:    return toubvec!7(0b010_0000);
+    case riscv_instr_name_t.ANDN:   return UBVEC!(7, 0b010_0000);
+    case riscv_instr_name_t.CLZ:    return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.CLZW:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.CPOP:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.CPOPW:  return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.CTZ:    return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.CTZW:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.MAX:    return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.MAXU:   return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.MIN:    return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.MINU:   return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.ORC_B:  return UBVEC!(7, 0b001_0100);
+    case riscv_instr_name_t.ORN:    return UBVEC!(7, 0b010_0000);
     case riscv_instr_name_t.REV8:
-      return toubvec!7(0b011_0100 | toubvec!7(is_rv64())); // 0110101 64 bit
-    case riscv_instr_name_t.ROL:    return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.ROLW:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.ROR:    return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.RORW:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.RORI:   return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.RORIW:  return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.SEXT_B: return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.SEXT_H: return toubvec!7(0b011_0000);
-    case riscv_instr_name_t.XNOR:   return toubvec!7(0b010_0000);
-    case riscv_instr_name_t.ZEXT_H: return toubvec!7(0b000_0100);
+      return (UBVEC!(7, 0b011_0100) | toubvec!7(is_rv64())); // 0110101 64 bit
+    case riscv_instr_name_t.ROL:    return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.ROLW:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.ROR:    return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.RORW:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.RORI:   return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.RORIW:  return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.SEXT_B: return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.SEXT_H: return UBVEC!(7, 0b011_0000);
+    case riscv_instr_name_t.XNOR:   return UBVEC!(7, 0b010_0000);
+    case riscv_instr_name_t.ZEXT_H: return UBVEC!(7, 0b000_0100);
     default:                        return super.get_func7();
     }
   }

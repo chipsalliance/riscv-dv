@@ -24,7 +24,7 @@ import riscv.gen.target: supported_isa;
 
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec, clog2;
+import esdl.data.bvec: ubvec, UBVEC, clog2;
 import uvm;
 
 import std.algorithm: canFind;
@@ -45,25 +45,25 @@ class riscv_zbc_instr: riscv_instr
     switch (instr_name) {
     case riscv_instr_name_t.CLMUL,
       riscv_instr_name_t.CLMULH,
-      riscv_instr_name_t.CLMULR: return toubvec!7(0b011_0011);
+      riscv_instr_name_t.CLMULR: return UBVEC!(7, 0b011_0011);
     default:                     return super.get_opcode();
     }
   }
 
   override ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.CLMUL:  return toubvec!3(0b001);
-    case riscv_instr_name_t.CLMULH: return toubvec!3(0b011);
-    case riscv_instr_name_t.CLMULR: return toubvec!3(0b010);
+    case riscv_instr_name_t.CLMUL:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CLMULH: return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.CLMULR: return UBVEC!(3, 0b010);
     default:                        return super.get_func3();
     }
   }
 
   override ubvec!7 get_func7() {
     switch (instr_name) {
-    case riscv_instr_name_t.CLMUL:  return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.CLMULH: return toubvec!7(0b000_0101);
-    case riscv_instr_name_t.CLMULR: return toubvec!7(0b000_0101);
+    case riscv_instr_name_t.CLMUL:  return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.CLMULH: return UBVEC!(7, 0b000_0101);
+    case riscv_instr_name_t.CLMULR: return UBVEC!(7, 0b000_0101);
     default:                        return super.get_func7();
     }
   }

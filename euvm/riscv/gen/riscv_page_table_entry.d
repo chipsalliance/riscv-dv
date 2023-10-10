@@ -27,7 +27,7 @@ import riscv.gen.riscv_instr_pkg: pte_permission_t, satp_mode_t;
 import riscv.gen.target: XLEN;
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec;
 import esdl.rand: constraint, rand;
 
 import uvm;
@@ -161,13 +161,13 @@ class riscv_page_table_entry(satp_mode_t MODE = satp_mode_t.SV39) : uvm_object
   void pack_entry() {
     switch (MODE) {
     case satp_mode_t.SV32:
-      bits = ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ toubvec!3(xwr) ~ v;
+      bits = ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ xwr ~ v;
       break;
     case satp_mode_t.SV39:
-      bits = cast(ubvec!XLEN) (rsvd ~ ppn2 ~ ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ toubvec!3(xwr) ~ v);
+      bits = cast(ubvec!XLEN) (rsvd ~ ppn2 ~ ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ xwr ~ v);
       break;
     case satp_mode_t.SV48:
-      bits = cast(ubvec!XLEN) (rsvd ~ ppn3 ~ ppn2 ~ ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ toubvec!3(xwr) ~ v);
+      bits = cast(ubvec!XLEN) (rsvd ~ ppn3 ~ ppn2 ~ ppn1 ~ ppn0 ~ rsw ~ d ~ a ~ g ~ u ~ xwr ~ v);
       break;
     default:
       uvm_fatal(get_full_name(), format("Unsupported mode %0x", MODE));

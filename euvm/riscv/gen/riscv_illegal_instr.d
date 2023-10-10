@@ -31,7 +31,7 @@ import std.traits: EnumMembers;
 import std.format: format;
 import std.algorithm: canFind;
 
-import esdl.data.bvec: ubvec, toubvec;
+import esdl.data.bvec: ubvec, UBVEC;
 import esdl.rand: rand, constraint;
 
 import uvm;
@@ -72,26 +72,26 @@ class riscv_illegal_instr: uvm_object
   }
 
   // Default legal opcode for RV32I instructions
-  ubvec!7[]  legal_opcode = [0b0000011.toubvec!7,
-			     0b0001111.toubvec!7,
-			     0b0010011.toubvec!7,
-			     0b0010111.toubvec!7,
-			     0b0100011.toubvec!7,
-			     0b0110111.toubvec!7,
-			     0b1100011.toubvec!7,
-			     0b0110011.toubvec!7,
-			     0b1100111.toubvec!7,
-			     0b1110011.toubvec!7,
-			     0b1101111.toubvec!7];
+  ubvec!7[]  legal_opcode = [UBVEC!(7, 0b0000011),
+			     UBVEC!(7, 0b0001111),
+			     UBVEC!(7, 0b0010011),
+			     UBVEC!(7, 0b0010111),
+			     UBVEC!(7, 0b0100011),
+			     UBVEC!(7, 0b0110111),
+			     UBVEC!(7, 0b1100011),
+			     UBVEC!(7, 0b0110011),
+			     UBVEC!(7, 0b1100111),
+			     UBVEC!(7, 0b1110011),
+			     UBVEC!(7, 0b1101111)];
 
   // Default legal opcode for RV32C instructions
-  ubvec!3[] legal_c00_opcode = [0b000.toubvec!3,
-				0b010.toubvec!3,
-				0b110.toubvec!3];
-  ubvec!3[] legal_c10_opcode = [0b000.toubvec!3,
-				0b010.toubvec!3,
-				0b100.toubvec!3,
-				0b110.toubvec!3];
+  ubvec!3[] legal_c00_opcode = [UBVEC!(3, 0b000),
+				UBVEC!(3, 0b010),
+				UBVEC!(3, 0b110)];
+  ubvec!3[] legal_c10_opcode = [UBVEC!(3, 0b000),
+				UBVEC!(3, 0b010),
+				UBVEC!(3, 0b100),
+				UBVEC!(3, 0b110)];
 
   @rand illegal_instr_type_e  exception;
   @rand reserved_c_instr_e    reserved_c;
@@ -433,23 +433,23 @@ class riscv_illegal_instr: uvm_object
     this.cfg = cfg;
     if ((canFind(supported_isa, riscv_instr_group_t.RV32F) ||
 	 canFind(supported_isa, riscv_instr_group_t.RV32D))) {
-      legal_opcode ~= [0b0000111.toubvec!7, 0b0100111.toubvec!7, 0b1000011.toubvec!7,
-		       0b1000111.toubvec!7, 0b1001011.toubvec!7, 0b1001111.toubvec!7,
-		       0b1010011.toubvec!7] ;
+      legal_opcode ~= [UBVEC!(7, 0b0000111), UBVEC!(7, 0b0100111), UBVEC!(7, 0b1000011),
+		       UBVEC!(7, 0b1000111), UBVEC!(7, 0b1001011), UBVEC!(7, 0b1001111),
+		       UBVEC!(7, 0b1010011)] ;
     }
     if (canFind(supported_isa, riscv_instr_group_t.RV64I)) {
-      legal_opcode ~= [0b0011011.toubvec!7];
+      legal_opcode ~= [UBVEC!(7, 0b0011011)];
     }
     if (canFind(supported_isa, riscv_instr_group_t.RV32A)) {
-      legal_opcode ~= [0b0101111.toubvec!7];
+      legal_opcode ~= [UBVEC!(7, 0b0101111)];
     }
     if (canFind(supported_isa, riscv_instr_group_t.RV64I)  ||
 	canFind(supported_isa,  riscv_instr_group_t.RV64M )) {
-      legal_opcode ~= [0b0111011.toubvec!7];
+      legal_opcode ~= [UBVEC!(7, 0b0111011)];
     }
     if (canFind(supported_isa, riscv_instr_group_t.RV64I)) {
-      legal_c00_opcode ~= [0b011.toubvec!3, 0b111.toubvec!3];
-      legal_c10_opcode ~= [0b011.toubvec!3, 0b111.toubvec!3];
+      legal_c00_opcode ~= [UBVEC!(3, 0b011), UBVEC!(3, 0b111)];
+      legal_c10_opcode ~= [UBVEC!(3, 0b011), UBVEC!(3, 0b111)];
     }
     // csr = csr.first();
     // for (int i = 0; i < csr.num(); i = i + 1) begin

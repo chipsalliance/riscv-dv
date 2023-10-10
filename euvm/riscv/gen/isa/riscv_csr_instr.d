@@ -26,7 +26,7 @@ import riscv.gen.target: supported_isa;
 
 import std.format: format;
 
-import esdl.data.bvec: ubvec, toubvec, clog2;
+import esdl.data.bvec: ubvec, UBVEC, clog2;
 import esdl.rand: constraint, rand;
 import uvm;
 
@@ -181,17 +181,17 @@ class riscv_csr_instr: riscv_instr
   }
 
   override ubvec!7 get_opcode() {
-    return toubvec!7(0b1110011);
+    return UBVEC!(7, 0b1110011);
   }
 
   override ubvec!3 get_func3() {
     switch (instr_name) {
-    case riscv_instr_name_t.CSRRW:  return toubvec!3(0b001);
-    case riscv_instr_name_t.CSRRS:  return toubvec!3(0b010);
-    case riscv_instr_name_t.CSRRC:  return toubvec!3(0b011);
-    case riscv_instr_name_t.CSRRWI: return toubvec!3(0b101);
-    case riscv_instr_name_t.CSRRSI: return toubvec!3(0b110);
-    case riscv_instr_name_t.CSRRCI: return toubvec!3(0b111);
+    case riscv_instr_name_t.CSRRW:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.CSRRS:  return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.CSRRC:  return UBVEC!(3, 0b011);
+    case riscv_instr_name_t.CSRRWI: return UBVEC!(3, 0b101);
+    case riscv_instr_name_t.CSRRSI: return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.CSRRCI: return UBVEC!(3, 0b111);
     default:     return super.get_func3();
     }
   }
