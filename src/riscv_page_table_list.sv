@@ -187,6 +187,11 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
     $cast(valid_data_leaf_pte, valid_leaf_pte.clone());
     illegal_pte.turn_off_default_constraint();
     valid_link_pte.xwr = NEXT_LEVEL_PAGE;
+    // I am not sure why riscv-dv are not setting a,u,d to 0 when it is a next
+    // level page?
+    valid_link_pte.u = 0; //edit
+    valid_link_pte.a = 0; //edit
+    valid_link_pte.d = 0; //edit
     valid_link_pte.pack_entry();
     // Set data page to read/write, but not executable
     valid_data_leaf_pte.xwr = READ_WRITE_PAGE;
