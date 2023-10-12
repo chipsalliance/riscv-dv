@@ -27,6 +27,7 @@ import logging
 import signal
 
 from datetime import date
+from datetime import datetime
 
 RET_SUCCESS = 0
 RET_FAIL    = 1
@@ -234,8 +235,11 @@ def process_regression_list(testlist, test, iterations, matched_list,
                 if iterations > 0 and entry['iterations'] > 0:
                     entry['iterations'] = iterations
                 if entry['iterations'] > 0:
+                    now = datetime.now()
+                    current_time = now.strftime("%Y-%m-%d_%H:%M:%S")
                     logging.info("Found matched tests: {}, iterations:{}".format(
                       entry['test'], entry['iterations']))
+                    entry['test'] = entry['test']+'_'+str(current_time)
                     matched_list.append(entry)
 
 
@@ -483,6 +487,9 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "rev":
         instr_name = "grevi"
         operands += ",31"
+    elif instr_name == "gorci" and ",7" in operands:
+        instr_name = "orc.b"
+        operands = operands.replace(",7","") # new addition
     elif instr_name == "orc.p":
         instr_name = "gorci"
         operands += ",1"

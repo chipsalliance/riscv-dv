@@ -18,7 +18,8 @@ ENTRY(_start)
 
 SECTIONS
 {
-  . = 0x80000000;
+  /*. = 0x40000000;*/
+  . = 0x00000000;
   .text : { *(.text) }
   . = ALIGN(0x1000);
   .tohost : { *(.tohost) }

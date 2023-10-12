@@ -339,7 +339,7 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                                 debug_cmd=debug_cmd)
     if sim_seed:
         with open(('{}/seed.yaml'.format(os.path.abspath(output_dir))),
-                  'w') as outfile:
+                  'a') as outfile:
             yaml.dump(sim_seed, outfile, default_flow_style=False)
     if lsf_cmd:
         run_parallel_cmd(cmd_list, timeout_s,
@@ -411,6 +411,9 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
       debug_cmd  : Produce the debug cmd log without running
     """
     cwd = os.path.dirname(os.path.realpath(__file__))
+    addr_bits = 32
+    data_bytes = 16
+    successful_test = []
     for test in test_list:
         for i in range(0, test['iterations']):
             if 'no_gcc' in test and test['no_gcc'] == 1:
@@ -419,10 +422,14 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             asm = prefix + ".S"
             elf = prefix + ".o"
             binary = prefix + ".bin"
+            srec = prefix + ".srec"
+            OBJCOPY_OPTS = "--srec-len=16 --srec-forceS3 --gap-fill=0 --remove-section=.comment --remove-section=.riscv.attributes" #jonathanjonsson
             test_isa = isa
             if not os.path.isfile(asm) and not debug_cmd:
                 logging.error("Cannot find assembly test: {}\n".format(asm))
+                #continue
                 sys.exit(RET_FAIL)
+                
             # gcc compilation
             cmd = ("{} -static -mcmodel=medany \
              -fvisibility=hidden -nostdlib \
@@ -446,10 +453,15 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             logging.info("Compiling {}".format(asm))
             run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
             # Convert the ELF to plain binary, used in RTL sim
-            logging.info("Converting to {}".format(binary))
-            cmd = ("{} -O binary {} {}".format(
-                get_env_var("RISCV_OBJCOPY", debug_cmd=debug_cmd), elf, binary))
-            run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+            #logging.info("Converting to {}".format(binary))
+            #cmd = ("{} -O binary {} {}".format(
+            #    get_env_var("RISCV_OBJCOPY", debug_cmd=debug_cmd), elf, binary))
+            #run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
+            logging.info("Converting to {}".format(srec)) 
+            #cmd_srec = ("{} -O srec {} {} {}".format(
+            #    get_env_var("RISCV_OBJCOPY", debug_cmd=debug_cmd), elf, srec, OBJCOPY_OPTS))
+            cmd_srec = (f"bincopy convert -i elf -o srec,{data_bytes},{addr_bits} {elf} {srec}")
+            run_cmd_output(cmd_srec.split(), debug_cmd=debug_cmd) #jonathanjonsson
 
 
 def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
@@ -662,7 +674,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
                     prefix = ("{}/asm_test/{}_{}".format(
                         output_dir, test['test'], i))
                     elf = prefix + ".o"
-                    log = ("{}/{}.{}.log".format(log_dir, test['test'], i))
+                    log = ("{}/{}_{}.log".format(log_dir, test['test'], i))
                     cmd = get_iss_cmd(base_cmd, elf, log)
                     if 'iss_opts' in test:
                         cmd += ' '

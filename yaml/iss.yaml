@@ -25,7 +25,7 @@
     --objfilenoentry <elf>
     --override riscvOVPsim/cpu/simulateexceptions=T
     --trace --tracechange --traceshowicount --tracemode --traceregs
-    --finishafter 1000000
+    --finishafter 110000
 
 - iss: sail
   path_var: SAIL_RISCV

@@ -39,7 +39,8 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
   privileged_mode_t privileged_mode = USER_MODE;
 
   // Starting physical address of the program.
-  bit [XLEN-1:0] start_pa = 'h8000_0000;
+  bit [XLEN-1:0] start_pa = 'h0000_0000;
+  //bit [XLEN-1:0] start_pa = 'h4000_0000;
 
   // Num of page table per level
   int unsigned num_of_page_table[];
