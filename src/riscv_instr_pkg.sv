@@ -1364,10 +1364,10 @@ package riscv_instr_pkg;
   `include "riscv_core_setting.sv"
 
   // ePMP machine security configuration
-  typedef struct packed {
-    bit rlb;
-    bit mmwp;
-    bit mml;
+  typedef struct {
+    rand bit rlb;
+    rand bit mmwp;
+    rand bit mml;
   } mseccfg_reg_t;
 
   // PMP address matching mode
@@ -1381,23 +1381,23 @@ package riscv_instr_pkg;
   // PMP configuration register layout
   // This configuration struct includes the pmp address for simplicity
   // TODO (udinator) allow a full 34 bit address for rv32?
-`ifdef _VCP //GRK958
-  typedef struct packed {
-    bit                   l;
-    bit [1:0]                  zero;
-    pmp_addr_mode_t       a;
-    bit                   x;
-    bit                   w;
-    bit                   r;
-    // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
-    // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
-    bit [XLEN - 1 : 0]    addr;
-    // The offset from the address of <main> - automatically populated by the
-    // PMP generation routine.
-    bit [XLEN - 1 : 0]    offset;
-    // The size of the region in case of NAPOT and overlap in case of TOR.
-    integer addr_mode;
-`else
+  // `ifdef _VCP //GRK958
+  //typedef struct packed {
+  //  bit                   l;
+  //  bit [1:0]                  zero;
+  //  pmp_addr_mode_t       a;
+  //  bit                   x;
+  //  bit                   w;
+  //  bit                   r;
+  //  // RV32: the pmpaddr is the top 32 bits of a 34 bit PMP address
+  //  // RV64: the pmpaddr is the top 54 bits of a 56 bit PMP address
+  //  bit [XLEN - 1 : 0]    addr;
+  //  // The offset from the address of <main> - automatically populated by the
+  //  // PMP generation routine.
+  //  bit [XLEN - 1 : 0]    offset;
+  //  // The size of the region in case of NAPOT and overlap in case of TOR.
+  //  integer addr_mode;
+  // `else
   typedef struct{
     rand bit                   l;
     bit [1:0]                  zero;
@@ -1413,7 +1413,7 @@ package riscv_instr_pkg;
     rand bit [XLEN - 1 : 0]    offset;
     // The size of the region in case of NAPOT and allows for top less than bottom in TOR when 0.
     rand integer addr_mode;
-`endif
+// `endif
   } pmp_cfg_reg_t;
 
   function automatic string hart_prefix(int hart = 0);

@@ -31,7 +31,7 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
   localparam int PteCnt    = 4096 / PteSize;
   localparam int PageLevel = (MODE == SV32) ? 2 : ((MODE == SV39) ? 3 : 4);
   localparam int LinkPtePerTable = 2;
-  localparam int SuperLeafPtePerTable = 2;
+  localparam int SuperLeafPtePerTable = 450;
 
   satp_mode_t mode = MODE;
 
