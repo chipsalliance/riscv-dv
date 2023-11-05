@@ -18,6 +18,7 @@
 module riscv.gen.isa.rv64i_instr;
 
 import riscv.gen.riscv_defines;
+import riscv.gen.isa.riscv_instr: riscv_instr;
 
 import uvm;
 

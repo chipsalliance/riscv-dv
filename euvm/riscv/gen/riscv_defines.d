@@ -183,8 +183,7 @@ class RISCV_VA_INSTR_TMPL(string ext, riscv_instr_name_t instr_n,
 mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
 				    riscv_instr_format_t instr_format,
 				    riscv_instr_category_t instr_category,
-				    riscv_instr_group_t instr_group,
-				    vav...)
+				    riscv_instr_group_t instr_group)
 {
   enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
   mixin uvm_object_utils;
@@ -195,7 +194,7 @@ mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
     this.group = instr_group;
     this.category = instr_category;
     this.imm_type = imm_t.IMM;
-    this.allowed_va_variants = [vav];
+    this.allowed_va_variants = [];
     this.sub_extension = ext;
     set_imm_len();
     set_rand_mode();
@@ -205,8 +204,7 @@ mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
 mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
 				    riscv_instr_format_t instr_format,
 				    riscv_instr_category_t instr_category,
-				    riscv_instr_group_t instr_group,
-				    vav...)
+				    riscv_instr_group_t instr_group)
 {
   enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
   mixin uvm_object_utils;
@@ -217,7 +215,7 @@ mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
     this.group = instr_group;
     this.category = instr_category;
     this.imm_type = imm_t.IMM;
-    this.allowed_va_variants = [vav];
+    this.allowed_va_variants = [];
     this.sub_extension = "";
     set_imm_len();
     set_rand_mode();

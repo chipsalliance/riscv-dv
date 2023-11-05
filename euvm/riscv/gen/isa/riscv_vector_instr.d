@@ -21,7 +21,7 @@
 module riscv.gen.isa.riscv_vector_instr;
 
 import riscv.gen.riscv_instr_pkg: riscv_vreg_t, va_variant_t,
-  riscv_instr_name_t, riscv_instr_format_t,
+  riscv_instr_name_t, riscv_instr_format_t, va_base_instr,
   MAX_INSTR_STR_LEN, riscv_instr_category_t;
 import riscv.gen.isa.riscv_instr: riscv_instr;
 import riscv.gen.isa.riscv_floating_point_instr: riscv_floating_point_instr;
@@ -62,6 +62,8 @@ class riscv_vector_instr: riscv_floating_point_instr
   @rand ubvec!3      nfields; // Used by segmented load/store
   bool               rand_nfields;
   @rand ubvec!4      emul;
+
+  enum va_base_instr VA_BASE = va_base_instr.VA_NO_BASE;
 
   constraint!q{
     if (m_cfg.vector_cfg.reserved_vregs.length > 0) {
@@ -126,14 +128,14 @@ class riscv_vector_instr: riscv_floating_point_instr
     if (m_cfg.vector_cfg.vtype.vlmul  > 1) {
       // For vadc and vsbc, an illegal instruction exception is raised if the
       // destination vector register is v0 and LMUL> 1
-      if (instr_name inside [riscv_instr_name_t.VADC,
-			     riscv_instr_name_t.VSBC]) {
+      if (VA_BASE inside [va_base_instr.VADC,
+			  va_base_instr.VSBC]) {
 	vd != 0;
       }
       // For vmadc and vmsbc, an illegal instruction exception is raised if the
       // destination vector register overlaps asource vector register group and LMUL > 1
-      if (instr_name inside [riscv_instr_name_t.VMADC,
-			     riscv_instr_name_t.VMSBC]) {
+      if (VA_BASE inside [va_base_instr.VMADC,
+			  va_base_instr.VMSBC]) {
 	vd != vs2;
 	vd != vs1;
       }
@@ -175,10 +177,10 @@ class riscv_vector_instr: riscv_floating_point_instr
   // The destination vector register group for vslideup cannot overlap the vector register
   // group of the source vector register group or the mask register
   constraint!q{
-    if (instr_name inside [riscv_instr_name_t.VSLIDEUP,
-			   riscv_instr_name_t.VSLIDE1UP,
-			   riscv_instr_name_t.VSLIDEDOWN,
-			   riscv_instr_name_t.VSLIDE1DOWN]) {
+    if (VA_BASE inside [va_base_instr.VSLIDEUP,
+			va_base_instr.VSLIDE1UP,
+			va_base_instr.VSLIDEDOWN,
+			va_base_instr.VSLIDE1DOWN]) {
       vd != vs2;
       vd != vs1;
       (vm == false) -> (vd != 0);
@@ -189,7 +191,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // For any vrgather instruction, the destination vector register group cannot overlap
   // with the source vector register group
   constraint!q{
-    if (instr_name == riscv_instr_name_t.VRGATHER) {
+    if (VA_BASE == va_base_instr.VRGATHER) {
       vd != vs2;
       vd != vs1;
       (vm == false) -> (vd != 0);
@@ -200,7 +202,7 @@ class riscv_vector_instr: riscv_floating_point_instr
   // The destination vector register group cannot overlap the source vector register
   // group or the source vector mask register
   constraint!q{
-    if (instr_name == riscv_instr_name_t.VCOMPRESS) {
+    if (VA_BASE == va_base_instr.VCOMPRESS) {
       vd != vs2;
       vd != vs1;
       (vm == false) -> (vd != 0);
@@ -257,18 +259,18 @@ class riscv_vector_instr: riscv_floating_point_instr
 
   constraint!q{
     // Below instruction is always masked
-    if (instr_name inside [riscv_instr_name_t.VMERGE,
-			   riscv_instr_name_t.VFMERGE,
-			   riscv_instr_name_t.VADC,
-			   riscv_instr_name_t.VSBC]) {
+    if (VA_BASE inside [va_base_instr.VMERGE,
+			va_base_instr.VFMERGE,
+			va_base_instr.VADC,
+			va_base_instr.VSBC]) {
       vm == false;
     }
   } vector_mask_enable_c;
 
   constraint!q{
     // (vm=0) is reserved for below ops
-    if (instr_name inside [riscv_instr_name_t.VMV, riscv_instr_name_t.VFMV,
-			   riscv_instr_name_t.VCOMPRESS, riscv_instr_name_t.VFMV_F_S,
+    if (instr_name inside [riscv_instr_name_t.VMV_VV, riscv_instr_name_t.VMV_VX, riscv_instr_name_t.VMV_VI,
+			   riscv_instr_name_t.VFMV_VF, riscv_instr_name_t.VCOMPRESS_VM, riscv_instr_name_t.VFMV_F_S,
 			   riscv_instr_name_t.VFMV_S_F, riscv_instr_name_t.VMV_X_S,
 			   riscv_instr_name_t.VMV_S_X, riscv_instr_name_t.VMV1R_V,
 			   riscv_instr_name_t.VMV2R_V, riscv_instr_name_t.VMV4R_V,
@@ -285,11 +287,12 @@ class riscv_vector_instr: riscv_floating_point_instr
     }
   } vector_mask_instr_c;
 
-  constraint!q{
-    if (! m_cfg.vector_cfg.vec_fp) {
-      va_variant != va_variant_t.VF;
-    }
-  } disable_floating_point_varaint_c;
+  // This is now dealt with in config object
+  // constraint!q{
+  //   if (! m_cfg.vector_cfg.vec_fp) {
+  //     va_variant != va_variant_t.VF;
+  //   }
+  // } disable_floating_point_varaint_c;
 
   constraint!q{
     // TODO: Check why this is needed?
@@ -351,8 +354,8 @@ class riscv_vector_instr: riscv_floating_point_instr
     string name = instr_name.to!string();
     // 19.2.2. Vector Add with Carry/Subtract with Borrow Reserved under EDIV>1
     if ((cfg.vector_cfg.vtype.vediv > 1) &&
-	(instr_name.inside(riscv_instr_name_t.VADC, riscv_instr_name_t.VSBC,
-			   riscv_instr_name_t.VMADC, riscv_instr_name_t.VMSBC))) {
+	(VA_BASE.inside(va_base_instr.VADC, va_base_instr.VSBC,
+			va_base_instr.VMADC, va_base_instr.VMSBC))) {
       return false;
     }
     // Disable widening/narrowing instruction when LMUL == 8
@@ -364,11 +367,11 @@ class riscv_vector_instr: riscv_floating_point_instr
       return false;
     }
     // TODO: Clean up this list, it's causing gcc compile error now
-    if (instr_name.inside(riscv_instr_name_t.VWMACCSU,
-			  riscv_instr_name_t.VMERGE,
-			  riscv_instr_name_t.VFMERGE,
-			  riscv_instr_name_t.VMADC,
-			  riscv_instr_name_t.VMSBC)) {
+    if (VA_BASE.inside(va_base_instr.VWMACCSU,
+		       va_base_instr.VMERGE,
+		       va_base_instr.VFMERGE,
+		       va_base_instr.VMADC,
+		       va_base_instr.VMSBC)) {
       return false;
     }
     // The standard vector floating-point instructions treat 16-bit, 32-bit, 64-bit,
@@ -437,7 +440,7 @@ class riscv_vector_instr: riscv_floating_point_instr
       }
       break;
     case riscv_instr_format_t.VA_FORMAT:
-      if (instr_name == riscv_instr_name_t.VMV) {
+      if (VA_BASE == va_base_instr.VMV) {
 	switch (va_variant) {
 	case va_variant_t.VV:
 	  asm_str = format("vmv.v.v %s,%s", vd, vs1);
@@ -451,7 +454,7 @@ class riscv_vector_instr: riscv_floating_point_instr
 	default: uvm_info(get_full_name(), format("Unsupported va_variant %0s", va_variant), UVM_LOW);
 	}
       }
-      else if (instr_name == riscv_instr_name_t.VFMV) {
+      else if (VA_BASE == va_base_instr.VFMV) {
 	asm_str = format("vfmv.v.f %s,%s", vd, fs1);
       }
       else if (instr_name == riscv_instr_name_t.VMV_X_S) {
@@ -489,18 +492,18 @@ class riscv_vector_instr: riscv_floating_point_instr
 	    break;
 	  case va_variant_t.VF,
 	    va_variant_t.VFM:
-	    if (instr_name.inside(riscv_instr_name_t.VFMADD,
-				  riscv_instr_name_t.VFNMADD,
-				  riscv_instr_name_t.VFMACC,
-				  riscv_instr_name_t.VFNMACC,
-				  riscv_instr_name_t.VFNMSUB,
-				  riscv_instr_name_t.VFWNMSAC,
-				  riscv_instr_name_t.VFWMACC,
-				  riscv_instr_name_t.VFMSUB,
-				  riscv_instr_name_t.VFMSAC,
-				  riscv_instr_name_t.VFNMSAC,
-				  riscv_instr_name_t.VFWNMACC,
-				  riscv_instr_name_t.VFWMSAC)) {
+	    if (VA_BASE.inside(va_base_instr.VFMADD,
+			       va_base_instr.VFNMADD,
+			       va_base_instr.VFMACC,
+			       va_base_instr.VFNMACC,
+			       va_base_instr.VFNMSUB,
+			       va_base_instr.VFWNMSAC,
+			       va_base_instr.VFWMACC,
+			       va_base_instr.VFMSUB,
+			       va_base_instr.VFMSAC,
+			       va_base_instr.VFNMSAC,
+			       va_base_instr.VFWNMACC,
+			       va_base_instr.VFWMSAC)) {
 	      asm_str = asm_str ~ format("%0s,%0s,%0s", vd, fs1, vs2);
 	    }
 	    else {
@@ -510,14 +513,14 @@ class riscv_vector_instr: riscv_floating_point_instr
 	  case va_variant_t.WX,
 	    va_variant_t.VX,
 	    va_variant_t.VXM:
-	    if (instr_name.inside(riscv_instr_name_t.VMADD,
-				  riscv_instr_name_t.VNMSUB,
-				  riscv_instr_name_t.VMACC,
-				  riscv_instr_name_t.VNMSAC,
-				  riscv_instr_name_t.VWMACCSU,
-				  riscv_instr_name_t.VWMACCU,
-				  riscv_instr_name_t.VWMACCUS,
-				  riscv_instr_name_t.VWMACC)) {
+	    if (VA_BASE.inside(va_base_instr.VMADD,
+			       va_base_instr.VNMSUB,
+			       va_base_instr.VMACC,
+			       va_base_instr.VNMSAC,
+			       va_base_instr.VWMACCSU,
+			       va_base_instr.VWMACCU,
+			       va_base_instr.VWMACCUS,
+			       va_base_instr.VWMACC)) {
 	      asm_str ~= format("%0s,%0s,%0s", vd, rs1, vs2);
 	    }
 	    else {
@@ -636,7 +639,7 @@ class riscv_vector_instr: riscv_floating_point_instr
       }
       break;
     case riscv_instr_format_t.VA_FORMAT:
-      if (instr_name == riscv_instr_name_t.VMV) {
+      if (VA_BASE == va_base_instr.VMV) {
 	switch (va_variant) {
 	case va_variant_t.VV:
 	  asm_buf = sformat!("vmv.v.v %s,%s")(buf, vd, vs1);
@@ -650,7 +653,7 @@ class riscv_vector_instr: riscv_floating_point_instr
 	default: uvm_info(get_full_name(), format("Unsupported va_variant %0s", va_variant), UVM_LOW);
 	}
       }
-      else if (instr_name == riscv_instr_name_t.VFMV) {
+      else if (VA_BASE == va_base_instr.VFMV) {
 	asm_buf = sformat!("vfmv.v.f %s,%s")(buf, vd, fs1);
       }
       else if (instr_name == riscv_instr_name_t.VMV_X_S) {
@@ -688,18 +691,18 @@ class riscv_vector_instr: riscv_floating_point_instr
 	    break;
 	  case va_variant_t.VF,
 	    va_variant_t.VFM:
-	    if (instr_name.inside(riscv_instr_name_t.VFMADD,
-				  riscv_instr_name_t.VFNMADD,
-				  riscv_instr_name_t.VFMACC,
-				  riscv_instr_name_t.VFNMACC,
-				  riscv_instr_name_t.VFNMSUB,
-				  riscv_instr_name_t.VFWNMSAC,
-				  riscv_instr_name_t.VFWMACC,
-				  riscv_instr_name_t.VFMSUB,
-				  riscv_instr_name_t.VFMSAC,
-				  riscv_instr_name_t.VFNMSAC,
-				  riscv_instr_name_t.VFWNMACC,
-				  riscv_instr_name_t.VFWMSAC)) {
+	    if (VA_BASE.inside(va_base_instr.VFMADD,
+			       va_base_instr.VFNMADD,
+			       va_base_instr.VFMACC,
+			       va_base_instr.VFNMACC,
+			       va_base_instr.VFNMSUB,
+			       va_base_instr.VFWNMSAC,
+			       va_base_instr.VFWMACC,
+			       va_base_instr.VFMSUB,
+			       va_base_instr.VFMSAC,
+			       va_base_instr.VFNMSAC,
+			       va_base_instr.VFWNMACC,
+			       va_base_instr.VFWMSAC)) {
 	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, fs1, vs2);
 	    }
 	    else {
@@ -709,14 +712,14 @@ class riscv_vector_instr: riscv_floating_point_instr
 	  case va_variant_t.WX,
 	    va_variant_t.VX,
 	    va_variant_t.VXM:
-	    if (instr_name.inside(riscv_instr_name_t.VMADD,
-				  riscv_instr_name_t.VNMSUB,
-				  riscv_instr_name_t.VMACC,
-				  riscv_instr_name_t.VNMSAC,
-				  riscv_instr_name_t.VWMACCSU,
-				  riscv_instr_name_t.VWMACCU,
-				  riscv_instr_name_t.VWMACCUS,
-				  riscv_instr_name_t.VWMACC)) {
+	    if (VA_BASE.inside(va_base_instr.VMADD,
+			       va_base_instr.VNMSUB,
+			       va_base_instr.VMACC,
+			       va_base_instr.VNMSAC,
+			       va_base_instr.VWMACCSU,
+			       va_base_instr.VWMACCU,
+			       va_base_instr.VWMACCUS,
+			       va_base_instr.VWMACC)) {
 	      asm_buf = sformat!("%0s%0s,%0s,%0s")(buf, instr_name_str, vd, rs1, vs2);
 	    }
 	    else {
@@ -874,12 +877,12 @@ class riscv_vector_instr: riscv_floating_point_instr
       return "";
     }
     else {
-      if (instr_name.inside(riscv_instr_name_t.VMERGE,
-			    riscv_instr_name_t.VFMERGE,
-			    riscv_instr_name_t.VADC,
-			    riscv_instr_name_t.VSBC,
-			    riscv_instr_name_t.VMADC,
-			    riscv_instr_name_t.VMSBC)) {
+      if (VA_BASE.inside(va_base_instr.VMERGE,
+			 va_base_instr.VFMERGE,
+			 va_base_instr.VADC,
+			 va_base_instr.VSBC,
+			 va_base_instr.VMADC,
+			 va_base_instr.VMSBC)) {
         return ",v0";
       }
       else {

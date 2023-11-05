@@ -449,109 +449,330 @@ enum riscv_instr_name_t: ushort {
   // Vector instructions
   VSETVL,
   VSETVLI,
-  VADD,
-  VSUB,
-  VRSUB,
-  VWADDU,
-  VWSUBU,
-  VWADD,
-  VWSUB,
-  VADC,
-  VMADC,
-  VSBC,
-  VMSBC,
-  VAND,
-  VOR,
-  VXOR,
-  VSLL,
-  VSRL,
-  VSRA,
-  VNSRL,
-  VNSRA,
-  VMSEQ,
-  VMSNE,
-  VMSLTU,
-  VMSLT,
-  VMSLEU,
-  VMSLE,
-  VMSGTU,
-  VMSGT,
-  VMINU,
-  VMIN,
-  VMAXU,
-  VMAX,
-  VMUL,
-  VMULH,
-  VMULHU,
-  VMULHSU,
-  VDIVU,
-  VDIV,
-  VREMU,
-  VREM,
-  VWMUL,
-  VWMULU,
-  VWMULSU,
-  VMACC,
-  VNMSAC,
-  VMADD,
-  VNMSUB,
-  VWMACCU,
-  VWMACC,
-  VWMACCSU,
-  VWMACCUS,
+  VADD_VV,
+  VADD_VX,
+  VADD_VI,
+  // // // VADD,  #  #  #
+  VSUB_VV,
+  VSUB_VX,
+  // // VSUB,  #  #
+  VRSUB_VX,
+  VRSUB_VI,
+  // // VRSUB,  #  #
+  VWADDU_VV,
+  VWADDU_VX,
+  VWADDU_WV,
+  VWADDU_WX,
+  // // // // VWADDU,  #  #  #  #
+  VWSUBU_VV,
+  VWSUBU_VX,
+  VWSUBU_WV,
+  VWSUBU_WX,
+  // // // // VWSUBU,  #  #  #  #
+  VWADD_VV,
+  VWADD_VX,
+  VWADD_WV,
+  VWADD_WX,
+  // // // // VWADD,  #  #  #  #
+  VWSUB_VV,
+  VWSUB_VX,
+  VWSUB_WV,
+  VWSUB_WX,
+  // // // // VWSUB,  #  #  #  #
+  VADC_VVM,
+  VADC_VXM,
+  VADC_VIM,
+  // // // VADC,  #  #  #
+  VMADC_VVM,
+  VMADC_VXM,
+  VMADC_VIM,
+  VMADC_VV,
+  VMADC_VX,
+  VMADC_VI,
+  // // // // // // VMADC,  #  #  #  #  #  #
+  VSBC_VVM,
+  VSBC_VXM,
+  // // VSBC,  #  #
+  VMSBC_VVM,
+  VMSBC_VXM,
+  VMSBC_VV,
+  VMSBC_VX,
+  // // // // VMSBC,  #  #  #  #
+  VAND_VV,
+  VAND_VX,
+  VAND_VI,
+  // // // VAND,  #  #  #
+  VOR_VV,
+  VOR_VX,
+  VOR_VI,
+  // // // VOR,  #  #  #
+  VXOR_VV,
+  VXOR_VX,
+  VXOR_VI,
+  // // // VXOR,  #  #  #
+  VSLL_VV,
+  VSLL_VX,
+  VSLL_VI,
+  // // // VSLL,  #  #  #
+  VSRL_VV,
+  VSRL_VX,
+  VSRL_VI,
+  // // // VSRL,  #  #  #
+  VSRA_VV,
+  VSRA_VX,
+  VSRA_VI,
+  // // // VSRA,  #  #  #
+  VNSRL_WV,
+  VNSRL_WX,
+  VNSRL_WI,
+  // // // VNSRL,  #  #  #
+  VNSRA_WV,
+  VNSRA_WX,
+  VNSRA_WI,
+  // // // VNSRA,  #  #  #
+  VMSEQ_VV,
+  VMSEQ_VX,
+  VMSEQ_VI,
+  // // // VMSEQ,  #  #  #
+  VMSNE_VV,
+  VMSNE_VX,
+  VMSNE_VI,
+  // // // VMSNE,  #  #  #
+  VMSLTU_VV,
+  VMSLTU_VX,
+  // // VMSLTU,  #  #
+  VMSLT_VV,
+  VMSLT_VX,
+  // // VMSLT,  #  #
+  VMSLEU_VV,
+  VMSLEU_VX,
+  VMSLEU_VI,
+  // // // VMSLEU,  #  #  #
+  VMSLE_VV,
+  VMSLE_VX,
+  VMSLE_VI,
+  // // // VMSLE,  #  #  #
+  VMSGTU_VX,
+  VMSGTU_VI,
+  // // VMSGTU,  #  #
+  VMSGT_VX,
+  VMSGT_VI,
+  // // VMSGT,  #  #
+  VMINU_VV,
+  VMINU_VX,
+  // // VMINU,  #  #
+  VMIN_VV,
+  VMIN_VX,
+  // // VMIN,  #  #
+  VMAXU_VV,
+  VMAXU_VX,
+  // // VMAXU,  #  #
+  VMAX_VV,
+  VMAX_VX,
+  // // VMAX,  #  #
+  VMUL_VV,
+  VMUL_VX,
+  // // VMUL,  #  #
+  VMULH_VV,
+  VMULH_VX,
+  // // VMULH,  #  #
+  VMULHU_VV,
+  VMULHU_VX,
+  // // VMULHU,  #  #
+  VMULHSU_VV,
+  VMULHSU_VX,
+  // // VMULHSU,  #  #
+  VDIVU_VV,
+  VDIVU_VX,
+  // // VDIVU,  #  #
+  VDIV_VV,
+  VDIV_VX,
+  // // VDIV,  #  #
+  VREMU_VV,
+  VREMU_VX,
+  // // VREMU,  #  #
+  VREM_VV,
+  VREM_VX,
+  // // VREM,  #  #
+  VWMUL_VV,
+  VWMUL_VX,
+  // // VWMUL,  #  #
+  VWMULU_VV,
+  VWMULU_VX,
+  // // VWMULU,  #  #
+  VWMULSU_VV,
+  VWMULSU_VX,
+  // // VWMULSU,  #  #
+  VMACC_VV,
+  VMACC_VX,
+  // // VMACC,  #  #
+  VNMSAC_VV,
+  VNMSAC_VX,
+  // // VNMSAC,  #  #
+  VMADD_VV,
+  VMADD_VX,
+  // // VMADD,  #  #
+  VNMSUB_VV,
+  VNMSUB_VX,
+  // // VNMSUB,  #  #
+  VWMACCU_VV,
+  VWMACCU_VX,
+  // // VWMACCU,  #  #
+  VWMACC_VV,
+  VWMACC_VX,
+  // // VWMACC,  #  #
+  VWMACCSU_VV,
+  VWMACCSU_VX,
+  // // VWMACCSU,  #  #
+  VWMACCUS_VX,
+  // VWMACCUS,  #
   //VQMACCU,
   //VQMACC,
   //VQMACCSU,
   //VQMACCUS,
-  VMERGE,
-  VMV,
-  VSADDU,
-  VSADD,
-  VSSUBU,
-  VSSUB,
-  VAADDU,
-  VAADD,
-  VASUBU,
-  VASUB,
-  VSSRL,
-  VSSRA,
-  VNCLIPU,
-  VNCLIP,
+  VMERGE_VVM,
+  VMERGE_VXM,
+  VMERGE_VIM,
+  // // // VMERGE,  #  #  #
+  VMV_VV,
+  VMV_VX,
+  VMV_VI,
+  // // // VMV,  #  #  #
+  VSADDU_VV,
+  VSADDU_VX,
+  VSADDU_VI,
+  // // // VSADDU,  #  #  #
+  VSADD_VV,
+  VSADD_VX,
+  VSADD_VI,
+  // // // VSADD,  #  #  #
+  VSSUBU_VV,
+  VSSUBU_VX,
+  // // VSSUBU,  #  #
+  VSSUB_VV,
+  VSSUB_VX,
+  // // VSSUB,  #  #
+  VAADDU_VV,
+  VAADDU_VX,
+  // // VAADDU,  #  #
+  VAADD_VV,
+  VAADD_VX,
+  // // VAADD,  #  #
+  VASUBU_VV,
+  VASUBU_VX,
+  // // VASUBU,  #  #
+  VASUB_VV,
+  VASUB_VX,
+  // // VASUB,  #  #
+  VSSRL_VV,
+  VSSRL_VX,
+  VSSRL_VI,
+  // // // VSSRL,  #  #  #
+  VSSRA_VV,
+  VSSRA_VX,
+  VSSRA_VI,
+  // // // VSSRA,  #  #  #
+  VNCLIPU_WV,
+  VNCLIPU_WX,
+  VNCLIPU_WI,
+  // // // VNCLIPU,  #  #  #
+  VNCLIP_WV,
+  VNCLIP_WX,
+  VNCLIP_WI,
+  // // // VNCLIP,  #  #  #
   // 14. Vector Floating-Point Instructions
-  VFADD,
-  VFSUB,
-  VFRSUB,
-  VFMUL,
-  VFDIV,
-  VFRDIV,
-  VFWMUL,
-  VFMACC,
-  VFNMACC,
-  VFMSAC,
-  VFNMSAC,
-  VFMADD,
-  VFNMADD,
-  VFMSUB,
-  VFNMSUB,
-  VFWMACC,
-  VFWNMACC,
-  VFWMSAC,
-  VFWNMSAC,
+  VFADD_VV,
+  VFADD_VF,
+  // // VFADD,  #  #
+  VFSUB_VV,
+  VFSUB_VF,
+  // // VFSUB,  #  #
+  VFRSUB_VF,
+  // VFRSUB,  #
+  VFMUL_VV,
+  VFMUL_VF,
+  // // VFMUL,  #  #
+  VFDIV_VV,
+  VFDIV_VF,
+  // // VFDIV,  #  #
+  VFRDIV_VF,
+  // VFRDIV,  #
+  VFWMUL_VV,
+  VFWMUL_VF,
+  // // VFWMUL,  #  #
+  VFMACC_VV,
+  VFMACC_VF,
+  // // VFMACC,  #  #
+  VFNMACC_VV,
+  VFNMACC_VF,
+  // // VFNMACC,  #  #
+  VFMSAC_VV,
+  VFMSAC_VF,
+  // // VFMSAC,  #  #
+  VFNMSAC_VV,
+  VFNMSAC_VF,
+  // // VFNMSAC,  #  #
+  VFMADD_VV,
+  VFMADD_VF,
+  // // VFMADD,  #  #
+  VFNMADD_VV,
+  VFNMADD_VF,
+  // // VFNMADD,  #  #
+  VFMSUB_VV,
+  VFMSUB_VF,
+  // // VFMSUB,  #  #
+  VFNMSUB_VV,
+  VFNMSUB_VF,
+  // // VFNMSUB,  #  #
+  VFWMACC_VV,
+  VFWMACC_VF,
+  // // VFWMACC,  #  #
+  VFWNMACC_VV,
+  VFWNMACC_VF,
+  // // VFWNMACC,  #  #
+  VFWMSAC_VV,
+  VFWMSAC_VF,
+  // // VFWMSAC,  #  #
+  VFWNMSAC_VV,
+  VFWNMSAC_VF,
+  // // VFWNMSAC,  #  #
   VFSQRT_V,
-  VFMIN,
-  VFMAX,
-  VFSGNJ,
-  VFSGNJN,
-  VFSGNJX,
-  VMFEQ,
-  VMFNE,
-  VMFLT,
-  VMFLE,
-  VMFGT,
-  VMFGE,
+  VFMIN_VV,
+  VFMIN_VF,
+  // // VFMIN,  #  #
+  VFMAX_VV,
+  VFMAX_VF,
+  // // VFMAX,  #  #
+  VFSGNJ_VV,
+  VFSGNJ_VF,
+  // // VFSGNJ,  #  #
+  VFSGNJN_VV,
+  VFSGNJN_VF,
+  // // VFSGNJN,  #  #
+  VFSGNJX_VV,
+  VFSGNJX_VF,
+  // // VFSGNJX,  #  #
+  VMFEQ_VV,
+  VMFEQ_VF,
+  // // VMFEQ,  #  #
+  VMFNE_VV,
+  VMFNE_VF,
+  // // VMFNE,  #  #
+  VMFLT_VV,
+  VMFLT_VF,
+  // // VMFLT,  #  #
+  VMFLE_VV,
+  VMFLE_VF,
+  // // VMFLE,  #  #
+  VMFGT_VF,
+  // VMFGT,  #
+  VMFGE_VF,
+  // VMFGE,  #
   VFCLASS_V,
-  VFMERGE,
-  VFMV,
+  VFMERGE_VFM,
+  // VFMERGE,  #
+  VFMV_VF,
+  // VFMV,  #
   VFCVT_XU_F_V,
   VFCVT_X_F_V,
   VFCVT_F_XU_V,
@@ -604,12 +825,22 @@ enum riscv_instr_name_t: ushort {
   VMV_S_X,
   VFMV_F_S,
   VFMV_S_F,
-  VSLIDEUP,
-  VSLIDEDOWN,
-  VSLIDE1UP,
-  VSLIDE1DOWN,
-  VRGATHER,
-  VCOMPRESS,
+  VSLIDEUP_VI,
+  VSLIDEUP_VX,
+  // // VSLIDEUP,  #  #
+  VSLIDEDOWN_VI,
+  VSLIDEDOWN_VX,
+  // // VSLIDEDOWN,  #  #
+  VSLIDE1UP_VX,
+  // VSLIDE1UP,  #
+  VSLIDE1DOWN_VX,
+  // VSLIDE1DOWN,  #
+  VRGATHER_VV,
+  VRGATHER_VX,
+  VRGATHER_VI,
+  // // // VRGATHER,  #  #  #
+  VCOMPRESS_VM,
+  // VCOMPRESS,  #
   VMV1R_V,
   VMV2R_V,
   VMV4R_V,
@@ -655,6 +886,352 @@ enum riscv_instr_name_t: ushort {
   // You can add other instructions here
   INVALID_INSTR
 }
+
+
+enum va_base_instr: byte {
+  VADD,
+  VSUB,
+  VRSUB,
+  VWADDU,
+  VWSUBU,
+  VWADD,
+  VWSUB,
+  VADC,
+  VMADC,
+  VSBC,
+  VMSBC,
+  VAND,
+  VOR,
+  VXOR,
+  VSLL,
+  VSRL,
+  VSRA,
+  VNSRL,
+  VNSRA,
+  VMSEQ,
+  VMSNE,
+  VMSLTU,
+  VMSLT,
+  VMSLEU,
+  VMSLE,
+  VMSGTU,
+  VMSGT,
+  VMINU,
+  VMIN,
+  VMAXU,
+  VMAX,
+  VMUL,
+  VMULH,
+  VMULHU,
+  VMULHSU,
+  VDIVU,
+  VDIV,
+  VREMU,
+  VREM,
+  VWMUL,
+  VWMULU,
+  VWMULSU,
+  VMACC,
+  VNMSAC,
+  VMADD,
+  VNMSUB,
+  VWMACCU,
+  VWMACC,
+  VWMACCSU,
+  VWMACCUS,
+  VMERGE,
+  VMV,
+  VSADDU,
+  VSADD,
+  VSSUBU,
+  VSSUB,
+  VAADDU,
+  VAADD,
+  VASUBU,
+  VASUB,
+  VSSRL,
+  VSSRA,
+  VNCLIPU,
+  VNCLIP,
+  VFADD,
+  VFSUB,
+  VFRSUB,
+  VFMUL,
+  VFDIV,
+  VFRDIV,
+  VFWMUL,
+  VFMACC,
+  VFNMACC,
+  VFMSAC,
+  VFNMSAC,
+  VFMADD,
+  VFNMADD,
+  VFMSUB,
+  VFNMSUB,
+  VFWMACC,
+  VFWNMACC,
+  VFWMSAC,
+  VFWNMSAC,
+  VFMIN,
+  VFMAX,
+  VFSGNJ,
+  VFSGNJN,
+  VFSGNJX,
+  VMFEQ,
+  VMFNE,
+  VMFLT,
+  VMFLE,
+  VMFGT,
+  VMFGE,
+  VFMERGE,
+  VFMV,
+  VSLIDEUP,
+  VSLIDEDOWN,
+  VSLIDE1UP,
+  VSLIDE1DOWN,
+  VRGATHER,
+  VCOMPRESS,
+  // Not every Vector Instruction has a base
+  VA_NO_BASE
+}
+
+va_base_instr va_get_base(riscv_instr_name_t INSTR) {
+  switch (INSTR) {
+  case riscv_instr_name_t.VADD_VV: return va_base_instr.VADD;
+  case riscv_instr_name_t.VADD_VX: return va_base_instr.VADD;
+  case riscv_instr_name_t.VADD_VI: return va_base_instr.VADD;
+  case riscv_instr_name_t.VSUB_VV: return va_base_instr.VSUB;
+  case riscv_instr_name_t.VSUB_VX: return va_base_instr.VSUB;
+  case riscv_instr_name_t.VRSUB_VX: return va_base_instr.VRSUB;
+  case riscv_instr_name_t.VRSUB_VI: return va_base_instr.VRSUB;
+  case riscv_instr_name_t.VWADDU_VV: return va_base_instr.VWADDU;
+  case riscv_instr_name_t.VWADDU_VX: return va_base_instr.VWADDU;
+  case riscv_instr_name_t.VWADDU_WV: return va_base_instr.VWADDU;
+  case riscv_instr_name_t.VWADDU_WX: return va_base_instr.VWADDU;
+  case riscv_instr_name_t.VWSUBU_VV: return va_base_instr.VWSUBU;
+  case riscv_instr_name_t.VWSUBU_VX: return va_base_instr.VWSUBU;
+  case riscv_instr_name_t.VWSUBU_WV: return va_base_instr.VWSUBU;
+  case riscv_instr_name_t.VWSUBU_WX: return va_base_instr.VWSUBU;
+  case riscv_instr_name_t.VWADD_VV: return va_base_instr.VWADD;
+  case riscv_instr_name_t.VWADD_VX: return va_base_instr.VWADD;
+  case riscv_instr_name_t.VWADD_WV: return va_base_instr.VWADD;
+  case riscv_instr_name_t.VWADD_WX: return va_base_instr.VWADD;
+  case riscv_instr_name_t.VWSUB_VV: return va_base_instr.VWSUB;
+  case riscv_instr_name_t.VWSUB_VX: return va_base_instr.VWSUB;
+  case riscv_instr_name_t.VWSUB_WV: return va_base_instr.VWSUB;
+  case riscv_instr_name_t.VWSUB_WX: return va_base_instr.VWSUB;
+  case riscv_instr_name_t.VADC_VVM: return va_base_instr.VADC;
+  case riscv_instr_name_t.VADC_VXM: return va_base_instr.VADC;
+  case riscv_instr_name_t.VADC_VIM: return va_base_instr.VADC;
+  case riscv_instr_name_t.VMADC_VVM: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VMADC_VXM: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VMADC_VIM: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VMADC_VV: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VMADC_VX: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VMADC_VI: return va_base_instr.VMADC;
+  case riscv_instr_name_t.VSBC_VVM: return va_base_instr.VSBC;
+  case riscv_instr_name_t.VSBC_VXM: return va_base_instr.VSBC;
+  case riscv_instr_name_t.VMSBC_VVM: return va_base_instr.VMSBC;
+  case riscv_instr_name_t.VMSBC_VXM: return va_base_instr.VMSBC;
+  case riscv_instr_name_t.VMSBC_VV: return va_base_instr.VMSBC;
+  case riscv_instr_name_t.VMSBC_VX: return va_base_instr.VMSBC;
+  case riscv_instr_name_t.VAND_VV: return va_base_instr.VAND;
+  case riscv_instr_name_t.VAND_VX: return va_base_instr.VAND;
+  case riscv_instr_name_t.VAND_VI: return va_base_instr.VAND;
+  case riscv_instr_name_t.VOR_VV: return va_base_instr.VOR;
+  case riscv_instr_name_t.VOR_VX: return va_base_instr.VOR;
+  case riscv_instr_name_t.VOR_VI: return va_base_instr.VOR;
+  case riscv_instr_name_t.VXOR_VV: return va_base_instr.VXOR;
+  case riscv_instr_name_t.VXOR_VX: return va_base_instr.VXOR;
+  case riscv_instr_name_t.VXOR_VI: return va_base_instr.VXOR;
+  case riscv_instr_name_t.VSLL_VV: return va_base_instr.VSLL;
+  case riscv_instr_name_t.VSLL_VX: return va_base_instr.VSLL;
+  case riscv_instr_name_t.VSLL_VI: return va_base_instr.VSLL;
+  case riscv_instr_name_t.VSRL_VV: return va_base_instr.VSRL;
+  case riscv_instr_name_t.VSRL_VX: return va_base_instr.VSRL;
+  case riscv_instr_name_t.VSRL_VI: return va_base_instr.VSRL;
+  case riscv_instr_name_t.VSRA_VV: return va_base_instr.VSRA;
+  case riscv_instr_name_t.VSRA_VX: return va_base_instr.VSRA;
+  case riscv_instr_name_t.VSRA_VI: return va_base_instr.VSRA;
+  case riscv_instr_name_t.VNSRL_WV: return va_base_instr.VNSRL;
+  case riscv_instr_name_t.VNSRL_WX: return va_base_instr.VNSRL;
+  case riscv_instr_name_t.VNSRL_WI: return va_base_instr.VNSRL;
+  case riscv_instr_name_t.VNSRA_WV: return va_base_instr.VNSRA;
+  case riscv_instr_name_t.VNSRA_WX: return va_base_instr.VNSRA;
+  case riscv_instr_name_t.VNSRA_WI: return va_base_instr.VNSRA;
+  case riscv_instr_name_t.VMSEQ_VV: return va_base_instr.VMSEQ;
+  case riscv_instr_name_t.VMSEQ_VX: return va_base_instr.VMSEQ;
+  case riscv_instr_name_t.VMSEQ_VI: return va_base_instr.VMSEQ;
+  case riscv_instr_name_t.VMSNE_VV: return va_base_instr.VMSNE;
+  case riscv_instr_name_t.VMSNE_VX: return va_base_instr.VMSNE;
+  case riscv_instr_name_t.VMSNE_VI: return va_base_instr.VMSNE;
+  case riscv_instr_name_t.VMSLTU_VV: return va_base_instr.VMSLTU;
+  case riscv_instr_name_t.VMSLTU_VX: return va_base_instr.VMSLTU;
+  case riscv_instr_name_t.VMSLT_VV: return va_base_instr.VMSLT;
+  case riscv_instr_name_t.VMSLT_VX: return va_base_instr.VMSLT;
+  case riscv_instr_name_t.VMSLEU_VV: return va_base_instr.VMSLEU;
+  case riscv_instr_name_t.VMSLEU_VX: return va_base_instr.VMSLEU;
+  case riscv_instr_name_t.VMSLEU_VI: return va_base_instr.VMSLEU;
+  case riscv_instr_name_t.VMSLE_VV: return va_base_instr.VMSLE;
+  case riscv_instr_name_t.VMSLE_VX: return va_base_instr.VMSLE;
+  case riscv_instr_name_t.VMSLE_VI: return va_base_instr.VMSLE;
+  case riscv_instr_name_t.VMSGTU_VX: return va_base_instr.VMSGTU;
+  case riscv_instr_name_t.VMSGTU_VI: return va_base_instr.VMSGTU;
+  case riscv_instr_name_t.VMSGT_VX: return va_base_instr.VMSGT;
+  case riscv_instr_name_t.VMSGT_VI: return va_base_instr.VMSGT;
+  case riscv_instr_name_t.VMINU_VV: return va_base_instr.VMINU;
+  case riscv_instr_name_t.VMINU_VX: return va_base_instr.VMINU;
+  case riscv_instr_name_t.VMIN_VV: return va_base_instr.VMIN;
+  case riscv_instr_name_t.VMIN_VX: return va_base_instr.VMIN;
+  case riscv_instr_name_t.VMAXU_VV: return va_base_instr.VMAXU;
+  case riscv_instr_name_t.VMAXU_VX: return va_base_instr.VMAXU;
+  case riscv_instr_name_t.VMAX_VV: return va_base_instr.VMAX;
+  case riscv_instr_name_t.VMAX_VX: return va_base_instr.VMAX;
+  case riscv_instr_name_t.VMUL_VV: return va_base_instr.VMUL;
+  case riscv_instr_name_t.VMUL_VX: return va_base_instr.VMUL;
+  case riscv_instr_name_t.VMULH_VV: return va_base_instr.VMULH;
+  case riscv_instr_name_t.VMULH_VX: return va_base_instr.VMULH;
+  case riscv_instr_name_t.VMULHU_VV: return va_base_instr.VMULHU;
+  case riscv_instr_name_t.VMULHU_VX: return va_base_instr.VMULHU;
+  case riscv_instr_name_t.VMULHSU_VV: return va_base_instr.VMULHSU;
+  case riscv_instr_name_t.VMULHSU_VX: return va_base_instr.VMULHSU;
+  case riscv_instr_name_t.VDIVU_VV: return va_base_instr.VDIVU;
+  case riscv_instr_name_t.VDIVU_VX: return va_base_instr.VDIVU;
+  case riscv_instr_name_t.VDIV_VV: return va_base_instr.VDIV;
+  case riscv_instr_name_t.VDIV_VX: return va_base_instr.VDIV;
+  case riscv_instr_name_t.VREMU_VV: return va_base_instr.VREMU;
+  case riscv_instr_name_t.VREMU_VX: return va_base_instr.VREMU;
+  case riscv_instr_name_t.VREM_VV: return va_base_instr.VREM;
+  case riscv_instr_name_t.VREM_VX: return va_base_instr.VREM;
+  case riscv_instr_name_t.VWMUL_VV: return va_base_instr.VWMUL;
+  case riscv_instr_name_t.VWMUL_VX: return va_base_instr.VWMUL;
+  case riscv_instr_name_t.VWMULU_VV: return va_base_instr.VWMULU;
+  case riscv_instr_name_t.VWMULU_VX: return va_base_instr.VWMULU;
+  case riscv_instr_name_t.VWMULSU_VV: return va_base_instr.VWMULSU;
+  case riscv_instr_name_t.VWMULSU_VX: return va_base_instr.VWMULSU;
+  case riscv_instr_name_t.VMACC_VV: return va_base_instr.VMACC;
+  case riscv_instr_name_t.VMACC_VX: return va_base_instr.VMACC;
+  case riscv_instr_name_t.VNMSAC_VV: return va_base_instr.VNMSAC;
+  case riscv_instr_name_t.VNMSAC_VX: return va_base_instr.VNMSAC;
+  case riscv_instr_name_t.VMADD_VV: return va_base_instr.VMADD;
+  case riscv_instr_name_t.VMADD_VX: return va_base_instr.VMADD;
+  case riscv_instr_name_t.VNMSUB_VV: return va_base_instr.VNMSUB;
+  case riscv_instr_name_t.VNMSUB_VX: return va_base_instr.VNMSUB;
+  case riscv_instr_name_t.VWMACCU_VV: return va_base_instr.VWMACCU;
+  case riscv_instr_name_t.VWMACCU_VX: return va_base_instr.VWMACCU;
+  case riscv_instr_name_t.VWMACC_VV: return va_base_instr.VWMACC;
+  case riscv_instr_name_t.VWMACC_VX: return va_base_instr.VWMACC;
+  case riscv_instr_name_t.VWMACCSU_VV: return va_base_instr.VWMACCSU;
+  case riscv_instr_name_t.VWMACCSU_VX: return va_base_instr.VWMACCSU;
+  case riscv_instr_name_t.VWMACCUS_VX: return va_base_instr.VWMACCUS;
+  case riscv_instr_name_t.VMERGE_VVM: return va_base_instr.VMERGE;
+  case riscv_instr_name_t.VMERGE_VXM: return va_base_instr.VMERGE;
+  case riscv_instr_name_t.VMERGE_VIM: return va_base_instr.VMERGE;
+  case riscv_instr_name_t.VMV_VV: return va_base_instr.VMV;
+  case riscv_instr_name_t.VMV_VX: return va_base_instr.VMV;
+  case riscv_instr_name_t.VMV_VI: return va_base_instr.VMV;
+  case riscv_instr_name_t.VSADDU_VV: return va_base_instr.VSADDU;
+  case riscv_instr_name_t.VSADDU_VX: return va_base_instr.VSADDU;
+  case riscv_instr_name_t.VSADDU_VI: return va_base_instr.VSADDU;
+  case riscv_instr_name_t.VSADD_VV: return va_base_instr.VSADD;
+  case riscv_instr_name_t.VSADD_VX: return va_base_instr.VSADD;
+  case riscv_instr_name_t.VSADD_VI: return va_base_instr.VSADD;
+  case riscv_instr_name_t.VSSUBU_VV: return va_base_instr.VSSUBU;
+  case riscv_instr_name_t.VSSUBU_VX: return va_base_instr.VSSUBU;
+  case riscv_instr_name_t.VSSUB_VV: return va_base_instr.VSSUB;
+  case riscv_instr_name_t.VSSUB_VX: return va_base_instr.VSSUB;
+  case riscv_instr_name_t.VAADDU_VV: return va_base_instr.VAADDU;
+  case riscv_instr_name_t.VAADDU_VX: return va_base_instr.VAADDU;
+  case riscv_instr_name_t.VAADD_VV: return va_base_instr.VAADD;
+  case riscv_instr_name_t.VAADD_VX: return va_base_instr.VAADD;
+  case riscv_instr_name_t.VASUBU_VV: return va_base_instr.VASUBU;
+  case riscv_instr_name_t.VASUBU_VX: return va_base_instr.VASUBU;
+  case riscv_instr_name_t.VASUB_VV: return va_base_instr.VASUB;
+  case riscv_instr_name_t.VASUB_VX: return va_base_instr.VASUB;
+  case riscv_instr_name_t.VSSRL_VV: return va_base_instr.VSSRL;
+  case riscv_instr_name_t.VSSRL_VX: return va_base_instr.VSSRL;
+  case riscv_instr_name_t.VSSRL_VI: return va_base_instr.VSSRL;
+  case riscv_instr_name_t.VSSRA_VV: return va_base_instr.VSSRA;
+  case riscv_instr_name_t.VSSRA_VX: return va_base_instr.VSSRA;
+  case riscv_instr_name_t.VSSRA_VI: return va_base_instr.VSSRA;
+  case riscv_instr_name_t.VNCLIPU_WV: return va_base_instr.VNCLIPU;
+  case riscv_instr_name_t.VNCLIPU_WX: return va_base_instr.VNCLIPU;
+  case riscv_instr_name_t.VNCLIPU_WI: return va_base_instr.VNCLIPU;
+  case riscv_instr_name_t.VNCLIP_WV: return va_base_instr.VNCLIP;
+  case riscv_instr_name_t.VNCLIP_WX: return va_base_instr.VNCLIP;
+  case riscv_instr_name_t.VNCLIP_WI: return va_base_instr.VNCLIP;
+  case riscv_instr_name_t.VFADD_VV: return va_base_instr.VFADD;
+  case riscv_instr_name_t.VFADD_VF: return va_base_instr.VFADD;
+  case riscv_instr_name_t.VFSUB_VV: return va_base_instr.VFSUB;
+  case riscv_instr_name_t.VFSUB_VF: return va_base_instr.VFSUB;
+  case riscv_instr_name_t.VFRSUB_VF: return va_base_instr.VFRSUB;
+  case riscv_instr_name_t.VFMUL_VV: return va_base_instr.VFMUL;
+  case riscv_instr_name_t.VFMUL_VF: return va_base_instr.VFMUL;
+  case riscv_instr_name_t.VFDIV_VV: return va_base_instr.VFDIV;
+  case riscv_instr_name_t.VFDIV_VF: return va_base_instr.VFDIV;
+  case riscv_instr_name_t.VFRDIV_VF: return va_base_instr.VFRDIV;
+  case riscv_instr_name_t.VFWMUL_VV: return va_base_instr.VFWMUL;
+  case riscv_instr_name_t.VFWMUL_VF: return va_base_instr.VFWMUL;
+  case riscv_instr_name_t.VFMACC_VV: return va_base_instr.VFMACC;
+  case riscv_instr_name_t.VFMACC_VF: return va_base_instr.VFMACC;
+  case riscv_instr_name_t.VFNMACC_VV: return va_base_instr.VFNMACC;
+  case riscv_instr_name_t.VFNMACC_VF: return va_base_instr.VFNMACC;
+  case riscv_instr_name_t.VFMSAC_VV: return va_base_instr.VFMSAC;
+  case riscv_instr_name_t.VFMSAC_VF: return va_base_instr.VFMSAC;
+  case riscv_instr_name_t.VFNMSAC_VV: return va_base_instr.VFNMSAC;
+  case riscv_instr_name_t.VFNMSAC_VF: return va_base_instr.VFNMSAC;
+  case riscv_instr_name_t.VFMADD_VV: return va_base_instr.VFMADD;
+  case riscv_instr_name_t.VFMADD_VF: return va_base_instr.VFMADD;
+  case riscv_instr_name_t.VFNMADD_VV: return va_base_instr.VFNMADD;
+  case riscv_instr_name_t.VFNMADD_VF: return va_base_instr.VFNMADD;
+  case riscv_instr_name_t.VFMSUB_VV: return va_base_instr.VFMSUB;
+  case riscv_instr_name_t.VFMSUB_VF: return va_base_instr.VFMSUB;
+  case riscv_instr_name_t.VFNMSUB_VV: return va_base_instr.VFNMSUB;
+  case riscv_instr_name_t.VFNMSUB_VF: return va_base_instr.VFNMSUB;
+  case riscv_instr_name_t.VFWMACC_VV: return va_base_instr.VFWMACC;
+  case riscv_instr_name_t.VFWMACC_VF: return va_base_instr.VFWMACC;
+  case riscv_instr_name_t.VFWNMACC_VV: return va_base_instr.VFWNMACC;
+  case riscv_instr_name_t.VFWNMACC_VF: return va_base_instr.VFWNMACC;
+  case riscv_instr_name_t.VFWMSAC_VV: return va_base_instr.VFWMSAC;
+  case riscv_instr_name_t.VFWMSAC_VF: return va_base_instr.VFWMSAC;
+  case riscv_instr_name_t.VFWNMSAC_VV: return va_base_instr.VFWNMSAC;
+  case riscv_instr_name_t.VFWNMSAC_VF: return va_base_instr.VFWNMSAC;
+  case riscv_instr_name_t.VFMIN_VV: return va_base_instr.VFMIN;
+  case riscv_instr_name_t.VFMIN_VF: return va_base_instr.VFMIN;
+  case riscv_instr_name_t.VFMAX_VV: return va_base_instr.VFMAX;
+  case riscv_instr_name_t.VFMAX_VF: return va_base_instr.VFMAX;
+  case riscv_instr_name_t.VFSGNJ_VV: return va_base_instr.VFSGNJ;
+  case riscv_instr_name_t.VFSGNJ_VF: return va_base_instr.VFSGNJ;
+  case riscv_instr_name_t.VFSGNJN_VV: return va_base_instr.VFSGNJN;
+  case riscv_instr_name_t.VFSGNJN_VF: return va_base_instr.VFSGNJN;
+  case riscv_instr_name_t.VFSGNJX_VV: return va_base_instr.VFSGNJX;
+  case riscv_instr_name_t.VFSGNJX_VF: return va_base_instr.VFSGNJX;
+  case riscv_instr_name_t.VMFEQ_VV: return va_base_instr.VMFEQ;
+  case riscv_instr_name_t.VMFEQ_VF: return va_base_instr.VMFEQ;
+  case riscv_instr_name_t.VMFNE_VV: return va_base_instr.VMFNE;
+  case riscv_instr_name_t.VMFNE_VF: return va_base_instr.VMFNE;
+  case riscv_instr_name_t.VMFLT_VV: return va_base_instr.VMFLT;
+  case riscv_instr_name_t.VMFLT_VF: return va_base_instr.VMFLT;
+  case riscv_instr_name_t.VMFLE_VV: return va_base_instr.VMFLE;
+  case riscv_instr_name_t.VMFLE_VF: return va_base_instr.VMFLE;
+  case riscv_instr_name_t.VMFGT_VF: return va_base_instr.VMFGT;
+  case riscv_instr_name_t.VMFGE_VF: return va_base_instr.VMFGE;
+  case riscv_instr_name_t.VFMERGE_VFM: return va_base_instr.VFMERGE;
+  case riscv_instr_name_t.VFMV_VF: return va_base_instr.VFMV;
+  case riscv_instr_name_t.VSLIDEUP_VI: return va_base_instr.VSLIDEUP;
+  case riscv_instr_name_t.VSLIDEUP_VX: return va_base_instr.VSLIDEUP;
+  case riscv_instr_name_t.VSLIDEDOWN_VI: return va_base_instr.VSLIDEDOWN;
+  case riscv_instr_name_t.VSLIDEDOWN_VX: return va_base_instr.VSLIDEDOWN;
+  case riscv_instr_name_t.VSLIDE1UP_VX: return va_base_instr.VSLIDE1UP;
+  case riscv_instr_name_t.VSLIDE1DOWN_VX: return va_base_instr.VSLIDE1DOWN;
+  case riscv_instr_name_t.VRGATHER_VV: return va_base_instr.VRGATHER;
+  case riscv_instr_name_t.VRGATHER_VX: return va_base_instr.VRGATHER;
+  case riscv_instr_name_t.VRGATHER_VI: return va_base_instr.VRGATHER;
+  case riscv_instr_name_t.VCOMPRESS_VM: return va_base_instr.VCOMPRESS;
+  default: return va_base_instr.VA_NO_BASE;
+  }
+}
+
 
 // Maximum virtual address bits used by the program
 enum uint MAX_USED_VADDR_BITS = 30;
@@ -802,19 +1379,20 @@ enum riscv_instr_format_t: ubyte {	// 6'b
 
 // Vector arithmetic instruction variant
 enum va_variant_t: ubvec!4 {
-  VV  = UBVEC!(4, 0),  
-  VI  = UBVEC!(4, 1),  
-  VX  = UBVEC!(4, 2),  
-  VF  = UBVEC!(4, 3),  
-  WV  = UBVEC!(4, 4),  
-  WI  = UBVEC!(4, 5),  
-  WX  = UBVEC!(4, 6),  
-  VVM = UBVEC!(4, 7),  
-  VIM = UBVEC!(4, 8),  
-  VXM = UBVEC!(4, 9),  
-  VFM = UBVEC!(4, 10), 
-  VS  = UBVEC!(4, 11), 
-  VM  = UBVEC!(4, 12)
+  VV   = UBVEC!(4, 0),  
+  VI   = UBVEC!(4, 1),  
+  VX   = UBVEC!(4, 2),  
+  VF   = UBVEC!(4, 3),  
+  WV   = UBVEC!(4, 4),  
+  WI   = UBVEC!(4, 5),  
+  WX   = UBVEC!(4, 6),  
+  VVM  = UBVEC!(4, 7),  
+  VIM  = UBVEC!(4, 8),  
+  VXM  = UBVEC!(4, 9),  
+  VFM  = UBVEC!(4, 10), 
+  VS   = UBVEC!(4, 11), 
+  VM   = UBVEC!(4, 12),
+  NONE = UBVEC!(4, 13)
 }
 
 enum riscv_instr_category_t: ubyte {	// 6'b
@@ -1669,3 +2247,4 @@ void get_val(string str, out bvec!XLEN val, bool hex = 0) {
   uvm_info("riscv_instr_pkg", format("imm:%0s -> 0x%0x/%0d", str, val,
 				     cast(bvec!XLEN) val), UVM_FULL);
 }
+
