@@ -28,6 +28,7 @@ from pygen_src.riscv_signature_pkg import (signature_type_t, core_status_t,
 from pygen_src.riscv_instr_gen_config import cfg
 from pygen_src.riscv_data_page_gen import riscv_data_page_gen
 from pygen_src.riscv_privileged_common_seq import riscv_privileged_common_seq
+from pygen_src.riscv_page_table_list import riscv_page_table_list
 from pygen_src.riscv_utils import factory
 rcs = import_module("pygen_src.target." + cfg.argv.target + ".riscv_core_setting")
 
@@ -49,7 +50,7 @@ class riscv_asm_program_gen:
         # Directed instruction ratio, occurance per 1000 instructions
         self.directed_instr_stream_ratio = {}
         self.hart = 0
-        self.page_table_list = []
+        self.page_table_list = riscv_page_table_list()
         self.main_program = []
         self.sub_program = [0] * rcs.NUM_HARTS
         self.data_page_gen = None
@@ -421,8 +422,31 @@ class riscv_asm_program_gen:
     # Generate some dummy writes to xSTATUS/xIE at the beginning of the test to check
     # repeated writes to these CSRs.
     def gen_dummy_csr_write(self):
-        # TODO
-        pass
+        instr = []
+        if cfg.enable_dummy_csr_write:
+            if cfg.init_privileged_mode == privileged_mode_t.MACHINE_MODE:
+                instr.append("csrr x{}, {}".format(cfg.gpr[0], privileged_reg_t.MSTATUS))
+                instr.append("csrr x{}, {}".format(cfg.gpr[1], privileged_reg_t.MIE))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.MSTATUS, cfg.gpr[0]))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.MIE, cfg.gpr[1]))
+            elif cfg.init_privileged_mode == privileged_mode_t.SUPERVISOR_MODE:
+                instr.append("csrr x{}, {}".format(cfg.gpr[0], privileged_reg_t.SSTATUS))
+                instr.append("csrr x{}, {}".format(cfg.gpr[1], privileged_reg_t.SIE))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.SSTATUS, cfg.gpr[0]))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.SIE, cfg.gpr[1]))
+            elif cfg.init_privileged_mode == privileged_mode_t.USER_MODE:
+                if not rcs.support_umode_trap:
+                    return
+                instr.append("csrr x{}, {}".format(cfg.gpr[0], privileged_reg_t.USTATUS))
+                instr.append("csrr x{}, {}".format(cfg.gpr[1], privileged_reg_t.UIE))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.USTATUS, cfg.gpr[0]))
+                instr.append("csrw {}, x{}".format(privileged_reg_t.UIE, cfg.gpr[1]))
+            else:
+                logging.critical("Unsupported boot mode")
+                sys.exit(1)
+
+            self.format_section(instr)
+            self.instr_stream.append(instr)
 
     # Initialize general purpose registers with random value
     def init_gpr(self):
@@ -591,8 +615,7 @@ class riscv_asm_program_gen:
         self.gen_pmp_csr_write(hart)
         # Initialize PTE (link page table based on their real physical address)
         if cfg.virtual_addr_translation_on:
-            # TODO
-            # self.page_table_list.process_page_table(instr)
+            self.page_table_list.process_page_table(instr)
             self.gen_section(pkg_ins.get_label("process_pt", hart), instr)
         # Setup mepc register, jump to init entry
         self.setup_epc(hart)
@@ -615,8 +638,30 @@ class riscv_asm_program_gen:
             privil_seq.randomize()
             privil_seq.enter_privileged_mode(privil_mode, instr)
             if cfg.require_signature_addr:
-                # TODO
-                pass
+                ret_instr = instr.pop();
+                # Want to write the main system CSRs to the testbench before indicating that initialization
+                # is complete, for any initial state analysis
+                if i in range(len(rcs.supported_privileged_mode)):
+                    if rcs.supported_privileged_mode == privileged_mode_t.SUPERVISOR_MODE:
+                        self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                privileged_reg_t.SSTATUS)
+                        self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                privileged_reg_t.SIE)
+                    elif rcs.supported_privileged_mode == privileged_mode_t.USER_MODE:
+                        self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                privileged_reg_t.USTATUS)
+                        self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                privileged_reg_t.UIE)
+                    else:
+                        logging.critical("Unsupported privileged_mode {}".format(mode.name))
+                    # Write M-mode CSRs to testbench by default, as these should be implemented
+                self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                 privileged_reg_t.MSTATUS)
+                self.gen_signature_handshake(instr.csr_handshake, signature_type_t.WRITE_CSR,
+                                                 privileged_reg_t.MIE)
+                self.format_section(csr_handshake)
+                self.instr.extend(csr_handshake, ret_instr)
+            self.instr_stream.extend(instr)
         self.instr_stream.extend(instr)
 
     # Setup EPC before entering target privileged mode
@@ -745,21 +790,38 @@ class riscv_asm_program_gen:
         # broken when page fault happens.
         self.gen_signature_handshake(instr, signature_type_t.CORE_STATUS,
                                      core_status_t.HANDLING_EXCEPTION)
-        if not self.page_table_list:
-            # TODO
-            # self.page_table_list.gen_page_fault_handling_routine(instr)
-            pass
+        if len(self.page_table_list) != 0:
+            self.page_table_list.gen_page_fault_handling_routine(instr)
         else:
             instr.append("nop")
         self.gen_section(pkg_ins.get_label("pt_fault_handler", hart), instr)
 
     def gen_trap_handlers(self, hart):
-        # TODO
-        self.gen_trap_handler_section(hart, "m", privileged_reg_t.MCAUSE,
-                                      privileged_reg_t.MTVEC, privileged_reg_t.MTVAL,
-                                      privileged_reg_t.MEPC, privileged_reg_t.MSCRATCH,
-                                      privileged_reg_t.MSTATUS, privileged_reg_t.MIE,
-                                      privileged_reg_t.MIP)
+        for mode in rcs.supported_privileged_mode:
+            if mode < cfg.init_privileged_mode:
+                continue
+            if mode == privileged_mode_t.MACHINE_MODE:
+                self.gen_trap_handler_section(hart, "m", privileged_reg_t.MCAUSE,
+                                              privileged_reg_t.MTVEC, privileged_reg_t.MTVAL,
+                                              privileged_reg_t.MEPC, privileged_reg_t.MSCRATCH,
+                                              privileged_reg_t.MSTATUS, privileged_reg_t.MIE,
+                                              privileged_reg_t.MIP)
+            elif mode == privileged_mode_t.SUPERVISOR_MODE:
+                self.gen_trap_handler_section(hart, "s", privileged_reg_t.SCAUSE,
+                                              privileged_reg_t.STVEC, privileged_reg_t.STVAL,
+                                              privileged_reg_t.SEPC, privileged_reg_t.SSCRATCH,
+                                              privileged_reg_t.SSTATUS, privileged_reg_t.SIE,
+                                              privileged_reg_t.SIP)
+            elif mode == privileged_mode_t.USER_MODE:
+                if rcs.support_umode_trap:
+                    self.gen_trap_handler_section(hart, "u", privileged_reg_t.UCAUSE,
+                                                  privileged_reg_t.UTVEC, privileged_reg_t.UTVAL,
+                                                  privileged_reg_t.UEPC, privileged_reg_t.USCRATCH,
+                                                  privileged_reg_t.USTATUS, privileged_reg_t.UIE,
+                                                  privileged_reg_t.UIP)
+            else:
+                logging.critical("Unsupported privileged_mode: {}".format(mode.name))
+                sys.exit(1)
 
     # Generate the interrupt and trap handler for different privileged mode.
     # The trap handler checks the xCAUSE to determine the type of the exception and jumps to
@@ -937,14 +999,34 @@ class riscv_asm_program_gen:
     # Right now only the lowest level 4KB page table is configured as leaf page table entry (PTE),
     # all the other super pages are link PTE.
     def create_page_table(self, hart):
-        # TODO
-        pass
+        instr = []
+        if cfg.virtual_addr_translation_on:
+            self.page_table_list = riscv_page_table_list()
+            self.page_table_list.create_page_table_list()
+            self.page_table_list.enable_exception = cfg.enable_page_table_exception
+            logging.info("Randomizing page tables, totally %0d page tables, mode = %0s".format(
+                            len(self.page_table_list.page_table), cfg.init_privileged_mode.name()))
+            self.page_table_list.privileged_mode = cfg.init_privileged_mode
+            self.page_table_list.randomize()
+            self.page_table_list.randomize_page_table()
+            logging.info("Finished creating page tables")
 
     # Generate the page table section of the program
     # The page table is generated as a group of continuous 4KB data sections.
     def gen_page_table_section(self, hart):
-        # TODO
-        pass
+        page_table_section = []
+        if len(self.page_table_list) != 0:
+            if cfg.use_push_data_section:
+                instr_stream.append(".pushsection .%0spage_table,\"aw\",@progbits;".format(
+                                               hart_prefix(hart)))
+            else:
+                instr_stream.append(".section .%0spage_table,\"aw\",@progbits;".format(
+                                               hart_prefix(hart)))
+            for i in range(self.page_table_list.page_table):
+                self.page_table_list.page_table[i].gen_page_table_section(page_table_section)
+                instr_stream.extend(page_table_section)
+            if cfg.use_push_data_section:
+                instr_stream.append(".popsection;")
 
     # Only extend this function if the core utilizes a PLIC for handling interrupts
     # In this case, the core will write to a specific location as the response to the interrupt, and

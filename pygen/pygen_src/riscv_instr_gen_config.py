@@ -79,7 +79,7 @@ class riscv_instr_gen_config:
 
         # init_privileged_mode default to MACHINE_MODE
         # TODO: remove defult machine_mode once all modes get supported
-        self.init_privileged_mode = privileged_mode_t.MACHINE_MODE
+        self.init_privileged_mode = vsc.rand_enum_t(privileged_mode_t)
 
         self.mstatus = vsc.rand_bit_t(rcs.XLEN - 1)
         self.mie = vsc.rand_bit_t(rcs.XLEN - 1)
