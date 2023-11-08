@@ -1169,8 +1169,9 @@ package riscv_instr_pkg;
     DSCRATCH0       = 'h7B2,  // Debug scratch register
     DSCRATCH1       = 'h7B3,  // Debug scratch register (last one)
     VSTART          = 'h008,  // Vector start position
-    VXSTAT          = 'h009,  // Fixed point saturate flag
+    VXSAT           = 'h009,  // Fixed point saturate flag
     VXRM            = 'h00A,  // Fixed point rounding mode
+    VCSR            = 'h00F,  // Vector control and status register
     VL              = 'hC20,  // Vector length
     VTYPE           = 'hC21,  // Vector data type register
     VLENB           = 'hC22   // VLEN/8 (vector register length in bytes)
@@ -1355,9 +1356,8 @@ package riscv_instr_pkg;
 
   typedef struct packed {
     bit ill;
-    bit fractional_lmul;
-    bit [XLEN-2:7] reserved;
-    int vediv;
+    bit vma;
+    bit vta;
     int vsew;
     bit fractional_lmul;
     int vlmul;
@@ -1369,6 +1369,11 @@ package riscv_instr_pkg;
     RoundDown,
     RoundToOdd
   } vxrm_t;
+
+  typedef struct packed {
+    vxrm_t vxrm;
+    bit    vxsat;
+  } vcsr_t;
 
   typedef enum int {
     ZBA,
