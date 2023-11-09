@@ -37,6 +37,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               is_narrowing_instr;
   bit               is_quad_widening_instr;
   bit               is_convert_instr;
+  int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
   string            sub_extension;
   rand bit [2:0]    nfields; // Used by segmented load/store
@@ -97,6 +98,24 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       !(vd inside {[vs2 : vs2 + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
       // The destination vector register group cannot overlap the mask register
       // if used, unless LMUL=1 (implemented in vmask_overlap_c)
+    }
+  }
+
+  // 11.3. Vector Integer Extension
+  constraint integer_extension_c {
+    if (instr_name inside {VZEXT_VF2, VZEXT_VF4, VZEXT_VF8,
+                           VSEXT_VF2, VSEXT_VF4, VSEXT_VF8}) {
+      // VD needs to be LMUL aligned
+      vd % m_cfg.vector_cfg.vtype.vlmul == 0;
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor >= 1) {
+        // VS2 needs to be LMUL/ext_widening_factor aligned
+        vs2 % (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) == 0;
+        // VS2 can only overlap last ext_widening_factor'th of VD
+        !(vs2 inside {[vd : vd + ((m_cfg.vector_cfg.vtype.vlmul-1) * ext_widening_factor - 1)]});
+      } else {
+        // If source has fractional LMUL, VD and VS2 cannot overlap
+        vs2 != vd;
+      }
     }
   }
 
@@ -524,9 +543,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if ((name.substr(0, 1) == "VW") || (name.substr(0, 2) == "VFW")) begin
       is_widening_instr = 1'b1;
     end
-    if (name.substr(0, 2) == "VQW") begin
-      is_quad_widening_instr = 1'b1;
-      is_widening_instr = 1'b1;
+    if (uvm_is_match("V[SZ]EXT_VF[248]", name)) begin
+      ext_widening_factor = name.substr(name.len()-2, name.len()-1).atoi();
     end
     if ((name.substr(0, 1) == "VN") || (name.substr(0, 2) == "VFN")) begin
       is_narrowing_instr = 1'b1;
