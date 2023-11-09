@@ -151,8 +151,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Section 17.3  Vector Slide Instructions
   // The destination vector register group for vslideup cannot overlap the vector register
   // group of the source vector register group or the mask register
-  constraint vector_slide_c {
-    if (instr_name inside {VSLIDEUP, VSLIDE1UP, VSLIDEDOWN, VSLIDE1DOWN}) {
+  constraint vector_slideup_c {
+    if (instr_name inside {VSLIDEUP, VSLIDE1UP, VFSLIDE1UP}) {
       vd != vs2;
       vd != vs1;
       (vm == 0) -> (vd != 0);
