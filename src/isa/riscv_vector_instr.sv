@@ -236,8 +236,10 @@ class riscv_vector_instr extends riscv_floating_point_instr;
 
   constraint vector_mask_disable_c {
     // (vm=0) is reserved for below ops
-    if (instr_name inside {VMV, VFMV, VCOMPRESS, VFMV_F_S, VFMV_S_F, VMV_X_S, VMV_S_X,
-                           VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V}) {
+    if (instr_name inside {VMV_V_V, VMV_V_X, VMV_V_I, VFMV_V_F,
+                           VFMV_F_S, VFMV_S_F, VMV_X_S, VMV_S_X,
+                           VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V,
+                           VCOMPRESS}) {
       vm == 1'b1;
     }
   }
@@ -361,64 +363,57 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       VS2_FORMAT: begin
         if (instr_name == VID_V) begin
           asm_str = $sformatf("vid.v %s", vd.name());
-        end else if (instr_name inside {VPOPC_M, VFIRST_M}) begin
+        end else if (instr_name inside {VCPOP_M, VFIRST_M}) begin
           asm_str = $sformatf("%0s %0s,%0s", get_instr_name(), rd.name(), vs2.name());
         end else begin
           asm_str = $sformatf("%0s %0s,%0s", get_instr_name(), vd.name(), vs2.name());
         end
       end
       VA_FORMAT: begin
-        if (instr_name == VMV) begin
-          case (va_variant)
-            VV: asm_str = $sformatf("vmv.v.v %s,%s", vd.name(), vs1.name());
-            VX: asm_str = $sformatf("vmv.v.x %s,%s", vd.name(), rs1.name());
-            VI: asm_str = $sformatf("vmv.v.i %s,%s", vd.name(), imm_str);
-            default: `uvm_info(`gfn, $sformatf("Unsupported va_variant %0s", va_variant), UVM_LOW)
-          endcase
-        end else if (instr_name == VFMV) begin
-          asm_str = $sformatf("vfmv.v.f %s,%s", vd.name(), fs1.name());
-        end else if (instr_name == VMV_X_S) begin
-          asm_str = $sformatf("vmv.x.s %s,%s", rd.name(), vs2.name());
-        end else if (instr_name == VMV_S_X) begin
-          asm_str = $sformatf("vmv.s.x %s,%s", vd.name(), rs1.name());
-        end else if (instr_name == VFMV_F_S) begin
-          asm_str = $sformatf("vfmv.f.s %s,%s", fd.name(), vs2.name());
-        end else if (instr_name == VFMV_S_F) begin
-          asm_str = $sformatf("vfmv.s.f %s,%s", vd.name(), fs1.name());
-        end else begin
-          if (!has_va_variant) begin
-            asm_str = $sformatf("%0s ", get_instr_name());
-            asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
-            asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), vs1.name())};
-          end else begin
-            asm_str = $sformatf("%0s.%0s ", get_instr_name(), va_variant.name());
-            asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
-            case (va_variant) inside
-              WV, VV, VVM, VM: begin
-                asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), vs1.name())};
-              end
-              WI, VI, VIM: begin
-                asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), imm_str)};
-              end
-              VF, VFM: begin
-                if (instr_name inside {VFMADD, VFNMADD, VFMACC, VFNMACC, VFNMSUB, VFWNMSAC,
-                                       VFWMACC, VFMSUB, VFMSAC, VFNMSAC, VFWNMACC, VFWMSAC}) begin
-                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), fs1.name(), vs2.name())};
-                end else begin
-                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), fs1.name())};
+        case (instr_name)
+          VMV_V_V:  asm_str = $sformatf("vmv.v.v %s,%s",  vd.name(), vs1.name());
+          VMV_V_X:  asm_str = $sformatf("vmv.v.x %s,%s",  vd.name(), rs1.name());
+          VMV_V_I:  asm_str = $sformatf("vmv.v.i %s,%s",  vd.name(), imm_str);
+          VFMV_V_F: asm_str = $sformatf("vfmv.v.f %s,%s", vd.name(), fs1.name());
+          VMV_X_S:  asm_str = $sformatf("vmv.x.s %s,%s",  rd.name(), vs2.name());
+          VMV_S_X:  asm_str = $sformatf("vmv.s.x %s,%s",  vd.name(), rs1.name());
+          VFMV_F_S: asm_str = $sformatf("vfmv.f.s %s,%s", fd.name(), vs2.name());
+          VFMV_S_F: asm_str = $sformatf("vfmv.s.f %s,%s", vd.name(), fs1.name());
+          default: begin
+            if (!has_va_variant) begin
+              asm_str = $sformatf("%0s ", get_instr_name());
+              asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
+              asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), vs1.name())};
+            end else begin
+              asm_str = $sformatf("%0s.%0s ", get_instr_name(), va_variant.name());
+              asm_str = format_string(asm_str, MAX_INSTR_STR_LEN);
+              case (va_variant) inside
+                WV, VV, VVM, VM: begin
+                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), vs1.name())};
                 end
-              end
-              WX, VX, VXM: begin
-                if (instr_name inside {VMADD, VNMSUB, VMACC, VNMSAC, VWMACCSU, VWMACCU,
-                                       VWMACCUS, VWMACC}) begin
-                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), rs1.name(), vs2.name())};
-                end else begin
-                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), rs1.name())};
+                WI, VI, VIM: begin
+                  asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), imm_str)};
                 end
-              end
-            endcase
+                VF, VFM: begin
+                  if (instr_name inside {VFMADD, VFNMADD, VFMACC, VFNMACC, VFNMSUB, VFWNMSAC,
+                                        VFWMACC, VFMSUB, VFMSAC, VFNMSAC, VFWNMACC, VFWMSAC}) begin
+                    asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), fs1.name(), vs2.name())};
+                  end else begin
+                    asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), fs1.name())};
+                  end
+                end
+                WX, VX, VXM: begin
+                  if (instr_name inside {VMADD, VNMSUB, VMACC, VNMSAC, VWMACCSU, VWMACCU,
+                                        VWMACCUS, VWMACC}) begin
+                    asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), rs1.name(), vs2.name())};
+                  end else begin
+                    asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), rs1.name())};
+                  end
+                end
+              endcase
+            end
           end
-        end
+        endcase
       end
       VL_FORMAT: begin
         if (sub_extension == "zvlsseg") begin

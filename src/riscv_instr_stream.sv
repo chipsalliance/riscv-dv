@@ -299,7 +299,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
 
   function void add_init_vector_gpr_instr(riscv_vreg_t gpr, bit [XLEN-1:0] val);
     riscv_vector_instr instr;
-    $cast(instr, riscv_instr::get_instr(VMV));
+    $cast(instr, riscv_instr::get_instr(VMV_V_V));
     instr.m_cfg = cfg;
     instr.avoid_reserved_vregs_c.constraint_mode(0);
     `DV_CHECK_RANDOMIZE_WITH_FATAL(instr,
