@@ -367,6 +367,23 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         return 1'b0;
       end
     end
+    if (instr_name inside {VZEXT_VF8, VSEXT_VF8}) begin
+      if (cfg.vector_cfg.vtype.vsew < 64 || cfg.vector_cfg.vtype.fractional_lmul) begin
+        return 1'b0;
+      end
+    end
+    if (instr_name inside {VZEXT_VF4, VSEXT_VF4}) begin
+      if (cfg.vector_cfg.vtype.vsew < 32 ||
+          (cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul > 2)) begin
+        return 1'b0;
+      end
+    end
+    if (instr_name inside {VZEXT_VF2, VSEXT_VF2}) begin
+      if (cfg.vector_cfg.vtype.vsew < 16 ||
+          (cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul > 4)) begin
+        return 1'b0;
+      end
+    end
     return 1'b1;
   endfunction
 
