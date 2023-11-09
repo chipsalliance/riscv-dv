@@ -34,7 +34,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               has_va_variant;
   bit               is_widening_instr;
   bit               is_narrowing_instr;
-  bit               is_quad_widening_instr;
   bit               is_convert_instr;
   int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
@@ -353,9 +352,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     // Disable widening/narrowing instruction when LMUL == 8
     if ((!cfg.vector_cfg.vec_narrowing_widening) &&
         (is_widening_instr || is_narrowing_instr)) begin
-      return 1'b0;
-    end
-    if (!cfg.vector_cfg.vec_quad_widening && is_quad_widening_instr) begin
       return 1'b0;
     end
     // TODO: Clean up this list, it's causing gcc compile error now

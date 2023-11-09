@@ -37,15 +37,6 @@ class riscv_vector_cfg extends uvm_object;
   // Allow vector narrowing or widening instructions.
   rand bit vec_narrowing_widening;
 
-  // Allow vector quad-widening instructions.
-  rand bit vec_quad_widening;
-
-  constraint vec_quad_widening_c {
-    (!vec_narrowing_widening) -> (!vec_quad_widening);
-    // FP requires at least 16 bits and quad-widening requires no more than ELEN/4 bits.
-    (ELEN < 64) -> (!(vec_fp && vec_quad_widening));
-  }
-
   rand bit allow_illegal_vec_instr;
   constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
 
@@ -84,9 +75,6 @@ class riscv_vector_cfg extends uvm_object;
     if (vec_narrowing_widening) {
       (vtype.vlmul < 8) || (vtype.fractional_lmul == 1'b1);
     }
-    if (vec_quad_widening) {
-      (vtype.vlmul < 4) || (vtype.fractional_lmul == 1'b1);
-    }
   }
 
   constraint vsew_c {
@@ -95,7 +83,6 @@ class riscv_vector_cfg extends uvm_object;
     // TODO: Determine the legal range of floating point format
     if (vec_fp) {vtype.vsew inside {32};}
     if (vec_narrowing_widening) {vtype.vsew < ELEN;}
-    if (vec_quad_widening) {vtype.vsew < (ELEN >> 1);}
   }
 
   constraint vseg_c {
