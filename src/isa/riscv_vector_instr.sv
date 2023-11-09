@@ -542,9 +542,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       return "";
     end else begin
       if (instr_name inside {VMERGE, VFMERGE, VADC, VSBC, VMADC, VMSBC}) begin
-        return ",v0";
+        return ", v0";
       end else begin
-        return ",v0.t";
+        return ", v0.t";
       end
     end
   endfunction
