@@ -74,7 +74,6 @@ class riscv_vector_cfg extends uvm_object;
   constraint bringup_c {
     vstart == 0;
     vl == VLEN/vtype.vsew;
-    vtype.vediv == 1;
   }
 
   // For all widening instructions, the destination element width must be a supported element
@@ -103,14 +102,10 @@ class riscv_vector_cfg extends uvm_object;
     enable_zvlsseg -> (vtype.vlmul < 8);
   }
 
-  constraint vdeiv_c {
-    vtype.vediv inside {1, 2, 4, 8};
-    vtype.vediv <= (vtype.vsew / SELEN);
-  }
-
   `uvm_object_utils_begin(riscv_vector_cfg)
     `uvm_field_int(vtype.ill, UVM_DEFAULT)
-    `uvm_field_int(vtype.vediv, UVM_DEFAULT)
+    `uvm_field_int(vtype.vma, UVM_DEFAULT)
+    `uvm_field_int(vtype.vta, UVM_DEFAULT)
     `uvm_field_int(vtype.vsew, UVM_DEFAULT)
     `uvm_field_int(vtype.vlmul, UVM_DEFAULT)
     `uvm_field_int(vtype.fractional_lmul, UVM_DEFAULT)

@@ -543,18 +543,20 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Initialize vector general purpose registers
   virtual function void init_vec_gpr();
-    int SEW;
-    int LMUL;
-    int EDIV = 1;
-    int len = (ELEN <= XLEN) ? ELEN : XLEN;
-    int num_elements = VLEN / len;
+    int SEW = (ELEN <= XLEN) ? ELEN : XLEN;
+    int LMUL = 1;
+    int num_elements = VLEN / SEW;
+
+    // Do not init vector registers if RVV is not enabled
     if (!(RVV inside {supported_isa})) return;
-    LMUL = 1;
-    SEW = (ELEN <= XLEN) ? ELEN : XLEN;
-    instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
-    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, m%0d, d%0d",
-                                     indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL, EDIV));
+
+    // Create RVV init label
     instr_stream.push_back("vec_reg_init:");
+
+    // Set vector configuration
+    instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], num_elements));
+    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, m%0d, ta, ma",
+                                     indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL));
 
     // Vector registers will be initialized using one of the following three methods
     case (cfg.vreg_init_method)
@@ -566,16 +568,10 @@ class riscv_asm_program_gen extends uvm_object;
       RANDOM_VALUES_VMV: begin
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
           for (int e = 0; e < num_elements; e++) begin
-            if (e > 0) instr_stream.push_back($sformatf("%0svmv.v.v v0, v%0d", indent, v));
             instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
                                              indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
-            if (v > 0) begin
-              instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v0, x%0d",
-                                               indent, v, cfg.gpr[0]));
-            end else begin
-              instr_stream.push_back($sformatf("%0svslide1up.vx v%0d, v1, x%0d",
-                                               indent, v, cfg.gpr[0]));
-            end
+            instr_stream.push_back($sformatf("%0svslide1down.vx v%0d, v%0d, x%0d",
+                                             indent, v, v, cfg.gpr[0]));
           end
         end
       end
@@ -590,8 +586,8 @@ class riscv_asm_program_gen extends uvm_object;
 
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
           int region = $urandom_range(0, valid_mem_region.size()-1);
-          instr_stream.push_back($sformatf("%0sla t0, %0s", indent, valid_mem_region[region].name));
-          instr_stream.push_back($sformatf("%0svle.v v%0d, (t0)", indent, v));
+          instr_stream.push_back($sformatf("%0sla x%0s, %0s", indent, cfg.gpr[0], valid_mem_region[region].name));
+          instr_stream.push_back($sformatf("%0svle%0s.v v%0d, (x%0s)", indent, SEW, v, cfg.gpr[0]));
         end
       end
     endcase
@@ -1627,19 +1623,20 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", cfg.vector_cfg.vxsat)});
     instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", cfg.vector_cfg.vxrm)});
     init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
-    instr_stream.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.vector_cfg.vl));
+    instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], cfg.vector_cfg.vl));
     if ((cfg.vector_cfg.vtype.vlmul > 1) && (cfg.vector_cfg.vtype.fractional_lmul)) begin
       lmul = $sformatf("mf%0d", cfg.vector_cfg.vtype.vlmul);
     end else begin
       lmul = $sformatf("m%0d", cfg.vector_cfg.vtype.vlmul);
     end
-    instr_stream.push_back($sformatf("%svsetvli x%0d, x%0d, e%0d, %0s, d%0d",
+    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, %0s, %0s, %0s",
                                      indent,
                                      cfg.gpr[0],
                                      cfg.gpr[1],
                                      cfg.vector_cfg.vtype.vsew,
                                      lmul,
-                                     cfg.vector_cfg.vtype.vediv));
+                                     cfg.vector_cfg.vtype.vta ? "ta" : "tu",
+                                     cfg.vector_cfg.vtype.vma ? "ma" : "mu"));
   endfunction
 
 endclass
