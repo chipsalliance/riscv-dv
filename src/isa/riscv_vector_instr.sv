@@ -178,14 +178,21 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // Section 17.4: Vector Register Gather Instruction
+  // Section 16.4: Vector Register Gather Instruction
   // For any vrgather instruction, the destination vector register group cannot overlap
   // with the source vector register group
+  // The vrgatherei16.vv form uses SEW/LMUL for the data in vs2 but EEW=16 and
+  // EMUL = (16/SEW)*LMUL for the indices in vs1.
   constraint vector_gather_c {
-    if (instr_name == VRGATHER) {
+    if (instr_name inside {VRGATHER, VRGATHEREI16}) {
       vd != vs2;
       vd != vs1;
       (vm == 0) -> (vd != 0);
+    }
+    if (instr_name == VRGATHEREI16) {
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vsew == 8) {
+        vs1 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
+      }
     }
   }
 
