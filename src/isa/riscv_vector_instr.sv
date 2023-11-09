@@ -25,7 +25,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   rand riscv_vreg_t vd;
   rand va_variant_t va_variant;
   rand bit          vm;
-  rand bit          wd;
   rand bit [10:0]   eew;
   bit               has_vd = 1'b1;
   bit               has_vs1 = 1'b1;
