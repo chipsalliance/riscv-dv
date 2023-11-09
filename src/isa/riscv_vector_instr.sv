@@ -252,6 +252,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
+  // 14.5, 14.6, 14.7. The destination register cannot overlap the
+  // source register and, if masked, cannot overlap the mask register ('v0').
+  constraint vector_set_first_c {
+    if (instr_name inside {VMSBF_M, VMSIF_M, VMSOF_M}) {
+      vd != vs2;
+      (vm == 0) -> vd != 0;
+    }
+  }
+
   constraint disable_floating_point_varaint_c {
     if (!m_cfg.vector_cfg.vec_fp) {
       va_variant != VF;
