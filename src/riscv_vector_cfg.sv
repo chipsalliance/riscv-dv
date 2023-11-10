@@ -24,15 +24,22 @@ class riscv_vector_cfg extends uvm_object;
   rand bit               vxsat;
   riscv_vreg_t           reserved_vregs[$];
 
+  // Zve* extension
+  string       zve_extension     = "";
+  bit          enable_fp_support = 1'b1;
+  int unsigned max_int_sew       = 64;
+  int unsigned max_fp_sew        = 64;
+
+  // Zvfh extension
+  bit          enable_zvfh_extension = 1'b0;
+  int unsigned min_fp_sew            = 32;
+
   // Allowed effective element width based on the LMUL setting
   int unsigned           legal_eew[$];
 
   // Allow only vector instructions from the random sequences
   rand bit only_vec_instr;
   constraint only_vec_instr_c {soft only_vec_instr == 0;}
-
-  // Allow vector floating-point instructions (Allows vtype.vsew to be set <16 or >32).
-  rand bit vec_fp;
 
   // Allow vector narrowing or widening instructions.
   rand bit vec_narrowing_widening;
@@ -67,22 +74,16 @@ class riscv_vector_cfg extends uvm_object;
     vl == VLEN/vtype.vsew;
   }
 
-  // For all widening instructions, the destination element width must be a supported element
-  // width and the destination LMUL value must also be a supported LMUL value
   constraint vlmul_c {
     vtype.vlmul inside {1, 2, 4, 8};
-    vtype.vlmul <= MAX_LMUL;
-    if (vec_narrowing_widening) {
-      (vtype.vlmul < 8) || (vtype.fractional_lmul == 1'b1);
-    }
+    vtype.fractional_lmul -> vtype.vlmul != 1;
+    // Fractional LMUL 1/8th only supported when EEW 64 is supported
+    vtype.fractional_lmul -> vtype.vlmul <= max_int_sew / 8;
   }
 
   constraint vsew_c {
-    vtype.vsew inside {8, 16, 32, 64, 128};
-    vtype.vsew <= ELEN;
-    // TODO: Determine the legal range of floating point format
-    if (vec_fp) {vtype.vsew inside {32};}
-    if (vec_narrowing_widening) {vtype.vsew < ELEN;}
+    vtype.vsew inside {8, 16, 32, 64};
+    vtype.vsew <= max_int_sew;
   }
 
   constraint vseg_c {
@@ -101,6 +102,12 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(vstart, UVM_DEFAULT)
     `uvm_field_enum(vxrm_t,vxrm, UVM_DEFAULT)
     `uvm_field_int(vxsat, UVM_DEFAULT)
+    `uvm_field_string(zve_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_fp_support, UVM_DEFAULT)
+    `uvm_field_int(max_int_sew, UVM_DEFAULT)
+    `uvm_field_int(max_fp_sew, UVM_DEFAULT)
+    `uvm_field_int(enable_zvfh_extension, UVM_DEFAULT)
+    `uvm_field_int(min_fp_sew, UVM_DEFAULT)
     `uvm_field_int(enable_zvlsseg, UVM_DEFAULT)
     `uvm_field_int(enable_fault_only_first_load, UVM_DEFAULT)
   `uvm_object_utils_end
@@ -112,6 +119,37 @@ class riscv_vector_cfg extends uvm_object;
     end
     if ($value$plusargs("enable_fault_only_first_load=%0d", enable_fault_only_first_load)) begin
       enable_fault_only_first_load.rand_mode(0);
+    end
+    // Check for Zve* extension
+    if ($value$plusargs("zve_extension=%0s", zve_extension)) begin
+      int minimum_vlen;
+      string supported_type;
+      zve_extension = zve_extension.tolower();
+      minimum_vlen = zve_extension.substr(3,4).atoi();
+      supported_type = zve_extension.substr(5,5);
+
+      // Is the extension valid
+      if (zve_extension.substr(0,2) != "zve" || !(minimum_vlen inside {32, 64}) ||
+          !(supported_type inside {"x", "f", "d"}) || (minimum_vlen == 32 && supported_type == "d")) begin
+        `uvm_fatal(`gfn, $sformatf("Unsupported Zve* extension %0s. Supported are Zve32{x,f} and Zve64{x,f,d}.",
+                                   zve_extension))
+      end
+      `uvm_info(`gfn, $sformatf("Enabling vector spec %0s extension", zve_extension), UVM_LOW)
+      // Check VLEN to be of correct minimum size
+      if (VLEN < minimum_vlen) begin
+        `uvm_fatal(`gfn, $sformatf("%0s extension requires a VLEN of at least %0d bits",
+                                   zve_extension, minimum_vlen))
+      end
+      // Set configuration
+      enable_fp_support = supported_type inside {"f", "d"};
+      max_int_sew       = minimum_vlen;
+      max_fp_sew        = supported_type == "f" ? 32 :
+                          supported_type == "d" ? 64 : 0;
+    end
+    if ($value$plusargs("enable_zvfh_extension=%0b", enable_zvfh_extension)) begin
+      if (enable_zvfh_extension) begin
+        min_fp_sew = 16;
+      end
     end
   endfunction : new
 

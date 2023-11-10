@@ -297,10 +297,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  constraint disable_floating_point_varaint_c {
-    if (!m_cfg.vector_cfg.vec_fp) {
-      va_variant != VF;
-    }
+  // Do not use float variants if FP is disabled
+  constraint disable_fp_variant_c {
+    !m_cfg.vector_cfg.enable_fp_support -> !(va_variant inside {VF, WF, VFM});
   }
 
   constraint vector_load_store_mask_overlap_c {
@@ -355,12 +354,28 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         (is_widening_instr || is_narrowing_instr)) begin
       return 1'b0;
     end
-    // The standard vector floating-point instructions treat 16-bit, 32-bit, 64-bit,
-    // and 128-bit elements as IEEE-754/2008-compatible values. If the current SEW does
-    // not correspond to a supported IEEE floating-pointtype, an illegal instruction
-    // exception is raised
-    if (!cfg.vector_cfg.vec_fp) begin
-      if ((name.substr(0, 1) == "VF") || (name.substr(0, 2) == "VMF")) begin
+    // Check FP instructions
+    if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
+      // FP instructions are not supported
+      if (!cfg.vector_cfg.enable_fp_support) begin
+        return 1'b0;
+      end
+      // FP instruction is unsupported if outside of valid EEW range
+      if (!(cfg.vector_cfg.vtype.vsew inside {[cfg.vector_cfg.min_fp_sew :
+                                               cfg.vector_cfg.max_fp_sew]})) begin
+        return 1'b0;
+      end
+      // Widening/narrowing is unsupported if only one fp size is valid
+      if ((is_widening_instr || is_narrowing_instr) &&
+          cfg.vector_cfg.min_fp_sew == cfg.vector_cfg.max_fp_sew) begin
+        return 1'b0;
+      end
+      // Widening requires 2*SEW = SEW op SEW
+      if (is_widening_instr && cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.min_fp_sew) begin
+        return 1'b0;
+      end
+      // Narrowing requires SEW = 2*SEW op SEW
+      if (is_narrowing_instr && cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.max_fp_sew) begin
         return 1'b0;
       end
     end
@@ -438,7 +453,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
                 WI, VI, VIM: begin
                   asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), vs2.name(), imm_str)};
                 end
-                VF, VFM: begin
+                WF, VF, VFM: begin
                   if (instr_name inside {VFMADD, VFNMADD, VFMACC, VFNMACC, VFNMSUB, VFWNMSAC,
                                         VFWMACC, VFMSUB, VFMSAC, VFNMSAC, VFWNMACC, VFWMSAC}) begin
                     asm_str = {asm_str, $sformatf("%0s,%0s,%0s", vd.name(), fs1.name(), vs2.name())};
