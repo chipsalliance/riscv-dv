@@ -31,10 +31,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               has_vs2 = 1'b1;
   bit               has_vs3 = 1'b1;
   bit               has_vm = 1'b0;
-  bit               has_va_variant;
-  bit               is_widening_instr;
-  bit               is_narrowing_instr;
-  bit               is_convert_instr;
+  bit               has_va_variant = 1'b0;
+  bit               is_widening_instr = 1'b0;
+  bit               is_narrowing_instr = 1'b0;
+  bit               is_convert_instr = 1'b0;
+  bit               is_reduction_instr = 1'b0;
+  bit               is_mask_producing_instr = 1'b0;
   int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
   string            sub_extension;
@@ -244,11 +246,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
 
   /////////////////// Vector mask constraint ///////////////////
 
-  // Section 5.3
-  // The destination vector register group for a masked vector instruction can only overlap
-  // the source mask register (v0) when LMUL=1
-  constraint vmask_overlap_c {
-    (vm == 0) && (m_cfg.vector_cfg.vtype.vlmul > 1) -> (vd != 0);
+  // 5.3 Vector Masking
+  // The destination vector register group for a masked vector instruction cannot overlap
+  // the source mask register (v0), unless the destination vector register is being written
+  // with a mask value (e.g., compares) or the scalar result of a reduction. These
+  // instruction encodings are reserved.
+  constraint mask_v0_overlap_c {
+    if (!vm) {
+      !(group == COMPARE || is_mask_producing_instr || is_reduction_instr) -> (vd != 0);
+    }
   }
 
   constraint vector_mask_enable_c {
@@ -336,12 +342,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         vs3 % emul == 0;
       }
     }
-  }
-
-  // Some temporarily constraint to avoid illegal instruction
-  // TODO: Review these constraints
-  constraint temp_c {
-    (vm == 0) -> (vd != 0);
   }
 
   `uvm_object_utils(riscv_vector_instr)
@@ -568,18 +568,24 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if ((name.substr(0, 1) == "VW") || (name.substr(0, 2) == "VFW")) begin
       is_widening_instr = 1'b1;
     end
-    if (uvm_is_match("V[SZ]EXT_VF[248]", name)) begin
-      ext_widening_factor = name.substr(name.len()-2, name.len()-1).atoi();
+    if (!uvm_re_match("V[SZ]EXT_VF[248]", name)) begin
+      ext_widening_factor = name.substr(name.len()-1, name.len()-1).atoi();
     end
     if ((name.substr(0, 1) == "VN") || (name.substr(0, 2) == "VFN")) begin
       is_narrowing_instr = 1'b1;
     end
-    if (uvm_is_match("*CVT*", name)) begin
+    if (!uvm_re_match("VF[NW]?CVT_.*", name)) begin
       is_convert_instr = 1'b1;
       has_vs1 = 1'b0;
     end
+    if (!uvm_re_match("VF?RED.*", name)) begin
+      is_reduction_instr = 1'b1;
+    end
+    if (!uvm_re_match("VM.*_MM?", name)) begin
+      is_mask_producing_instr = 1'b1;
+    end
     if (allowed_va_variants.size() > 0) begin
-      has_va_variant = 1;
+      has_va_variant = 1'b1;
     end
     // Set the rand mode based on the superset of all VA variants
     if (format == VA_FORMAT) begin
