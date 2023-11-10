@@ -252,18 +252,24 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   }
 
   constraint vector_mask_enable_c {
-    // Below instruction is always masked
+    // Instructions that require vm=0
     if (instr_name inside {VMERGE, VFMERGE, VADC, VSBC}) {
+      vm == 1'b0;
+    }
+    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VVM, VXM, VIM}) {
       vm == 1'b0;
     }
   }
 
   constraint vector_mask_disable_c {
-    // (vm=0) is reserved for below ops
+    // Instructions that require vm=1
     if (instr_name inside {VMV_V_V, VMV_V_X, VMV_V_I, VFMV_V_F,
                            VFMV_F_S, VFMV_S_F, VMV_X_S, VMV_S_X,
                            VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V,
                            VCOMPRESS}) {
+      vm == 1'b1;
+    }
+    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VV, VX, VI}) {
       vm == 1'b1;
     }
   }
