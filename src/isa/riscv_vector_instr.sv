@@ -350,18 +350,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Filter unsupported instructions based on configuration
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     string name = instr_name.name();
-    // 19.2.2. Vector Add with Carry/Subtract with Borrow Reserved under EDIV>1
-    if ((cfg.vector_cfg.vtype.vediv > 1) &&
-        (instr_name inside {VADC, VSBC, VMADC, VMSBC})) begin
-      return 1'b0;
-    end
     // Disable widening/narrowing instruction when LMUL == 8
     if ((!cfg.vector_cfg.vec_narrowing_widening) &&
         (is_widening_instr || is_narrowing_instr)) begin
-      return 1'b0;
-    end
-    // TODO: Clean up this list, it's causing gcc compile error now
-    if (instr_name inside {VWMACCSU, VMERGE, VFMERGE, VMADC, VMSBC}) begin
       return 1'b0;
     end
     // The standard vector floating-point instructions treat 16-bit, 32-bit, 64-bit,
