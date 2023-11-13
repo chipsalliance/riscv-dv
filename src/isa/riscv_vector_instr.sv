@@ -59,10 +59,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Section 3.3.2: Vector Register Grouping (vlmul)
   // Instructions specifying a vector operand with an odd-numbered vector register will raisean
   // illegal instruction exception.
-  // TODO: Exclude the instruction that ignore VLMUL
-  // TODO: Update this constraint for fractional LMUL
-  constraint operand_group_c {
-    if (m_cfg.vector_cfg.vtype.vlmul > 0) {
+  constraint vector_operand_group_c {
+    if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul > 0 &&
+        !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F})) {
       vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
@@ -70,49 +69,101 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // Section 11.2: Widening Vector Arithmetic Instructions
-  constraint widening_instr_c {
+  // Section 5.2 and 10.2: Widening Vector Arithmetic Instructions
+  constraint vector_widening_instr_c {
     if (is_widening_instr) {
-     // The destination vector register group results are arranged as if both
-     // SEW and LMUL were at twice their current settings.
-     vd % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
-     // The destination vector register group cannot overlap a source vector
-     // register group of a different element width (including the mask register if masked)
-     !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
-     !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
-     (vm == 0) -> (vd != 0);
-     // Double-width result, first source double-width, second source single-width
-     if (va_variant inside {WV, WX}) {
-       vs2 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
-     }
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        // The destination vector register group results are arranged as if both
+        // SEW and LMUL were at twice their current settings.
+        vd % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
+        // The destination vector register group cannot overlap a source vector
+        // register group of a different element width
+        // For reduction instructions, vs1 is double width
+        if (!is_reduction_instr) {
+          !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        }
+        // Double-width vd, vs2 double-width, vs1 single-width
+        if (va_variant inside {WV, WX}) {
+          vs2 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
+        } else {
+          !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        }
+      } else {
+        // Double-width vs2 is allowed to overlap double-width vd
+        if (!(va_variant inside {WV, WX})) {
+          vs2 != vd;
+        }
+        vs1 != vd;
+      }
     }
   }
 
-  // Section 11.3: Narrowing Vector Arithmetic Instructions
-  constraint narrowing_instr_c {
+  // Section 5.2 and 10.3: Narrowing Vector Arithmetic Instructions
+  constraint vector_narrowing_instr_c {
     if (is_narrowing_instr) {
-      // The source and destination vector register numbers must be aligned
-      // appropriately for the vector registergroup size
-      vs2 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
-      // The destination vector register group cannot overlap the rst source
-      // vector register group (specied by vs2)
-      !(vd inside {[vs2 : vs2 + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
-      // The destination vector register group cannot overlap the mask register
-      // if used, unless LMUL=1 (implemented in vmask_overlap_c)
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        // The source and destination vector register numbers must be aligned
+        // appropriately for the vector registergroup size
+        vs2 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
+        // The destination vector register group cannot overlap the vs2 source
+        // vector register group
+        !(vd inside {[vs2 + m_cfg.vector_cfg.vtype.vlmul : vs2 + m_cfg.vector_cfg.vtype.vlmul*2 - 1]});
+      } else {
+        vs2 != vd;
+      }
     }
   }
 
-  // 11.3. Vector Integer Extension
-  constraint integer_extension_c {
+  // Section 5.3: Vector Masking
+  // The destination vector register group for a masked vector instruction cannot overlap
+  // the source mask register (v0), unless the destination vector register is being written
+  // with a mask value (e.g., compares) or the scalar result of a reduction. These
+  // instruction encodings are reserved.
+  constraint vector_mask_v0_overlap_c {
+    if (!vm) {
+      !(group == COMPARE || is_mask_producing_instr || is_reduction_instr) -> (vd != 0);
+    }
+  }
+
+  // VM-bit required to be zero
+  constraint vector_mask_enable_c {
+    // Instructions that require vm=0
+    if (instr_name inside {VMERGE, VFMERGE, VADC, VSBC}) {
+      vm == 1'b0;
+    }
+    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VVM, VXM, VIM}) {
+      vm == 1'b0;
+    }
+  }
+
+  // VM-bit required to be one
+  constraint vector_mask_disable_c {
+    // Instructions that require vm=1
+    if (instr_name inside {VMV_V_V, VMV_V_X, VMV_V_I, VFMV_V_F,
+                           VFMV_F_S, VFMV_S_F, VMV_X_S, VMV_S_X,
+                           VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V,
+                           VCOMPRESS}) {
+      vm == 1'b1;
+    }
+    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VV, VX, VI}) {
+      vm == 1'b1;
+    }
+    if (instr_name inside {[VMAND_MM : VMXNOR_MM]}) {
+      vm == 1'b1;
+    }
+  }
+
+  // Section 11.3: Vector Integer Extension
+  constraint vector_integer_extension_c {
     if (instr_name inside {VZEXT_VF2, VZEXT_VF4, VZEXT_VF8,
                            VSEXT_VF2, VSEXT_VF4, VSEXT_VF8}) {
-      // VD needs to be LMUL aligned
-      vd % m_cfg.vector_cfg.vtype.vlmul == 0;
       if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor >= 1) {
+        // VD needs to be LMUL aligned
+        vd % m_cfg.vector_cfg.vtype.vlmul == 0;
         // VS2 needs to be LMUL/ext_widening_factor aligned
         vs2 % (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) == 0;
         // VS2 can only overlap last ext_widening_factor'th of VD
-        !(vs2 inside {[vd : vd + ((m_cfg.vector_cfg.vtype.vlmul-1) * ext_widening_factor - 1)]});
+        !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) - 1]});
       } else {
         // If source has fractional LMUL, VD and VS2 cannot overlap
         vs2 != vd;
@@ -120,62 +171,47 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // 12.3. Vector Integer Add-with-Carry / Subtract-with-Borrow Instructions
-  constraint add_sub_with_carry_c {
-    if (m_cfg.vector_cfg.vtype.vlmul > 1) {
-      // For vadc and vsbc, an illegal instruction exception is raised if the
-      // destination vector register is v0 and LMUL> 1
-      if (instr_name inside {VADC, VSBC}) {
-        vd != 0;
-      }
-      // For vmadc and vmsbc, an illegal instruction exception is raised if the
-      // destination vector register overlaps asource vector register group and LMUL > 1
-      if (instr_name inside {VMADC, VMSBC}) {
-        vd != vs2;
-        vd != vs1;
-      }
+  // Section 11.16: Vector Integer Move Instructions
+  constraint vector_int_vmv_c {
+    // VS2 needs to be zero
+    if (instr_name inside {VMV_V_V, VMV_V_I, VMV_V_X}) {
+      vs2 == 0;
     }
   }
 
-  // 12.7. Vector Integer Comparison Instructions
-  // For all comparison instructions, an illegal instruction exception is raised if the
-  // destination vector register overlaps a source vector register group and LMUL > 1
-  constraint compare_instr_c {
-    if (category == COMPARE) {
+  // Section 15.5, 15.6, 15.7: The destination register cannot overlap the
+  // source register and, if masked, cannot overlap the mask register ('v0')
+  constraint vector_set_first_c {
+    if (instr_name inside {VMSBF_M, VMSIF_M, VMSOF_M}) {
       vd != vs2;
-      vd != vs1;
+      (vm == 0) -> vd != 0;
     }
   }
 
-  // 16.8. Vector Iota Instruction
-  // An illegal instruction exception is raised if the destination vector register group
-  // overlaps the source vector mask register. If the instruction is masked, an illegal
-  // instruction exception is issued if the destination vector register group overlaps v0.
-  constraint vector_itoa_c {
+  // Section 15.8: Vector Iota Instruction
+  // The destination register group cannot overlap the source register
+  // and, if masked, cannot overlap the mask register (v0)
+  constraint vector_iota_c {
     if (instr_name == VIOTA_M) {
       vd != vs2;
-      (vm == 0) -> (vd != 0);
     }
   }
 
-  // 16.9. Vector Element Index Instruction
-  // The vs2 eld of the instruction must be set to v0, otherwise the encoding is reserved
+  // Section 15.9: Vector Element Index Instruction
+  // The vs2 field of the instruction must be set to v0, otherwise the encoding is reserved
   constraint vector_element_index_c {
     if (instr_name == VID_V) {
       vs2 == 0;
-      // TODO; Check if this constraint is needed
-      vd != vs2;
     }
   }
 
-  // Section 17.3  Vector Slide Instructions
+  // Section 16.3: Vector Slide Instructions
   // The destination vector register group for vslideup cannot overlap the vector register
   // group of the source vector register group or the mask register
   constraint vector_slideup_c {
     if (instr_name inside {VSLIDEUP, VSLIDE1UP, VFSLIDE1UP}) {
       vd != vs2;
       vd != vs1;
-      (vm == 0) -> (vd != 0);
     }
   }
 
@@ -188,7 +224,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (instr_name inside {VRGATHER, VRGATHEREI16}) {
       vd != vs2;
       vd != vs1;
-      (vm == 0) -> (vd != 0);
     }
     if (instr_name == VRGATHEREI16) {
       if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vsew == 8) {
@@ -197,14 +232,31 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // Section 17.5: Vector compress instruction
+  // Section 16.5: Vector compress instruction
   // The destination vector register group cannot overlap the source vector register
-  // group or the source vector mask register
+  // group or the source mask register, otherwise the instruction encoding is reserved
   constraint vector_compress_c {
     if (instr_name == VCOMPRESS) {
       vd != vs2;
       vd != vs1;
-      (vm == 0) -> (vd != 0);
+    }
+  }
+
+  // Section 16.6: Whole Vector Register Move
+  // The source and destination vector register numbers must be aligned appropriately for
+  // the vector register group size, and encodings with other vector register numbers are reserved
+  constraint vector_vmvxr_c {
+    if (instr_name == VMV2R_V) {
+      vs2 % 2 == 0;
+      vd  % 2 == 0;
+    }
+    if (instr_name == VMV4R_V) {
+      vs2 % 4 == 0;
+      vd  % 4 == 0;
+    }
+    if (instr_name == VMV8R_V) {
+      vs2 % 8 == 0;
+      vd  % 8 == 0;
     }
   }
 
@@ -227,74 +279,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       } else {
         nfields == 0;
       }
-    }
-  }
-
-  constraint vmv_alignment_c {
-    if (instr_name == VMV2R_V) {
-      int'(vs2) % 2 == 0;
-      int'(vd)  % 2 == 0;
-    }
-    if (instr_name == VMV4R_V) {
-      int'(vs2) % 4 == 0;
-      int'(vd)  % 4 == 0;
-    }
-    if (instr_name == VMV8R_V) {
-      int'(vs2) % 8 == 0;
-      int'(vd)  % 8 == 0;
-    }
-  }
-
-  /////////////////// Vector mask constraint ///////////////////
-
-  // 5.3 Vector Masking
-  // The destination vector register group for a masked vector instruction cannot overlap
-  // the source mask register (v0), unless the destination vector register is being written
-  // with a mask value (e.g., compares) or the scalar result of a reduction. These
-  // instruction encodings are reserved.
-  constraint mask_v0_overlap_c {
-    if (!vm) {
-      !(group == COMPARE || is_mask_producing_instr || is_reduction_instr) -> (vd != 0);
-    }
-  }
-
-  constraint vector_mask_enable_c {
-    // Instructions that require vm=0
-    if (instr_name inside {VMERGE, VFMERGE, VADC, VSBC}) {
-      vm == 1'b0;
-    }
-    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VVM, VXM, VIM}) {
-      vm == 1'b0;
-    }
-  }
-
-  constraint vector_mask_disable_c {
-    // Instructions that require vm=1
-    if (instr_name inside {VMV_V_V, VMV_V_X, VMV_V_I, VFMV_V_F,
-                           VFMV_F_S, VFMV_S_F, VMV_X_S, VMV_S_X,
-                           VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V,
-                           VCOMPRESS}) {
-      vm == 1'b1;
-    }
-    if (instr_name inside {VMADC, VMSBC} && va_variant inside {VV, VX, VI}) {
-      vm == 1'b1;
-    }
-  }
-
-  // 16.1. Vector Mask-Register Logical Instructions
-  // No vector mask for these instructions
-  constraint vector_mask_instr_c {
-    if (instr_name inside {[VMAND_MM : VMXNOR_MM]}) {
-      vm == 1'b1;
-    }
-  }
-
-  // 14.5, 14.6, 14.7. The destination register cannot overlap the
-  // source register and, if masked, cannot overlap the mask register ('v0').
-  constraint vector_set_first_c {
-    if (instr_name inside {VMSBF_M, VMSIF_M, VMSOF_M}) {
-      vd != vs2;
-      (vm == 0) -> vd != 0;
     }
   }
 
