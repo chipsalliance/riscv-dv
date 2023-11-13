@@ -399,6 +399,19 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         return 1'b0;
       end
     end
+    // Check for valid LMUL for vrgatherei16
+    if (instr_name == VRGATHEREI16) begin
+      if (16/cfg.vector_cfg.vtype.vsew > 1) begin
+        if (!cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul == 8) begin
+          return 1'b0;
+        end
+      end else begin
+        if (cfg.vector_cfg.vtype.fractional_lmul &&
+            (cfg.vector_cfg.vtype.vsew/16)*cfg.vector_cfg.vtype.vlmul > cfg.vector_cfg.max_int_sew/8) begin
+          return 1'b0;
+        end
+      end
+    end
     return 1'b1;
   endfunction
 
