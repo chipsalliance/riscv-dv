@@ -37,6 +37,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               is_convert_instr = 1'b0;
   bit               is_reduction_instr = 1'b0;
   bit               is_mask_producing_instr = 1'b0;
+  bit               is_fp_instr = 1'b0;
   int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
   string            sub_extension;
@@ -349,13 +350,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Filter unsupported instructions based on configuration
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     string name = instr_name.name();
-    // Disable widening/narrowing instruction when LMUL == 8
-    if ((!cfg.vector_cfg.vec_narrowing_widening) &&
-        (is_widening_instr || is_narrowing_instr)) begin
-      return 1'b0;
+    // Check that current LMUL and SEW are valid for narrowing and widening instruction
+    if (is_widening_instr || is_narrowing_instr) begin
+      if (cfg.vector_cfg.vtype.vsew == (is_fp_instr ? cfg.vector_cfg.max_fp_sew : cfg.vector_cfg.max_int_sew) ||
+          (!cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul == 8)) begin
+        return 1'b0;
+      end
     end
     // Check FP instructions
-    if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
+    if (is_fp_instr) begin
       // FP instructions are not supported
       if (!cfg.vector_cfg.enable_fp_support) begin
         return 1'b0;
@@ -589,6 +592,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     end
     if (!uvm_re_match("VM.*_MM?", name)) begin
       is_mask_producing_instr = 1'b1;
+    end
+    if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
+      is_fp_instr = 1'b1;
     end
     if (allowed_va_variants.size() > 0) begin
       has_va_variant = 1'b1;
