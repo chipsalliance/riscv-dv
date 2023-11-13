@@ -47,14 +47,6 @@ class riscv_vector_cfg extends uvm_object;
   rand bit allow_illegal_vec_instr;
   constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
 
-  // Cause frequent hazards for the Vector Registers:
-  //  * Write-After-Read (WAR)
-  //  * Read-After-Write (RAW)
-  //  * Read-After-Read (RAR)
-  //  * Write-After-Write (WAW)
-  // These hazard conditions are induced by keeping a small (~5) list of registers to select from.
-  rand bit vec_reg_hazards;
-
   // Enable segmented load/store extension ops
   rand bit enable_zvlsseg = 1'b1;
 
