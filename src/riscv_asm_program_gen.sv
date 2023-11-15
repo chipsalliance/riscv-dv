@@ -423,13 +423,13 @@ class riscv_asm_program_gen extends uvm_object;
     if (cfg.enable_floating_point) begin
       init_floating_point_gpr();
     end
+    if (cfg.enable_vector_extension) begin
+      init_vector_gpr();
+    end
     init_gpr();
     // Init stack pointer to point to the end of the user stack
     str = {indent, $sformatf("la x%0d, %0suser_stack_end", cfg.sp, hart_prefix(hart))};
     instr_stream.push_back(str);
-    if (cfg.enable_vector_extension) begin
-      randomize_vec_gpr_and_csr();
-    end
     core_is_initialized();
     gen_dummy_csr_write(); // TODO add a way to disable xStatus read
     if (riscv_instr_pkg::support_pmp) begin
@@ -542,16 +542,13 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   // Initialize vector general purpose registers
-  virtual function void init_vec_gpr();
+  virtual function void init_vector_gpr();
     int SEW = (ELEN <= XLEN) ? ELEN : XLEN;
     int LMUL = 1;
     int num_elements = VLEN / SEW;
 
     // Do not init vector registers if RVV is not enabled
     if (!(RVV inside {supported_isa})) return;
-
-    // Create RVV init label
-    instr_stream.push_back("vec_reg_init:");
 
     // Set vector configuration
     instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], num_elements));
@@ -591,6 +588,22 @@ class riscv_asm_program_gen extends uvm_object;
         end
       end
     endcase
+
+    // Initialize vector CSRs
+    instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", cfg.vector_cfg.vxsat)});
+    instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", cfg.vector_cfg.vxrm)});
+
+    // Initialize vector configuration
+    instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], cfg.vector_cfg.vl));
+    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, m%0s%0d, %0s, %0s",
+                                     indent,
+                                     cfg.gpr[0],
+                                     cfg.gpr[1],
+                                     cfg.vector_cfg.vtype.vsew,
+                                     cfg.vector_cfg.vtype.fractional_lmul ? "f" : "",
+                                     cfg.vector_cfg.vtype.vlmul,
+                                     cfg.vector_cfg.vtype.vta ? "ta" : "tu",
+                                     cfg.vector_cfg.vtype.vma ? "ma" : "mu"));
   endfunction
 
   // Initialize floating point general purpose registers
@@ -1611,32 +1624,6 @@ class riscv_asm_program_gen extends uvm_object;
     debug_rom.hart = hart;
     debug_rom.gen_program();
     instr_stream = {instr_stream, debug_rom.instr_stream};
-  endfunction
-
-  //---------------------------------------------------------------------------------------
-  // Vector extension generation
-  //---------------------------------------------------------------------------------------
-
-  virtual function void randomize_vec_gpr_and_csr();
-    string lmul;
-    if (!(RVV inside {supported_isa})) return;
-    instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", cfg.vector_cfg.vxsat)});
-    instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", cfg.vector_cfg.vxrm)});
-    init_vec_gpr(); // GPR init uses a temporary SEW/LMUL setting before the final value set below.
-    instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], cfg.vector_cfg.vl));
-    if ((cfg.vector_cfg.vtype.vlmul > 1) && (cfg.vector_cfg.vtype.fractional_lmul)) begin
-      lmul = $sformatf("mf%0d", cfg.vector_cfg.vtype.vlmul);
-    end else begin
-      lmul = $sformatf("m%0d", cfg.vector_cfg.vtype.vlmul);
-    end
-    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, %0s, %0s, %0s",
-                                     indent,
-                                     cfg.gpr[0],
-                                     cfg.gpr[1],
-                                     cfg.vector_cfg.vtype.vsew,
-                                     lmul,
-                                     cfg.vector_cfg.vtype.vta ? "ta" : "tu",
-                                     cfg.vector_cfg.vtype.vma ? "ma" : "mu"));
   endfunction
 
 endclass
