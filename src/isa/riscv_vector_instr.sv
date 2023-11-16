@@ -445,7 +445,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         case (instr_name)
           VMV_V_V:  asm_str = $sformatf("vmv.v.v %s, %s",  vd.name(), vs1.name());
           VMV_V_X:  asm_str = $sformatf("vmv.v.x %s, %s",  vd.name(), rs1.name());
-          VMV_V_I:  asm_str = $sformatf("vmv.v.i %s, %s",  vd.name(), imm_str);
+          VMV_V_I:  asm_str = $sformatf("vmv.v.i %s, %s",  vd.name(), get_imm());
           VFMV_V_F: asm_str = $sformatf("vfmv.v.f %s, %s", vd.name(), fs1.name());
           VMV_X_S:  asm_str = $sformatf("vmv.x.s %s, %s",  rd.name(), vs2.name());
           VMV_S_X:  asm_str = $sformatf("vmv.s.x %s, %s",  vd.name(), rs1.name());
@@ -464,7 +464,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
                   asm_str = {asm_str, $sformatf("%0s, %0s, %0s", vd.name(), vs2.name(), vs1.name())};
                 end
                 WI, VI, VIM: begin
-                  asm_str = {asm_str, $sformatf("%0s, %0s, %0s", vd.name(), vs2.name(), imm_str)};
+                  asm_str = {asm_str, $sformatf("%0s, %0s, %0s", vd.name(), vs2.name(), get_imm())};
                 end
                 WF, VF, VFM: begin
                   if (instr_name inside {VFMADD, VFNMADD, VFMACC, VFNMACC, VFNMSUB, VFWNMSAC,
@@ -631,6 +631,10 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       has_fd = 1'b1;
     end
   endfunction : set_rand_mode
+
+  virtual function void set_imm_len();
+    imm_len = 5;
+  endfunction: set_imm_len
 
   virtual function string vec_vm_str();
     if (vm) begin

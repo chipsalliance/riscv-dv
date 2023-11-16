@@ -48,7 +48,7 @@
     endfunction \
   endclass
 
- `define VA_INSTR_BODY(instr_n, instr_format, instr_category, instr_group, vav, ext = "") \
+ `define VA_INSTR_BODY(instr_n, instr_format, instr_category, instr_group, vav, imm_tp, ext = "") \
     static bit valid = riscv_instr::register(instr_n);  \
     `uvm_object_utils(riscv_``instr_n``_instr)  \
     function new(string name = "");  \
@@ -57,7 +57,7 @@
       this.format = ``instr_format;  \
       this.group = ``instr_group;  \
       this.category = ``instr_category;  \
-      this.imm_type = IMM;  \
+      this.imm_type = ``imm_tp;  \
       this.allowed_va_variants = ``vav; \
       this.sub_extension = ``ext; \
       set_imm_len(); \
@@ -96,9 +96,9 @@
     `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
 
 // Vector arithmetic instruction
-`define DEFINE_VA_INSTR(instr_n, instr_format, instr_category, instr_group, vav = {}, ext = "")\
+`define DEFINE_VA_INSTR(instr_n, instr_format, instr_category, instr_group, vav = {}, imm_tp = IMM, ext = "")\
   class riscv_``instr_n``_instr extends riscv_vector_instr;  \
-    `VA_INSTR_BODY(instr_n, instr_format, instr_category, instr_group, vav, ext)
+    `VA_INSTR_BODY(instr_n, instr_format, instr_category, instr_group, vav, imm_tp, ext)
 
 // Custom extension instruction
 `define DEFINE_CUSTOM_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM)  \
