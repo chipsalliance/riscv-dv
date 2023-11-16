@@ -328,15 +328,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  `uvm_object_utils(riscv_vector_instr)
-  `uvm_object_new
-
   // Filter unsupported instructions based on configuration
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     string name = instr_name.name();
     // Check that current LMUL and SEW are valid for narrowing and widening instruction
     if (is_widening_instr || is_narrowing_instr) begin
-      if (cfg.vector_cfg.vtype.vsew == (is_fp_instr ? cfg.vector_cfg.max_fp_sew : cfg.vector_cfg.max_int_sew) ||
+      if (cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.max_int_sew ||
           (!cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul == 8)) begin
         return 1'b0;
       end
@@ -347,18 +344,32 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       if (!cfg.vector_cfg.enable_fp_support) begin
         return 1'b0;
       end
-      // FP instruction is unsupported if outside of valid EEW range
-      if (!(cfg.vector_cfg.vtype.vsew inside {[cfg.vector_cfg.min_fp_sew :
-                                               cfg.vector_cfg.max_fp_sew]})) begin
-        return 1'b0;
+      if (instr_name inside {VFWCVT_F_XU_V, VFWCVT_F_X_V, VFNCVT_XU_F_W,
+                             VFNCVT_X_F_W, VFNCVT_RTZ_XU_F_W, VFNCVT_RTZ_X_F_W}) begin
+        // Single-width (unsigned) integer, double-width float
+        if (!((2*cfg.vector_cfg.vtype.vsew) inside {[cfg.vector_cfg.min_fp_sew :
+                                                     cfg.vector_cfg.max_fp_sew]})) begin
+          return 1'b0;
+        end
+      end else begin
+        // FP instruction is unsupported if outside of valid EEW range
+        if (!(cfg.vector_cfg.vtype.vsew inside {[cfg.vector_cfg.min_fp_sew :
+                                                 cfg.vector_cfg.max_fp_sew]})) begin
+          return 1'b0;
+        end
+        if (!instr_name inside {VFWCVT_XU_F_V, VFWCVT_X_F_V, VFWCVT_RTZ_XU_F_V,
+                                VFWCVT_RTZ_X_F_V, VFNCVT_F_XU_W, VFNCVT_X_F_W}) begin
+          // Additional check not required for single-width float, double-width (unsigned) integer
+          // Widening/narrowing is unsupported if only one fp size is valid and
+          // requires 2*SEW to be of legal size
+          if ((is_widening_instr || is_narrowing_instr) &&
+              cfg.vector_cfg.max_fp_sew inside {cfg.vector_cfg.min_fp_sew, cfg.vector_cfg.vtype.vsew}) begin
+            return 1'b0;
+          end
       end
-      // Widening/narrowing is unsupported if only one fp size is valid
-      if ((is_widening_instr || is_narrowing_instr) &&
-          cfg.vector_cfg.min_fp_sew == cfg.vector_cfg.max_fp_sew) begin
-        return 1'b0;
       end
-      // Widening requires 2*SEW = SEW op SEW
-      if (is_widening_instr && cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.min_fp_sew) begin
+      // Narrowing requires SEW = 2*SEW op SEW
+      if (is_narrowing_instr && cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.max_fp_sew) begin
         return 1'b0;
       end
       // Narrowing requires SEW = 2*SEW op SEW
@@ -577,7 +588,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (!uvm_re_match("V[SZ]EXT_VF[248]", name)) begin
       ext_widening_factor = name.substr(name.len()-1, name.len()-1).atoi();
     end
-    if ((name.substr(0, 1) == "VN") || (name.substr(0, 2) == "VFN")) begin
+    if ((name.substr(0, 1) == "VN") || !uvm_re_match("VFN.*_W", name)) begin
       is_narrowing_instr = 1'b1;
     end
     if (!uvm_re_match("VF[NW]?CVT_.*", name)) begin
