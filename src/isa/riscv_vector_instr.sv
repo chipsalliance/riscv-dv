@@ -344,8 +344,11 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       if (!cfg.vector_cfg.enable_fp_support) begin
         return 1'b0;
       end
-      if (instr_name inside {VFWCVT_F_XU_V, VFWCVT_F_X_V, VFNCVT_XU_F_W,
-                             VFNCVT_X_F_W, VFNCVT_RTZ_XU_F_W, VFNCVT_RTZ_X_F_W}) begin
+        if (instr_name inside {VFWCVT_F_XU_V, VFWCVT_F_X_V, VFNCVT_XU_F_W,
+                               VFNCVT_X_F_W, VFNCVT_RTZ_XU_F_W, VFNCVT_RTZ_X_F_W} ||
+            (instr_name inside {VFWCVT_F_F_V, VFNCVT_F_F_W} &&
+             cfg.vector_cfg.enable_zvfhmin_extension &&
+             !cfg.vector_cfg.enable_zvfh_extension)) begin
         // Single-width (unsigned) integer, double-width float
         if (!((2*cfg.vector_cfg.vtype.vsew) inside {[cfg.vector_cfg.min_fp_sew :
                                                      cfg.vector_cfg.max_fp_sew]})) begin

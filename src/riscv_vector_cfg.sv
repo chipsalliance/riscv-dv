@@ -30,6 +30,9 @@ class riscv_vector_cfg extends uvm_object;
   int unsigned max_int_sew       = 64;
   int unsigned max_fp_sew        = 64;
 
+  // Zvfhmin extension
+  bit enable_zvfhmin_extension = 1'b0;
+
   // Zvfh extension
   bit          enable_zvfh_extension = 1'b0;
   int unsigned min_fp_sew            = 32;
@@ -99,6 +102,7 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(enable_fp_support, UVM_DEFAULT)
     `uvm_field_int(max_int_sew, UVM_DEFAULT)
     `uvm_field_int(max_fp_sew, UVM_DEFAULT)
+    `uvm_field_int(enable_zvfhmin_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zvfh_extension, UVM_DEFAULT)
     `uvm_field_int(min_fp_sew, UVM_DEFAULT)
     `uvm_field_int(enable_zvlsseg, UVM_DEFAULT)
@@ -139,7 +143,15 @@ class riscv_vector_cfg extends uvm_object;
       max_fp_sew        = supported_type == "f" ? 32 :
                           supported_type == "d" ? 64 : 0;
     end
+    if ($value$plusargs("enable_zvfhmin_extension=%0b", enable_zvfhmin_extension)) begin
+      if (enable_zvfhmin_extension && !enable_fp_support) begin
+        `uvm_fatal(`gfn, $sformatf("Zvfhmin extension requires floating point support (Zve32x is invalid)"))
+      end
+    end
     if ($value$plusargs("enable_zvfh_extension=%0b", enable_zvfh_extension)) begin
+      if (enable_zvfh_extension && !enable_zvfhmin_extension) begin
+        `uvm_fatal(`gfn, $sformatf("Zvfh extension requires the Zvfhmin extension"))
+      end
       if (enable_zvfh_extension) begin
         min_fp_sew = 16;
       end
