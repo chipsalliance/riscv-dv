@@ -40,10 +40,6 @@ class riscv_vector_cfg extends uvm_object;
   // Allowed effective element width based on the LMUL setting
   int unsigned           legal_eew[$];
 
-  // Allow only vector instructions from the random sequences
-  rand bit only_vec_instr;
-  constraint only_vec_instr_c {soft only_vec_instr == 0;}
-
   // Allow vector narrowing or widening instructions.
   rand bit vec_narrowing_widening;
 

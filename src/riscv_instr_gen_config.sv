@@ -606,6 +606,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+set_mstatus_mprv=", set_mstatus_mprv);
     get_bool_arg_value("+enable_floating_point=", enable_floating_point);
     get_bool_arg_value("+enable_vector_extension=", enable_vector_extension);
+    get_bool_arg_value("+vector_instr_only=", vector_instr_only);
     get_bool_arg_value("+enable_b_extension=", enable_b_extension);
     get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
     get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
