@@ -30,7 +30,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               has_vs1 = 1'b1;
   bit               has_vs2 = 1'b1;
   bit               has_vs3 = 1'b1;
-  bit               has_vm = 1'b0;
   bit               has_va_variant = 1'b0;
   bit               is_widening_instr = 1'b0;
   bit               is_narrowing_instr = 1'b0;
@@ -567,21 +566,28 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     vs2.rand_mode(has_vs2);
     vs3.rand_mode(has_vs3);
     vd.rand_mode(has_vd);
+    va_variant.rand_mode(has_va_variant);
     if (!(category inside {LOAD, STORE, AMO})) begin
       load_store_solve_order_c.constraint_mode(0);
     end
+    // $info("Randomizing for %0s, vd: %0d, vs2: %0d, vs1: %0d", instr_name, vd, vs2, vs2);
   endfunction : pre_randomize
+
+  function void post_randomize();
+    super.post_randomize();
+    // $info("Randomized for %0s, vd: %0d, vs2: %0d, vs1: %0d", instr_name, vd, vs2, vs2);
+  endfunction : post_randomize
 
   virtual function void set_rand_mode();
     string name = instr_name.name();
-    has_rs1 = 1;
-    has_rs2 = 0;
-    has_rd  = 0;
-    has_fs1 = 0;
-    has_fs2 = 0;
-    has_fs3 = 0;
-    has_fd  = 0;
-    has_imm = 0;
+    has_rs1 = 1'b1;
+    has_rs2 = 1'b0;
+    has_rd  = 1'b0;
+    has_fs1 = 1'b0;
+    has_fs2 = 1'b0;
+    has_fs3 = 1'b0;
+    has_fd  = 1'b0;
+    has_imm = 1'b0;
     if (sub_extension != "zvlsseg") begin
       nfields.rand_mode(0);
     end
@@ -596,7 +602,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     end
     if (!uvm_re_match("VF[NW]?CVT_.*", name)) begin
       is_convert_instr = 1'b1;
-      has_vs1 = 1'b0;
     end
     if (!uvm_re_match("VF?RED.*", name)) begin
       is_reduction_instr = 1'b1;
@@ -615,6 +620,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       has_imm = 1'b1;
       has_rs1 = 1'b1;
       has_fs1 = 1'b1;
+    end
+    if (format == VS2_FORMAT) begin
+      has_vs1 = 1'b0;
+    end
+    if (name inside {"VCPOP_M", "VFIRST_M", "VMV_X_S"}) begin
+      has_rd = 1'b1;
+    end
+    if (name == "VFMV_F_S") begin
+      has_fd = 1'b1;
     end
   endfunction : set_rand_mode
 
