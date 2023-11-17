@@ -16,7 +16,7 @@
  */
 
 
-// Base class for RISC-V vector exenstion ISA, implmented based on spec v0.8
+// Base class for RISC-V vector extension ISA, implementation based on spec v1.0
 class riscv_vector_instr extends riscv_floating_point_instr;
 
   rand riscv_vreg_t vs1;
@@ -25,11 +25,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   rand riscv_vreg_t vd;
   rand va_variant_t va_variant;
   rand bit          vm;
-  rand bit [10:0]   eew;
+  rand int          ls_eew;
+  rand int          nfields;
   bit               has_vd = 1'b1;
   bit               has_vs1 = 1'b1;
   bit               has_vs2 = 1'b1;
-  bit               has_vs3 = 1'b1;
+  bit               has_vs3 = 1'b0;
   bit               has_va_variant = 1'b0;
   bit               is_widening_instr = 1'b0;
   bit               is_narrowing_instr = 1'b0;
@@ -37,11 +38,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               is_reduction_instr = 1'b0;
   bit               is_mask_producing_instr = 1'b0;
   bit               is_fp_instr = 1'b0;
+  bit               is_segmented_ls_instr = 1'b0;
+  bit               is_whole_register_ls_instr = 1'b0;
   int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
+  rand int          ls_emul_non_frac;
   string            sub_extension;
-  rand bit [2:0]    nfields; // Used by segmented load/store
-  rand bit [3:0]    emul;
+
+  `uvm_object_utils(riscv_vector_instr)
+  `uvm_object_new
 
   constraint avoid_reserved_vregs_c {
     if (m_cfg.vector_cfg.reserved_vregs.size() > 0) {
@@ -60,7 +65,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // illegal instruction exception.
   constraint vector_operand_group_c {
     if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul > 0 &&
-        !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F})) {
+        !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F}) &&
+        !(category inside {LOAD, STORE})) {
       vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
@@ -120,7 +126,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // instruction encodings are reserved.
   constraint vector_mask_v0_overlap_c {
     if (!vm) {
-      !(group == COMPARE || is_mask_producing_instr || is_reduction_instr) -> (vd != 0);
+      !(category == COMPARE || is_mask_producing_instr || is_reduction_instr) -> (vd != 0);
+      category == STORE -> vs3 != 0;
     }
   }
 
@@ -149,6 +156,104 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
     if (instr_name inside {[VMAND_MM : VMXNOR_MM]}) {
       vm == 1'b1;
+    }
+    if (is_whole_register_ls_instr) {
+      vm == 1'b1;
+    }
+    if (instr_name inside {VLM_V, VSM_V}) {
+      vm == 1'b1;
+    }
+  }
+
+  // Oder to solve load and store constraints in
+  constraint load_store_solve_order_c {
+    solve ls_eew           before ls_emul_non_frac;
+    solve ls_emul_non_frac before vd;
+    solve ls_emul_non_frac before vs2;
+    solve ls_emul_non_frac before vs3;
+    solve ls_emul_non_frac before nfields;
+  }
+
+  // Section 7.3: Vector Load/Store Width Encoding
+  // Vector loads and stores have an EEW encoded directly in the instruction
+  constraint load_store_eew_c {
+    ls_eew inside {m_cfg.vector_cfg.legal_ls_eew};
+  }
+
+  // Section 7.3: Vector Load/Store Width Encoding
+  // The corresponding EMUL is calculated as EMUL = (EEW/SEW)*LMUL. If the
+  // EMUL would be out of range (EMUL>8 or EMUL<1/8), the instruction encoding
+  // is reserved.
+  constraint load_store_emul_c {
+    ls_emul_non_frac == emul_non_frac(ls_eew);
+  }
+
+  // Section 7.3: Vector Load/Store Width Encoding
+  // The vector register groups must have legal register specifiers for the
+  // selected EMUL, otherwise the instruction encoding is reserved
+  constraint load_store_register_alignment_c {
+    if (category inside {LOAD, STORE}) {
+      vs2 % ls_emul_non_frac == 0;
+      if (format inside {VLX_FORMAT, VSX_FORMAT} && !m_cfg.vector_cfg.vtype.fractional_lmul) {
+        vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
+        vs3 % m_cfg.vector_cfg.vtype.vlmul == 0;
+      } else {
+        vd  % ls_emul_non_frac == 0;
+        vs3 % ls_emul_non_frac == 0;
+      }
+    }
+  }
+
+  // Section 7.8.3: Vector Indexed Segment Loads and Stores
+  // For vector indexed segment loads, the destination vector register groups cannot
+  // overlap the source vector register group (specified by vs2), else the instruction
+  // encoding is reserved
+  constraint load_store_group_overlap_c {
+    if (format == VLX_FORMAT) {
+      if (is_segmented_ls_instr) {
+        // No overlap at all for segmented loads
+        !(vd inside {[vs2 : vs2 + ls_emul_non_frac - 1]});
+        vd < vs2 -> vd + nfields * emul_non_frac(m_cfg.vector_cfg.vtype.vsew) - 1 < vs2;
+      } else {
+        // Partial overlap allowed
+        if (ls_eew < m_cfg.vector_cfg.vtype.vsew && !m_cfg.vector_cfg.vtype.fractional_lmul &&
+            (m_cfg.vector_cfg.vtype.vlmul * ls_eew / m_cfg.vector_cfg.vtype.vsew >= 1)) {
+          // If src_eew < dst_eew and src_emul is not fractional, overlap in highest part of dst
+          !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - ls_emul_non_frac - 1]});
+        } else if (ls_eew < m_cfg.vector_cfg.vtype.vsew) {
+          // If src_eew < dst_eew and src_emul is fractional, no overlap allowed
+          !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        } else if (ls_eew > m_cfg.vector_cfg.vtype.vsew && !m_cfg.vector_cfg.vtype.fractional_lmul) {
+          // If src_eew > dst_eew, overlap in lowest part of src
+          !(vd inside {[vs2 + ls_emul_non_frac - m_cfg.vector_cfg.vtype.vlmul : vs2 + ls_emul_non_frac - 1]});
+        }
+      }
+    }
+  }
+
+  // Section 7.8: Vector Load/Store Segment Instructions
+  // The EMUL setting must be such that EMUL * NFIELDS ≤ 8, otherwise the
+  // instruction encoding is reserved.
+  // If the vector register numbers accessed by the segment load or store would
+  // increment past 31, then the instruction encoding is reserved.
+  constraint load_store_nfields_c {
+    if (is_segmented_ls_instr) {
+      nfields inside {[2 : 8]};
+      if (format inside {VLX_FORMAT, VSX_FORMAT}) {
+        nfields * (m_cfg.vector_cfg.vtype.fractional_lmul ? 1 : m_cfg.vector_cfg.vtype.vlmul) <= 8;
+        vd  + nfields * (m_cfg.vector_cfg.vtype.fractional_lmul ? 1 : m_cfg.vector_cfg.vtype.vlmul) <= 32;
+        vs3 + nfields * (m_cfg.vector_cfg.vtype.fractional_lmul ? 1 : m_cfg.vector_cfg.vtype.vlmul) <= 32;
+      } else {
+        nfields * ls_emul_non_frac       <= 8;
+        nfields * ls_emul_non_frac + vd  <= 32;
+        nfields * ls_emul_non_frac + vs3 <= 32;
+      }
+    }
+    // Whole register l/s
+    if (is_whole_register_ls_instr) {
+      nfields inside {1, 2, 4, 8};
+      vd  % nfields == 0;
+      vs3 % nfields == 0;
     }
   }
 
@@ -259,72 +364,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // Section 7.8. Vector Load/Store Segment Instructions
-  // The LMUL setting must be such that LMUL * NFIELDS <= 8
-  // Vector register numbers accessed by the segment load or store would increment
-  // cannot past 31
-  constraint nfields_c {
-    if (check_sub_extension(sub_extension, "zvlsseg")) {
-      if (m_cfg.vector_cfg.vtype.vlmul < 8) {
-        (nfields + 1) * m_cfg.vector_cfg.vtype.vlmul <= 8;
-        if (category == LOAD) {
-          vd + nfields <= 31;
-        }
-        if (category == STORE) {
-          vs3 + nfields <= 31;
-        }
-        // TODO: Check gcc compile issue with nfields == 0
-        nfields > 0;
-      } else {
-        nfields == 0;
-      }
-    }
-  }
-
   // Do not use float variants if FP is disabled
   constraint disable_fp_variant_c {
     !m_cfg.vector_cfg.enable_fp_support -> !(va_variant inside {VF, WF, VFM});
-  }
-
-  constraint vector_load_store_mask_overlap_c {
-    // TODO: Check why this is needed?
-    if (category == STORE) {
-      (vm == 0) -> (vs3 != 0);
-      vs2 != vs3;
-    }
-    // 7.8.3 For vector indexed segment loads, the destination vector register groups
-    // cannot overlap the source vectorregister group (specied by vs2), nor can they
-    // overlap the mask register if masked
-    // AMO instruction uses indexed address mode
-    if (format inside {VLX_FORMAT, VAMO_FORMAT}) {
-      vd != vs2;
-    }
-  }
-
-  // load/store EEW/EMUL and corresponding register grouping constraints
-  constraint load_store_solve_order_c {
-    solve eew before emul;
-    solve emul before vd;
-    solve emul before vs1;
-    solve emul before vs2;
-    solve emul before vs3;
-  }
-
-  constraint load_store_eew_emul_c {
-    if (category inside {LOAD, STORE, AMO}) {
-      eew inside {m_cfg.vector_cfg.legal_eew};
-      if (eew > m_cfg.vector_cfg.vtype.vsew) {
-        emul == eew / m_cfg.vector_cfg.vtype.vsew;
-      } else {
-        emul == 1;
-      }
-      if (emul > 1) {
-        vd % emul == 0;
-        vs1 % emul == 0;
-        vs2 % emul == 0;
-        vs3 % emul == 0;
-      }
-    }
   }
 
   // Filter unsupported instructions based on configuration
@@ -409,21 +451,43 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         end
       end
     end
+    // Check load and stores
+    if (category inside {LOAD, STORE}) begin
+      // Requires a legal EEW
+      if (cfg.vector_cfg.legal_ls_eew.size() == 0 && !is_whole_register_ls_instr &&
+          !(instr_name inside {VLM_V, VSM_V})) begin
+        return 0;
+      end
+      // Segmented l/s need at least two segments
+      if (is_segmented_ls_instr) begin
+        if (format inside {VLX_FORMAT, VSX_FORMAT}) begin
+          if (!cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul == 8) begin
+            return 0;
+          end
+        end else begin
+          if (int'(real'(cfg.vector_cfg.legal_ls_eew.max().pop_front()) / real'(cfg.vector_cfg.vtype.vsew) *
+                   (cfg.vector_cfg.vtype.fractional_lmul ? 1.0 / real'(cfg.vector_cfg.vtype.vlmul) :
+                                                           real'(cfg.vector_cfg.vtype.vlmul))) == 8) begin
+            return 0;
+          end
+        end
+      end
+    end
     return 1'b1;
   endfunction
 
   virtual function string get_instr_name();
     string name = super.get_instr_name();
     if (category inside {LOAD, STORE}) begin
+      name = add_nfields(name);
       // Add eew before ".v" or "ff.v" suffix
       if (instr_name inside {VLEFF_V, VLSEGEFF_V}) begin
         name = name.substr(0, name.len() - 5);
-        name = $sformatf("%0s%0dFF.V", name, eew);
-      end else begin
+        name = $sformatf("%0s%0dFF.V", name, ls_eew);
+      end else if (!(instr_name inside {VLM_V, VSM_V, VSR_V})) begin
         name = name.substr(0, name.len() - 3);
-        name = $sformatf("%0s%0d.V", name, eew);
+        name = $sformatf("%0s%0d.V", name, ls_eew);
       end
-      `uvm_info(`gfn, $sformatf("%0s -> %0s", super.get_instr_name(), name), UVM_LOW)
     end
     return name;
   endfunction
@@ -487,66 +551,21 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           end
         endcase
       end
-      VL_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %s, (%s)", add_nfields(get_instr_name(), "vlseg"),
-                                             vd.name(), rs1.name());
-        end else begin
-          asm_str = $sformatf("%0s %s, (%s)", get_instr_name(), vd.name(), rs1.name());
-        end
+      VL_FORMAT,
+      VS_FORMAT,
+      VLR_FORMAT,
+      VSR_FORMAT: begin
+        asm_str = $sformatf("%0s %s, (%s)", get_instr_name(), category == LOAD ? vd.name() : vs3.name(), rs1.name());
       end
-      VS_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %s, (%s)", add_nfields(get_instr_name(), "vsseg"),
-                                             vs3.name(), rs1.name());
-        end else begin
-          asm_str = $sformatf("%0s %s, (%s)", get_instr_name(), vs3.name(), rs1.name());
-        end
-      end
-      VLS_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", add_nfields(get_instr_name(), "vlsseg"),
-                                                   vd.name(), rs1.name(), rs2.name());
-        end else begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(),
-                                                   vd.name(), rs1.name(), rs2.name());
-        end
-      end
+      VLS_FORMAT,
       VSS_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", add_nfields(get_instr_name(), "vssseg"),
-                                                   vs3.name(), rs1.name(), rs2.name());
-        end else begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(),
-                                                   vs3.name(), rs1.name(), rs2.name());
-        end
+        asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(), category == LOAD ? vd.name() : vs3.name(),
+                                                   rs1.name(), rs2.name());
       end
-      VLX_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", add_nfields(get_instr_name(), "vlxseg"),
-                                                   vd.name(), rs1.name(), vs2.name());
-        end else begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(),
-                                                   vd.name(), rs1.name(), vs2.name());
-        end
-      end
+      VLX_FORMAT,
       VSX_FORMAT: begin
-        if (sub_extension == "zvlsseg") begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", add_nfields(get_instr_name(), "vsxseg"),
-                                                   vs3.name(), rs1.name(), vs2.name());
-        end else begin
-          asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(),
-                                                   vs3.name(), rs1.name(), vs2.name());
-        end
-      end
-      VAMO_FORMAT: begin
-        if (wd) begin
-          asm_str = $sformatf("%0s %0s,(%0s),%0s,%0s", get_instr_name(), vd.name(),
-                                                   rs1.name(), vs2.name(), vd.name());
-        end else begin
-          asm_str = $sformatf("%0s x0,(%0s),%0s,%0s", get_instr_name(),
-                                                  rs1.name(), vs2.name(), vs3.name());
-        end
+          asm_str = $sformatf("%0s %0s, (%0s), %0s", get_instr_name(), category == LOAD ? vd.name() : vs3.name(),
+                                                     rs1.name(), vs2.name());
       end
       default: begin
         `uvm_fatal(`gfn, $sformatf("Unsupported format %0s", format.name()))
@@ -567,20 +586,11 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     vs3.rand_mode(has_vs3);
     vd.rand_mode(has_vd);
     va_variant.rand_mode(has_va_variant);
-    if (!(category inside {LOAD, STORE, AMO})) begin
-      load_store_solve_order_c.constraint_mode(0);
-    end
-    // $info("Randomizing for %0s, vd: %0d, vs2: %0d, vs1: %0d", instr_name, vd, vs2, vs2);
   endfunction : pre_randomize
-
-  function void post_randomize();
-    super.post_randomize();
-    // $info("Randomized for %0s, vd: %0d, vs2: %0d, vs1: %0d", instr_name, vd, vs2, vs2);
-  endfunction : post_randomize
 
   virtual function void set_rand_mode();
     string name = instr_name.name();
-    has_rs1 = 1'b1;
+    has_rs1 = 1'b0;
     has_rs2 = 1'b0;
     has_rd  = 1'b0;
     has_fs1 = 1'b0;
@@ -588,9 +598,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     has_fs3 = 1'b0;
     has_fd  = 1'b0;
     has_imm = 1'b0;
-    if (sub_extension != "zvlsseg") begin
-      nfields.rand_mode(0);
-    end
     if ((name.substr(0, 1) == "VW") || (name.substr(0, 2) == "VFW")) begin
       is_widening_instr = 1'b1;
     end
@@ -612,6 +619,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
       is_fp_instr = 1'b1;
     end
+    if (!uvm_re_match("V[LS].*SEGE.*_V", name)) begin
+      is_segmented_ls_instr = 1'b1;
+    end
+    if (name inside {"VLRE_V", "VSR_V"}) begin
+      is_whole_register_ls_instr = 1'b1;
+    end
     if (allowed_va_variants.size() > 0) begin
       has_va_variant = 1'b1;
     end
@@ -623,6 +636,18 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     end
     if (format == VS2_FORMAT) begin
       has_vs1 = 1'b0;
+    end
+    if (category inside {LOAD, STORE}) begin
+      has_vs1 = 1'b0;
+      has_vs2 = 1'b0;
+      has_vs3 = category == STORE;
+      has_rs1 = 1'b1;
+    end
+    if (format inside {VLS_FORMAT, VSS_FORMAT}) begin
+      has_rs2 = 1'b1;
+    end
+    if (format inside {VLX_FORMAT, VSX_FORMAT}) begin
+      has_vs2 = 1'b1;
     end
     if (name inside {"VCPOP_M", "VFIRST_M", "VMV_X_S"}) begin
       has_rd = 1'b1;
@@ -649,18 +674,68 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     end
   endfunction
 
-  function string add_nfields(string instr_name, string prefix);
-    string suffix = instr_name.substr(prefix.len(), instr_name.len() - 1);
-    return $sformatf("%0s%0d%0s", prefix, nfields + 1, suffix);
+  // Add nfields to the name of segmented l/s instructions
+  function string add_nfields(string instr_name);
+    string name;
+    string prefix;
+    string suffix;
+    if (is_segmented_ls_instr || is_whole_register_ls_instr) begin
+      case (format)
+        VL_FORMAT,
+        VS_FORMAT: prefix = instr_name.substr(0, 4);
+        VLS_FORMAT,
+        VSS_FORMAT: prefix = instr_name.substr(0, 5);
+        VLX_FORMAT,
+        VSX_FORMAT: prefix = instr_name.substr(0, 6);
+        VLR_FORMAT,
+        VSR_FORMAT: prefix = instr_name.substr(0, 1);
+        default: ;
+      endcase
+      suffix = instr_name.substr(prefix.len(), instr_name.len() - 1);
+      name = $sformatf("%0s%0d%0s", prefix, nfields, suffix);
+    end else begin
+      name = instr_name;
+    end
+    return name;
   endfunction
 
-  function string add_eew(string instr_name, string prefix);
-    string suffix = instr_name.substr(prefix.len(), instr_name.len() - 1);
-    return $sformatf("%0s%0d%0s", prefix,  eew, suffix);
+  // Effective multiplier used by load and store instructions
+  // If emul is fractional -> EMUL=1
+  // For mask l/s -> EMUL=1
+  function int emul_non_frac(int eew);
+    real emul = real'(eew) / real'(m_cfg.vector_cfg.vtype.vsew) *
+                (m_cfg.vector_cfg.vtype.fractional_lmul ? 1.0 / real'(m_cfg.vector_cfg.vtype.vlmul) :
+                                                          real'(m_cfg.vector_cfg.vtype.vlmul));
+    return emul <= 1.0 || instr_name inside {VLM_V, VSM_V} ? 1 : int'(emul);
   endfunction
 
-  function bit check_sub_extension(string s, string literal);
-    return s == literal;
-  endfunction
+  virtual function void do_copy(uvm_object rhs);
+    riscv_vector_instr rhs_;
+    super.copy(rhs);
+    assert($cast(rhs_, rhs));
+    this.vs1                        = rhs_.vs1;
+    this.vs2                        = rhs_.vs2;
+    this.vs3                        = rhs_.vs3;
+    this.vd                         = rhs_.vd;
+    this.va_variant                 = rhs_.va_variant;
+    this.vm                         = rhs_.vm;
+    this.ls_eew                     = rhs_.ls_eew;
+    this.nfields                    = rhs_.nfields;
+    this.has_vs1                    = rhs_.has_vs1;
+    this.has_vs2                    = rhs_.has_vs2;
+    this.has_vs3                    = rhs_.has_vs3;
+    this.has_vd                     = rhs_.has_vd;
+    this.has_va_variant             = rhs_.has_va_variant;
+    this.is_widening_instr          = rhs_.is_widening_instr;
+    this.is_narrowing_instr         = rhs_.is_narrowing_instr;
+    this.is_convert_instr           = rhs_.is_convert_instr;
+    this.is_reduction_instr         = rhs_.is_reduction_instr;
+    this.is_mask_producing_instr    = rhs_.is_mask_producing_instr;
+    this.is_fp_instr                = rhs_.is_fp_instr;
+    this.is_segmented_ls_instr      = rhs_.is_segmented_ls_instr;
+    this.is_whole_register_ls_instr = rhs_.is_whole_register_ls_instr;
+    this.ext_widening_factor        = rhs_.ext_widening_factor;
+    this.allowed_va_variants        = rhs_.allowed_va_variants;
+  endfunction : do_copy
 
 endclass : riscv_vector_instr
