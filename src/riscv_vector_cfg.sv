@@ -37,17 +37,15 @@ class riscv_vector_cfg extends uvm_object;
   bit          enable_zvfh_extension = 1'b0;
   int unsigned min_fp_sew            = 32;
 
-  // Allowed effective element width based on the LMUL setting
-  int unsigned           legal_eew[$];
+  // Legal EEW encoded in load/store instructions based
+  // on current SEW and LMUL setting
+  int unsigned legal_ls_eew[$];
 
   // Allow vector narrowing or widening instructions.
   rand bit vec_narrowing_widening;
 
   rand bit allow_illegal_vec_instr;
   constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
-
-  // Enable segmented load/store extension ops
-  rand bit enable_zvlsseg = 1'b1;
 
   // Enable fault only first load ops
   rand bit enable_fault_only_first_load;
@@ -56,7 +54,7 @@ class riscv_vector_cfg extends uvm_object;
     solve vtype before vl;
     solve vl before vstart;
     vstart inside {[0:vl]};
-    vl inside {[1:VLEN/vtype.vsew]};
+    vl inside {[0:VLEN/vtype.vsew]};
   }
 
   // Basic constraint for initial bringup
@@ -78,10 +76,6 @@ class riscv_vector_cfg extends uvm_object;
     vtype.vsew <= max_int_sew;
   }
 
-  constraint vseg_c {
-    enable_zvlsseg -> (vtype.vlmul < 8);
-  }
-
   `uvm_object_utils_begin(riscv_vector_cfg)
     `uvm_field_int(vtype.ill, UVM_DEFAULT)
     `uvm_field_int(vtype.vma, UVM_DEFAULT)
@@ -89,7 +83,7 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(vtype.vsew, UVM_DEFAULT)
     `uvm_field_int(vtype.vlmul, UVM_DEFAULT)
     `uvm_field_int(vtype.fractional_lmul, UVM_DEFAULT)
-    `uvm_field_queue_int(legal_eew, UVM_DEFAULT)
+    `uvm_field_queue_int(legal_ls_eew, UVM_DEFAULT)
     `uvm_field_int(vl, UVM_DEFAULT)
     `uvm_field_int(vstart, UVM_DEFAULT)
     `uvm_field_enum(vxrm_t,vxrm, UVM_DEFAULT)
@@ -101,15 +95,11 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(enable_zvfhmin_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zvfh_extension, UVM_DEFAULT)
     `uvm_field_int(min_fp_sew, UVM_DEFAULT)
-    `uvm_field_int(enable_zvlsseg, UVM_DEFAULT)
     `uvm_field_int(enable_fault_only_first_load, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
     super.new(name);
-    if ($value$plusargs("enable_zvlsseg=%0d", enable_zvlsseg)) begin
-      enable_zvlsseg.rand_mode(0);
-    end
     if ($value$plusargs("enable_fault_only_first_load=%0d", enable_fault_only_first_load)) begin
       enable_fault_only_first_load.rand_mode(0);
     end
@@ -155,23 +145,28 @@ class riscv_vector_cfg extends uvm_object;
   endfunction : new
 
   function void post_randomize();
-    real temp_eew;
-    legal_eew = {};
-    // Section 7.3 Vector loads and stores have the EEW encoded directly in the instruction.
-    // EMUL is calculated as EMUL =(EEW/SEW)*LMUL. If the EMUL would be out of range
-    // (EMUL>8 or EMUL<1/8), an illegal instruction exceptionis raised.
-    // EEW = SEW * EMUL / LMUL
-    for (real emul = 0.125; emul <= 8; emul = emul * 2) begin
-      if (vtype.fractional_lmul == 0) begin
-        temp_eew = real'(vtype.vsew) * emul / real'(vtype.vlmul);
-      end else begin
-        temp_eew = real'(vtype.vsew) * emul * real'(vtype.vlmul);
-      end
-      if (temp_eew inside {[8:1024]}) begin
-        legal_eew.push_back(int'(temp_eew));
-      end
-      `uvm_info(`gfn, $sformatf("Checking emul: %.2f", emul), UVM_LOW)
-    end
+    set_legal_ls_eew();
   endfunction : post_randomize
+
+  // Section 7.3: Vector Load/Store Width Encoding
+  // Vector loads and stores have an EEW encoded directly in the instruction. The
+  // corresponding EMUL is calculated as EMUL = (EEW/SEW)*LMUL. If the EMUL would
+  // be out of range (EMUL>8 or EMUL<1/8), the instruction encoding is reserved.
+  function void set_legal_ls_eew();
+    real eew;
+    legal_ls_eew = {};
+    for (real emul = 1.0 / real'(max_int_sew/8); emul <= 8.0; emul = emul * 2) begin
+      // Calculate EEW
+      if (vtype.fractional_lmul) begin
+        eew = real'(vtype.vsew) * emul * real'(vtype.vlmul);
+      end else begin
+        eew = real'(vtype.vsew) * emul / real'(vtype.vlmul);
+      end
+      // Check EEW and append iff legal
+      if (eew inside {[8:max_int_sew]}) begin
+        legal_ls_eew.push_back(int'(eew));
+      end
+    end
+  endfunction
 
 endclass : riscv_vector_cfg
