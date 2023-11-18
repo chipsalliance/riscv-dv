@@ -33,7 +33,7 @@ import std.algorithm.sorting: sort;
 import std.traits: EnumMembers;
 
 import esdl.base.rand: urandom;
-import esdl.experimental.allocator.mallocator: Mallocator;
+import esdl.experimental.allocator.tallocator: Tallocator;
 import std.container.array: Array;
 import esdl.data.vector: Vector;
 
@@ -57,6 +57,7 @@ class riscv_instr_registry: uvm_object
   riscv_instr[riscv_instr_name_t]               instr_template;
 
   riscv_instr_gen_config                        cfg;
+  static Tallocator!(1024*1024)                 tallocator;
 
   this (string name="") {
     super(name);
@@ -272,8 +273,8 @@ class riscv_instr_registry: uvm_object
       name = inter_set[idx];
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    // auto instr = instr_template[name].dup(Mallocator.instance);
-    auto instr = instr_template[name].dup();
+    auto instr = instr_template[name].dup(tallocator);
+    // auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -301,8 +302,8 @@ class riscv_instr_registry: uvm_object
     ulong idx = urandom( 0, load_store_instr.length);
     riscv_instr_name_t name = load_store_instr[idx];
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    // auto instr = instr_template[name].dup(Mallocator.instance);
-    auto instr = instr_template[name].dup();
+    auto instr = instr_template[name].dup(tallocator);
+    // auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
@@ -312,8 +313,8 @@ class riscv_instr_registry: uvm_object
       uvm_fatal("riscv_instr", format("Cannot get instr %0s", name));
     }
     // Shallow copy for all relevant fields, avoid using create() to improve performance
-    // auto instr = instr_template[name].dup(Mallocator.instance);
-    auto instr = instr_template[name].dup();
+    auto instr = instr_template[name].dup(tallocator);
+    // auto instr = instr_template[name].dup();
     instr.m_cfg = cfg;
     return instr;
   }
