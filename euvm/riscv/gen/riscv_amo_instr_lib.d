@@ -262,11 +262,11 @@ class riscv_vector_amo_instr_stream: riscv_vector_load_store_instr_stream
   }
 
   void add_element_vec_load_stores() {
-    allowed_instr = [riscv_instr_name_t.VAMOSWAPE_V, riscv_instr_name_t.VAMOADDE_V,
-		     riscv_instr_name_t.VAMOXORE_V,  riscv_instr_name_t.VAMOANDE_V,
-		     riscv_instr_name_t.VAMOORE_V,   riscv_instr_name_t.VAMOMINE_V,
-		     riscv_instr_name_t.VAMOMAXE_V,  riscv_instr_name_t.VAMOMINUE_V,
-		     riscv_instr_name_t.VAMOMAXUE_V] ~ allowed_instr;
+    // allowed_instr = [riscv_instr_name_t.VAMOSWAPE_V, riscv_instr_name_t.VAMOADDE_V,
+    // 		     riscv_instr_name_t.VAMOXORE_V,  riscv_instr_name_t.VAMOANDE_V,
+    // 		     riscv_instr_name_t.VAMOORE_V,   riscv_instr_name_t.VAMOMINE_V,
+    // 		     riscv_instr_name_t.VAMOMAXE_V,  riscv_instr_name_t.VAMOMINUE_V,
+    // 		     riscv_instr_name_t.VAMOMAXUE_V] ~ allowed_instr;
   }
 
 }

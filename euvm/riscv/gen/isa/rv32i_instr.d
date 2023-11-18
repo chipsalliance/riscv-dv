@@ -76,7 +76,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
   // SYSTEM instructions
   mixin (riscv_instr_mixin(ECALL,   I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(EBREAK,  I_FORMAT, SYSTEM, RV32I));
-  mixin (riscv_instr_mixin(URET,    I_FORMAT, SYSTEM, RV32I));
+  // mixin (riscv_instr_mixin(URET,    I_FORMAT, SYSTEM, RV32I));  -- deprecated
   mixin (riscv_instr_mixin(SRET,    I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(MRET,    I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(DRET,    I_FORMAT, SYSTEM, RV32I));
@@ -186,8 +186,8 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(ECALL,   I_FORMAT, SYSTEM, RV32I); }
    class riscv_EBREAK_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(EBREAK,  I_FORMAT, SYSTEM, RV32I); }
-   class riscv_URET_instr: riscv_instr
-   { mixin RISCV_INSTR_MIXIN!(URET,    I_FORMAT, SYSTEM, RV32I); }
+   // class riscv_URET_instr: riscv_instr -- deprecated
+   // { mixin RISCV_INSTR_MIXIN!(URET,    I_FORMAT, SYSTEM, RV32I); }
    class riscv_SRET_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(SRET,    I_FORMAT, SYSTEM, RV32I); }
    class riscv_MRET_instr: riscv_instr

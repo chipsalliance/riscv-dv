@@ -739,30 +739,32 @@ class riscv_vector_load_store_instr_stream : riscv_mem_access_stream
   void build_allowed_instr() {
     switch (address_mode) {
     case address_mode_e.UNIT_STRIDED:
-      allowed_instr = [riscv_instr_name_t.VLE_V, riscv_instr_name_t.VSE_V] ~ allowed_instr;
-      if (cfg.vector_cfg.enable_fault_only_first_load) {
-	allowed_instr = [riscv_instr_name_t.VLEFF_V] ~ allowed_instr;
-      }
-      if (cfg.vector_cfg.enable_zvlsseg) {
-	allowed_instr = [riscv_instr_name_t.VLSEGE_V, riscv_instr_name_t.VSSEGE_V] ~ allowed_instr;
-	if (cfg.vector_cfg.enable_fault_only_first_load) {
-	  allowed_instr = [riscv_instr_name_t.VLSEGEFF_V] ~ allowed_instr;
-	}
-      }
+      // allowed_instr = [// riscv_instr_name_t.VLE_V, // mismatch with riscv-opcodes
+      // 		       // riscv_instr_name_t.VSE_V  // mismatch with riscv-opcodes
+      // 		       ] ~ allowed_instr;
+      // if (cfg.vector_cfg.enable_fault_only_first_load) {
+      // 	allowed_instr = [riscv_instr_name_t.VLEFF_V] ~ allowed_instr;
+      // }
+      // if (cfg.vector_cfg.enable_zvlsseg) {
+      // 	allowed_instr = [riscv_instr_name_t.VLSEGE_V, riscv_instr_name_t.VSSEGE_V] ~ allowed_instr;
+      // 	if (cfg.vector_cfg.enable_fault_only_first_load) {
+      // 	  allowed_instr = [riscv_instr_name_t.VLSEGEFF_V] ~ allowed_instr;
+      // 	}
+      // }
       break;
     case address_mode_e.STRIDED:
-      allowed_instr = [riscv_instr_name_t.VLSE_V, riscv_instr_name_t.VSSE_V] ~ allowed_instr;
-      if (cfg.vector_cfg.enable_zvlsseg) {
-	allowed_instr = [riscv_instr_name_t.VLSSEGE_V, riscv_instr_name_t.VSSSEGE_V] ~ allowed_instr;
-      }
-      break;
-    case address_mode_e.INDEXED:
-      allowed_instr = [riscv_instr_name_t.VLXEI_V, riscv_instr_name_t.VSXEI_V,
-		       riscv_instr_name_t.VSUXEI_V] ~ allowed_instr;
-      if (cfg.vector_cfg.enable_zvlsseg) {
-	allowed_instr = [riscv_instr_name_t.VLXSEGEI_V, riscv_instr_name_t.VSXSEGEI_V,
-			 riscv_instr_name_t.VSUXSEGEI_V] ~ allowed_instr;
-      }
+    //   allowed_instr = [riscv_instr_name_t.VLSE_V, riscv_instr_name_t.VSSE_V] ~ allowed_instr;
+    //   if (cfg.vector_cfg.enable_zvlsseg) {
+    // 	allowed_instr = [riscv_instr_name_t.VLSSEGE_V, riscv_instr_name_t.VSSSEGE_V] ~ allowed_instr;
+    //   }
+    //   break;
+    // case address_mode_e.INDEXED:
+    //   allowed_instr = [riscv_instr_name_t.VLXEI_V, riscv_instr_name_t.VSXEI_V,
+    // 		       riscv_instr_name_t.VSUXEI_V] ~ allowed_instr;
+    //   if (cfg.vector_cfg.enable_zvlsseg) {
+    // 	allowed_instr = [riscv_instr_name_t.VLXSEGEI_V, riscv_instr_name_t.VSXSEGEI_V,
+    // 			 riscv_instr_name_t.VSUXSEGEI_V] ~ allowed_instr;
+    //   }
       break;
     default: break;
     }

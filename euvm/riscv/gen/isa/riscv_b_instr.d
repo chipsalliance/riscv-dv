@@ -185,10 +185,10 @@ class riscv_b_instr: riscv_instr
       riscv_instr_name_t.SLO,
       riscv_instr_name_t.SRO,
       riscv_instr_name_t.GREV,
-      riscv_instr_name_t.XPERM_N,
-      riscv_instr_name_t.XPERM_B,
-      riscv_instr_name_t.XPERM_H,
-      riscv_instr_name_t.XPERM_W: return UBVEC!(7, 0b0110011);
+      riscv_instr_name_t.XPERM4,
+      riscv_instr_name_t.XPERM8,
+      riscv_instr_name_t.XPERM16,
+      riscv_instr_name_t.XPERM32: return UBVEC!(7, 0b0110011);
     case riscv_instr_name_t.GORCI,
       riscv_instr_name_t.SLOI,
       riscv_instr_name_t.SROI,
@@ -297,10 +297,10 @@ class riscv_b_instr: riscv_instr
     case riscv_instr_name_t.PACKW: return UBVEC!(3, 0b100);
     case riscv_instr_name_t.PACKUW: return UBVEC!(3, 0b100);
     case riscv_instr_name_t.BFPW: return UBVEC!(3, 0b111);
-    case riscv_instr_name_t.XPERM_N: return UBVEC!(3, 0b010);
-    case riscv_instr_name_t.XPERM_B: return UBVEC!(3, 0b100);
-    case riscv_instr_name_t.XPERM_H: return UBVEC!(3, 0b110);
-    case riscv_instr_name_t.XPERM_W: return UBVEC!(3, 0b000);
+    case riscv_instr_name_t.XPERM4: return UBVEC!(3, 0b010);
+    case riscv_instr_name_t.XPERM8: return UBVEC!(3, 0b100);
+    case riscv_instr_name_t.XPERM16: return UBVEC!(3, 0b110);
+    case riscv_instr_name_t.XPERM32: return UBVEC!(3, 0b000);
     default:                         return super.get_func3();
     }
   }
@@ -350,10 +350,10 @@ class riscv_b_instr: riscv_instr
     case riscv_instr_name_t.PACKW: return UBVEC!(7, 0b0000100);
     case riscv_instr_name_t.PACKUW: return UBVEC!(7, 0b0100100);
     case riscv_instr_name_t.BFPW: return UBVEC!(7, 0b0100100);
-    case riscv_instr_name_t.XPERM_N: return UBVEC!(7, 0b0010100);
-    case riscv_instr_name_t.XPERM_B: return UBVEC!(7, 0b0010100);
-    case riscv_instr_name_t.XPERM_H: return UBVEC!(7, 0b0010100);
-    case riscv_instr_name_t.XPERM_W: return UBVEC!(7, 0b0010100);
+    case riscv_instr_name_t.XPERM4: return UBVEC!(7, 0b0010100);
+    case riscv_instr_name_t.XPERM8: return UBVEC!(7, 0b0010100);
+    case riscv_instr_name_t.XPERM16: return UBVEC!(7, 0b0010100);
+    case riscv_instr_name_t.XPERM32: return UBVEC!(7, 0b0010100);
     default:                         return super.get_func7();
     }
   }
@@ -486,8 +486,8 @@ class riscv_b_instr: riscv_instr
 	 riscv_instr_name_t.SHFL, riscv_instr_name_t.SHFLW,
 	 riscv_instr_name_t.UNSHFL, riscv_instr_name_t.UNSHFLW,
 	 riscv_instr_name_t.SHFLI, riscv_instr_name_t.UNSHFLI,
-	 riscv_instr_name_t.XPERM_N, riscv_instr_name_t.XPERM_B,
-	 riscv_instr_name_t.XPERM_H, riscv_instr_name_t.XPERM_W,
+	 riscv_instr_name_t.XPERM4, riscv_instr_name_t.XPERM8,
+	 riscv_instr_name_t.XPERM16, riscv_instr_name_t.XPERM32,
 	 riscv_instr_name_t.SLO, riscv_instr_name_t.SLOW,
 	 riscv_instr_name_t.SLOI, riscv_instr_name_t.SLOIW,
 	 riscv_instr_name_t.SRO, riscv_instr_name_t.SROW,

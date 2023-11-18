@@ -115,24 +115,32 @@ string riscv_va_instr_mixin_tmpl(BASE_TYPE)(riscv_instr_name_t instr_name,
   return class_str;
 }
 
-class RISCV_INSTR_TMPL(riscv_instr_name_t instr_n,
-		       riscv_instr_format_t instr_format,
-		       riscv_instr_category_t instr_category,
-		       riscv_instr_group_t instr_group,
-		       imm_t imm_tp,
-		       BASE_TYPE): BASE_TYPE
-{
-  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
-  mixin uvm_object_utils;
-  this(string name="") {
-    super(name);
-    this.instr_name = instr_n;
-    this.instr_format = instr_format;
-    this.group = instr_group;
-    this.category = instr_category;
-    this.imm_type = imm_tp;
-    set_imm_len();
-    set_rand_mode();
+// class RISCV_INSTR_TMPL(riscv_instr_name_t instr_n,
+// 		       riscv_instr_format_t instr_format,
+// 		       riscv_instr_category_t instr_category,
+// 		       riscv_instr_group_t instr_group,
+// 		       imm_t imm_tp,
+// 		       BASE_TYPE): BASE_TYPE
+// {
+//   enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
+//   mixin uvm_object_utils;
+//   this(string name="") {
+//     super(name);
+//     this.instr_name = instr_n;
+//     this.instr_format = instr_format;
+//     this.group = instr_group;
+//     this.category = instr_category;
+//     this.imm_type = imm_tp;
+//     set_imm_len();
+//     set_rand_mode();
+//   }
+// }
+
+void print_class_info(T)(T inst) {
+  static if (is (T B == super)) {
+    pragma(msg, B.stringof);
+    import std.stdio: writeln;
+    writeln("Randomized ", B[0].stringof);
   }
 }
 
@@ -142,7 +150,36 @@ mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
 				 riscv_instr_group_t instr_group,
 				 imm_t imm_tp=imm_t.IMM)
 {
-  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  import riscv.gen.riscv_opcodes_pkg;
+
+  static bool hasReg(riscv_opcodes_args_t r, riscv_opcodes_args_t[] vars) {
+    foreach (var; vars) if (var is r) return true;
+      else continue;
+    return false;
+  }
+
+  static bool hasReg(riscv_opcodes_args_t[] regs, riscv_opcodes_args_t[] vars) {
+    foreach (r; regs) if (hasReg(r, vars)) return true;
+      else continue;
+    return false;
+  }
+
+  // static if (hasReg(riscv_opcodes_args_t.rs1)) {
+  //   @rand ubvec!5 rs1;
+  // }
+
+  
+  enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
+  // enum RISCV_OPCODES_ARGS_T = riscv_opcode_params_list[instr_n]._args_t;
+  // pragma (msg, riscv_opcode_params_list[instr_n]);
+  // enum RISCV_ARGS = riscv_instr_variables[instr_n];
+  // enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_ARGS);
+
+  enum RISCV_PARAMS = riscv_instr_params[instr_n];
+  static assert (RISCV_PARAMS._name == instr_n);
+  enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_PARAMS._args);
+
+  pragma(msg, instr_n.stringof ~ " " ~ HAS_RS1.stringof);
   mixin uvm_object_utils;
   this(string name="") {
     super(name);
@@ -154,17 +191,83 @@ mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
     set_imm_len();
     set_rand_mode();
   }
+
+  // override void post_randomize() {
+  //   print_class_info(this);
+  // }
+
+  static if (HAS_RS1) {
+    pragma(msg, "Constraint Gets Defined");
+    // constraint!q{
+      
+    // }
+  }
+  else {
+    pragma(msg, "Constraint Does not Get Defined");
+  }
+
+  static if (instr_n == riscv_instr_name_t.SLLIW ||
+	     instr_n == riscv_instr_name_t.SRLIW ||
+	     instr_n == riscv_instr_name_t.SRAIW) {
+    import esdl.rand: constraint;
+    constraint!q{
+      imm[5..12] == 0;
+    } imm_sw_cstr;
+  }
+
+  static if (instr_n == riscv_instr_name_t.SLLI ||
+	     instr_n == riscv_instr_name_t.SRLI ||
+	     instr_n == riscv_instr_name_t.SRAI) {
+    import riscv.gen.target: XLEN;
+    import esdl.rand: constraint;
+    static if (XLEN) {
+      constraint!q{
+	imm[5..12] == 0;
+      }  imm_s_cstr;
+    }
+    else {
+    import esdl.rand: constraint;
+      constraint!q{
+	imm[6:0] == 0;
+      } imm_s_cstr;
+    }
+  }
+
 }
 
-class RISCV_VA_INSTR_TMPL(string ext, riscv_instr_name_t instr_n,
-			  riscv_instr_format_t instr_format,
-			  riscv_instr_category_t instr_category,
-			  riscv_instr_group_t instr_group,
-			  imm_t imm_tp,
-			  BASE_TYPE,
-			  vav...): BASE_TYPE
+mixin template RISCV_C_INSTR_MIXIN(riscv_instr_name_t instr_n,
+				   riscv_instr_format_t instr_format,
+				   riscv_instr_category_t instr_category,
+				   riscv_instr_group_t instr_group,
+				   imm_t imm_tp=imm_t.IMM)
 {
-  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  import riscv.gen.riscv_opcodes_pkg;
+  import esdl.rand: constraint;
+  import riscv.gen.riscv_instr_pkg: riscv_reg_t;
+
+  static bool hasReg(riscv_opcodes_args_t r, riscv_opcodes_args_t[] vars) {
+    foreach (var; vars) if (var is r) return true;
+      else continue;
+    return false;
+  }
+
+  static bool hasReg(riscv_opcodes_args_t[] regs, riscv_opcodes_args_t[] vars) {
+    foreach (r; regs) if (hasReg(r, vars)) return true;
+      else continue;
+    return false;
+  }
+
+  enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
+  // enum RISCV_OPCODES_ARGS_T = riscv_opcode_params_list[instr_n]._args_t;
+  // pragma (msg, riscv_opcode_params_list[instr_n]);
+  // enum RISCV_ARGS = riscv_instr_variables[instr_n];
+  // enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_ARGS);
+
+  enum RISCV_PARAMS = riscv_instr_params[instr_n];
+  static assert (RISCV_PARAMS._name == instr_n);
+  enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_PARAMS._args);
+
+  pragma(msg, instr_n.stringof ~ " " ~ HAS_RS1.stringof);
   mixin uvm_object_utils;
   this(string name="") {
     super(name);
@@ -173,19 +276,157 @@ class RISCV_VA_INSTR_TMPL(string ext, riscv_instr_name_t instr_n,
     this.group = instr_group;
     this.category = instr_category;
     this.imm_type = imm_tp;
-    this.allowed_va_variants = [vav];
-    this.sub_extension = ext;
     set_imm_len();
     set_rand_mode();
   }
+
+  // override void post_randomize() {
+  //   print_class_info(this);
+  // }
+
+  static if (HAS_RS1) {
+    pragma(msg, "Constraint Gets Defined");
+    // constraint!q{
+      
+    // }
+  }
+  else {
+    pragma(msg, "Constraint Does not Get Defined");
+  }
+
+  static if (imm_tp == imm_t.NZIMM || imm_tp == imm_t.NZUIMM) {
+    constraint! q{
+      imm[0..6] != 0;
+    } c_imm_val_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_LUI) {
+    // TODO(taliu) Check why bit 6 cannot be zero
+    constraint! q{
+      imm[5..32] == 0;
+    } c_lui_imm_val_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_SRAI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_SRLI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_SLLI) {
+    constraint! q{
+      imm[5..32] == 0;
+    } c_sh_imm_val_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_ADDI4SPN) {
+    constraint! q{
+      imm[0..2] == 0;
+    } imm_addi4spn_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_ADDI16SP) {
+    constraint! q{
+      rd  == riscv_reg_t.SP;
+    } c_addi16sp_sp_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_JR ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_JALR) {
+    constraint! q{
+      rs2 == riscv_reg_t.ZERO;
+      rs1 != riscv_reg_t.ZERO;
+    } c_j_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_ADDI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_ADDIW ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_LI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_LUI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_SLLI ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_SLLI64 ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_LQSP ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_LDSP ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_MV ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_ADD ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_LWSP) {
+    constraint! q{
+      rd != riscv_reg_t.ZERO;
+    } c_rdn0_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_JR) {
+    constraint! q{
+      rs1 != riscv_reg_t.ZERO;
+    } c_rs1n0_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_ADD ||
+	     RISCV_INSTR_NAME == riscv_instr_name_t.C_MV) {
+    constraint! q{
+      rs2 != riscv_reg_t.ZERO;
+    } c_rs2n0_cst;
+  }
+
+  static if (RISCV_INSTR_NAME == riscv_instr_name_t.C_LUI) {
+    constraint! q{
+      rd != riscv_reg_t.SP;
+    } c_rdnsp_cst;
+  }
+  
+  static if (hasReg(riscv_opcodes_args_t.rs1_p, RISCV_PARAMS._args) ||
+	     hasReg(riscv_opcodes_args_t.rd_rs1_p, RISCV_PARAMS._args) ||
+	     hasReg(riscv_opcodes_args_t.c_sreg1, RISCV_PARAMS._args)) {
+    constraint! q{
+      rs1 inside [riscv_reg_t.S0:riscv_reg_t.A5];
+    } c_rs1_cst;
+  }
+
+  static if (hasReg(riscv_opcodes_args_t.rs2_p, RISCV_PARAMS._args) ||
+	     hasReg(riscv_opcodes_args_t.c_sreg2, RISCV_PARAMS._args)) {
+    constraint! q{
+      rs2 inside [riscv_reg_t.S0:riscv_reg_t.A5];
+    } c_rs2_cst;
+  }
+
+  static if (hasReg(riscv_opcodes_args_t.rd_p, RISCV_PARAMS._args) ||
+	     hasReg(riscv_opcodes_args_t.rd_rs1_p, RISCV_PARAMS._args)) {
+    constraint! q{
+      rd inside [riscv_reg_t.S0:riscv_reg_t.A5];
+    } c_rd_cst;
+  }
+
+  
+  
+
+
 }
+// class RISCV_VA_INSTR_TMPL(string ext, riscv_instr_name_t instr_n,
+// 			  riscv_instr_format_t instr_format,
+// 			  riscv_instr_category_t instr_category,
+// 			  riscv_instr_group_t instr_group,
+// 			  imm_t imm_tp,
+// 			  BASE_TYPE,
+// 			  vav...): BASE_TYPE
+// {
+//   enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
+//   mixin uvm_object_utils;
+//   this(string name="") {
+//     super(name);
+//     this.instr_name = instr_n;
+//     this.instr_format = instr_format;
+//     this.group = instr_group;
+//     this.category = instr_category;
+//     this.imm_type = imm_tp;
+//     this.allowed_va_variants = [vav];
+//     this.sub_extension = ext;
+//     set_imm_len();
+//     set_rand_mode();
+//   }
+// }
 
 mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
 				    riscv_instr_format_t instr_format,
 				    riscv_instr_category_t instr_category,
 				    riscv_instr_group_t instr_group)
 {
-  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
   mixin uvm_object_utils;
   this(string name="") {
     super(name);
@@ -199,6 +440,10 @@ mixin template RISCV_VA_INSTR_MIXIN(string ext, riscv_instr_name_t instr_n,
     set_imm_len();
     set_rand_mode();
   }
+  override void post_randomize() {
+    print_class_info(this);
+  }
+
 }
 
 mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
@@ -206,7 +451,7 @@ mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
 				    riscv_instr_category_t instr_category,
 				    riscv_instr_group_t instr_group)
 {
-  enum riscv_instr_name_t RISCV_INSTR_NAME_T = instr_n;
+  enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
   mixin uvm_object_utils;
   this(string name="") {
     super(name);
@@ -220,118 +465,123 @@ mixin template RISCV_VA_INSTR_MIXIN(riscv_instr_name_t instr_n,
     set_imm_len();
     set_rand_mode();
   }
+  override void post_randomize() {
+    print_class_info(this);
+  }
+
 }
 
 alias riscv_instr_mixin = riscv_instr_mixin_tmpl!riscv_instr;
 
-alias RISCV_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		  riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		  imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_instr);
+// alias RISCV_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		  riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		  imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_instr);
 
-alias RISCV_CSR_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		  riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		  imm_t imm_tp = imm_t.IMM) =
-  RISCV_CSR_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_csr_instr);
+// alias RISCV_CSR_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		  riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		  imm_t imm_tp = imm_t.IMM) =
+//   RISCV_CSR_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_csr_instr);
 
-alias riscv_csr_instr_mixin = riscv_instr_mixin_tmpl!riscv_csr_instr;
+// alias riscv_csr_instr_mixin = riscv_instr_mixin_tmpl!riscv_csr_instr;
 
-alias riscv_fp_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
+// alias riscv_fp_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
 
-alias RISCV_FP_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		     imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_floating_point_instr);
+// alias RISCV_FP_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		     imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_floating_point_instr);
 
-alias riscv_amo_instr_mixin = riscv_instr_mixin_tmpl!riscv_amo_instr;
+// alias riscv_amo_instr_mixin = riscv_instr_mixin_tmpl!riscv_amo_instr;
 
-alias RISCV_AMO_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		      imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_amo_instr);
+// alias RISCV_AMO_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		      imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_amo_instr);
 
-alias riscv_c_instr_mixin = riscv_instr_mixin_tmpl!riscv_compressed_instr;
+// alias riscv_c_instr_mixin = riscv_instr_mixin_tmpl!riscv_compressed_instr;
 
-alias RISCV_C_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		    riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		    imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_compressed_instr);
+// alias RISCV_C_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		    riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		    imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_compressed_instr);
 
-alias riscv_fc_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
+// alias riscv_fc_instr_mixin = riscv_instr_mixin_tmpl!riscv_floating_point_instr;
 
-alias RISCV_FC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		     imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_floating_point_instr);
+// alias RISCV_FC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		     imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_floating_point_instr);
 
-alias riscv_va_instr_mixin = riscv_va_instr_mixin_tmpl!riscv_vector_instr;
+// alias riscv_va_instr_mixin = riscv_va_instr_mixin_tmpl!riscv_vector_instr;
 
-alias RISCV_VA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		     vav...) =
-  RISCV_VA_INSTR_TMPL!("", instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
-		       riscv_vector_instr, vav);
+// alias RISCV_VA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		     vav...) =
+//   RISCV_VA_INSTR_TMPL!("", instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
+// 		       riscv_vector_instr, vav);
 
-alias RISCV_VA_INSTR(string ext, riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		     vav...) =
-  RISCV_VA_INSTR_TMPL!(ext, instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
-		       riscv_vector_instr, vav);
+// alias RISCV_VA_INSTR(string ext, riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		     riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		     vav...) =
+//   RISCV_VA_INSTR_TMPL!(ext, instr_n, instr_format, instr_category, instr_group, imm_t.IMM,
+// 		       riscv_vector_instr, vav);
 
-alias riscv_custom_instr_mixin = riscv_instr_mixin_tmpl!riscv_custom_instr;
+// alias riscv_custom_instr_mixin = riscv_instr_mixin_tmpl!riscv_custom_instr;
 
-alias RISCV_CUSTOM_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-			 riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-			 imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_custom_instr);
+// alias RISCV_CUSTOM_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 			 riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 			 imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_custom_instr);
 
-alias riscv_b_instr_mixin = riscv_instr_mixin_tmpl!riscv_b_instr;
+// alias riscv_b_instr_mixin = riscv_instr_mixin_tmpl!riscv_b_instr;
 
-alias RISCV_B_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		    riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		    imm_t imm_tp = imm_t.IMM) =
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_b_instr);
+// alias RISCV_B_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		    riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		    imm_t imm_tp = imm_t.IMM) =
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_b_instr);
 
-//Zba-extension instruction
-alias riscv_zba_instr_mixin = riscv_instr_mixin_tmpl!riscv_zba_instr;
+// //Zba-extension instruction
+// alias riscv_zba_instr_mixin = riscv_instr_mixin_tmpl!riscv_zba_instr;
 
-alias RISCV_ZBA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		      imm_t imm_tp = imm_t.IMM)	=
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_zba_instr);
+// alias RISCV_ZBA_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		      imm_t imm_tp = imm_t.IMM)	=
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_zba_instr);
 
-//Zbb-extension instruction
-alias riscv_zbb_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbb_instr;
+// //Zbb-extension instruction
+// alias riscv_zbb_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbb_instr;
 
-alias RISCV_ZBB_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		      imm_t imm_tp = imm_t.IMM)	=
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_zbb_instr);
+// alias RISCV_ZBB_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		      imm_t imm_tp = imm_t.IMM)	=
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_zbb_instr);
 
-//Zbc-extension instruction
-alias riscv_zbc_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbc_instr;
+// //Zbc-extension instruction
+// alias riscv_zbc_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbc_instr;
 
-alias RISCV_ZBC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		      imm_t imm_tp = imm_t.IMM)	=
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_zbc_instr);
+// alias RISCV_ZBC_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		      imm_t imm_tp = imm_t.IMM)	=
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_zbc_instr);
 
-//Zbs-extension instruction
-alias riscv_zbs_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbs_instr;
+// //Zbs-extension instruction
+// alias riscv_zbs_instr_mixin = riscv_instr_mixin_tmpl!riscv_zbs_instr;
 
-alias RISCV_ZBS_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
-		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
-		      imm_t imm_tp = imm_t.IMM)	=
-  RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
-		    riscv_zbs_instr);
+// alias RISCV_ZBS_INSTR(riscv_instr_name_t instr_n, riscv_instr_format_t instr_format,
+// 		      riscv_instr_category_t instr_category, riscv_instr_group_t instr_group,
+// 		      imm_t imm_tp = imm_t.IMM)	=
+//   RISCV_INSTR_TMPL!(instr_n, instr_format, instr_category, instr_group, imm_tp,
+// 		    riscv_zbs_instr)
+  ;

@@ -269,8 +269,8 @@ class riscv_vector_instr: riscv_floating_point_instr
 
   constraint!q{
     // (vm=0) is reserved for below ops
-    if (instr_name inside [riscv_instr_name_t.VMV_VV, riscv_instr_name_t.VMV_VX, riscv_instr_name_t.VMV_VI,
-			   riscv_instr_name_t.VFMV_VF, riscv_instr_name_t.VCOMPRESS_VM, riscv_instr_name_t.VFMV_F_S,
+    if (instr_name inside [riscv_instr_name_t.VMV_V_V, riscv_instr_name_t.VMV_V_X, riscv_instr_name_t.VMV_V_I,
+			   riscv_instr_name_t.VFMV_V_F, riscv_instr_name_t.VCOMPRESS_VM, riscv_instr_name_t.VFMV_F_S,
 			   riscv_instr_name_t.VFMV_S_F, riscv_instr_name_t.VMV_X_S,
 			   riscv_instr_name_t.VMV_S_X, riscv_instr_name_t.VMV1R_V,
 			   riscv_instr_name_t.VMV2R_V, riscv_instr_name_t.VMV4R_V,
@@ -390,14 +390,14 @@ class riscv_vector_instr: riscv_floating_point_instr
     string name = super.get_instr_name();
     if (category.inside(riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE)) {
       // Add eew before ".v" or "ff.v" suffix
-      if (instr_name.inside(riscv_instr_name_t.VLEFF_V, riscv_instr_name_t.VLSEGEFF_V)) {
-	name = name[0..name.length - 4];
-        name = format("%0s%0dFF.V", name, eew);
-      }
-      else {
-        name = name[0..name.length - 2];
-        name = format("%0s%0d.V", name, eew);
-      }
+      // if (instr_name.inside(riscv_instr_name_t.VLEFF_V, riscv_instr_name_t.VLSEGEFF_V)) {
+      // 	name = name[0..name.length - 4];
+      //   name = format("%0s%0dFF.V", name, eew);
+      // }
+      // else {
+      name = name[0..name.length - 2];
+      name = format("%0s%0d.V", name, eew);
+      // }
       uvm_info(get_full_name(), format("%0s -> %0s", super.get_instr_name(), name), UVM_LOW);
     }
     return name;
@@ -409,14 +409,14 @@ class riscv_vector_instr: riscv_floating_point_instr
     char[] name = super.get_instr_name(buf_);
     if (category.inside(riscv_instr_category_t.LOAD, riscv_instr_category_t.STORE)) {
       // Add eew before ".v" or "ff.v" suffix
-      if (instr_name.inside(riscv_instr_name_t.VLEFF_V, riscv_instr_name_t.VLSEGEFF_V)) {
-	name = name[0..name.length - 4];
-        name = sformat!("%0s%0dFF.V")(buf, name, eew);
-      }
-      else {
-        name = name[0..name.length - 2];
-        name = sformat!("%0s%0d.V")(buf, name, eew);
-      }
+      // if (instr_name.inside(riscv_instr_name_t.VLEFF_V, riscv_instr_name_t.VLSEGEFF_V)) {
+      // 	name = name[0..name.length - 4];
+      //   name = sformat!("%0s%0dFF.V")(buf, name, eew);
+      // }
+      // else {
+      name = name[0..name.length - 2];
+      name = sformat!("%0s%0d.V")(buf, name, eew);
+      // }
       uvm_info(get_full_name(), format("%0s -> %0s", super.get_instr_name(), name), UVM_LOW);
     }
     return name;

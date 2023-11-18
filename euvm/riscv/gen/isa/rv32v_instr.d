@@ -212,8 +212,10 @@ version (RISCV_INSTR_STRING_MIXIN) {
   //  Section 7. Vector Loads and Stores
   // -------------------------------------------------------------------------
   // Section 7.4 - Vector Unit-Stride Instructions
-  mixin (riscv_va_instr_mixin(VLE_V, VL_FORMAT, LOAD, RVV));
-  mixin (riscv_va_instr_mixin(VSE_V, VS_FORMAT, STORE, RVV));
+
+  //   mixin (riscv_va_instr_mixin(VLE_V, VL_FORMAT, LOAD, RVV));   // mismatch with riscv-opcodes
+  //   mixin (riscv_va_instr_mixin(VSE_V, VS_FORMAT, STORE, RVV));  // mismatch with riscv-opcodes
+
   // Section 7.5 - Vector Strided Instructions
   mixin (riscv_va_instr_mixin(VLSE_V, VLS_FORMAT, LOAD, RVV));
   mixin (riscv_va_instr_mixin(VSSE_V, VSS_FORMAT, STORE, RVV));
@@ -446,9 +448,9 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_VMERGE_VVM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMERGE_VVM, VA_FORMAT, ARITHMETIC, RVV); } // VMERGE
    class riscv_VMERGE_VXM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMERGE_VXM, VA_FORMAT, ARITHMETIC, RVV); } // VMERGE
    class riscv_VMERGE_VIM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMERGE_VIM, VA_FORMAT, ARITHMETIC, RVV); } // VMERGE
-   class riscv_VMV_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_VV, VA_FORMAT, ARITHMETIC, RVV); } // VMV
-   class riscv_VMV_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_VX, VA_FORMAT, ARITHMETIC, RVV); } // VMV
-   class riscv_VMV_VI_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_VI, VA_FORMAT, ARITHMETIC, RVV); } // VMV
+   class riscv_VMV_V_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_V_V, VA_FORMAT, ARITHMETIC, RVV); } // VMV
+   class riscv_VMV_V_X_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_V_X, VA_FORMAT, ARITHMETIC, RVV); } // VMV
+   class riscv_VMV_V_I_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV_V_I, VA_FORMAT, ARITHMETIC, RVV); } // VMV
 
    // Vector Fixed-Point Arithmetic Instructions
    // class riscv_VSADDU_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VSADDU,   VA_FORMAT, ARITHMETIC, RVV, VV, VX, VI); }
@@ -590,7 +592,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
    // class riscv_VFMERGE_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFMERGE,  VA_FORMAT, ARITHMETIC, RVV, VFM); }
    class riscv_VFMERGE_VFM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMERGE_VFM, VA_FORMAT, ARITHMETIC, RVV); } // VFMERGE
    // class riscv_VFMV_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFMV,     VA_FORMAT, ARITHMETIC, RVV, VF); }
-   class riscv_VFMV_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMV_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFMV
+   class riscv_VFMV_V_F_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMV_V_F, VA_FORMAT, ARITHMETIC, RVV); } // VFMV
 
    // Vector conversion instructions
    class riscv_VFCVT_XU_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_XU_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
@@ -677,41 +679,42 @@ version (RISCV_INSTR_STRING_MIXIN) {
    //  Section 7. Vector Loads and Stores
    // -------------------------------------------------------------------------
    // Section 7.4 - Vector Unit-Stride Instructions
-   class riscv_VLE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE_V, VL_FORMAT, LOAD, RVV); }
-   class riscv_VSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE_V, VS_FORMAT, STORE, RVV); }
-   // Section 7.5 - Vector Strided Instructions
-   class riscv_VLSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE_V, VLS_FORMAT, LOAD, RVV); }
-   class riscv_VSSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE_V, VSS_FORMAT, STORE, RVV); }
-   // Section 7.6 - Vector Indexed Instructions
-   class riscv_VLXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLXEI_V, VLX_FORMAT, LOAD, RVV); }
-   class riscv_VSXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSXEI_V, VSX_FORMAT, STORE, RVV); }
-   class riscv_VSUXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI_V, VSX_FORMAT, STORE, RVV); }
-   // Section 7.7 - Vector Unit-Stride Fault-Only-First Loads
-   class riscv_VLEFF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLEFF_V, VL_FORMAT, LOAD, RVV); }
-   // Section 7.8 - Vector Load/Store Segment Instructions (Zvlsseg)
-   // 7.8.1. Vector Unit Strided Segment Loads and Stores
-   class riscv_VLSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSEGE_V, VL_FORMAT, LOAD, RVV); }
-   class riscv_VSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSSEGE_V, VS_FORMAT, STORE, RVV); }
-   class riscv_VLSEGEFF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSEGEFF_V, VL_FORMAT, LOAD, RVV); }
-   // 7.8.2. Vector Strided Segment Loads and Stores
-   class riscv_VLSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSSEGE_V, VLS_FORMAT, LOAD, RVV); }
-   class riscv_VSSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSSSEGE_V, VSS_FORMAT, STORE, RVV); }
-   // 7.8.3. Vector Indexed Segment Loads and Stores
-   class riscv_VLXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLXSEGEI_V, VLX_FORMAT, LOAD, RVV); }
-   class riscv_VSXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSXSEGEI_V, VSX_FORMAT, STORE, RVV); }
-   class riscv_VSUXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSUXSEGEI_V, VSX_FORMAT, STORE, RVV); }
+   //    class riscv_VLE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE_V, VL_FORMAT, LOAD, RVV); }   // mismatch with riscv-opcodes
+   // class riscv_VSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE_V, VS_FORMAT, STORE, RVV); }   // mismatch with riscv-opcodes
 
-   // -------------------------------------------------------------------------
-   //  Section 8. Vector AMO Operations (Zvamo)
-   // -------------------------------------------------------------------------
-   // EEW vector AMOs
-   class riscv_VAMOSWAPE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOADDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOXORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXORE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOANDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOORE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOMINE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOMAXE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOMINUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUE_V, VAMO_FORMAT, AMO, RVV); }
-   class riscv_VAMOMAXUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUE_V, VAMO_FORMAT, AMO, RVV); }
+   // // Section 7.5 - Vector Strided Instructions
+   // class riscv_VLSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE_V, VLS_FORMAT, LOAD, RVV); }
+   // class riscv_VSSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE_V, VSS_FORMAT, STORE, RVV); }
+   // // Section 7.6 - Vector Indexed Instructions
+   // class riscv_VLXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLXEI_V, VLX_FORMAT, LOAD, RVV); }
+   // class riscv_VSXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSXEI_V, VSX_FORMAT, STORE, RVV); }
+   // class riscv_VSUXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI_V, VSX_FORMAT, STORE, RVV); }
+   // // Section 7.7 - Vector Unit-Stride Fault-Only-First Loads
+   // class riscv_VLEFF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLEFF_V, VL_FORMAT, LOAD, RVV); }
+   // // Section 7.8 - Vector Load/Store Segment Instructions (Zvlsseg)
+   // // 7.8.1. Vector Unit Strided Segment Loads and Stores
+   // class riscv_VLSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSEGE_V, VL_FORMAT, LOAD, RVV); }
+   // class riscv_VSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSSEGE_V, VS_FORMAT, STORE, RVV); }
+   // class riscv_VLSEGEFF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSEGEFF_V, VL_FORMAT, LOAD, RVV); }
+   // // 7.8.2. Vector Strided Segment Loads and Stores
+   // class riscv_VLSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLSSEGE_V, VLS_FORMAT, LOAD, RVV); }
+   // class riscv_VSSSEGE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSSSEGE_V, VSS_FORMAT, STORE, RVV); }
+   // // 7.8.3. Vector Indexed Segment Loads and Stores
+   // class riscv_VLXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VLXSEGEI_V, VLX_FORMAT, LOAD, RVV); }
+   // class riscv_VSXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSXSEGEI_V, VSX_FORMAT, STORE, RVV); }
+   // class riscv_VSUXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSUXSEGEI_V, VSX_FORMAT, STORE, RVV); }
+
+   // // -------------------------------------------------------------------------
+   // //  Section 8. Vector AMO Operations (Zvamo)
+   // // -------------------------------------------------------------------------
+   // // EEW vector AMOs
+   // class riscv_VAMOSWAPE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOADDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOXORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXORE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOANDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOORE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUE_V, VAMO_FORMAT, AMO, RVV); }
  }

@@ -34,76 +34,76 @@ class riscv_compressed_instr: riscv_instr
 
   int imm_align;
 
-  constraint! q{
-    //  Registers specified by the three-bit rs1’, rs2’, and rd’
-    if (instr_format inside [riscv_instr_format_t.CIW_FORMAT,
-			     riscv_instr_format_t.CL_FORMAT,
-			     riscv_instr_format_t.CS_FORMAT,
-			     riscv_instr_format_t.CB_FORMAT,
-			     riscv_instr_format_t.CA_FORMAT]) {
-      if (has_rs1) {
-	rs1 inside [riscv_reg_t.S0:riscv_reg_t.A5];
-      }
-      if (has_rs2) {
-	rs2 inside [riscv_reg_t.S0:riscv_reg_t.A5];
-      }
-      if (has_rd) {
-	rd inside [riscv_reg_t.S0:riscv_reg_t.A5];
-      }
-    }
-    // C_ADDI16SP is only valid when rd == SP
-    if (instr_name == riscv_instr_name_t.C_ADDI16SP) {
-      rd  == riscv_reg_t.SP;
-    }
-    if (instr_name inside [riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR]) {
-      rs2 == riscv_reg_t.ZERO;
-      rs1 != riscv_reg_t.ZERO;
-    }
-  } rvc_csr_c ;
+  // constraint! q{
+  //   //  Registers specified by the three-bit rs1’, rs2’, and rd’
+  //   if (instr_format inside [riscv_instr_format_t.CIW_FORMAT,
+  // 			     riscv_instr_format_t.CL_FORMAT,
+  // 			     riscv_instr_format_t.CS_FORMAT,
+  // 			     riscv_instr_format_t.CB_FORMAT,
+  // 			     riscv_instr_format_t.CA_FORMAT]) {
+  //     if (has_rs1) {
+  // 	rs1 inside [riscv_reg_t.S0:riscv_reg_t.A5];
+  //     }
+  //     if (has_rs2) {
+  // 	rs2 inside [riscv_reg_t.S0:riscv_reg_t.A5];
+  //     }
+  //     if (has_rd) {
+  // 	rd inside [riscv_reg_t.S0:riscv_reg_t.A5];
+  //     }
+  //   }
+  //   // C_ADDI16SP is only valid when rd == SP
+  //   // if (instr_name == riscv_instr_name_t.C_ADDI16SP) {
+  //   //   rd  == riscv_reg_t.SP;
+  //   // }
+  //   // if (instr_name inside [riscv_instr_name_t.C_JR, riscv_instr_name_t.C_JALR]) {
+  //   //   rs2 == riscv_reg_t.ZERO;
+  //   //   rs1 != riscv_reg_t.ZERO;
+  //   // }
+  // } rvc_csr_c ;
 
-  constraint! q{
-    if(imm_type inside [imm_t.NZIMM, imm_t.NZUIMM]) {
-      imm[0..6] != 0;
-      if (instr_name == riscv_instr_name_t.C_LUI) {
-        // TODO(taliu) Check why bit 6 cannot be zero
-        imm[5..32] == 0;
-      }
-      if (instr_name inside [riscv_instr_name_t.C_SRAI,
-			     riscv_instr_name_t.C_SRLI,
-			     riscv_instr_name_t.C_SLLI]) {
-	imm[5..32] == 0;
-      }
-    }
-    if (instr_name == riscv_instr_name_t.C_ADDI4SPN) {
-      imm[0..2] == 0;
-    }
-  } imm_val_c ;
+  // constraint! q{
+  //   if(imm_type inside [imm_t.NZIMM, imm_t.NZUIMM]) {
+  //     imm[0..6] != 0;
+  //     if (instr_name == riscv_instr_name_t.C_LUI) {
+  //       // TODO(taliu) Check why bit 6 cannot be zero
+  //       imm[5..32] == 0;
+  //     }
+  //     if (instr_name inside [riscv_instr_name_t.C_SRAI,
+  // 			     riscv_instr_name_t.C_SRLI,
+  // 			     riscv_instr_name_t.C_SLLI]) {
+  // 	imm[5..32] == 0;
+  //     }
+  //   }
+  //   if (instr_name == riscv_instr_name_t.C_ADDI4SPN) {
+  //     imm[0..2] == 0;
+  //   }
+  // } imm_val_c ;
 
   // C_JAL is RV32C only instruction
-  constraint! q{
-    if (XLEN != 32) {
-      instr_name != riscv_instr_name_t.C_JAL;
-    }
-  } jal_c ;
+  // constraint! q{
+  //   if (XLEN != 32) {
+  //     instr_name != riscv_instr_name_t.C_JAL;
+  //   }
+  // } jal_c ;
 
   // Avoid generating HINT or illegal instruction by default as it's not supported by the compiler
-  constraint! q{
-    if (instr_name inside [riscv_instr_name_t.C_ADDI, riscv_instr_name_t.C_ADDIW,
-			   riscv_instr_name_t.C_LI, riscv_instr_name_t.C_LUI,
-			   riscv_instr_name_t.C_SLLI, riscv_instr_name_t.C_SLLI64,
-                           riscv_instr_name_t.C_LQSP, riscv_instr_name_t.C_LDSP,
-			   riscv_instr_name_t.C_MV, riscv_instr_name_t.C_ADD,
-			   riscv_instr_name_t.C_LWSP]) {
-      rd != riscv_reg_t.ZERO;
-    }
-    if (instr_name == riscv_instr_name_t.C_JR) {
-      rs1 != riscv_reg_t.ZERO;
-    }
-    if (instr_name inside [riscv_instr_name_t.C_ADD, riscv_instr_name_t.C_MV]) {
-      rs2 != riscv_reg_t.ZERO;
-    }
-    (instr_name == riscv_instr_name_t.C_LUI) -> (rd != riscv_reg_t.SP);
-  } no_hint_illegal_instr_c ;
+  // constraint! q{
+  //   if (instr_name inside [riscv_instr_name_t.C_ADDI, riscv_instr_name_t.C_ADDIW,
+  // 			   riscv_instr_name_t.C_LI, riscv_instr_name_t.C_LUI,
+  // 			   riscv_instr_name_t.C_SLLI, riscv_instr_name_t.C_SLLI64,
+  //                          riscv_instr_name_t.C_LQSP, riscv_instr_name_t.C_LDSP,
+  // 			   riscv_instr_name_t.C_MV, riscv_instr_name_t.C_ADD,
+  // 			   riscv_instr_name_t.C_LWSP]) {
+  //     rd != riscv_reg_t.ZERO;
+  //   }
+  //   if (instr_name == riscv_instr_name_t.C_JR) {
+  //     rs1 != riscv_reg_t.ZERO;
+  //   }
+  //   if (instr_name inside [riscv_instr_name_t.C_ADD, riscv_instr_name_t.C_MV]) {
+  //     rs2 != riscv_reg_t.ZERO;
+  //   }
+  //   (instr_name == riscv_instr_name_t.C_LUI) -> (rd != riscv_reg_t.SP);
+  // } no_hint_illegal_instr_c ;
 
   this(string name = "") {
     super(name);

@@ -418,7 +418,7 @@ class riscv_rand_instr_stream: riscv_instr_stream
 
   void  add_init_vector_gpr_instr(riscv_vreg_t gpr, ubvec!XLEN val) {
     riscv_vector_instr instr
-      = cast(riscv_vector_instr) cfg.instr_registry.get_instr(riscv_instr_name_t.VMV_VX);
+      = cast(riscv_vector_instr) cfg.instr_registry.get_instr(riscv_instr_name_t.VMV_V_X);
     instr.m_cfg = cfg;
     instr.avoid_reserved_vregs_c.constraint_mode(false);
     instr.randomize_with! q{

@@ -34,6 +34,7 @@ GEN_FILES = riscv/gen/package.d riscv/gen/riscv_amo_instr_lib.d		\
 	    riscv/gen/riscv_directed_instr_lib.d			\
 	    riscv/gen/riscv_instr_gen_config.d				\
 	    riscv/gen/riscv_instr_pkg.d					\
+	    riscv/gen/riscv_opcodes_pkg.d				\
 	    riscv/gen/riscv_instr_registry.d				\
 	    riscv/gen/riscv_instr_sequence.d				\
 	    riscv/gen/riscv_instr_stream.d				\

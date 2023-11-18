@@ -210,9 +210,9 @@ enum riscv_instr_name_t: ushort {
   PACK,
   PACKU,
   PACKH,
-  XPERM_N,
-  XPERM_B,
-  XPERM_H,
+  XPERM4,
+  XPERM8,
+  XPERM16,
   SLO,
   SRO,
   SLOI,
@@ -273,7 +273,7 @@ enum riscv_instr_name_t: ushort {
   GORCIW,
   PACKW,
   PACKUW,
-  XPERM_W,
+  XPERM32,
   // RV32M instructions
   MUL,
   MULH,
@@ -634,9 +634,9 @@ enum riscv_instr_name_t: ushort {
   VMERGE_VXM,
   VMERGE_VIM,
   // // // VMERGE,  #  #  #
-  VMV_VV,
-  VMV_VX,
-  VMV_VI,
+  VMV_V_V,
+  VMV_V_X,
+  VMV_V_I,
   // // // VMV,  #  #  #
   VSADDU_VV,
   VSADDU_VX,
@@ -771,7 +771,7 @@ enum riscv_instr_name_t: ushort {
   VFCLASS_V,
   VFMERGE_VFM,
   // VFMERGE,  #
-  VFMV_VF,
+  VFMV_V_F,
   // VFMV,  #
   VFCVT_XU_F_V,
   VFCVT_X_F_V,
@@ -846,38 +846,78 @@ enum riscv_instr_name_t: ushort {
   VMV4R_V,
   VMV8R_V,
   // Vector load/store instruction
-  VLE_V,
-  VSE_V,
-  VLSE_V,
-  VSSE_V,
-  VLXEI_V,
-  VSXEI_V,
-  VSUXEI_V,
-  VLEFF_V,
+  // VLE1_V,
+  // VLE8_V,
+  // VLE16_V,
+  // VLE32_V,
+  // VLE64_V,
+  // VLE128_V,
+  // VLE256_V,
+  // VLE512_V,
+  // VLE1024_V,
+  // VLE8FF_V,
+  // VLE16FF_V,
+  // VLE32FF_V,
+  // VLE64FF_V,
+  // VLE128FF_V,
+  // VLE256FF_V,
+  // VLE512FF_V,
+  // VLE1024FF_V,
+  // VSE1_V,
+  // VSE8_V,
+  // VSE16_V,
+  // VSE32_V,
+  // VSE64_V,
+  // VSE128_V,
+  // VSE256_V,
+  // VSE512_V,
+  // VSE1024_V,
+
+  // VLSE8_V,
+  // VLSE16_V,
+  // VLSE32_V,
+  // VLSE64_V,
+  // VLSE128_V,
+  // VLSE256_V,
+  // VLSE512_V,
+  // VLSE1024_V,
+  // VSSE8_V,
+  // VSSE16_V,
+  // VSSE32_V,
+  // VSSE64_V,
+  // VSSE128_V,
+  // VSSE256_V,
+  // VSSE512_V,
+  // VSSE1024_V,
+
+  // VLXEI_V,
+  // VSXEI_V,
+  // VSUXEI_V,
+  // VLEFF_V,
   // Segmented load/store instruction
-  VLSEGE_V,
-  VSSEGE_V,
-  VLSEGEFF_V,
-  VLSSEGE_V,
-  VSSSEGE_V,
-  VLXSEGEI_V,
-  VSXSEGEI_V,
-  VSUXSEGEI_V,
+  // VLSEGE_V,
+  // VSSEGE_V,
+  // VLSEGEFF_V,
+  // VLSSEGE_V,
+  // VSSSEGE_V,
+  // VLXSEGEI_V,
+  // VSXSEGEI_V,
+  // VSUXSEGEI_V,
   // Vector AMO instruction
   // EEW vector AMOs
-  VAMOSWAPE_V,
-  VAMOADDE_V,
-  VAMOXORE_V,
-  VAMOANDE_V,
-  VAMOORE_V,
-  VAMOMINE_V,
-  VAMOMAXE_V,
-  VAMOMINUE_V,
-  VAMOMAXUE_V,
+  // VAMOSWAPE_V,
+  // VAMOADDE_V,
+  // VAMOXORE_V,
+  // VAMOANDE_V,
+  // VAMOORE_V,
+  // VAMOMINE_V,
+  // VAMOMAXE_V,
+  // VAMOMINUE_V,
+  // VAMOMAXUE_V,
   // Supervisor instruction
   DRET,
   MRET,
-  URET,
+  // URET,                       // deprecated
   SRET,
   WFI,
   SFENCE_VMA,
@@ -1127,9 +1167,9 @@ va_base_instr va_get_base(riscv_instr_name_t INSTR) {
   case riscv_instr_name_t.VMERGE_VVM: return va_base_instr.VMERGE;
   case riscv_instr_name_t.VMERGE_VXM: return va_base_instr.VMERGE;
   case riscv_instr_name_t.VMERGE_VIM: return va_base_instr.VMERGE;
-  case riscv_instr_name_t.VMV_VV: return va_base_instr.VMV;
-  case riscv_instr_name_t.VMV_VX: return va_base_instr.VMV;
-  case riscv_instr_name_t.VMV_VI: return va_base_instr.VMV;
+  case riscv_instr_name_t.VMV_V_V: return va_base_instr.VMV;
+  case riscv_instr_name_t.VMV_V_X: return va_base_instr.VMV;
+  case riscv_instr_name_t.VMV_V_I: return va_base_instr.VMV;
   case riscv_instr_name_t.VSADDU_VV: return va_base_instr.VSADDU;
   case riscv_instr_name_t.VSADDU_VX: return va_base_instr.VSADDU;
   case riscv_instr_name_t.VSADDU_VI: return va_base_instr.VSADDU;
@@ -1217,7 +1257,7 @@ va_base_instr va_get_base(riscv_instr_name_t INSTR) {
   case riscv_instr_name_t.VMFGT_VF: return va_base_instr.VMFGT;
   case riscv_instr_name_t.VMFGE_VF: return va_base_instr.VMFGE;
   case riscv_instr_name_t.VFMERGE_VFM: return va_base_instr.VFMERGE;
-  case riscv_instr_name_t.VFMV_VF: return va_base_instr.VFMV;
+  case riscv_instr_name_t.VFMV_V_F: return va_base_instr.VFMV;
   case riscv_instr_name_t.VSLIDEUP_VI: return va_base_instr.VSLIDEUP;
   case riscv_instr_name_t.VSLIDEUP_VX: return va_base_instr.VSLIDEUP;
   case riscv_instr_name_t.VSLIDEDOWN_VI: return va_base_instr.VSLIDEDOWN;

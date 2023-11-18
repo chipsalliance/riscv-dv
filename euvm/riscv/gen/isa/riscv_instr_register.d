@@ -29,7 +29,7 @@ void register(alias MOD, INSTRS...)(riscv_instr_registry registry) {
     alias INSTR=__traits(getMember, MOD, INSTRS[0]);
     static if (is (INSTR == class) && is (INSTR: riscv_instr)) {
       // pragma(msg, "register ", fullyQualifiedName!INSTR);
-      registry.register(INSTR.RISCV_INSTR_NAME_T, fullyQualifiedName!INSTR);
+      registry.register(INSTR.RISCV_INSTR_NAME, fullyQualifiedName!INSTR);
     }
     register!(MOD, INSTRS[1..$])(registry);
     return;

@@ -51,7 +51,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_b_instr_mixin(GORCIW,  I_FORMAT, LOGICAL, RV64B, UIMM));
   mixin (riscv_b_instr_mixin(PACKW,   R_FORMAT, LOGICAL, RV64B));
   mixin (riscv_b_instr_mixin(PACKUW,  R_FORMAT, LOGICAL, RV64B));
-  mixin (riscv_b_instr_mixin(XPERM_W, R_FORMAT, LOGICAL, RV64B));
+  mixin (riscv_b_instr_mixin(XPERM32, R_FORMAT, LOGICAL, RV64B));
  }
  else {
   // ARITHMETIC intructions
@@ -103,6 +103,6 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(PACKW,   R_FORMAT, LOGICAL, RV64B); }
    class riscv_PACKUW_instr: riscv_b_instr
    { mixin RISCV_INSTR_MIXIN!(PACKUW,  R_FORMAT, LOGICAL, RV64B); }
-   class riscv_XPERM_W_instr: riscv_b_instr
-   { mixin RISCV_INSTR_MIXIN!(XPERM_W, R_FORMAT, LOGICAL, RV64B); }
+   class riscv_XPERM32_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(XPERM32, R_FORMAT, LOGICAL, RV64B); }
  }

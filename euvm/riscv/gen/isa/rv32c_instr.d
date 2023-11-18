@@ -52,57 +52,57 @@ version (RISCV_INSTR_STRING_MIXIN) {
  }
  else {
    class riscv_C_LW_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_LW,       CL_FORMAT, LOAD, RV32C, UIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_LW,       CL_FORMAT, LOAD, RV32C, UIMM); }
    class riscv_C_SW_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SW,       CS_FORMAT, STORE, RV32C, UIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SW,       CS_FORMAT, STORE, RV32C, UIMM); }
    class riscv_C_LWSP_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_LWSP,     CI_FORMAT, LOAD, RV32C, UIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_LWSP,     CI_FORMAT, LOAD, RV32C, UIMM); }
    class riscv_C_SWSP_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SWSP,     CSS_FORMAT, STORE, RV32C, UIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SWSP,     CSS_FORMAT, STORE, RV32C, UIMM); }
    class riscv_C_ADDI4SPN_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_ADDI4SPN, CIW_FORMAT, ARITHMETIC, RV32C, NZUIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_ADDI4SPN, CIW_FORMAT, ARITHMETIC, RV32C, NZUIMM); }
    class riscv_C_ADDI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_ADDI,     CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_ADDI,     CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
    class riscv_C_ADDI16SP_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_ADDI16SP, CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
    class riscv_C_LI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_LI,       CI_FORMAT, ARITHMETIC, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_LI,       CI_FORMAT, ARITHMETIC, RV32C); }
    class riscv_C_LUI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_LUI,      CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_LUI,      CI_FORMAT, ARITHMETIC, RV32C, NZIMM); }
    class riscv_C_SUB_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SUB,      CA_FORMAT, ARITHMETIC, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SUB,      CA_FORMAT, ARITHMETIC, RV32C); }
    class riscv_C_ADD_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_ADD,      CR_FORMAT, ARITHMETIC, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_ADD,      CR_FORMAT, ARITHMETIC, RV32C); }
    class riscv_C_NOP_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_NOP,      CI_FORMAT, ARITHMETIC, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_NOP,      CI_FORMAT, ARITHMETIC, RV32C); }
    class riscv_C_MV_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_MV,       CR_FORMAT, ARITHMETIC, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_MV,       CR_FORMAT, ARITHMETIC, RV32C); }
    class riscv_C_ANDI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_ANDI,     CB_FORMAT, LOGICAL, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_ANDI,     CB_FORMAT, LOGICAL, RV32C); }
    class riscv_C_XOR_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_XOR,      CA_FORMAT, LOGICAL, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_XOR,      CA_FORMAT, LOGICAL, RV32C); }
    class riscv_C_OR_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_OR,       CA_FORMAT, LOGICAL, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_OR,       CA_FORMAT, LOGICAL, RV32C); }
    class riscv_C_AND_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_AND,      CA_FORMAT, LOGICAL, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_AND,      CA_FORMAT, LOGICAL, RV32C); }
    class riscv_C_BEQZ_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_BEQZ,     CB_FORMAT, BRANCH, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_BEQZ,     CB_FORMAT, BRANCH, RV32C); }
    class riscv_C_BNEZ_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_BNEZ,     CB_FORMAT, BRANCH, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_BNEZ,     CB_FORMAT, BRANCH, RV32C); }
    class riscv_C_SRLI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SRLI,     CB_FORMAT, SHIFT, RV32C, NZUIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SRLI,     CB_FORMAT, SHIFT, RV32C, NZUIMM); }
    class riscv_C_SRAI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SRAI,     CB_FORMAT, SHIFT, RV32C, NZUIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SRAI,     CB_FORMAT, SHIFT, RV32C, NZUIMM); }
    class riscv_C_SLLI_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_SLLI,     CI_FORMAT, SHIFT, RV32C, NZUIMM); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_SLLI,     CI_FORMAT, SHIFT, RV32C, NZUIMM); }
    class riscv_C_J_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_J,        CJ_FORMAT, JUMP, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_J,        CJ_FORMAT, JUMP, RV32C); }
    class riscv_C_JAL_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_JAL,      CJ_FORMAT, JUMP, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_JAL,      CJ_FORMAT, JUMP, RV32C); }
    class riscv_C_JR_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_JR,       CR_FORMAT, JUMP, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_JR,       CR_FORMAT, JUMP, RV32C); }
    class riscv_C_JALR_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_JALR,     CR_FORMAT, JUMP, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_JALR,     CR_FORMAT, JUMP, RV32C); }
    class riscv_C_EBREAK_INSTR: riscv_compressed_instr
-   { mixin RISCV_INSTR_MIXIN!(C_EBREAK,   CI_FORMAT, SYSTEM, RV32C); }
+   { mixin RISCV_C_INSTR_MIXIN!(C_EBREAK,   CI_FORMAT, SYSTEM, RV32C); }
  }

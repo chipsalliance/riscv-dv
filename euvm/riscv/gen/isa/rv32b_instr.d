@@ -33,9 +33,9 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_b_instr_mixin(PACK,     R_FORMAT, LOGICAL, RV32B));
   mixin (riscv_b_instr_mixin(PACKU,    R_FORMAT, LOGICAL, RV32B));
   mixin (riscv_b_instr_mixin(PACKH,    R_FORMAT, LOGICAL, RV32B));
-  mixin (riscv_b_instr_mixin(XPERM_N,  R_FORMAT, LOGICAL, RV32B));
-  mixin (riscv_b_instr_mixin(XPERM_B,  R_FORMAT, LOGICAL, RV32B));
-  mixin (riscv_b_instr_mixin(XPERM_H,  R_FORMAT, LOGICAL, RV32B));
+  mixin (riscv_b_instr_mixin(XPERM5,  R_FORMAT, LOGICAL, RV32B));
+  mixin (riscv_b_instr_mixin(XPERM8,  R_FORMAT, LOGICAL, RV32B));
+  mixin (riscv_b_instr_mixin(XPERM16,  R_FORMAT, LOGICAL, RV32B));
   // SHIFT intructions
   mixin (riscv_b_instr_mixin(SLO,    R_FORMAT, SHIFT, RV32B));
   mixin (riscv_b_instr_mixin(SRO,    R_FORMAT, SHIFT, RV32B));
@@ -77,12 +77,12 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(PACKU,    R_FORMAT, LOGICAL, RV32B); }
    class riscv_PACKH_instr: riscv_b_instr
    { mixin RISCV_INSTR_MIXIN!(PACKH,    R_FORMAT, LOGICAL, RV32B); }
-   class riscv_XPERM_N_instr: riscv_b_instr
-   { mixin RISCV_INSTR_MIXIN!(XPERM_N,  R_FORMAT, LOGICAL, RV32B); }
-   class riscv_XPERM_B_instr: riscv_b_instr
-   { mixin RISCV_INSTR_MIXIN!(XPERM_B,  R_FORMAT, LOGICAL, RV32B); }
-   class riscv_XPERM_H_instr: riscv_b_instr
-   { mixin RISCV_INSTR_MIXIN!(XPERM_H,  R_FORMAT, LOGICAL, RV32B); }
+   class riscv_XPERM4_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(XPERM4,  R_FORMAT, LOGICAL, RV32B); }
+   class riscv_XPERM8_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(XPERM8,  R_FORMAT, LOGICAL, RV32B); }
+   class riscv_XPERM16_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(XPERM16,  R_FORMAT, LOGICAL, RV32B); }
    // SHIFT intructions
    class riscv_SLO_instr: riscv_b_instr
    { mixin RISCV_INSTR_MIXIN!(SLO,    R_FORMAT, SHIFT, RV32B); }

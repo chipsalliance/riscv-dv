@@ -76,23 +76,23 @@ class riscv_instr: uvm_object
   bool                       has_imm = true;
 
 
-  constraint! q{
-    if (instr_name inside [riscv_instr_name_t.SLLIW,
-			   riscv_instr_name_t.SRLIW,
-			   riscv_instr_name_t.SRAIW]) {
-      imm[5..12] == 0;
-    }
-    if (instr_name inside [riscv_instr_name_t.SLLI,
-			   riscv_instr_name_t.SRLI,
-			   riscv_instr_name_t.SRAI]) {
-      if (XLEN == 32) {
-        imm[5..12] == 0;
-      }
-      else {
-        imm[6..12] == 0;
-      }
-    }
-  } imm_c;
+  // constraint! q{
+  //   if (instr_name inside [riscv_instr_name_t.SLLIW,
+  // 			   riscv_instr_name_t.SRLIW,
+  // 			   riscv_instr_name_t.SRAIW]) {
+  //     imm[5..12] == 0;
+  //   }
+  //   if (instr_name inside [riscv_instr_name_t.SLLI,
+  // 			   riscv_instr_name_t.SRLI,
+  // 			   riscv_instr_name_t.SRAI]) {
+  //     if (XLEN == 32) {
+  //       imm[5..12] == 0;
+  //     }
+  //     else {
+  //       imm[6..12] == 0;
+  //     }
+  //   }
+  // } imm_c;
 
   this(string name = "") {
     super(name);
@@ -379,7 +379,7 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.REMUW:        return UBVEC!(7, 0b0111011);
     case riscv_instr_name_t.ECALL,
       riscv_instr_name_t.EBREAK,
-      riscv_instr_name_t.URET,
+      // riscv_instr_name_t.URET,
       riscv_instr_name_t.SRET,
       riscv_instr_name_t.MRET,
       riscv_instr_name_t.DRET,
@@ -458,7 +458,7 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.REMUW:      return UBVEC!(3, 0b111);
     case riscv_instr_name_t.ECALL,
       riscv_instr_name_t.EBREAK,
-      riscv_instr_name_t.URET,
+      // riscv_instr_name_t.URET,
       riscv_instr_name_t.SRET,
       riscv_instr_name_t.MRET,
       riscv_instr_name_t.DRET,
@@ -509,7 +509,7 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.REMUW:      return UBVEC!(7, 0b0000001);
     case riscv_instr_name_t.ECALL:      return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.EBREAK:     return UBVEC!(7, 0b0000000);
-    case riscv_instr_name_t.URET:       return UBVEC!(7, 0b0000000);
+      // case riscv_instr_name_t.URET:       return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.SRET:       return UBVEC!(7, 0b0001000);
     case riscv_instr_name_t.MRET:       return UBVEC!(7, 0b0011000);
     case riscv_instr_name_t.DRET:       return UBVEC!(7, 0b0111101);
@@ -550,7 +550,7 @@ class riscv_instr: uvm_object
 	  ~ UBVEC!(18, 0b000000000000000000)
 	  ~ get_opcode();
       } //  18 bit zero
-      else if (canFind([riscv_instr_name_t.URET,
+      else if (canFind([// riscv_instr_name_t.URET,
 			riscv_instr_name_t.SRET,
 			riscv_instr_name_t.MRET], instr_name )) {
 	vec = get_func7()
