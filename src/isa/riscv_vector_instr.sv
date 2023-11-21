@@ -163,6 +163,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (instr_name inside {VLM_V, VSM_V}) {
       vm == 1'b1;
     }
+    if (format == VSET_FORMAT) {
+      vm == 1'b1;
+    }
   }
 
   // Oder to solve load and store constraints in
@@ -473,6 +476,13 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         end
       end
     end
+    // Check vector configuration-setting
+    if (instr_name == VSETIVLI) begin
+      // Immediate vsetivli can only be used if VL fits into space of immediate value
+      if (cfg.vector_cfg.vl >= 2**5) begin
+        return 0;
+      end
+    end
     return 1'b1;
   endfunction
 
@@ -496,6 +506,21 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   virtual function string convert2asm(string prefix = "");
     string asm_str;
     case (format)
+      VSET_FORMAT: begin
+        if (instr_name == VSETVL) begin
+          asm_str = $sformatf("%0s %0s, %0s, %0s", get_instr_name(), rd.name(), rs1.name(), rs2.name());
+        end else begin
+          asm_str = $sformatf("%0s %0s, %0s, e%0d, m%0s%0d, t%0s, m%0s",
+                              get_instr_name(),
+                              rd.name(),
+                              instr_name == VSETIVLI ? get_imm() : rs1.name(),
+                              m_cfg.vector_cfg.vtype.vsew,
+                              m_cfg.vector_cfg.vtype.fractional_lmul ? "f" : "",
+                              m_cfg.vector_cfg.vtype.vlmul,
+                              m_cfg.vector_cfg.vtype.vta ? "a" : "u",
+                              m_cfg.vector_cfg.vtype.vma ? "a" : "u");
+        end
+      end
       VS2_FORMAT: begin
         if (instr_name == VID_V) begin
           asm_str = $sformatf("vid.v %s", vd.name());
@@ -628,7 +653,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (allowed_va_variants.size() > 0) begin
       has_va_variant = 1'b1;
     end
-    // Set the rand mode based on the superset of all VA variants
+    if (format == VSET_FORMAT) begin
+      has_vs1 = 1'b0;
+      has_vs2 = 1'b0;
+      has_vd  = 1'b0;
+      has_rs1 = name != "VSETIVLI";
+      has_rs2 = name == "VSETVL";
+      has_rd  = 1'b1;
+      has_imm = name == "VSETIVLI";
+    end
     if (format == VA_FORMAT) begin
       has_imm = 1'b1;
       has_rs1 = 1'b1;
