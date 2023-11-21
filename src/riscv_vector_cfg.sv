@@ -169,4 +169,30 @@ class riscv_vector_cfg extends uvm_object;
     end
   endfunction
 
+  // Updates the current vtype with a new desired SEW. VL will stay the same, so
+  // LMUL will be scaled accordingly.
+  function void update_vsew_keep_vl(int vsew);
+    real lmul_o, lmul_n;
+    lmul_o = vtype.fractional_lmul ? 1.0 / real'(vtype.vlmul) : real'(vtype.vlmul);
+    lmul_n = lmul_o * real'(vsew) / real'(vtype.vsew);
+    if (lmul_n < 1.0) begin
+      vtype.fractional_lmul = 1'b1;
+      vtype.vlmul = int'(1.0 / lmul_n);
+    end else begin
+      vtype.fractional_lmul = 1'b0;
+      vtype.vlmul = int'(lmul_n);
+    end
+    vtype.vsew = vsew;
+  endfunction
+
+  // Get the vlmax for the current vtype
+  function int vlmax();
+    if (vtype.fractional_lmul) begin
+      vlmax = VLEN / vtype.vsew / vtype.vlmul;
+    end else begin
+      vlmax = VLEN / vtype.vsew * vtype.vlmul;
+    end
+    return vlmax;
+  endfunction
+
 endclass : riscv_vector_cfg

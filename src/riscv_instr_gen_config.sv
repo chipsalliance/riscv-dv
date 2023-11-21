@@ -542,6 +542,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_zbc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbs_extension, UVM_DEFAULT)
     `uvm_field_int(use_push_data_section, UVM_DEFAULT)
+    `uvm_field_object(vector_cfg, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
