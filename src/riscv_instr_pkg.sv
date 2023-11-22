@@ -649,17 +649,6 @@ package riscv_instr_pkg;
     VMV2R_V,
     VMV4R_V,
     VMV8R_V,
-    // Vector AMO instruction
-    // EEW vector AMOs
-    VAMOSWAPE_V,
-    VAMOADDE_V,
-    VAMOXORE_V,
-    VAMOANDE_V,
-    VAMOORE_V,
-    VAMOMINE_V,
-    VAMOMAXE_V,
-    VAMOMINUE_V,
-    VAMOMAXUE_V,
     // Supervisor instruction
     DRET,
     MRET,
@@ -724,8 +713,7 @@ package riscv_instr_pkg;
     VLS_FORMAT,
     VSS_FORMAT,
     VLR_FORMAT,
-    VSR_FORMAT,
-    VAMO_FORMAT
+    VSR_FORMAT
   } riscv_instr_format_t;
 
 

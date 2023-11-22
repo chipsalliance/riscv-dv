@@ -209,22 +209,3 @@ class riscv_amo_instr_stream extends riscv_amo_base_instr_stream;
   endfunction
 
 endclass : riscv_amo_instr_stream
-
-
-class riscv_vector_amo_instr_stream extends riscv_vector_load_store_instr_stream;
-
-  constraint amo_address_mode_c {
-    // AMO operation uses indexed address mode
-    address_mode == INDEXED;
-  }
-
-  `uvm_object_utils(riscv_vector_amo_instr_stream)
-  `uvm_object_new
-
-  virtual function void add_element_vec_load_stores();
-    allowed_instr = {VAMOSWAPE_V, VAMOADDE_V, VAMOXORE_V,
-                     VAMOANDE_V, VAMOORE_V, VAMOMINE_V,
-                     VAMOMAXE_V, VAMOMINUE_V, VAMOMAXUE_V, allowed_instr};
-  endfunction
-
-endclass : riscv_vector_amo_instr_stream
