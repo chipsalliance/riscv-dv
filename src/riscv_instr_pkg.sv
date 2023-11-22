@@ -1336,7 +1336,7 @@ package riscv_instr_pkg;
   parameter int DATA_WIDTH  = 32;
 
   // Parameters for output assembly program formatting
-  parameter int MAX_INSTR_STR_LEN = 13;
+  parameter int MAX_INSTR_STR_LEN = 18;
   parameter int LABEL_STR_LEN     = 18;
 
   // Parameter for program generation
