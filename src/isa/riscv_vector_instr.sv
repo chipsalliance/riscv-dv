@@ -47,12 +47,14 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   `uvm_object_utils(riscv_vector_instr)
   `uvm_object_new
 
+  // Make sure that reserved vregs are not overwritten
   constraint avoid_reserved_vregs_c {
     if (m_cfg.vector_cfg.reserved_vregs.size() > 0) {
       !(vd inside {m_cfg.vector_cfg.reserved_vregs});
     }
   }
 
+  // Select a vector arithmetic variant
   constraint va_variant_c {
     if (has_va_variant) {
       va_variant inside {allowed_va_variants};
@@ -768,6 +770,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     this.is_whole_register_ls_instr = rhs_.is_whole_register_ls_instr;
     this.ext_widening_factor        = rhs_.ext_widening_factor;
     this.allowed_va_variants        = rhs_.allowed_va_variants;
+    this.ls_emul_non_frac           = rhs_.ls_emul_non_frac;
   endfunction : do_copy
 
 endclass : riscv_vector_instr

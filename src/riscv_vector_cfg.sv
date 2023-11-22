@@ -41,27 +41,22 @@ class riscv_vector_cfg extends uvm_object;
   // on current SEW and LMUL setting
   int unsigned legal_ls_eew[$];
 
-  // Allow vector narrowing or widening instructions.
-  rand bit vec_narrowing_widening;
-
-  rand bit allow_illegal_vec_instr;
-  constraint allow_illegal_vec_instr_c {soft allow_illegal_vec_instr == 0;}
-
-  // Enable fault only first load ops
-  rand bit enable_fault_only_first_load;
-
-  constraint legal_c {
+  constraint solve_order_c {
     solve vtype before vl;
     solve vl before vstart;
-    vstart inside {[0:vl]};
-    vl inside {[0:VLEN/vtype.vsew]};
   }
 
-  // Basic constraint for initial bringup
-  constraint bringup_c {
-    vstart == 0;
+  // vl has to be within VLMAX
+  constraint vl_c {
+    vl inside {[0 : vlmax()]};
   }
 
+  // vstart has to be within vl
+  constraint vstart_c {
+    vstart inside {[0 : vl]};
+  }
+
+  // Select valid vlmul
   constraint vlmul_c {
     vtype.vlmul inside {1, 2, 4, 8};
     vtype.fractional_lmul -> vtype.vlmul != 1;
@@ -71,6 +66,7 @@ class riscv_vector_cfg extends uvm_object;
     vtype.fractional_lmul -> vtype.vlmul <= max_int_sew / 8;
   }
 
+  // Set current element width
   constraint vsew_c {
     vtype.vsew inside {8, 16, 32, 64};
     vtype.vsew <= max_int_sew;
@@ -83,11 +79,11 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(vtype.vsew, UVM_DEFAULT)
     `uvm_field_int(vtype.vlmul, UVM_DEFAULT)
     `uvm_field_int(vtype.fractional_lmul, UVM_DEFAULT)
-    `uvm_field_queue_int(legal_ls_eew, UVM_DEFAULT)
     `uvm_field_int(vl, UVM_DEFAULT)
     `uvm_field_int(vstart, UVM_DEFAULT)
     `uvm_field_enum(vxrm_t,vxrm, UVM_DEFAULT)
     `uvm_field_int(vxsat, UVM_DEFAULT)
+    `uvm_field_queue_enum(riscv_vreg_t, reserved_vregs, UVM_DEFAULT)
     `uvm_field_string(zve_extension, UVM_DEFAULT)
     `uvm_field_int(enable_fp_support, UVM_DEFAULT)
     `uvm_field_int(max_int_sew, UVM_DEFAULT)
@@ -95,14 +91,11 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(enable_zvfhmin_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zvfh_extension, UVM_DEFAULT)
     `uvm_field_int(min_fp_sew, UVM_DEFAULT)
-    `uvm_field_int(enable_fault_only_first_load, UVM_DEFAULT)
+    `uvm_field_queue_int(legal_ls_eew, UVM_DEFAULT)
   `uvm_object_utils_end
 
   function new (string name = "");
     super.new(name);
-    if ($value$plusargs("enable_fault_only_first_load=%0d", enable_fault_only_first_load)) begin
-      enable_fault_only_first_load.rand_mode(0);
-    end
     // Check for Zve* extension
     if ($value$plusargs("zve_extension=%0s", zve_extension)) begin
       int minimum_vlen;
