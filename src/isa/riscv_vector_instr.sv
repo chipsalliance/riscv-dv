@@ -43,7 +43,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   int               ext_widening_factor = 1;
   va_variant_t      allowed_va_variants[$];
   rand int          ls_emul_non_frac;
-  string            sub_extension;
 
   `uvm_object_utils(riscv_vector_instr)
   `uvm_object_new
