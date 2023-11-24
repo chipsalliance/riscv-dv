@@ -476,7 +476,8 @@ class riscv_vector_instr extends riscv_floating_point_instr;
             return 0;
           end
         end else begin
-          if (int'(real'(cfg.vector_cfg.legal_ls_eew.max().pop_front()) / real'(cfg.vector_cfg.vtype.vsew) *
+          int unsigned max_eew [$] = cfg.vector_cfg.legal_ls_eew.max();
+          if (int'(real'(max_eew.pop_front()) / real'(cfg.vector_cfg.vtype.vsew) *
                    (cfg.vector_cfg.vtype.fractional_lmul ? 1.0 / real'(cfg.vector_cfg.vtype.vlmul) :
                                                            real'(cfg.vector_cfg.vtype.vlmul))) == 8) begin
             return 0;
@@ -634,28 +635,28 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if ((name.substr(0, 1) == "VW") || (name.substr(0, 2) == "VFW")) begin
       is_widening_instr = 1'b1;
     end
-    if (!uvm_re_match("V[SZ]EXT_VF[248]", name)) begin
+    if (uvm_is_match("V?EXT_VF?", name)) begin
       ext_widening_factor = name.substr(name.len()-1, name.len()-1).atoi();
     end
-    if ((name.substr(0, 1) == "VN") || !uvm_re_match("VFN.*_W", name)) begin
+    if ((name.substr(0, 1) == "VN") || uvm_is_match("VFN*_W", name)) begin
       is_narrowing_instr = 1'b1;
     end
-    if (!uvm_re_match("VF[NW]?CVT_.*", name)) begin
+    if (uvm_is_match("VF*CVT_*", name)) begin
       is_convert_instr = 1'b1;
     end
-    if (!uvm_re_match("VF?RED.*", name)) begin
+    if (uvm_is_match("*RED*", name)) begin
       is_reduction_instr = 1'b1;
     end
-    if (!uvm_re_match("VM.*_MM?", name)) begin
+    if (uvm_is_match("VM*_M*", name)) begin
       is_mask_producing_instr = 1'b1;
     end
-    if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
+    if ((name.substr(0, 1) == "VF" && name != "VFIRST_M") || (name.substr(0, 2) == "VMF")) begin
       is_fp_instr = 1'b1;
     end
     if (instr_name inside {VMV2R_V, VMV4R_V, VMV8R_V}) begin
       whole_register_move_cnt = instr_name.name().substr(3, 3).atoi();
     end
-    if (!uvm_re_match("V[LS].*SEGE.*_V", name)) begin
+    if (uvm_is_match("V*SEGE*_V", name)) begin
       is_segmented_ls_instr = 1'b1;
     end
     if (name inside {"VLRE_V", "VSR_V"}) begin
