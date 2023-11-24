@@ -56,7 +56,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
         } else if (instr_name inside {VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V}) {
           !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + whole_register_move_cnt - 1]});
-        } else if (group inside {LOAD, STORE}) {
+        } else if (category inside {LOAD, STORE}) {
           if (format inside {VLX_FORMAT, VSX_FORMAT}) {
             !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vlmul) * nfields - 1]});
           } else {
@@ -80,8 +80,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Instructions specifying a vector operand with an odd-numbered vector register will raisean
   // illegal instruction exception.
   constraint vector_operand_group_c {
-    if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul > 0 &&
+    if (!m_cfg.vector_cfg.vtype.fractional_lmul &&
         !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F}) &&
+        !(instr_name inside {VRGATHEREI16}) &&
         !(category inside {LOAD, STORE})) {
       vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
       vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
@@ -104,14 +105,14 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
         }
         // Double-width vd, vs2 double-width, vs1 single-width
-        if (va_variant inside {WV, WX}) {
+        if (va_variant inside {WV, WX, WF}) {
           vs2 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
         } else {
           !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
         }
       } else {
         // Double-width vs2 is allowed to overlap double-width vd
-        if (!(va_variant inside {WV, WX})) {
+        if (!(va_variant inside {WV, WX, WF})) {
           vs2 != vd;
         }
         vs1 != vd;
@@ -244,7 +245,10 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
         } else if (ls_eew > m_cfg.vector_cfg.vtype.vsew && !m_cfg.vector_cfg.vtype.fractional_lmul) {
           // If src_eew > dst_eew, overlap in lowest part of src
-          !(vd inside {[vs2 + ls_emul_non_frac - m_cfg.vector_cfg.vtype.vlmul : vs2 + ls_emul_non_frac - 1]});
+          !(vd inside {[vs2 + 1 : vs2 + ls_emul_non_frac - 1]});
+        } else if (ls_eew != m_cfg.vector_cfg.vtype.vsew) {
+          // No overlap if fractional
+          vs2 != vd;
         }
       }
     }
@@ -280,16 +284,20 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   constraint vector_integer_extension_c {
     if (instr_name inside {VZEXT_VF2, VZEXT_VF4, VZEXT_VF8,
                            VSEXT_VF2, VSEXT_VF4, VSEXT_VF8}) {
-      if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor >= 1) {
-        // VD needs to be LMUL aligned
-        vd % m_cfg.vector_cfg.vtype.vlmul == 0;
+      // VD needs to be LMUL aligned
+      vd % m_cfg.vector_cfg.vtype.vlmul == 0;
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul && (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) >= 1) {
         // VS2 needs to be LMUL/ext_widening_factor aligned
         vs2 % (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) == 0;
         // VS2 can only overlap last ext_widening_factor'th of VD
         !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - (m_cfg.vector_cfg.vtype.vlmul / ext_widening_factor) - 1]});
       } else {
         // If source has fractional LMUL, VD and VS2 cannot overlap
-        vs2 != vd;
+        if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+          !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        } else {
+          vs2 != vd;
+        }
       }
     }
   }
@@ -340,17 +348,28 @@ class riscv_vector_instr extends riscv_floating_point_instr;
 
   // Section 16.4: Vector Register Gather Instruction
   // For any vrgather instruction, the destination vector register group cannot overlap
-  // with the source vector register group
+  // with the source vector register groups, otherwise the instruction encoding is reserved
   // The vrgatherei16.vv form uses SEW/LMUL for the data in vs2 but EEW=16 and
   // EMUL = (16/SEW)*LMUL for the indices in vs1.
   constraint vector_gather_c {
     if (instr_name inside {VRGATHER, VRGATHEREI16}) {
       vd != vs2;
       vd != vs1;
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
+        vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
+      }
     }
     if (instr_name == VRGATHEREI16) {
       if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vsew == 8) {
         vs1 % (m_cfg.vector_cfg.vtype.vlmul * 2) == 0;
+        !(vd inside {[vs1 : vs1 + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
+      }
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul && m_cfg.vector_cfg.vtype.vsew >= 16) {
+        if (m_cfg.vector_cfg.vtype.vlmul >= m_cfg.vector_cfg.vtype.vsew / 16) {
+          vs1 % (m_cfg.vector_cfg.vtype.vlmul / (m_cfg.vector_cfg.vtype.vsew / 16)) == 0;
+        }
+        !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
       }
     }
   }
@@ -382,7 +401,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
 
   // Filter unsupported instructions based on configuration
   virtual function bit is_supported(riscv_instr_gen_config cfg);
-    string name = instr_name.name();
     // Check that current LMUL and SEW are valid for narrowing and widening instruction
     if (is_widening_instr || is_narrowing_instr) begin
       if (cfg.vector_cfg.vtype.vsew == cfg.vector_cfg.max_int_sew ||
