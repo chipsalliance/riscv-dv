@@ -82,12 +82,16 @@ class riscv_mem_access_stream extends riscv_directed_instr_stream;
 
   // Insert some other instructions to mix with mem_access instruction
   virtual function void add_mixed_instr(int instr_cnt);
-    riscv_instr      instr;
+    riscv_instr instr;
+    int         i = 0;
     setup_allowed_instr(1, 1);
-    for(int i = 0; i < instr_cnt; i ++) begin
+    while (i < instr_cnt) begin
       instr = riscv_instr::type_id::create("instr");
       randomize_instr(instr);
-      insert_instr(instr);
+      if (instr.is_supported(cfg)) begin
+        insert_instr(instr);
+        i++;
+      end
     end
   endfunction
 
