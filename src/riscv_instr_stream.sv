@@ -386,6 +386,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     vinstr.m_cfg = cfg;
     `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
       rs1 == cfg.gpr[0];
+      !(rd inside {cfg.reserved_regs, reserved_rd});
       vd  == 0;
     )
     init_instr_list.push_back(vinstr);

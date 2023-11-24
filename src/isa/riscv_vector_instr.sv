@@ -41,6 +41,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               is_segmented_ls_instr = 1'b0;
   bit               is_whole_register_ls_instr = 1'b0;
   int               ext_widening_factor = 1;
+  int               whole_register_move_cnt = 1;
   va_variant_t      allowed_va_variants[$];
   rand int          ls_emul_non_frac;
 
@@ -50,7 +51,21 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // Make sure that reserved vregs are not overwritten
   constraint avoid_reserved_vregs_c {
     if (m_cfg.vector_cfg.reserved_vregs.size() > 0) {
-      !(vd inside {m_cfg.vector_cfg.reserved_vregs});
+      foreach (m_cfg.vector_cfg.reserved_vregs[i]) {
+        if (is_widening_instr && !m_cfg.vector_cfg.vtype.fractional_lmul) {
+          !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul * 2 - 1]});
+        } else if (instr_name inside {VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V}) {
+          !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + whole_register_move_cnt - 1]});
+        } else if (group inside {LOAD, STORE}) {
+          if (format inside {VLX_FORMAT, VSX_FORMAT}) {
+            !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vlmul) * nfields - 1]});
+          } else {
+            !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(ls_eew) * nfields - 1]});
+          }
+        } else {
+          !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vlmul) - 1]});
+        }
+      }
     }
   }
 
@@ -252,12 +267,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         nfields * ls_emul_non_frac + vd  <= 32;
         nfields * ls_emul_non_frac + vs3 <= 32;
       }
-    }
-    // Whole register l/s
-    if (is_whole_register_ls_instr) {
+    } else if (is_whole_register_ls_instr) {
       nfields inside {1, 2, 4, 8};
       vd  % nfields == 0;
       vs3 % nfields == 0;
+    } else {
+      nfields == 1;
     }
   }
 
@@ -354,17 +369,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   // The source and destination vector register numbers must be aligned appropriately for
   // the vector register group size, and encodings with other vector register numbers are reserved
   constraint vector_vmvxr_c {
-    if (instr_name == VMV2R_V) {
-      vs2 % 2 == 0;
-      vd  % 2 == 0;
-    }
-    if (instr_name == VMV4R_V) {
-      vs2 % 4 == 0;
-      vd  % 4 == 0;
-    }
-    if (instr_name == VMV8R_V) {
-      vs2 % 8 == 0;
-      vd  % 8 == 0;
+    if (instr_name inside {VMV1R_V, VMV2R_V, VMV4R_V, VMV8R_V}) {
+      vs2 % whole_register_move_cnt == 0;
+      vd  % whole_register_move_cnt == 0;
     }
   }
 
@@ -645,6 +652,9 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if ((name.substr(0, 1) == "VF" && name != VFIRST_M) || (name.substr(0, 2) == "VMF")) begin
       is_fp_instr = 1'b1;
     end
+    if (instr_name inside {VMV2R_V, VMV4R_V, VMV8R_V}) begin
+      whole_register_move_cnt = instr_name.name().substr(3, 3).atoi();
+    end
     if (!uvm_re_match("V[LS].*SEGE.*_V", name)) begin
       is_segmented_ls_instr = 1'b1;
     end
@@ -769,6 +779,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     this.is_segmented_ls_instr      = rhs_.is_segmented_ls_instr;
     this.is_whole_register_ls_instr = rhs_.is_whole_register_ls_instr;
     this.ext_widening_factor        = rhs_.ext_widening_factor;
+    this.whole_register_move_cnt    = rhs_.whole_register_move_cnt;
     this.allowed_va_variants        = rhs_.allowed_va_variants;
     this.ls_emul_non_frac           = rhs_.ls_emul_non_frac;
   endfunction : do_copy

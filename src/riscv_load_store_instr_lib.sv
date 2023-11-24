@@ -620,8 +620,6 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     randomize_avail_regs();
     // Generate a random load/store instruction
     gen_load_store_instr();
-    // Make sure not to overwrite the indexes
-    cfg.vector_cfg.reserved_vregs = {cfg.vector_cfg.reserved_vregs, vs2_reg};
     // Insert a random-mixed instruction stream
     add_mixed_instr(num_mixed_instr);
     // Insert the load/store instruction at a random place in the instruction stream
@@ -632,6 +630,10 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
       // Initialize rs2 with the stride
       insert_instr(get_init_gpr_instr(rs2_reg, byte_stride), 0);
     end else if (address_mode == INDEXED) begin
+      // Unreserve index vector registers
+      for (int i = 0; i < load_store_instr.emul_non_frac(index_eew); i++) begin
+        cfg.vector_cfg.reserved_vregs.pop_back();
+      end
       // Initialize vs2 with random/pre-defined indexes
       add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
     end
@@ -687,8 +689,11 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     load_store_instr.ls_eew  = address_mode == INDEXED ? index_eew : data_eew;
     randomize_gpr(load_store_instr);
     if (address_mode == INDEXED) begin
-      cfg.vector_cfg.reserved_vregs = {load_store_instr.vs2};
-      vs2_reg                       = load_store_instr.vs2;
+      vs2_reg = load_store_instr.vs2;
+      // Make sure that indexes are not overwritten
+      for (int i = 0; i < load_store_instr.emul_non_frac(index_eew); i++) begin
+        cfg.vector_cfg.reserved_vregs.push_back(riscv_vreg_t'(vs2_reg + i));
+      end
     end
     load_store_instr.process_load_store = 0;
   endfunction
