@@ -24,6 +24,9 @@ class riscv_vector_cfg extends uvm_object;
   rand bit               vxsat;
   riscv_vreg_t           reserved_vregs[$];
 
+  // Zvl* extension
+  int unsigned vlen = VLEN;
+
   // Zve* extension
   string       zve_extension     = "";
   bit          enable_fp_support = 1'b1;
@@ -96,6 +99,15 @@ class riscv_vector_cfg extends uvm_object;
 
   function new (string name = "");
     super.new(name);
+    // Check for Zvl* extension
+    if ($value$plusargs("zvl_extension=%0d", vlen)) begin
+      if (vlen < 32 || vlen > 2**16 || 2**$clog2(vlen) != vlen) begin
+        `uvm_fatal(`gfn, $sformatf({"Unsupported Zvl* extension Zvl%0db. VLEN needs to be within 32 and 2**16",
+                                    " and be of power of two"}, vlen))
+      end
+      `uvm_info(`gfn, $sformatf("Enabling Zvl%0db extension. Setting VLEN to %0d (overwriting old VLEN of %0d)",
+                                vlen, vlen, VLEN), UVM_LOW)
+    end
     // Check for Zve* extension
     if ($value$plusargs("zve_extension=%0s", zve_extension)) begin
       int minimum_vlen;
@@ -112,7 +124,7 @@ class riscv_vector_cfg extends uvm_object;
       end
       `uvm_info(`gfn, $sformatf("Enabling vector spec %0s extension", zve_extension), UVM_LOW)
       // Check VLEN to be of correct minimum size
-      if (VLEN < minimum_vlen) begin
+      if (vlen < minimum_vlen) begin
         `uvm_fatal(`gfn, $sformatf("%0s extension requires a VLEN of at least %0d bits",
                                    zve_extension, minimum_vlen))
       end
@@ -181,9 +193,9 @@ class riscv_vector_cfg extends uvm_object;
   // Get the vlmax for the current vtype
   function int vlmax();
     if (vtype.fractional_lmul) begin
-      vlmax = VLEN / vtype.vsew / vtype.vlmul;
+      vlmax = vlen / vtype.vsew / vtype.vlmul;
     end else begin
-      vlmax = VLEN / vtype.vsew * vtype.vlmul;
+      vlmax = vlen / vtype.vsew * vtype.vlmul;
     end
     return vlmax;
   endfunction

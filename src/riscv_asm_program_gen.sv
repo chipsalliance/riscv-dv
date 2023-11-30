@@ -545,7 +545,7 @@ class riscv_asm_program_gen extends uvm_object;
   virtual function void init_vector_gpr();
     int SEW = (ELEN <= XLEN) ? ELEN : XLEN;
     int LMUL = 1;
-    int num_elements = VLEN / SEW;
+    int num_elements = cfg.vector_cfg.vlen / SEW;
 
     // Do not init vector registers if RVV is not enabled
     if (!(RVV inside {supported_isa})) return;
@@ -573,10 +573,10 @@ class riscv_asm_program_gen extends uvm_object;
         end
       end
       RANDOM_VALUES_LOAD: begin
-        // Select those memory regions that are big enough for load a vreg
+        // Select those memory regions that are big enough to load a vreg
         mem_region_t valid_mem_region [$];
         foreach (cfg.mem_region[i])
-          if (cfg.mem_region[i].size_in_bytes * 8 >= VLEN) valid_mem_region.push_back(cfg.mem_region[i]);
+          if (cfg.mem_region[i].size_in_bytes * 8 >= cfg.vector_cfg.vlen) valid_mem_region.push_back(cfg.mem_region[i]);
 
         if (valid_mem_region.size() == 0)
           `uvm_fatal(`gfn, "Couldn't find a memory region big enough to initialize the vector registers")
