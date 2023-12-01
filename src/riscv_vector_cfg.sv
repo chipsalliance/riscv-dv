@@ -51,7 +51,7 @@ class riscv_vector_cfg extends uvm_object;
 
   // vl has to be within VLMAX
   constraint vl_c {
-    vl inside {[0 : vlmax()]};
+    vl inside {[0 : vlmax(vtype)]};
   }
 
   // vstart has to be within vl
@@ -191,11 +191,11 @@ class riscv_vector_cfg extends uvm_object;
   endfunction
 
   // Get the vlmax for the current vtype
-  function int vlmax();
-    if (vtype.fractional_lmul) begin
-      vlmax = vlen / vtype.vsew / vtype.vlmul;
+  function int vlmax(vtype_t _vtype = vtype);
+    if (_vtype.fractional_lmul) begin
+      vlmax = vlen / _vtype.vsew / _vtype.vlmul;
     end else begin
-      vlmax = vlen / vtype.vsew * vtype.vlmul;
+      vlmax = vlen / _vtype.vsew * _vtype.vlmul;
     end
     return vlmax;
   endfunction
