@@ -543,17 +543,16 @@ class riscv_asm_program_gen extends uvm_object;
 
   // Initialize vector general purpose registers
   virtual function void init_vector_gpr();
-    int SEW = (ELEN <= XLEN) ? ELEN : XLEN;
-    int LMUL = 1;
-    int num_elements = cfg.vector_cfg.vlen / SEW;
+    int sew          = cfg.vector_cfg.max_int_sew;
+    int num_elements = cfg.vector_cfg.vlen / sew;
 
     // Do not init vector registers if RVV is not enabled
     if (!(RVV inside {supported_isa})) return;
 
     // Set vector configuration
     instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], num_elements));
-    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, m%0d, ta, ma",
-                                     indent, cfg.gpr[0], cfg.gpr[1], SEW, LMUL));
+    instr_stream.push_back($sformatf("%0svsetvli x%0d, x%0d, e%0d, m1, ta, ma",
+                                     indent, cfg.gpr[0], cfg.gpr[1], sew));
 
     // Vector registers will be initialized using one of the following three methods
     case (cfg.vreg_init_method)
@@ -566,7 +565,7 @@ class riscv_asm_program_gen extends uvm_object;
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
           for (int e = 0; e < num_elements; e++) begin
             instr_stream.push_back($sformatf("%0sli x%0d, 0x%0x",
-                                             indent, cfg.gpr[0], $urandom_range(0, 2 ** SEW - 1)));
+                                             indent, cfg.gpr[0], $urandom_range(0, 2 ** sew - 1)));
             instr_stream.push_back($sformatf("%0svslide1down.vx v%0d, v%0d, x%0d",
                                              indent, v, v, cfg.gpr[0]));
           end
@@ -584,7 +583,7 @@ class riscv_asm_program_gen extends uvm_object;
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
           int region = $urandom_range(0, valid_mem_region.size()-1);
           instr_stream.push_back($sformatf("%0sla x%0s, %0s", indent, cfg.gpr[0], valid_mem_region[region].name));
-          instr_stream.push_back($sformatf("%0svle%0s.v v%0d, (x%0s)", indent, SEW, v, cfg.gpr[0]));
+          instr_stream.push_back($sformatf("%0svle%0s.v v%0d, (x%0s)", indent, sew, v, cfg.gpr[0]));
         end
       end
     endcase
