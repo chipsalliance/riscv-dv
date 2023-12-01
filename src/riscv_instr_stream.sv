@@ -299,7 +299,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
 
   // Initialize a v-register with pre-defined values
   // Instructions will be inserted at defined index (-1: random, 0: front, instr_list.size(): back)
-  function void add_init_vector_gpr(riscv_vreg_t vreg, int unsigned values [], int sew, int idx = instr_list.size());
+  function void add_init_vector_gpr(riscv_vreg_t vreg, logic [XLEN-1:0] values [], int sew, int idx = instr_list.size());
     riscv_instr init_instr_list [$];
     riscv_vector_instr vinstr;
     riscv_instr_gen_config init_cfg;
@@ -322,7 +322,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     // Initialize v-register
     if (values.size() == 1) begin
       // Load initialize value to x-register
-      init_instr_list.push_back(get_init_gpr_instr(init_cfg.gpr[0], values[0]));
+      init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], values[0]));
 
       // Splatter value to v-register
       $cast(vinstr, riscv_instr::get_instr(VMV_V_X));
@@ -339,7 +339,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
       // Load all defined values into v-register
       for (i = 0; i < values.size() && i < init_cfg.vector_cfg.vlmax(); i++) begin
         // Load initialize value to x-register
-        init_instr_list.push_back(get_init_gpr_instr(init_cfg.gpr[0], values[i]));
+        init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], values[i]));
 
         // Slide down value in v-register
         $cast(vinstr, riscv_instr::get_instr(VSLIDE1DOWN));

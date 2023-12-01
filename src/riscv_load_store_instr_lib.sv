@@ -530,7 +530,6 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   rand int unsigned   data_page_base_offset;
   rand int unsigned   num_mixed_instr;
   rand int            byte_stride;
-  rand int unsigned   indexed_byte_offset [];
   rand address_mode_e address_mode;
   // Base address
   rand riscv_reg_t    rs1_reg;
@@ -540,21 +539,26 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   riscv_vreg_t        vs2_reg;
   // Generated load/store instruction
   riscv_vector_instr  load_store_instr;
+  // Generated index byte offsets
+  logic [XLEN-1:0]    indexed_byte_offset [];
 
   constraint solve_order_c {
-    solve data_page_id          before data_page_base_offset;
+    solve address_mode          before data_page_id;
     solve address_mode          before data_eew;
     solve address_mode          before index_eew;
+    solve data_eew              before data_page_id;
+    solve index_eew             before data_page_id;
     solve data_eew              before data_page_base_offset;
     solve index_eew             before data_page_base_offset;
+    solve data_page_id          before data_page_base_offset;
     solve data_page_base_offset before byte_stride;
-    solve data_page_base_offset before indexed_byte_offset;
-    solve index_eew             before indexed_byte_offset;
   }
 
   // Choose from available data pages
   constraint data_page_id_c {
     data_page_id < max_data_page_id;
+    // Unit strided address mode requires a big enough data page
+    address_mode == UNIT_STRIDED -> data_page[data_page_id].size_in_bytes >= cfg.vector_cfg.vl * (data_eew / 8);
   }
 
   // Find base address inside data page
@@ -563,6 +567,9 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     data_page_base_offset <= data_page[data_page_id].size_in_bytes - 1;
     // Base address has to be aligned to data width
     data_page_base_offset % (data_eew / 8) == 0;
+    // For unit-strided accesses, base address has to be VL element bytes below page end
+    address_mode == UNIT_STRIDED -> data_page_base_offset <= data_page[data_page_id].size_in_bytes -
+                                                             (cfg.vector_cfg.vl * (data_eew / 8));
   }
 
   // Choose legal EEW for current config
@@ -582,25 +589,12 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
 
   // Choose a legal byte stride for strided l/s
   constraint byte_stride_c {
-    // Negative strides are allowed
-    byte_stride * (data_eew / 8) * cfg.vector_cfg.vl inside {[-data_page_base_offset :
-                                                              data_page[data_page_id].size_in_bytes - data_page_base_offset]};
-    // Addresses have to be data width aligned
-    byte_stride % (data_eew / 8) == 0;
-  }
-
-  // Choose legal index byte offsets for every element in vector
-  constraint index_byte_offset_c {
-    // We need a byte offset for every element in the vector
-    indexed_byte_offset.size() == cfg.vector_cfg.vl;
-    foreach (indexed_byte_offset[i]) {
-      // Only positive index byte offsets are allowed
-      // +8 since nfields <= 8
-      (indexed_byte_offset[i] + 8) * (data_eew / 8) <= data_page[data_page_id].size_in_bytes - data_page_base_offset;
-      // Index has to be data width aligned
-      indexed_byte_offset[i] % (data_eew / 8) == 0;
-      // Index has to fit into index EEW size
-      indexed_byte_offset[i] <= 2**index_eew - 1;
+    if (address_mode == STRIDED) {
+      // Negative strides are allowed
+      byte_stride * (data_eew / 8) * cfg.vector_cfg.vl inside {[-data_page_base_offset :
+                                                                data_page[data_page_id].size_in_bytes - data_page_base_offset]};
+      // Addresses have to be data width aligned
+      byte_stride % (data_eew / 8) == 0;
     }
   }
 
@@ -635,6 +629,7 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
         cfg.vector_cfg.reserved_vregs.pop_back();
       end
       // Initialize vs2 with random/pre-defined indexes
+      randomize_indexed_byte_offset();
       add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
     end
     super.post_randomize();
@@ -696,6 +691,19 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
       end
     end
     load_store_instr.process_load_store = 0;
+  endfunction
+
+  // Randomize the index byte offsets for index load and stores
+  function void randomize_indexed_byte_offset();
+    logic [XLEN-1:0] element;
+    indexed_byte_offset = new [cfg.vector_cfg.vl];
+    for (int i = 0; i < cfg.vector_cfg.vl; i++) begin
+      // Get a random offset which fits into page
+      element = $urandom_range(0, ((2**index_eew - 1) < data_page[data_page_id].size_in_bytes - data_page_base_offset - 1 ?
+                                   (2**index_eew - 1) : data_page[data_page_id].size_in_bytes - data_page_base_offset - 1));
+      // Align offset to data width
+      indexed_byte_offset[i] = (element & ('1 << $clog2(data_eew / 8)));
+    end
   endfunction
 
 endclass
