@@ -64,7 +64,7 @@ class riscv_vector_cfg extends uvm_object;
     vtype.vlmul inside {1, 2, 4, 8};
     vtype.fractional_lmul -> vtype.vlmul != 1;
     // Fractional LMUL only allowed iff at least one SEW element fits into vector
-    (8 >> $clog2(vtype.vsew/8)) < vtype.vlmul -> !vtype.fractional_lmul;
+    ((max_int_sew / 8) >> $clog2(vtype.vsew/8)) < vtype.vlmul -> !vtype.fractional_lmul;
     // Fractional LMUL 1/8th only supported iff EEW 64 is supported
     vtype.fractional_lmul -> vtype.vlmul <= max_int_sew / 8;
   }
