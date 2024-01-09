@@ -127,17 +127,17 @@ $(DBGPICOBJDIR)/%.o: ../%.d
 libriscv-dv-ldc-shared.so: $(addprefix $(PICOBJDIR)/,$(GEN_OBJS)) \
 			   $(addprefix $(PICOBJDIR)/,$(ISA_OBJS)) \
 			   $(addprefix $(PICOBJDIR)/,$(TEST_OBJS))
-	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3
+	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3 -L-lboolector
 
 libriscv-dv-ldc-debug-shared.so: $(addprefix $(DBGPICOBJDIR)/,$(GEN_OBJS)) \
 			         $(addprefix $(DBGPICOBJDIR)/,$(ISA_OBJS)) \
 			         $(addprefix $(DBGPICOBJDIR)/,$(TEST_OBJS))
-	CC=$(CC) $(LDC2) -shared $(DBGDFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3
+	CC=$(CC) $(LDC2) -shared $(DBGDFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3 -L-lboolector
 
 libriscv-dv-ldc-shared-alt.so: $(addprefix ../,$(GEN_FILES)) \
 			       $(addprefix ../,$(ISA_FILES)) \
 			       $(addprefix $(PICOBJDIR)/,$(TEST_OBJS))
-	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3
+	CC=$(CC) $(LDC2) -shared $(DFLAGS) -relocation-model=pic -of$@ -I.. $^ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lphobos2-ldc-shared -L-ldruntime-ldc-shared -L-lz3  -L-lboolector
 
 libriscv-dv-ldc.a: $(addprefix $(PICOBJDIR)/,$(GEN_OBJS)) \
 	           $(addprefix $(PICOBJDIR)/,$(ISA_OBJS)) \
@@ -150,10 +150,10 @@ TAGS: $(addprefix ../,$(GEN_FILES)) \
 	dscanner --etags $^ > $@
 
 riscv_instr_gen: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-shared.so
-	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lz3 -L-ldl # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto
+	$(LDC2) -link-defaultlib-shared $(DFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-shared -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lz3 -L-ldl  -L-lboolector # -defaultlib=phobos2-ldc-lto,druntime-ldc-lto
 
 riscv_instr_gen_debug: ../riscv/test/riscv_instr_gen.d libriscv-dv-ldc-debug-shared.so
-	$(LDC2) -link-defaultlib-shared $(DBGDFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-debug-shared -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3 -L-ldl
+	$(LDC2) -link-defaultlib-shared $(DBGDFLAGS) -of$@ -I.. -L--no-as-needed -L-R./ -L-L./ $< -L-lriscv-dv-ldc-debug-shared -L-luvm-ldc-debug-shared -L-lesdl-ldc-debug-shared -L-lphobos2-ldc-debug-shared -L-ldruntime-ldc-debug-shared -L-lz3 -L-ldl  -L-lboolector
 
 run: riscv_instr_gen
 	./riscv_instr_gen $(GCOPTS) +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(RANDSEED) +par_num_threads=$(THREADS) +thread_index=$(CPU) +UVM_TESTNAME=riscv.test.riscv_instr_base_test.riscv_instr_base_test +num_of_tests=1 +start_idx=0 +asm_file_name=out_$(DATE)/asm_test/riscv_rand_instr_test +instr_cnt=$(INSTRCOUNT) +num_of_sub_program=5 \

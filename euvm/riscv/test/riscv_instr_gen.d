@@ -16,6 +16,7 @@
 
 import uvm;
 import esdl;
+// import esdl.rand.meta: printStats;
 
 int main(string[] args) {
   import std.stdio: writeln;

@@ -1847,6 +1847,10 @@ class riscv_asm_program_gen : uvm_object
       }
       instr_stream.length = stream_length;
       foreach (f; forks) f.join();
+      // import esdl.rand.meta: printSolverStats;
+      // import std.stdio;
+      // writeln("printing solver stats");
+      // printSolverStats();
       assert (stream_idx == instr_stream.length);
       instr_stream.shuffle();
     }
