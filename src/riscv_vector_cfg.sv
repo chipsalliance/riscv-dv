@@ -140,8 +140,8 @@ class riscv_vector_cfg extends uvm_object;
       end
     end
     if ($value$plusargs("enable_zvfh_extension=%0b", enable_zvfh_extension)) begin
-      if (enable_zvfh_extension && !enable_zvfhmin_extension) begin
-        `uvm_fatal(`gfn, $sformatf("Zvfh extension requires the Zvfhmin extension"))
+      if (enable_zvfh_extension && !enable_fp_support) begin
+        `uvm_fatal(`gfn, $sformatf("Zvfh extension requires floating point support (Zve32x is invalid)"))
       end
       if (enable_zvfh_extension) begin
         min_fp_sew = 16;
