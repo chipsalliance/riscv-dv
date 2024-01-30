@@ -37,6 +37,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   bit               is_convert_instr = 1'b0;
   bit               is_reduction_instr = 1'b0;
   bit               is_mask_producing_instr = 1'b0;
+  bit               is_mask_operands = 1'b0;
   bit               is_fp_instr = 1'b0;
   bit               is_segmented_ls_instr = 1'b0;
   bit               is_whole_register_ls_instr = 1'b0;
@@ -77,16 +78,20 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   }
 
   // Section 3.3.2: Vector Register Grouping (vlmul)
-  // Instructions specifying a vector operand with an odd-numbered vector register will raisean
+  // Instructions specifying a vector operand with an odd-numbered vector register will raise an
   // illegal instruction exception.
   constraint vector_operand_group_c {
     if (!m_cfg.vector_cfg.vtype.fractional_lmul &&
         !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F}) &&
         !(instr_name inside {VRGATHEREI16}) &&
         !(category inside {LOAD, STORE})) {
-      vd  % m_cfg.vector_cfg.vtype.vlmul == 0;
-      vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
-      vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
+      if (!is_mask_producing_instr) {
+        vd % m_cfg.vector_cfg.vtype.vlmul == 0;
+      }
+      if (!is_mask_operands) {
+        (instr_name != VCOMPRESS) -> vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
+        vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
+      }
       vs3 % m_cfg.vector_cfg.vtype.vlmul == 0;
     }
   }
@@ -131,6 +136,29 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         // vector register group
         !(vd inside {[vs2 + m_cfg.vector_cfg.vtype.vlmul : vs2 + m_cfg.vector_cfg.vtype.vlmul*2 - 1]});
       } else {
+        vs2 != vd;
+      }
+    }
+  }
+
+  // If operand and result registers are not masks, then (mask) operand and
+  // (mask) result registers cannot overlap
+  constraint vector_mask_reg_overlap_c {
+    if (is_mask_producing_instr && !is_mask_operands) {
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        !(vd inside {[vs1 : vs1 + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        !(vd inside {[vs2 : vs2 + m_cfg.vector_cfg.vtype.vlmul - 1]});
+      } else {
+        vd != vs1;
+        vd != vs2;
+      }
+    }
+    if (!is_mask_producing_instr && is_mask_operands) {
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+        !(vs2 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+      } else {
+        vs1 != vd;
         vs2 != vd;
       }
     }
@@ -380,7 +408,11 @@ class riscv_vector_instr extends riscv_floating_point_instr;
   constraint vector_compress_c {
     if (instr_name == VCOMPRESS) {
       vd != vs2;
-      vd != vs1;
+      if (!m_cfg.vector_cfg.vtype.fractional_lmul) {
+        !(vs1 inside {[vd : vd + m_cfg.vector_cfg.vtype.vlmul - 1]});
+      } else {
+        vd != vs1;
+      }
     }
   }
 
@@ -665,8 +697,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     if (uvm_is_match("*RED*", name)) begin
       is_reduction_instr = 1'b1;
     end
-    if (uvm_is_match("VM*_M*", name)) begin
+    if (uvm_is_match("VM*_M*", name) || (name.substr(0, 2) == "VMF") ||
+        (name.substr(0, 2) == "VMS") || instr_name inside {VMADC, VMSBC}) begin
       is_mask_producing_instr = 1'b1;
+    end
+    if (uvm_is_match("*_M*", name)) begin
+      is_mask_operands = 1'b1;
     end
     if ((name.substr(0, 1) == "VF" && name != "VFIRST_M") || (name.substr(0, 2) == "VMF")) begin
       is_fp_instr = 1'b1;
@@ -794,6 +830,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     this.is_convert_instr           = rhs_.is_convert_instr;
     this.is_reduction_instr         = rhs_.is_reduction_instr;
     this.is_mask_producing_instr    = rhs_.is_mask_producing_instr;
+    this.is_mask_operands           = rhs_.is_mask_operands;
     this.is_fp_instr                = rhs_.is_fp_instr;
     this.is_segmented_ls_instr      = rhs_.is_segmented_ls_instr;
     this.is_whole_register_ls_instr = rhs_.is_whole_register_ls_instr;
