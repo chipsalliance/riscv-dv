@@ -147,6 +147,7 @@
     +num_of_sub_program=0
     +enable_floating_point=1
     +enable_vector_extension=1
+    +vreg_init_method=RANDOM_VALUES_LOAD
     +directed_instr_0=riscv_vector_load_store_instr_stream,10
     +no_branch_jump=1
     +boot_mode=m

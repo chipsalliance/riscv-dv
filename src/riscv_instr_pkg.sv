@@ -1504,6 +1504,26 @@ package riscv_instr_pkg;
         end
       end
     endfunction
+
+    static function void get_value(string cmdline_str, bit allow_raw_vals, ref T val);
+      string s;
+      void'(inst.get_arg_value(cmdline_str, s));
+      if(s != "") begin
+        T value;
+        if (allow_raw_vals && s.substr(0, 1) == "0x") begin
+          logic[$bits(T)-1:0] raw_val;
+
+          string raw_val_hex_digits = s.substr(2, s.len()-1);
+          raw_val = raw_val_hex_digits.atohex();
+          val = T'(raw_val);
+        end else if (uvm_enum_wrapper#(T)::from_name(s.toupper(), value)) begin
+          val = value;
+        end else begin
+          `uvm_fatal("riscv_instr_pkg", $sformatf(
+              "Invalid value (%0s) specified in command line: %0s", s, cmdline_str))
+        end
+      end
+    endfunction
   endclass
 
   riscv_reg_t all_gpr[] = {ZERO, RA, SP, GP, TP, T0, T1, T2, S0, S1, A0,
