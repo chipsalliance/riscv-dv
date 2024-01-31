@@ -2955,7 +2955,7 @@ class riscv_instr_cover_group;
                                  RVV, RV64B, RV32B,
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
-                                 RV32ZBKB, RV64ZBKB, RV32ZBKC, RV64ZBKC,
+                                //  RV32ZBKB, RV64ZBKB, RV32ZBKC, RV64ZBKC, // TODO commented because "Macro CG_ENDRV32ZBKB is not defined." ERROR
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
