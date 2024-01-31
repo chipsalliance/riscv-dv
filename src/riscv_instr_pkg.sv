@@ -112,6 +112,7 @@ package riscv_instr_pkg;
     RV64ZBA,
     RV64ZBB,
     RV64ZBC,
+    RV64ZBKC,
     RV64ZBS,
     RV64ZBKB,
     RV64ZBKX,
@@ -204,8 +205,6 @@ package riscv_instr_pkg;
     XNOR,
     ZEXT_H,
     // RV32ZBC instructions
-    CLMUL,
-    CLMULH,
     CLMULR,
     // RV32ZBS instructions
     BCLR,
@@ -216,6 +215,14 @@ package riscv_instr_pkg;
     BINVI,
     BSET,
     BSETI,
+    // RV32ZBKC (subset)
+    // These are the instructions which differ between zbc and zbkc this means
+    // that zbkc = zbkc_subset + zbc
+    // Some of the instruction which were previously defined in the 
+    // B extension has been moved here since they are ratified in the crypto
+    // standard.
+    CLMUL,
+    CLMULH,
     // RV32ZBKB (subset)
     // These are the instructions which differ between zbb and zbkb this means
     // that zbkb = zkbb_subset + zbb
@@ -1687,6 +1694,7 @@ package riscv_instr_pkg;
   typedef class riscv_zba_instr;
   typedef class riscv_zbb_instr;
   typedef class riscv_zbc_instr;
+  typedef class riscv_zbkc_instr;
   typedef class riscv_zbs_instr;
   typedef class riscv_zbkb_instr;
   typedef class riscv_zcb_instr;
@@ -1716,6 +1724,7 @@ package riscv_instr_pkg;
   `include "isa/rv32zbc_instr.sv"
   `include "isa/rv32zbs_instr.sv"
   // new additions
+  `include "isa/riscv_zbkc_instr.sv"
   `include "isa/rv32zbkb_instr.sv"
   `include "isa/rv64zbkb_instr.sv"
   `include "isa/riscv_zbkb_instr.sv"

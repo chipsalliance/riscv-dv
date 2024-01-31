@@ -619,6 +619,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
     get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
     get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
+    get_bool_arg_value("+enable_zbkc_extension=", enable_zbkc_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     get_bool_arg_value("+enable_zbkb_extension=", enable_zbkb_extension);
     get_bool_arg_value("+enable_zcb_extension=", enable_zcb_extension);
@@ -663,6 +664,11 @@ class riscv_instr_gen_config extends uvm_object;
     if (!((RV32ZBC inside {supported_isa}) ||
           (RV64ZBC inside {supported_isa}))) begin
       enable_zbc_extension = 0;
+    end
+
+    if (!((RV32ZBKC inside {supported_isa}) ||
+          (RV64ZBKC inside {supported_isa}))) begin
+      enable_zbkc_extension = 0;
     end
 
     if (!((RV32ZBS inside {supported_isa}) ||
