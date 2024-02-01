@@ -34,8 +34,8 @@ riscv_instr_name_t unsupported_instr[];
 // ISA supported by the processor
 riscv_instr_group_t supported_isa[$] = {RV32I, RV32M, RV64I, RV64M, RV32C, RV64C, RV32A, RV64A,
                                         RV32F, RV64F, RV32D, RV64D, RV32X, RV64ZBA, RV64ZBB, RV64ZBKB,
-                                        RV64ZBC, RV64ZBS, RV32ZBA,RV32ZBB, RV32ZBKB, RV32ZBC, RV32ZBS,
-                                        RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH};
+                                        RV64ZBC, RV64ZBS, RV32ZBA,RV32ZBB, RV32ZBKB, RV32ZBC, RV32ZBKC,
+                                        RV32ZBS, RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH};
 // Interrupt mode support
 mtvec_mode_t supported_interrupt_mode[$] = {DIRECT, VECTORED};
 
