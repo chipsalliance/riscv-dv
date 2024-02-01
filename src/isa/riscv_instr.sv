@@ -394,9 +394,7 @@ class riscv_instr extends uvm_object;
       ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND, MUL,
       MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
       ADDIW, SLLIW, SRLIW, SRAIW                                   : get_opcode = 7'b0011011;
-      MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
       FENCE, FENCE_I                                               : get_opcode = 7'b0001111;
-      ECALL, EBREAK                                                : get_opcode = 7'b1110011;
       ADDW, SUBW, SLLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW, REMUW : get_opcode = 7'b0111011;
       ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA       : get_opcode = 7'b1110011;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
@@ -469,7 +467,7 @@ class riscv_instr extends uvm_object;
       DIVUW      : get_func3 = 3'b101;
       REMW       : get_func3 = 3'b110;
       REMUW      : get_func3 = 3'b111;
-      ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
+      URET, SRET, MRET, DRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
     endcase
   endfunction
