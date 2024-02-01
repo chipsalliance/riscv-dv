@@ -266,6 +266,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_zbc_extension;
   bit                    enable_zbs_extension;
   bit                    enable_zbkb_extension;
+  bit                    enable_zbkc_extension;
   bit                    enable_zcb_extension;
   bit                    enable_zfh_extension;
   bit                    enable_zfa_extension;
@@ -547,6 +548,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_zbc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbs_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbkb_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zcb_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zfh_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zfa_extension, UVM_DEFAULT)
@@ -622,6 +624,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_zbkc_extension=", enable_zbkc_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     get_bool_arg_value("+enable_zbkb_extension=", enable_zbkb_extension);
+    get_bool_arg_value("+enable_zbkc_extension=", enable_zbkc_extension);
     get_bool_arg_value("+enable_zcb_extension=", enable_zcb_extension);
     get_bool_arg_value("+enable_zfh_extension=", enable_zfh_extension);
     get_bool_arg_value("+enable_zfa_extension=", enable_zfa_extension);
@@ -666,8 +669,7 @@ class riscv_instr_gen_config extends uvm_object;
       enable_zbc_extension = 0;
     end
 
-    if (!((RV32ZBKC inside {supported_isa}) ||
-          (RV64ZBKC inside {supported_isa}))) begin
+    if (!((RV32ZBKC inside {supported_isa}))) begin
       enable_zbkc_extension = 0;
     end
 

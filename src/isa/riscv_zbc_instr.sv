@@ -27,8 +27,6 @@ class riscv_zbc_instr extends riscv_instr;
 
   function bit[6:0] get_opcode();
     case (instr_name) inside
-      CLMUL,
-      CLMULH,
       CLMULR  : get_opcode = 7'b011_0011;
       default : get_opcode = super.get_opcode();
     endcase
@@ -36,8 +34,6 @@ class riscv_zbc_instr extends riscv_instr;
 
   function bit [2:0] get_func3();
     case (instr_name) inside
-      CLMUL   : get_func3 = 3'b001;
-      CLMULH  : get_func3 = 3'b011;
       CLMULR  : get_func3 = 3'b010;
       default : get_func3 = super.get_func3();
     endcase
@@ -45,8 +41,6 @@ class riscv_zbc_instr extends riscv_instr;
 
   function bit [6:0] get_func7();
     case (instr_name) inside
-      CLMUL   : get_func7 = 7'b000_0101;
-      CLMULH  : get_func7 = 7'b000_0101;
       CLMULR  : get_func7 = 7'b000_0101;
       default : get_func7 = super.get_func7();
     endcase
@@ -54,7 +48,7 @@ class riscv_zbc_instr extends riscv_instr;
 
   virtual function string convert2bin(string prefix = "");
     string binary = "";
-    if (instr_name inside {CLMUL, CLMULH, CLMULR}) begin
+    if (instr_name inside {CLMULR}) begin
       binary = $sformatf("%8h", {get_func7(), rs2, rs1, get_func3(), rd, get_opcode()});
     end
     else begin
@@ -66,7 +60,7 @@ class riscv_zbc_instr extends riscv_instr;
     return (cfg.enable_zbc_extension &&
            (RV32ZBC inside { supported_isa } || RV64ZBC inside { supported_isa }) &&
             instr_name inside {
-              CLMUL, CLMULH, CLMULR
+              CLMULR
             });
   endfunction : is_supported
 

@@ -64,7 +64,6 @@ class riscv_zbkc_instr extends riscv_instr;
     if (comment != "") begin
       asm_str_final = { asm_str_final, " #", comment };
     end
-
     return asm_str_final.tolower();
 
   endfunction : convert2asm
@@ -87,7 +86,7 @@ class riscv_zbkc_instr extends riscv_instr;
 
   virtual function bit [6:0] get_func7();
     case (instr_name) inside
-      CLMULH  : get_func7 = 7'b0000101;
+      CLMUL   : get_func7 = 7'b0000101;
       CLMULH  : get_func7 = 7'b0000101;
       default : get_func7 = super.get_func7();
     endcase
@@ -112,7 +111,7 @@ class riscv_zbkc_instr extends riscv_instr;
 
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     return (cfg.enable_zbkc_extension &&
-           (RV32zbkc inside { supported_isa } || RV64zbkc inside { supported_isa }) &&
+           (RV32ZBKC inside { supported_isa }) &&
            instr_name inside {
             CLMUL, CLMULH
            });

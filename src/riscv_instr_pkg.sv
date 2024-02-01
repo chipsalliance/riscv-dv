@@ -107,12 +107,12 @@ package riscv_instr_pkg;
     RV32ZBC,
     RV32ZBS,
     RV32ZBKB,
+    RV32ZBKC,
     RV32ZBKX,
     RV64B,
     RV64ZBA,
     RV64ZBB,
     RV64ZBC,
-    RV64ZBKC,
     RV64ZBS,
     RV64ZBKB,
     RV64ZBKX,
@@ -1724,6 +1724,7 @@ package riscv_instr_pkg;
   `include "isa/rv32zbc_instr.sv"
   `include "isa/rv32zbs_instr.sv"
   // new additions
+  `include "isa/rv32zbkc_instr.sv"
   `include "isa/riscv_zbkc_instr.sv"
   `include "isa/rv32zbkb_instr.sv"
   `include "isa/rv64zbkb_instr.sv"

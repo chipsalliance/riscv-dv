@@ -1254,7 +1254,7 @@ class riscv_instr_cover_group;
   `CG_END
 
   `ZBA_R_INSTR_CG_BEGIN(add_uw)
-  `CG_ENDRV32ZBKB
+  `CG_END
   `ZBS_R_INSTR_CG_BEGIN(bclr)
     `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
   `CG_END
@@ -2770,8 +2770,8 @@ class riscv_instr_cover_group;
       XNOR       : `SAMPLE_ZBB(xnor_cg, instr)
       ZEXT_H     : `SAMPLE_ZBB(zext_h_cg, instr)
       // RV32ZBKC
-      CLMUL      : `SAMPLE_ZBC(clmul_cg, instr)
-      CLMULH     : `SAMPLE_ZBC(clmulh_cg, instr)
+      CLMUL      : `SAMPLE_ZBKC(clmul_cg, instr)
+      CLMULH     : `SAMPLE_ZBKC(clmulh_cg, instr)
       // RV32ZBC
       CLMULR     : `SAMPLE_ZBC(clmulr_cg, instr)
       // RV32ZBS
@@ -2955,7 +2955,7 @@ class riscv_instr_cover_group;
                                  RVV, RV64B, RV32B,
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
-                                //  RV32ZBKB, RV64ZBKB, RV32ZBKC, RV64ZBKC, // TODO commented because "Macro CG_ENDRV32ZBKB is not defined." ERROR
+                                 RV32ZBKB, RV64ZBKB, RV32ZBKC,
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
