@@ -42,6 +42,8 @@
 `define SAMPLE_ZCB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zcb_instr)
 `define SAMPLE_ZFH(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_floating_point_instr)
 `define SAMPLE_ZBKB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkb_instr)
+`define SAMPLE_ZBKC(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkc_instr)
+`define SAMPLE_ZBKX(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkx_instr)
 
 `define INSTR_CG_BEGIN(INSTR_NAME, INSTR_CLASS = riscv_instr) \
   covergroup ``INSTR_NAME``_cg with function sample(INSTR_CLASS instr);
@@ -472,6 +474,21 @@
     cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd; \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+// Copy of ZBC_R_INSTR_CG_BEGIN
+`define ZBKC_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbkc_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ZBKX_R_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbkx_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define B_I_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_b_instr) \
@@ -1231,11 +1248,11 @@ class riscv_instr_cover_group;
   `CG_END
 
   // Multiplication
-  `ZBC_R_INSTR_CG_BEGIN(clmul)
-  `CG_END
+  // `ZBC_R_INSTR_CG_BEGIN(clmul)
+  // `CG_END
 
-  `ZBC_R_INSTR_CG_BEGIN(clmulh)
-  `CG_END
+  // `ZBC_R_INSTR_CG_BEGIN(clmulh)
+  // `CG_END
 
   `ZBC_R_INSTR_CG_BEGIN(clmulr)
   `CG_END
@@ -1246,7 +1263,6 @@ class riscv_instr_cover_group;
 
   `ZBA_R_INSTR_CG_BEGIN(add_uw)
   `CG_END
-
   `ZBS_R_INSTR_CG_BEGIN(bclr)
     `CP_VALUE_RANGE(bit_location, instr.rs2_value, 0, XLEN-1)
   `CG_END
@@ -1881,6 +1897,20 @@ class riscv_instr_cover_group;
   `ZCB_I_INSTR_CG_BEGIN(c_zext_w)
   `CG_END
 
+  // RV32ZBKC
+  `ZBKC_R_INSTR_CG_BEGIN(clmul)
+  `CG_END
+
+  `ZBKC_R_INSTR_CG_BEGIN(clmulh)
+  `CG_END
+
+  // RV32ZBKX
+  `ZBKX_R_INSTR_CG_BEGIN(xperm8)
+  `CG_END
+
+  `ZBKX_R_INSTR_CG_BEGIN(xperm4)
+  `CG_END
+
   // RV32ZBKB
   `ZBKB_R_INSTR_CG_BEGIN(pack)
   `CG_END
@@ -2358,8 +2388,6 @@ class riscv_instr_cover_group;
       zext_h_cg = new();
     `CG_SELECTOR_END
     `CG_SELECTOR_BEGIN(RV32ZBC)
-      clmul_cg  = new();
-      clmulh_cg = new();
       clmulr_cg = new();
     `CG_SELECTOR_END
     `CG_SELECTOR_BEGIN(RV32ZBS)
@@ -2393,6 +2421,16 @@ class riscv_instr_cover_group;
       brev8_cg       = new();
       zip_cg         = new();
       unzip_cg       = new();
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV32ZBKC)
+      clmul_cg  = new();
+      clmulh_cg = new();
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV32ZBKX)
+      xperm8_cg = new();
+      xperm4_cg = new();
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV32B)
@@ -2751,9 +2789,13 @@ class riscv_instr_cover_group;
       SEXT_H     : `SAMPLE_ZBB(sext_h_cg, instr)
       XNOR       : `SAMPLE_ZBB(xnor_cg, instr)
       ZEXT_H     : `SAMPLE_ZBB(zext_h_cg, instr)
+      // RV32ZBKC
+      CLMUL      : `SAMPLE_ZBKC(clmul_cg, instr)
+      CLMULH     : `SAMPLE_ZBKC(clmulh_cg, instr)
+      // RV32ZBKX
+      XPERM8     : `SAMPLE_ZBKX(xperm8_cg, instr)
+      XPERM4     : `SAMPLE_ZBKX(xperm4_cg, instr)
       // RV32ZBC
-      CLMUL      : `SAMPLE_ZBC(clmul_cg, instr)
-      CLMULH     : `SAMPLE_ZBC(clmulh_cg, instr)
       CLMULR     : `SAMPLE_ZBC(clmulr_cg, instr)
       // RV32ZBS
       BCLR       : `SAMPLE_ZBS(bclr_cg, instr)
@@ -2936,6 +2978,7 @@ class riscv_instr_cover_group;
                                  RVV, RV64B, RV32B,
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
+                                 RV32ZBKB, RV64ZBKB, RV32ZBKC, RV32ZBKX,
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&

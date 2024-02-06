@@ -266,6 +266,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_zbc_extension;
   bit                    enable_zbs_extension;
   bit                    enable_zbkb_extension;
+  bit                    enable_zbkc_extension;
+  bit                    enable_zbkx_extension;
   bit                    enable_zcb_extension;
   bit                    enable_zfh_extension;
   bit                    enable_zfa_extension;
@@ -547,6 +549,8 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_zbc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbs_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbkb_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkc_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkx_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zcb_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zfh_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zfa_extension, UVM_DEFAULT)
@@ -619,6 +623,8 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
     get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
     get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
+    get_bool_arg_value("+enable_zbkc_extension=", enable_zbkc_extension);
+    get_bool_arg_value("+enable_zbkx_extension=", enable_zbkx_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     get_bool_arg_value("+enable_zbkb_extension=", enable_zbkb_extension);
     get_bool_arg_value("+enable_zcb_extension=", enable_zcb_extension);
@@ -663,6 +669,14 @@ class riscv_instr_gen_config extends uvm_object;
     if (!((RV32ZBC inside {supported_isa}) ||
           (RV64ZBC inside {supported_isa}))) begin
       enable_zbc_extension = 0;
+    end
+
+    if (!((RV32ZBKC inside {supported_isa}))) begin
+      enable_zbkc_extension = 0;
+    end
+
+    if (!((RV32ZBKX inside {supported_isa}))) begin
+      enable_zbkx_extension = 0;
     end
 
     if (!((RV32ZBS inside {supported_isa}) ||

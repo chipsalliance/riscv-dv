@@ -140,3 +140,13 @@
 `define DEFINE_ZCB_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
   class riscv_``instr_n``_instr extends riscv_zcb_instr; \
     `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
+//Zbkc-extension instruction
+`define DEFINE_ZBKC_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zbkc_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
+//Zbkx-extension instruction
+`define DEFINE_ZBKX_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zbkx_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
