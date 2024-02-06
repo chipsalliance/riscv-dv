@@ -296,10 +296,13 @@ class riscv_instr extends uvm_object;
   endfunction
 
   function void pre_randomize();
-    rs1.rand_mode(has_rs1);
+    // rs1 and imm should be randomized when instructions is of type csr, otherwise,
+    // contraint of order for random generation would not work for some simulators
+    // (because if rand_mode(0) -> not random variable) 
+    rs1.rand_mode(has_rs1 || category == CSR);
     rs2.rand_mode(has_rs2);
     rd.rand_mode(has_rd);
-    imm.rand_mode(has_imm);
+    imm.rand_mode(has_imm || category == CSR);
     if (category != CSR) begin
       csr.rand_mode(0);
     end
