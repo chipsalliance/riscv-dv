@@ -31,7 +31,7 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
   localparam int PteCnt    = 4096 / PteSize;
   localparam int PageLevel = (MODE == SV32) ? 2 : ((MODE == SV39) ? 3 : 4);
   localparam int LinkPtePerTable = 2;
-  localparam int SuperLeafPtePerTable = 450;
+  localparam int SuperLeafPtePerTable = 2;
 
   satp_mode_t mode = MODE;
 
@@ -39,8 +39,7 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
   privileged_mode_t privileged_mode = USER_MODE;
 
   // Starting physical address of the program.
-  bit [XLEN-1:0] start_pa = 'h0000_0000;
-  //bit [XLEN-1:0] start_pa = 'h4000_0000;
+  bit [XLEN-1:0] start_pa = 'h8000_0000;
 
   // Num of page table per level
   int unsigned num_of_page_table[];
@@ -187,11 +186,9 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
     $cast(valid_data_leaf_pte, valid_leaf_pte.clone());
     illegal_pte.turn_off_default_constraint();
     valid_link_pte.xwr = NEXT_LEVEL_PAGE;
-    // I am not sure why riscv-dv are not setting a,u,d to 0 when it is a next
-    // level page?
-    valid_link_pte.u = 0; //edit
-    valid_link_pte.a = 0; //edit
-    valid_link_pte.d = 0; //edit
+    valid_link_pte.a = 1'b0;
+    valid_link_pte.d = 1'b0;
+    valid_link_pte.u = 1'b0;
     valid_link_pte.pack_entry();
     // Set data page to read/write, but not executable
     valid_data_leaf_pte.xwr = READ_WRITE_PAGE;
