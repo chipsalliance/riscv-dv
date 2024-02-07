@@ -30,8 +30,8 @@ jobs:
           
 
   generate-code:
-    runs-on: [ self-hosted, Linux, X64, gcp-custom-runners ]
-    container: centos:8
+    runs-on: ubuntu-latest
+    container: ubuntu:18.04
     needs: generate-config
     strategy:
       fail-fast: false
