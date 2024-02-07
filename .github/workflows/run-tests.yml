@@ -60,10 +60,6 @@ jobs:
           path: test/asm_test
           key: ${{ env.cache_code }}
 
-      - name: Prepare Environment
-        if: steps.cache-code.outputs.cache-hit != 'true'
-        run: _secret_environment
-
       - name: Setup Python 3.9
         if: steps.cache-code.outputs.cache-hit != 'true'
         run: |
