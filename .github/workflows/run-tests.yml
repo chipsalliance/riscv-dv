@@ -31,7 +31,6 @@ jobs:
 
   generate-code:
     runs-on: ubuntu-latest
-    container: ubuntu:18.04
     needs: generate-config
     strategy:
       fail-fast: false
