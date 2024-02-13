@@ -17,7 +17,6 @@
 class riscv_zfa_instr extends riscv_instr;
   bit                       has_rm = 1'b0;
   rand f_rounding_mode_t    rm;
-  static riscv_instr_name_t rs2_cte_instr_name[$];
 
   `uvm_object_utils(riscv_zfa_instr)
 
@@ -38,6 +37,7 @@ class riscv_zfa_instr extends riscv_instr;
           has_imm = 1'b0;
         end
       end
+
       I_FORMAT: begin
         if (instr_name inside {FROUND_H, FROUNDNX_H, FROUND_S, FROUNDNX_S, 
                               FROUND_D, FROUNDNX_D, FROUND_Q, FROUNDNX_Q}) begin
@@ -67,7 +67,7 @@ class riscv_zfa_instr extends riscv_instr;
     end
     super.pre_randomize();
   endfunction
-
+  
   virtual function string convert2asm(string prefix = "");
     string asm_str_final;
     string asm_str;
@@ -77,10 +77,10 @@ class riscv_zfa_instr extends riscv_instr;
     case (format)
       I_FORMAT : begin // instr rd rs1
           asm_str_final = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), rs1.name());
-        end
+      end
       R_FORMAT : begin // instr rd rs1
           asm_str_final = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), rs1.name(), rs2.name());
-        end
+      end
 
       default: `uvm_info(`gfn, $sformatf("Unsupported format %0s", format.name()), UVM_LOW)
     endcase
@@ -107,7 +107,7 @@ class riscv_zfa_instr extends riscv_instr;
       FMVH_X_Q: get_opcode = 7'b1010011;
       FMVP_Q_X: get_opcode = 7'b1010011;
       FLEQ_H, FLTQ_H, FLEQ_S, FLTQ_S, FLEQ_D, FLTQ_D, FLEQ_Q, FLTQ_Q: get_opcode = 7'b1010011;
-      default :                         get_opcode = super.get_opcode();
+      default : get_opcode = super.get_opcode();
     endcase
   endfunction : get_opcode
 
@@ -159,7 +159,7 @@ class riscv_zfa_instr extends riscv_instr;
       FCVTMOD_W_D : get_rs2_cte = 5'b01000; 
       FMVH_X_D    : get_rs2_cte = 5'b00001; 
       FMVH_X_Q    : get_rs2_cte = 5'b00001; 
-      default   : get_rs2_cte = 5'b0000;
+      default : get_rs2_cte = 5'b0000;
     endcase
   endfunction : get_rs2_cte
 
