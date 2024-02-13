@@ -41,6 +41,7 @@
 `define SAMPLE_ZBS(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbs_instr)
 `define SAMPLE_ZCB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zcb_instr)
 `define SAMPLE_ZFH(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_floating_point_instr)
+`define SAMPLE_ZFA(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zfa_instr)
 `define SAMPLE_ZBKB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkb_instr)
 `define SAMPLE_ZBKC(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkc_instr)
 `define SAMPLE_ZBKX(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbkx_instr)
@@ -2337,6 +2338,45 @@ class riscv_instr_cover_group;
       fmv_h_x_cg   = new();
     `CG_SELECTOR_END
 
+    `CG_SELECTOR_BEGIN(RV32ZFA)
+      fli_h_cg       = new();
+      fli_s_cg       = new();
+      fli_d_cg       = new();
+      fli_q_cg       = new();
+      fminm_h_cg       = new();
+      fminm_s_cg       = new();
+      fminm_d_cg       = new();
+      fminm_q_cg       = new();
+      fmaxm_h_cg       = new();
+      fmaxm_s_cg       = new();
+      fmaxm_d_cg       = new();
+      fmaxm_q_cg       = new();
+      fround_h_cg       = new();
+      froundnx_h_cg       = new();
+      fround_s_cg       = new();
+      froundnx_s_cg       = new();
+      fround_d_cg       = new();
+      froundnx_d_cg       = new();
+      fround_q_cg       = new();
+      froundnx_q_cg       = new();
+      fcvtmod_w_d_cg       = new();
+      fmvh_x_d_cg       = new();
+      fmvh_d_x_cg       = new();
+      fleq_h_cg       = new();
+      fltq_h_cg       = new();
+      fleq_s_cg       = new();
+      fltq_s_cg       = new();
+      fleq_d_cg       = new();
+      fltq_d_cg       = new();
+      fleq_q_cg       = new();
+      fltq_q_cg       = new();
+    `CG_SELECTOR_END
+
+    `CG_SELECTOR_BEGIN(RV64ZFA)
+      fmvh_x_q_cg       = new();
+      fmvh_q_x_cg       = new();
+    `CG_SELECTOR_END
+
     `CG_SELECTOR_BEGIN(RV64F)
       fcvt_l_s_cg  = new();
       fcvt_lu_s_cg = new();
@@ -2729,6 +2769,40 @@ class riscv_instr_cover_group;
       FLE_D      : `SAMPLE_F(fle_d_cg, instr)
       FCLASS_S   : `SAMPLE_F(fclass_s_cg, instr)
       FCLASS_D   : `SAMPLE_F(fclass_d_cg, instr)
+      // RV ZFA    
+      FLI_H       : `SAMPLE_ZFA(fli_h_cg, instr)
+      FLI_S       : `SAMPLE_ZFA(fli_s_cg, instr)
+      FLI_D       : `SAMPLE_ZFA(fli_d_cg, instr)
+      FLI_Q       : `SAMPLE_ZFA(fli_q_cg, instr)
+      FMINM_H     : `SAMPLE_ZFA(fminm_h_cg, instr)
+      FMINM_S     : `SAMPLE_ZFA(fminm_s_cg, instr)
+      FMINM_D     : `SAMPLE_ZFA(fminm_d_cg, instr)
+      FMINM_Q     : `SAMPLE_ZFA(fminm_q_cg, instr)
+      FMAXM_H     : `SAMPLE_ZFA(fmaxm_h_cg, instr)
+      FMAXM_S     : `SAMPLE_ZFA(fmaxm_s_cg, instr)
+      FMAXM_D     : `SAMPLE_ZFA(fmaxm_d_cg, instr)
+      FMAXM_Q     : `SAMPLE_ZFA(fmaxm_q_cg, instr)
+      FROUND_H    : `SAMPLE_ZFA(fround_h_cg, instr)
+      FROUNDNX_H  : `SAMPLE_ZFA(froundnx_h_cg, instr)
+      FROUND_S    : `SAMPLE_ZFA(fround_s_cg, instr)
+      FROUNDNX_S  : `SAMPLE_ZFA(froundnx_s_cg, instr)
+      FROUND_D    : `SAMPLE_ZFA(fround_d_cg, instr)
+      FROUNDNX_D  : `SAMPLE_ZFA(froundnx_d_cg, instr)
+      FROUND_Q    : `SAMPLE_ZFA(fround_q_cg, instr)
+      FROUNDNX_Q  : `SAMPLE_ZFA(froundnx_q_cg, instr)
+      FCVTMOD_W_D : `SAMPLE_ZFA(fcvtmod_w_d_cg, instr)
+      FMVH_X_D    : `SAMPLE_ZFA(fmvh_x_d_cg, instr)
+      FMVP_D_X    : `SAMPLE_ZFA(fmvh_d_x_cg, instr)
+      FLEQ_H      : `SAMPLE_ZFA(fleq_h_cg, instr)
+      FLTQ_H      : `SAMPLE_ZFA(fltq_h_cg, instr)
+      FLEQ_S      : `SAMPLE_ZFA(fleq_s_cg, instr)
+      FLTQ_S      : `SAMPLE_ZFA(fltq_s_cg, instr)
+      FLEQ_D      : `SAMPLE_ZFA(fleq_d_cg, instr)
+      FLTQ_D      : `SAMPLE_ZFA(fltq_d_cg, instr)
+      FLEQ_Q      : `SAMPLE_ZFA(fleq_q_cg, instr)
+      FLTQ_Q      : `SAMPLE_ZFA(fltq_q_cg, instr)
+      FMVH_X_Q    : `SAMPLE_ZFA(fmvh_x_q_cg, instr)
+      FMVP_Q_X    : `SAMPLE_ZFA(fmvh_q_x_cg, instr)
       // RV half-precission 
       FLH        : `SAMPLE_ZFH(flh_cg, instr)
       FSH        : `SAMPLE_ZFH(fsh_cg, instr)
@@ -2979,6 +3053,7 @@ class riscv_instr_cover_group;
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
                                  RV32ZBKB, RV64ZBKB, RV32ZBKC, RV32ZBKX,
+                                 RV32ZFA, RV64ZFA,
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&

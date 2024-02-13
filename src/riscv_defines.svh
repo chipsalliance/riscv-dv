@@ -81,6 +81,11 @@
   class riscv_``instr_n``_instr extends riscv_floating_point_instr;  \
     `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
 
+// ZFA instruction
+`define DEFINE_ZFA_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM)  \
+  class riscv_``instr_n``_instr extends riscv_zfa_instr;  \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
 // A-extension instruction
 `define DEFINE_AMO_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM)  \
   class riscv_``instr_n``_instr extends riscv_amo_instr;  \

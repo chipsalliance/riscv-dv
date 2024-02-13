@@ -1737,6 +1737,8 @@ package riscv_instr_pkg;
   `include "isa/rv64zcb_instr.sv"
   `include "isa/rv32zfh_instr.sv"
   `include "isa/rv64zfh_instr.sv"
+  `include "isa/rv32zfa_instr.sv"
+  `include "isa/rv64zfa_instr.sv"
 
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"

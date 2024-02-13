@@ -39,6 +39,7 @@
 --override riscvOVPsim/cpu/Zksh=F 
 
 --override riscvOVPsim/cpu/Zfh=T # half precision floats
+--override riscvOVPsim/cpu/Zfa=T
 --override riscvOVPsim/cpu/Zcb=T 
 --override riscvOVPsim/cpu/tvec_align=8 
 #--exitonsymbol _exit
