@@ -110,7 +110,16 @@ class riscv_instr extends uvm_object;
       if (!cfg.enable_sfence && instr_name == SFENCE_VMA) continue;
       if (cfg.no_fence && (instr_name inside {FENCE, FENCE_I, SFENCE_VMA})) continue;
       if ((XLEN != 32) && (instr_name inside {UNZIP, ZIP})) continue;
-
+      if (!((RV32D inside {supported_isa}) || (XLEN != 32)) && (instr_name inside {FMVH_X_D, FMVP_D_X })) continue;
+      if (!((RV64Q inside {supported_isa}) || (XLEN != 32)) && (instr_name inside {FMVH_X_Q, FMVP_Q_X })) continue;
+      if (!(RV32D inside {supported_isa} || RV64D inside {supported_isa}) && 
+         (instr_name inside {FLI_D, FMINM_D, FMAXM_D, FROUND_D, 
+         FROUNDNX_D, FCVTMOD_W_D, FLEQ_D, FLTQ_D})) continue;
+      if (!(RV32Q inside {supported_isa} || RV64Q inside {supported_isa}) && 
+         (instr_name inside {FLI_Q, FMINM_Q, FMAXM_Q, FROUND_Q, FROUNDNX_Q, 
+         FLEQ_Q, FLTQ_Q})) continue;
+      if (!cfg.enable_zfh_extension && (instr_name inside {FLI_H, FMINM_H, FMAXM_H, 
+         FROUND_H, FROUNDNX_H, FLEQ_H, FLTQ_H})) continue;
       if (!(RV32Q inside {supported_isa}) && instr_name inside {FCVT_H_Q, FCVT_Q_H}) continue;
       if (!cfg.enable_zfh_extension && instr_inst.group inside {RV32ZFH, RV64ZFH}) continue;
       if ((instr_inst.group inside {supported_isa}) &&

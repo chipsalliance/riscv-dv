@@ -1698,6 +1698,7 @@ package riscv_instr_pkg;
   typedef class riscv_zbkx_instr;
   typedef class riscv_zbs_instr;
   typedef class riscv_zbkb_instr;
+  typedef class riscv_zfa_instr;
   typedef class riscv_zcb_instr;
   typedef class riscv_b_instr;
   `include "riscv_instr_gen_config.sv"
@@ -1737,6 +1738,9 @@ package riscv_instr_pkg;
   `include "isa/rv64zcb_instr.sv"
   `include "isa/rv32zfh_instr.sv"
   `include "isa/rv64zfh_instr.sv"
+  `include "isa/riscv_zfa_instr.sv"
+  `include "isa/rv32zfa_instr.sv"
+  `include "isa/rv64zfa_instr.sv"
 
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"
