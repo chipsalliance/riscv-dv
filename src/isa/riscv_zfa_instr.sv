@@ -15,6 +15,13 @@
  * limitations under the License.
  */
 class riscv_zfa_instr extends riscv_floating_point_instr;
+  string all_fli_imm[] = {"-1.0", "min", "1.52587891e-5", "3.05175781e-5", "3.90625e-3", "7.8125e-3", "0.0625", "0.125",
+                          "0.25", "0.3125", "0.375", "0.4375", "0.5", "0.625", "0.75", "0.875",
+                          "1.0", "1.25", "1.5", "1.75", "2.0", "2.5", "3", "4",
+                          "8", "16", "128", "256", "3.2768e+4", "6.5536e+4", "inf", "nan"};  
+  rand bit [4:0]  imm_tbl_idx;
+  bit             has_fli_imm = 1'b0;
+
   `uvm_object_utils(riscv_zfa_instr)
 
   function new(string name = "");
@@ -53,13 +60,12 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
           // can use the rm field
           // cte rs2 value
         end else if (instr_name inside {FCVTMOD_W_D}) begin
-        
           has_fs2 = 1'b0;
           has_fd  = 1'b0;
           has_rd  = 1'b1;
           // cte rs2 value
         end else if (instr_name inside {FLI_H, FLI_S, FLI_D, FLI_Q}) begin
-          has_imm = 1'b1;
+          has_fli_imm = 1'b1;
           has_fs1 = 1'b0;
           has_fs2 = 1'b0;
           // cte rs2 value
@@ -69,6 +75,7 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
   endfunction : set_rand_mode
 
   function void pre_randomize();
+    imm_tbl_idx.rand_mode(has_fli_imm);
     super.pre_randomize();
   endfunction
   
@@ -101,7 +108,7 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
         end else if (instr_name inside {FCVTMOD_W_D}) begin
           asm_str_final = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), fs1.name(), "RTZ");
         end else if (instr_name inside {FLI_H, FLI_S, FLI_D, FLI_Q}) begin
-          asm_str_final = $sformatf("%0s%0s, %0d", asm_str, fd.name(), imm[4:0]);
+          asm_str_final = $sformatf("%0s%0s, %0s", asm_str, fd.name(), all_fli_imm[imm_tbl_idx]);
         end
       end
 
@@ -253,7 +260,7 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
         end else if (instr_name inside {FCVTMOD_W_D}) begin
           binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), fs1, get_func3(), rd, get_opcode()});
         end else if (instr_name inside {FLI_H, FLI_S, FLI_D, FLI_Q}) begin
-          binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), imm[4:0], get_func3(), rd, get_opcode()});
+          binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), imm_tbl_idx, get_func3(), rd, get_opcode()});
         end
       end
 
