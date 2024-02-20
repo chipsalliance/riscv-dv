@@ -238,8 +238,8 @@ def process_regression_list(testlist, test, iterations, matched_list,
                 if iterations > 0 and entry['iterations'] > 0:
                     entry['iterations'] = iterations
                 if entry['iterations'] > 0:
-                    now = datetime.now()
-                    current_time = now.strftime("%Y-%m-%d_%H:%M:%S")
+                    now = time.time()
+                    current_time = round(now)
                     logging.info("Found matched tests: {}, iterations:{}".format(
                       entry['test'], entry['iterations']))
                     entry['test'] = entry['test']+'_'+str(current_time)
