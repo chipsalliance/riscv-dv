@@ -1418,6 +1418,8 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction;
 
 
+  virtual function void gen_custom_section(ref string interrupt_handler_instr[$], privileged_mode_t mode);
+  endfunction
 
   // Interrupt handler routine
   virtual function void gen_interrupt_handler_section(privileged_mode_t mode, int hart);
@@ -1483,8 +1485,7 @@ class riscv_asm_program_gen extends uvm_object;
            $sformatf("csrrc x%0d, 0x%0x, x%0d # %0s;",
                      cfg.gpr[0], ip, cfg.gpr[0], ip.name())
     };
-    gen_timer_section(interrupt_handler_instr,mode);
-    gen_plic_section(interrupt_handler_instr, mode);
+    gen_custom_section(interrupt_handler_instr,mode);
     // Restore user mode GPR value from kernel stack before return
     pop_gpr_from_kernel_stack(status, scratch, cfg.mstatus_mprv,
                               cfg.sp, cfg.tp, interrupt_handler_instr);
