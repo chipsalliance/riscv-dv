@@ -108,26 +108,23 @@
     cov_opts: >
       -coverage -ucdb <out>/cov.ucdb
 
-#RIVIERA REMOVED BECAUSE RANDOMIZATION ISSUE
-#   ADDITIONALLY, 10X SLOWER THAN VCS
-
-# - tool: riviera
-#   compile:
-#     cmd:
-#       - "vlib <out>/work"
-#       - "vlog -work <out>/work
-#         -err VCP2694 W1
-#         -uvmver 1.2
-#         +define+UVM_REGEX_NO_DPI
-#         +incdir+<setting>
-#         +incdir+<user_extension>
-#         -f <cwd>/files.f
-#         <cmp_opts>"
-#   sim:
-#     cmd: >
-#       vsim -c <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
-#     cov_opts: >
-#       -acdb_file <out>/cov.acdb
+- tool: riviera
+  compile:
+    cmd:
+      - "vlib <out>/work"
+      - "vlog -work <out>/work
+        -err VCP2694 W1
+        -uvmver 1.2
+        +define+UVM_REGEX_NO_DPI
+        +incdir+<setting>
+        +incdir+<user_extension>
+        -f <cwd>/files.f
+        <cmp_opts>"
+  sim:
+    cmd: >
+      vsim -c <sim_opts> -sv_seed <seed> <cov_opts> -do <cwd>/riviera_sim.tcl
+    cov_opts: >
+      -acdb_file <out>/cov.acdb
 
 - tool: xlm
   compile:
