@@ -988,6 +988,7 @@ def load_config(args, cwd):
             args.isa = "rv64imafdc"
         else:
             sys.exit("Unsupported pre-defined target: {}".format(args.target))
+        args.isa = args.isa + "_zicsr_zifencei"
     else:
         if re.match(".*gcc_compile.*", args.steps) or re.match(".*iss_sim.*",
                                                                args.steps):
