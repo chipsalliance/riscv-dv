@@ -4,7 +4,7 @@ Overview
 RISCV-DV is a SV/UVM based open-source instruction generator for RISC-V
 processor verification. It currently supports the following features:
 
-- Supported instruction set: RV32IMAFDC, RV64IMAFDC
+- Supported instruction set: RV32IMAFDC_zfh_zcb_zfa_zbkb_zbkc_zbkx, RV64IMAFDC_zfh_zcb_zfa_zbkb_zbkc_zbkx
 - Supported privileged mode: machine mode, supervisor mode, user mode
 - Page table randomization and exception
 - Privileged CSR setup randomization
