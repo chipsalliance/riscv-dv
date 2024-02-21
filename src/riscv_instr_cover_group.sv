@@ -319,6 +319,29 @@
     `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
+`define FP_FLI_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
+    cp_fd          : coverpoint instr.fd;  \
+    cp_rs1_sign    : coverpoint instr.rs1_sign { \
+      option.weight = (`"SIGN_TYP`" == "SIGN"); \
+      type_option.weight = (`"SIGN_TYP`" == "SIGN"); \
+    } \
+    cp_fd_sign     : coverpoint instr.fd_sign; \
+    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+// TODO add rm field as coverpoint
+`define FP_FROUND_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
+    cp_fs1         : coverpoint instr.fs1; \
+    cp_fd          : coverpoint instr.fd;  \
+    cp_fs1_sign    : coverpoint instr.fs1_sign; \
+    cp_fd_sign     : coverpoint instr.fd_sign; \
+    `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
+    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
 `define FP_R4_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
     cp_fs1         : coverpoint instr.fs1; \
@@ -1127,18 +1150,112 @@ class riscv_instr_cover_group;
   `FCLASS_INSTR_CG_BEGIN(fclass_h, H)
   `CG_END
 
-  // // ZFA ext
-  // `FP_I2F_INSTR_CG_BEGIN(fli_h, H)
-  // `CG_END
+  // ZFA ext
+  // fli
+  `FP_FLI_INSTR_CG_BEGIN(fli_h, H)
+  `CG_END
 
-  // `FP_I2F_INSTR_CG_BEGIN(fli_s)
-  // `CG_END
+  `FP_FLI_INSTR_CG_BEGIN(fli_s)
+  `CG_END
 
-  // `FP_I2F_INSTR_CG_BEGIN(fli_d, D)
-  // `CG_END
+  `FP_FLI_INSTR_CG_BEGIN(fli_d, D)
+  `CG_END
 
-  // `FP_I2F_INSTR_CG_BEGIN(fli_q, Q)
-  // `CG_END
+  `FP_FLI_INSTR_CG_BEGIN(fli_q, Q)
+  `CG_END
+  // <- TODO
+
+  // fminm/fmaxm
+  `FP_R_INSTR_CG_BEGIN(fminm_h, H)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fminm_s)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fminm_d, D)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fminm_q, Q)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fmaxm_h, H)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fmaxm_s)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fmaxm_d, D)
+  `CG_END
+
+  `FP_R_INSTR_CG_BEGIN(fmaxm_q, Q)
+  `CG_END
+
+  // fround/froundnx
+  `FP_FROUND_INSTR_CG_BEGIN(fround_h, H)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(froundnx_h, H)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(fround_s)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(froundnx_s)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(fround_d, D)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(froundnx_d, D)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(fround_q, Q)
+  `CG_END
+
+  `FP_FROUND_INSTR_CG_BEGIN(froundnx_q, Q)
+  `CG_END
+  
+  // fcvtmod
+  `FP_F2I_INSTR_CG_BEGIN(fcvtmod_w_d, D)
+  `CG_END
+  
+  // fmv
+  `FP_F2I_INSTR_CG_BEGIN(fmvh_x_d, D)
+  `CG_END
+
+  `FP_F2I_INSTR_CG_BEGIN(fmvh_d_x, D)
+  `CG_END
+  
+  `FP_F2I_INSTR_CG_BEGIN(fmvh_x_q, Q)
+  `CG_END
+  
+  `FP_F2I_INSTR_CG_BEGIN(fmvh_q_x, Q)
+  `CG_END
+  
+  // fleq/fltq
+  `FP_CMP_INSTR_CG_BEGIN(fleq_h, H)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fltq_h, H)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fleq_s)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fltq_s)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fleq_d, D)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fltq_d, D)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fleq_q, Q)
+  `CG_END
+
+  `FP_CMP_INSTR_CG_BEGIN(fltq_q, Q)
+  `CG_END
 
   // B extension instructions ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
   `ZBA_R_INSTR_CG_BEGIN(sh1add)
@@ -1260,13 +1377,6 @@ class riscv_instr_cover_group;
 
   `ZBB_R_INSTR_CG_BEGIN(rev8)
   `CG_END
-
-  // Multiplication
-  // `ZBC_R_INSTR_CG_BEGIN(clmul)
-  // `CG_END
-
-  // `ZBC_R_INSTR_CG_BEGIN(clmulh)
-  // `CG_END
 
   `ZBC_R_INSTR_CG_BEGIN(clmulr)
   `CG_END
@@ -2351,44 +2461,44 @@ class riscv_instr_cover_group;
       fmv_h_x_cg   = new();
     `CG_SELECTOR_END
 
-    // `CG_SELECTOR_BEGIN(RV32ZFA)
-    //   fli_h_cg       = new();
-    //   fli_s_cg       = new();
-    //   fli_d_cg       = new();
-    //   fli_q_cg       = new();
-    //   fminm_h_cg       = new();
-    //   fminm_s_cg       = new();
-    //   fminm_d_cg       = new();
-    //   fminm_q_cg       = new();
-    //   fmaxm_h_cg       = new();
-    //   fmaxm_s_cg       = new();
-    //   fmaxm_d_cg       = new();
-    //   fmaxm_q_cg       = new();
-    //   fround_h_cg       = new();
-    //   froundnx_h_cg       = new();
-    //   fround_s_cg       = new();
-    //   froundnx_s_cg       = new();
-    //   fround_d_cg       = new();
-    //   froundnx_d_cg       = new();
-    //   fround_q_cg       = new();
-    //   froundnx_q_cg       = new();
-    //   fcvtmod_w_d_cg       = new();
-    //   fmvh_x_d_cg       = new();
-    //   fmvh_d_x_cg       = new();
-    //   fleq_h_cg       = new();
-    //   fltq_h_cg       = new();
-    //   fleq_s_cg       = new();
-    //   fltq_s_cg       = new();
-    //   fleq_d_cg       = new();
-    //   fltq_d_cg       = new();
-    //   fleq_q_cg       = new();
-    //   fltq_q_cg       = new();
-    // `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV32ZFA)
+      fli_h_cg       = new();
+      fli_s_cg       = new();
+      fli_d_cg       = new();
+      fli_q_cg       = new();
+      fminm_h_cg       = new();
+      fminm_s_cg       = new();
+      fminm_d_cg       = new();
+      fminm_q_cg       = new();
+      fmaxm_h_cg       = new();
+      fmaxm_s_cg       = new();
+      fmaxm_d_cg       = new();
+      fmaxm_q_cg       = new();
+      fround_h_cg       = new();
+      froundnx_h_cg       = new();
+      fround_s_cg       = new();
+      froundnx_s_cg       = new();
+      fround_d_cg       = new();
+      froundnx_d_cg       = new();
+      fround_q_cg       = new();
+      froundnx_q_cg       = new();
+      fcvtmod_w_d_cg       = new();
+      fmvh_x_d_cg       = new();
+      fmvh_d_x_cg       = new();
+      fleq_h_cg       = new();
+      fltq_h_cg       = new();
+      fleq_s_cg       = new();
+      fltq_s_cg       = new();
+      fleq_d_cg       = new();
+      fltq_d_cg       = new();
+      fleq_q_cg       = new();
+      fltq_q_cg       = new();
+    `CG_SELECTOR_END
 
-    // `CG_SELECTOR_BEGIN(RV64ZFA)
-    //   fmvh_x_q_cg       = new();
-    //   fmvh_q_x_cg       = new();
-    // `CG_SELECTOR_END
+    `CG_SELECTOR_BEGIN(RV64ZFA)
+      fmvh_x_q_cg       = new();
+      fmvh_q_x_cg       = new();
+    `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV64F)
       fcvt_l_s_cg  = new();
@@ -2782,40 +2892,40 @@ class riscv_instr_cover_group;
       FLE_D      : `SAMPLE_F(fle_d_cg, instr)
       FCLASS_S   : `SAMPLE_F(fclass_s_cg, instr)
       FCLASS_D   : `SAMPLE_F(fclass_d_cg, instr)
-      // // RV ZFA    
-      // FLI_H       : `SAMPLE_ZFA(fli_h_cg, instr)
-      // FLI_S       : `SAMPLE_ZFA(fli_s_cg, instr)
-      // FLI_D       : `SAMPLE_ZFA(fli_d_cg, instr)
-      // FLI_Q       : `SAMPLE_ZFA(fli_q_cg, instr)
-      // FMINM_H     : `SAMPLE_ZFA(fminm_h_cg, instr)
-      // FMINM_S     : `SAMPLE_ZFA(fminm_s_cg, instr)
-      // FMINM_D     : `SAMPLE_ZFA(fminm_d_cg, instr)
-      // FMINM_Q     : `SAMPLE_ZFA(fminm_q_cg, instr)
-      // FMAXM_H     : `SAMPLE_ZFA(fmaxm_h_cg, instr)
-      // FMAXM_S     : `SAMPLE_ZFA(fmaxm_s_cg, instr)
-      // FMAXM_D     : `SAMPLE_ZFA(fmaxm_d_cg, instr)
-      // FMAXM_Q     : `SAMPLE_ZFA(fmaxm_q_cg, instr)
-      // FROUND_H    : `SAMPLE_ZFA(fround_h_cg, instr)
-      // FROUNDNX_H  : `SAMPLE_ZFA(froundnx_h_cg, instr)
-      // FROUND_S    : `SAMPLE_ZFA(fround_s_cg, instr)
-      // FROUNDNX_S  : `SAMPLE_ZFA(froundnx_s_cg, instr)
-      // FROUND_D    : `SAMPLE_ZFA(fround_d_cg, instr)
-      // FROUNDNX_D  : `SAMPLE_ZFA(froundnx_d_cg, instr)
-      // FROUND_Q    : `SAMPLE_ZFA(fround_q_cg, instr)
-      // FROUNDNX_Q  : `SAMPLE_ZFA(froundnx_q_cg, instr)
-      // FCVTMOD_W_D : `SAMPLE_ZFA(fcvtmod_w_d_cg, instr)
-      // FMVH_X_D    : `SAMPLE_ZFA(fmvh_x_d_cg, instr)
-      // FMVP_D_X    : `SAMPLE_ZFA(fmvh_d_x_cg, instr)
-      // FLEQ_H      : `SAMPLE_ZFA(fleq_h_cg, instr)
-      // FLTQ_H      : `SAMPLE_ZFA(fltq_h_cg, instr)
-      // FLEQ_S      : `SAMPLE_ZFA(fleq_s_cg, instr)
-      // FLTQ_S      : `SAMPLE_ZFA(fltq_s_cg, instr)
-      // FLEQ_D      : `SAMPLE_ZFA(fleq_d_cg, instr)
-      // FLTQ_D      : `SAMPLE_ZFA(fltq_d_cg, instr)
-      // FLEQ_Q      : `SAMPLE_ZFA(fleq_q_cg, instr)
-      // FLTQ_Q      : `SAMPLE_ZFA(fltq_q_cg, instr)
-      // FMVH_X_Q    : `SAMPLE_ZFA(fmvh_x_q_cg, instr)
-      // FMVP_Q_X    : `SAMPLE_ZFA(fmvh_q_x_cg, instr)
+      // RV ZFA    
+      FLI_H       : `SAMPLE_ZFA(fli_h_cg, instr)
+      FLI_S       : `SAMPLE_ZFA(fli_s_cg, instr)
+      FLI_D       : `SAMPLE_ZFA(fli_d_cg, instr)
+      FLI_Q       : `SAMPLE_ZFA(fli_q_cg, instr)
+      FMINM_H     : `SAMPLE_ZFA(fminm_h_cg, instr)
+      FMINM_S     : `SAMPLE_ZFA(fminm_s_cg, instr)
+      FMINM_D     : `SAMPLE_ZFA(fminm_d_cg, instr)
+      FMINM_Q     : `SAMPLE_ZFA(fminm_q_cg, instr)
+      FMAXM_H     : `SAMPLE_ZFA(fmaxm_h_cg, instr)
+      FMAXM_S     : `SAMPLE_ZFA(fmaxm_s_cg, instr)
+      FMAXM_D     : `SAMPLE_ZFA(fmaxm_d_cg, instr)
+      FMAXM_Q     : `SAMPLE_ZFA(fmaxm_q_cg, instr)
+      FROUND_H    : `SAMPLE_ZFA(fround_h_cg, instr)
+      FROUNDNX_H  : `SAMPLE_ZFA(froundnx_h_cg, instr)
+      FROUND_S    : `SAMPLE_ZFA(fround_s_cg, instr)
+      FROUNDNX_S  : `SAMPLE_ZFA(froundnx_s_cg, instr)
+      FROUND_D    : `SAMPLE_ZFA(fround_d_cg, instr)
+      FROUNDNX_D  : `SAMPLE_ZFA(froundnx_d_cg, instr)
+      FROUND_Q    : `SAMPLE_ZFA(fround_q_cg, instr)
+      FROUNDNX_Q  : `SAMPLE_ZFA(froundnx_q_cg, instr)
+      FCVTMOD_W_D : `SAMPLE_ZFA(fcvtmod_w_d_cg, instr)
+      FMVH_X_D    : `SAMPLE_ZFA(fmvh_x_d_cg, instr)
+      FMVP_D_X    : `SAMPLE_ZFA(fmvh_d_x_cg, instr)
+      FLEQ_H      : `SAMPLE_ZFA(fleq_h_cg, instr)
+      FLTQ_H      : `SAMPLE_ZFA(fltq_h_cg, instr)
+      FLEQ_S      : `SAMPLE_ZFA(fleq_s_cg, instr)
+      FLTQ_S      : `SAMPLE_ZFA(fltq_s_cg, instr)
+      FLEQ_D      : `SAMPLE_ZFA(fleq_d_cg, instr)
+      FLTQ_D      : `SAMPLE_ZFA(fltq_d_cg, instr)
+      FLEQ_Q      : `SAMPLE_ZFA(fleq_q_cg, instr)
+      FLTQ_Q      : `SAMPLE_ZFA(fltq_q_cg, instr)
+      FMVH_X_Q    : `SAMPLE_ZFA(fmvh_x_q_cg, instr)
+      FMVP_Q_X    : `SAMPLE_ZFA(fmvh_q_x_cg, instr)
       // RV half-precission 
       FLH        : `SAMPLE_ZFH(flh_cg, instr)
       FSH        : `SAMPLE_ZFH(fsh_cg, instr)
@@ -3066,7 +3176,7 @@ class riscv_instr_cover_group;
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
                                  RV32ZBKB, RV64ZBKB, RV32ZBKC, RV32ZBKX,
-                                //  RV32ZFA, RV64ZFA,
+                                 RV32ZFA, RV64ZFA,
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
