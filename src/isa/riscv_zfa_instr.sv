@@ -256,7 +256,11 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
       I_FORMAT: begin
         if (instr_name inside {FROUND_H, FROUNDNX_H, FROUND_S, FROUNDNX_S, 
                               FROUND_D, FROUNDNX_D, FROUND_Q, FROUNDNX_Q}) begin
-          binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), fs1, rm, fd, get_opcode()});
+          if(use_rounding_mode_from_instr) begin
+            binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), fs1, rm, fd, get_opcode()});
+          end else begin
+            binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), fs1, 3'b111, fd, get_opcode()});
+          end
         end else if (instr_name inside {FCVTMOD_W_D}) begin
           binary = $sformatf("%8h", {get_func7(), get_rs2_cte(), fs1, get_func3(), rd, get_opcode()});
         end else if (instr_name inside {FLI_H, FLI_S, FLI_D, FLI_Q}) begin
