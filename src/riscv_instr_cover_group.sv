@@ -1223,13 +1223,13 @@ class riscv_instr_cover_group;
   `FP_F2I_INSTR_CG_BEGIN(fmvh_x_d, D)
   `CG_END
 
-  `FP_F2I_INSTR_CG_BEGIN(fmvh_d_x, D)
+  `FP_F2I_INSTR_CG_BEGIN(fmvp_d_x, D)
   `CG_END
   
   `FP_F2I_INSTR_CG_BEGIN(fmvh_x_q, Q)
   `CG_END
   
-  `FP_F2I_INSTR_CG_BEGIN(fmvh_q_x, Q)
+  `FP_F2I_INSTR_CG_BEGIN(fmvp_q_x, Q)
   `CG_END
   
   // fleq/fltq
@@ -2484,7 +2484,7 @@ class riscv_instr_cover_group;
       froundnx_q_cg       = new();
       fcvtmod_w_d_cg       = new();
       fmvh_x_d_cg       = new();
-      fmvh_d_x_cg       = new();
+      fmvp_d_x_cg       = new();
       fleq_h_cg       = new();
       fltq_h_cg       = new();
       fleq_s_cg       = new();
@@ -2497,7 +2497,7 @@ class riscv_instr_cover_group;
 
     `CG_SELECTOR_BEGIN(RV64ZFA)
       fmvh_x_q_cg       = new();
-      fmvh_q_x_cg       = new();
+      fmvp_q_x_cg       = new();
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV64F)
@@ -2915,7 +2915,7 @@ class riscv_instr_cover_group;
       FROUNDNX_Q  : `SAMPLE_ZFA(froundnx_q_cg, instr)
       FCVTMOD_W_D : `SAMPLE_ZFA(fcvtmod_w_d_cg, instr)
       FMVH_X_D    : `SAMPLE_ZFA(fmvh_x_d_cg, instr)
-      FMVP_D_X    : `SAMPLE_ZFA(fmvh_d_x_cg, instr)
+      FMVP_D_X    : `SAMPLE_ZFA(fmvp_d_x_cg, instr)
       FLEQ_H      : `SAMPLE_ZFA(fleq_h_cg, instr)
       FLTQ_H      : `SAMPLE_ZFA(fltq_h_cg, instr)
       FLEQ_S      : `SAMPLE_ZFA(fleq_s_cg, instr)
@@ -2925,7 +2925,7 @@ class riscv_instr_cover_group;
       FLEQ_Q      : `SAMPLE_ZFA(fleq_q_cg, instr)
       FLTQ_Q      : `SAMPLE_ZFA(fltq_q_cg, instr)
       FMVH_X_Q    : `SAMPLE_ZFA(fmvh_x_q_cg, instr)
-      FMVP_Q_X    : `SAMPLE_ZFA(fmvh_q_x_cg, instr)
+      FMVP_Q_X    : `SAMPLE_ZFA(fmvp_q_x_cg, instr)
       // RV half-precission 
       FLH        : `SAMPLE_ZFH(flh_cg, instr)
       FSH        : `SAMPLE_ZFH(fsh_cg, instr)
