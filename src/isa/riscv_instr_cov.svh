@@ -266,25 +266,32 @@
         get_val(operands[1], imm);
       end
       I_FORMAT: begin
-        `DV_CHECK_FATAL(operands.size() == 3, instr_name)
-        if(category == LOAD) begin
-          // load rd, imm(rs1) -> rd,rs1,imm
-          rs1 = get_gpr(operands[1]);
-          rs1_value = get_gpr_state(operands[1]);
-          get_val(operands[2], imm);
-        end else if(category == CSR) begin
-          // csrrwi rd, csr, imm
-          get_val(operands[2], imm);
-          if (preg_enum::from_name(operands[1].toupper(), preg)) begin
-            csr = preg;
-          end else begin
-            get_val(operands[1], csr);
-          end
+        if(group == RV32ZBKB) begin
+            // instr rd, rs1
+            // brev8, unzip and zip instrs
+            rs1 = get_gpr(operands[1]);
+            rs1_value = get_gpr_state(operands[1]);
         end else begin
-          // addi rd, rs1, imm
-          rs1 = get_gpr(operands[1]);
-          rs1_value = get_gpr_state(operands[1]);
-          get_val(operands[2], imm);
+          `DV_CHECK_FATAL(operands.size() == 3, instr_name)
+          if(category == LOAD) begin
+            // load rd, imm(rs1) -> rd,rs1,imm
+            rs1 = get_gpr(operands[1]);
+            rs1_value = get_gpr_state(operands[1]);
+            get_val(operands[2], imm);
+          end else if(category == CSR) begin
+            // csrrwi rd, csr, imm
+            get_val(operands[2], imm);
+            if (preg_enum::from_name(operands[1].toupper(), preg)) begin
+              csr = preg;
+            end else begin
+              get_val(operands[1], csr);
+            end
+          end else begin
+            // addi rd, rs1, imm
+            rs1 = get_gpr(operands[1]);
+            rs1_value = get_gpr_state(operands[1]);
+            get_val(operands[2], imm);
+          end
         end
       end
       S_FORMAT, B_FORMAT: begin
