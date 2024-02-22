@@ -535,13 +535,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "orc":
         instr_name = "gorci"
         operands += ",31"
-    elif instr_name == "zext.b":
-        instr_name = "andi"
-        operands += ",255"
-    elif instr_name == "zext.h":
-        # TODO: support for RV64B
-        instr_name = "pack"
-        operands += ",zero"
     elif instr_name == "zext.w":
         instr_name = "pack"
         operands += ",zero"
