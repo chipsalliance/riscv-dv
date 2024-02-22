@@ -492,7 +492,7 @@ def convert_pseudo_instr(instr_name, operands, binary):
         operands += ",31"
     elif instr_name == "gorci" and ",7" in operands:
         instr_name = "orc.b"
-        operands = operands.replace(",7","") # new addition
+        operands = operands.replace(",7","")
     elif instr_name == "orc.p":
         instr_name = "gorci"
         operands += ",1"
@@ -508,9 +508,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "orc2.b":
         instr_name = "gorci"
         operands += ",6"
-    elif instr_name == "orc.b":
-        instr_name = "gorci"
-        operands += ",7"
     elif instr_name == "orc8.h":
         instr_name = "gorci"
         operands += ",8"
