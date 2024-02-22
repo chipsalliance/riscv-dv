@@ -175,7 +175,7 @@ class riscv_zcb_instr extends riscv_instr;
       C_LH      : get_func6 = 6'b100001;
       C_SB      : get_func6 = 6'b100010;
       C_SH      : get_func6 = 6'b100011;
-      C_ZEXT_B  : get_func6 = 6'b100011;
+      C_ZEXT_B  : get_func6 = 6'b100111;
       C_SEXT_B  : get_func6 = 6'b100111;
       C_ZEXT_H  : get_func6 = 6'b100111;
       C_SEXT_H  : get_func6 = 6'b100111;
