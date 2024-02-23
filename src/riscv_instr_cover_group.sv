@@ -320,15 +320,9 @@
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define FP_FLI_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
-  `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
-    cp_rs1         : coverpoint instr.rs1; \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zfa_instr) \
     cp_fd          : coverpoint instr.fd;  \
-    cp_rs1_sign    : coverpoint instr.rs1_sign { \
-      option.weight = (`"SIGN_TYP`" == "SIGN"); \
-      type_option.weight = (`"SIGN_TYP`" == "SIGN"); \
-    } \
-    cp_fd_sign     : coverpoint instr.fd_sign; \
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
+    cp_imm_tbl_idx : coverpoint instr.imm_tbl_idx; \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 // TODO add rm field as coverpoint
@@ -446,6 +440,12 @@
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbb_instr) \
     cp_rs1         : coverpoint instr.rs1; \
     cp_rs2         : coverpoint instr.rs2; \
+    cp_rd          : coverpoint instr.rd;  \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
+
+`define ORC_B_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME, riscv_zbb_instr) \
+    cp_rs1         : coverpoint instr.rs1; \
     cp_rd          : coverpoint instr.rd;  \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
@@ -1307,8 +1307,7 @@ class riscv_instr_cover_group;
   `CG_END
 
   // Or-combine
-  `ZBB_R_INSTR_CG_BEGIN(orc_b)
-    `CP_VALUE_RANGE(or_combine_mode, instr.imm, 0, XLEN-1)
+  `ORC_B_INSTR_CG_BEGIN(orc_b)
   `CG_END
 
   // Min/max instructions (min, max, minu, maxu)

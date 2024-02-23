@@ -307,4 +307,18 @@ class riscv_zfa_instr extends riscv_floating_point_instr;
     return 1'b0;
   endfunction : is_supported
 
+  // coverage related functons
+  virtual function void update_src_regs(string operands[$]);
+    super.update_src_regs(operands);
+    if(instr_name inside {FLI_S, FLI_H, FLI_D, FLI_Q}) begin
+      imm_tbl_idx = 5'b01010;
+      foreach (all_fli_imm[i]) begin
+        if(all_fli_imm[i] == operands[1]) begin
+          imm_tbl_idx = i;
+          break;
+        end
+      end
+    end
+  endfunction : update_src_regs
+
 endclass : riscv_zfa_instr
