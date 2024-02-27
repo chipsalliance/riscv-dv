@@ -25,7 +25,8 @@ import uvm;
 
 version (RISCV_INSTR_STRING_MIXIN) {
   // Vector CSR access instruction
-  mixin (riscv_instr_mixin(VSETVLI,    VSET_FORMAT, CSR, RVV));
+  mixin (riscv_instr_mixin(SETVLI,    VSET_FORMAT, CSR, RVV));
+  mixin (riscv_instr_mixin(VSETIVLI,    VSET_FORMAT, CSR, RVV));
   mixin (riscv_instr_mixin(VSETVL,     VSET_FORMAT, CSR, RVV));
 
   // Vector integer arithmetic instruction
@@ -123,6 +124,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_va_instr_mixin(VFWMSAC,  VA_FORMAT, ARITHMETIC, RVV, [VV, VF]));
   mixin (riscv_va_instr_mixin(VFWNMSAC, VA_FORMAT, ARITHMETIC, RVV, [VV, VF]));
   mixin (riscv_va_instr_mixin(VFSQRT_V, VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFRSQRT7_V, VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFMIN,    VA_FORMAT, ARITHMETIC, RVV, [VV, VF]));
   mixin (riscv_va_instr_mixin(VFMAX,    VA_FORMAT, ARITHMETIC, RVV, [VV, VF]));
   mixin (riscv_va_instr_mixin(VFSGNJ,   VA_FORMAT, ARITHMETIC, RVV, [VV, VF]));
@@ -135,21 +137,28 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_va_instr_mixin(VMFGT,    VA_FORMAT, COMPARE, RVV, [VF]));
   mixin (riscv_va_instr_mixin(VMFGE,    VA_FORMAT, COMPARE, RVV, [VF]));
   mixin (riscv_va_instr_mixin(VFCLASS_V,VS2_FORMAT, COMPARE, RVV));
+  mixin (riscv_va_instr_mixin(VFREC7_V, VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFMERGE,  VA_FORMAT, ARITHMETIC, RVV, [VFM]));
   mixin (riscv_va_instr_mixin(VFMV,     VA_FORMAT, ARITHMETIC, RVV, [VF]));
 
   // Vector conversion instructions
   mixin (riscv_va_instr_mixin(VFCVT_XU_F_V,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFCVT_X_F_V,      VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFCVT_RTZ_XU_F_V, VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFCVT_RTZ_X_F_V,  VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFCVT_F_XU_V,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFCVT_F_X_V,      VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWCVT_XU_F_V,    VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWCVT_X_F_V,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWCVT_F_XU_V,    VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWCVT_F_X_V,     VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFWCVT_RTZ_XU_F_V,    VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFWCVT_RTZ_X_F_V,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWCVT_F_F_V,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFNCVT_XU_F_W,    VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFNCVT_X_F_W,     VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFNCVT_RTZ_XU_F_W,VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFNCVT_RTZ_X_F_W, VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFNCVT_F_XU_W,    VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFNCVT_F_X_W,     VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFNCVT_F_F_W,     VS2_FORMAT, ARITHMETIC, RVV));
@@ -167,22 +176,28 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_va_instr_mixin(VWREDSUMU_VS,  VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VWREDSUM_VS,   VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFREDOSUM_VS,  VA_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFREDUSUM_VS,  VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFREDSUM_VS,   VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFREDMAX_VS,   VA_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFREDMIN_VS,   VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWREDOSUM_VS, VA_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VFWREDUSUM_VS, VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFWREDSUM_VS,  VA_FORMAT, ARITHMETIC, RVV));
 
   // Vector mask instruction
   mixin (riscv_va_instr_mixin(VMAND_MM,    VA_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VMANDN_MM,    VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMNAND_MM,   VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMANDNOT_MM, VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMXOR_MM,    VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMOR_MM,     VA_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VMORN_MM,     VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMNOR_MM,    VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMORNOT_MM,  VA_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMXNOR_MM,   VA_FORMAT, ARITHMETIC, RVV));
 
   mixin (riscv_va_instr_mixin(VPOPC_M,   VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VCPOP_M,   VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VFIRST_M,  VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMSBF_M,   VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMSIF_M,   VS2_FORMAT, ARITHMETIC, RVV));
@@ -200,6 +215,8 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_va_instr_mixin(VSLIDEDOWN,  VA_FORMAT, ARITHMETIC, RVV, [VI, VX]));
   mixin (riscv_va_instr_mixin(VSLIDE1UP,   VA_FORMAT, ARITHMETIC, RVV, [VX]));
   mixin (riscv_va_instr_mixin(VSLIDE1DOWN, VA_FORMAT, ARITHMETIC, RVV, [VX]));
+  mixin (riscv_va_instr_mixin(VFSLIDE1UP,   VA_FORMAT, ARITHMETIC, RVV, [VF]));
+  mixin (riscv_va_instr_mixin(VFSLIDE1DOWN, VA_FORMAT, ARITHMETIC, RVV, [VF]));
   mixin (riscv_va_instr_mixin(VRGATHER,    VA_FORMAT, ARITHMETIC, RVV, [VV, VX, VI]));
   mixin (riscv_va_instr_mixin(VCOMPRESS,   VA_FORMAT, ARITHMETIC, RVV, [VM]));
 
@@ -208,13 +225,18 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_va_instr_mixin(VMV4R_V, VS2_FORMAT, ARITHMETIC, RVV));
   mixin (riscv_va_instr_mixin(VMV8R_V, VS2_FORMAT, ARITHMETIC, RVV));
 
+  mixin (riscv_va_instr_mixin(VS1R_V, VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VS2R_V, VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VS4R_V, VS2_FORMAT, ARITHMETIC, RVV));
+  mixin (riscv_va_instr_mixin(VS8R_V, VS2_FORMAT, ARITHMETIC, RVV));
+
   // -------------------------------------------------------------------------
   //  Section 7. Vector Loads and Stores
   // -------------------------------------------------------------------------
   // Section 7.4 - Vector Unit-Stride Instructions
 
-  //   mixin (riscv_va_instr_mixin(VLE_V, VL_FORMAT, LOAD, RVV));   // mismatch with riscv-opcodes
-  //   mixin (riscv_va_instr_mixin(VSE_V, VS_FORMAT, STORE, RVV));  // mismatch with riscv-opcodes
+  //   mixin (riscv_va_instr_mixin(VLM_V, VL_FORMAT, LOAD, RVV));   // mismatch with riscv-opcodes
+  //   mixin (riscv_va_instr_mixin(VSM_V, VS_FORMAT, STORE, RVV));  // mismatch with riscv-opcodes
 
   // Section 7.5 - Vector Strided Instructions
   mixin (riscv_va_instr_mixin(VLSE_V, VLS_FORMAT, LOAD, RVV));
@@ -256,6 +278,8 @@ version (RISCV_INSTR_STRING_MIXIN) {
    // Vector CSR access instruction
    class riscv_VSETVLI_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(VSETVLI,    VSET_FORMAT, CSR, RVV); }
+   class riscv_VSETIVLI_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(VSETIVLI,   VSET_FORMAT, CSR, RVV); }
    class riscv_VSETVL_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(VSETVL,     VSET_FORMAT, CSR, RVV); }
 
@@ -467,6 +491,9 @@ version (RISCV_INSTR_STRING_MIXIN) {
    // class riscv_VSSUB_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VSSUB,    VA_FORMAT, ARITHMETIC, RVV, VV, VX); }
    class riscv_VSSUB_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSUB_VV, VA_FORMAT, ARITHMETIC, RVV); } // VSSUB
    class riscv_VSSUB_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSUB_VX, VA_FORMAT, ARITHMETIC, RVV); } // VSSUB
+   // VSMUL
+   class riscv_VSMUL_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSMUL_VV, VA_FORMAT, ARITHMETIC, RVV); } // VSMUL
+   class riscv_VSMUL_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSMUL_VX, VA_FORMAT, ARITHMETIC, RVV); } // VSMUL
    // class riscv_VAADDU_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VAADDU,   VA_FORMAT, ARITHMETIC, RVV, VV, VX); }
    class riscv_VAADDU_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VAADDU_VV, VA_FORMAT, ARITHMETIC, RVV); } // VAADDU
    class riscv_VAADDU_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VAADDU_VX, VA_FORMAT, ARITHMETIC, RVV); } // VAADDU
@@ -555,6 +582,8 @@ version (RISCV_INSTR_STRING_MIXIN) {
 
    class riscv_VFSQRT_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFSQRT_V, VS2_FORMAT, ARITHMETIC, RVV); }
 
+   class riscv_VFRSQRT7_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFRSQRT7_V, VS2_FORMAT, ARITHMETIC, RVV); }
+
    // class riscv_VFMIN_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFMIN,    VA_FORMAT, ARITHMETIC, RVV, VV, VF); }
    class riscv_VFMIN_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMIN_VV, VA_FORMAT, ARITHMETIC, RVV); } // VFMIN
    class riscv_VFMIN_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMIN_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFMIN
@@ -593,16 +622,32 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_VFMERGE_VFM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMERGE_VFM, VA_FORMAT, ARITHMETIC, RVV); } // VFMERGE
    // class riscv_VFMV_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFMV,     VA_FORMAT, ARITHMETIC, RVV, VF); }
    class riscv_VFMV_V_F_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFMV_V_F, VA_FORMAT, ARITHMETIC, RVV); } // VFMV
+   // VFWADD
+   class riscv_VFWADD_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWADD_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFWADD
+   class riscv_VFWADD_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWADD_VV, VA_FORMAT, ARITHMETIC, RVV); } // VFWADD
+   class riscv_VFWADD_WF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWADD_WF, VA_FORMAT, ARITHMETIC, RVV); } // VFWADD
+   class riscv_VFWADD_WV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWADD_WV, VA_FORMAT, ARITHMETIC, RVV); } // VFWADD
+   // VFWSUB
+   class riscv_VFWSUB_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWSUB_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFWSUB
+   class riscv_VFWSUB_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWSUB_VV, VA_FORMAT, ARITHMETIC, RVV); } // VFWSUB
+   class riscv_VFWSUB_WF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWSUB_WF, VA_FORMAT, ARITHMETIC, RVV); } // VFWSUB
+   class riscv_VFWSUB_WV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWSUB_WV, VA_FORMAT, ARITHMETIC, RVV); } // VFWSUB
 
    // Vector conversion instructions
    class riscv_VFCVT_XU_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_XU_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFCVT_X_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_X_F_V,      VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFCVT_RTZ_XU_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_RTZ_XU_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFCVT_RTZ_X_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_RTZ_X_F_V,      VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFCVT_F_XU_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_F_XU_V,     VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFCVT_F_X_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFCVT_F_X_V,      VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWCVT_XU_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_XU_F_V,    VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFNCVT_RTZ_XU_F_W_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFNCVT_RTZ_XU_F_W,     VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFNCVT_RTZ_X_F_W_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFNCVT_RTZ_X_F_W,      VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWCVT_X_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_X_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWCVT_F_XU_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_F_XU_V,    VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWCVT_F_X_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_F_X_V,     VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFWCVT_RTZ_XU_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_RTZ_XU_F_V,    VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFWCVT_RTZ_X_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_RTZ_X_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWCVT_F_F_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWCVT_F_F_V,     VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFNCVT_XU_F_W_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFNCVT_XU_F_W,    VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFNCVT_X_F_W_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFNCVT_X_F_W,     VS2_FORMAT, ARITHMETIC, RVV); }
@@ -623,22 +668,28 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_VWREDSUMU_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VWREDSUMU_VS,  VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VWREDSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VWREDSUM_VS,   VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFREDOSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFREDOSUM_VS,  VA_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFREDUSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFREDUSUM_VS,    VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFREDSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFREDSUM_VS,   VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFREDMAX_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFREDMAX_VS,   VA_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFREDMIN_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFREDMIN_VS,   VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWREDOSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWREDOSUM_VS, VA_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VFWREDUSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWREDUSUM_VS, VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFWREDSUM_VS_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFWREDSUM_VS,  VA_FORMAT, ARITHMETIC, RVV); }
 
    // Vector mask instruction
    class riscv_VMAND_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMAND_MM,    VA_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VMANDN_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMANDN_MM,    VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMNAND_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMNAND_MM,   VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMANDNOT_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMANDNOT_MM, VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMXOR_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMXOR_MM,    VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMOR_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMOR_MM,     VA_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VMORN_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMORN_MM,     VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMNOR_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMNOR_MM,    VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMORNOT_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMORNOT_MM,  VA_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMXNOR_MM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMXNOR_MM,   VA_FORMAT, ARITHMETIC, RVV); }
 
    class riscv_VPOPC_M_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VPOPC_M,   VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VCPOP_M_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VCPOP_M,   VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VFIRST_M_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFIRST_M,  VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMSBF_M_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMSBF_M,   VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMSIF_M_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMSIF_M,   VS2_FORMAT, ARITHMETIC, RVV); }
@@ -661,12 +712,18 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_VSLIDEDOWN_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSLIDEDOWN_VX, VA_FORMAT, ARITHMETIC, RVV); } // VSLIDEDOWN
    // class riscv_VSLIDE1UP_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VSLIDE1UP,   VA_FORMAT, ARITHMETIC, RVV, VX); }
    class riscv_VSLIDE1UP_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSLIDE1UP_VX, VA_FORMAT, ARITHMETIC, RVV); } // VSLIDE1UP
+   // class riscv_VFSLIDE1UP_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFSLIDE1UP,   VA_FORMAT, ARITHMETIC, RVV, VF); }
+   class riscv_VFSLIDE1UP_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFSLIDE1UP_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFSLIDE1UP
    // class riscv_VSLIDE1DOWN_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VSLIDE1DOWN, VA_FORMAT, ARITHMETIC, RVV, VX); }
    class riscv_VSLIDE1DOWN_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSLIDE1DOWN_VX, VA_FORMAT, ARITHMETIC, RVV); } // VSLIDE1DOWN
+   // class riscv_VFSLIDE1DOWN_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VFSLIDE1DOWN, VA_FORMAT, ARITHMETIC, RVV, VF); }
+   class riscv_VFSLIDE1DOWN_VF_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VFSLIDE1DOWN_VF, VA_FORMAT, ARITHMETIC, RVV); } // VFSLIDE1DOWN
    // class riscv_VRGATHER_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VRGATHER,    VA_FORMAT, ARITHMETIC, RVV, VV, VX, VI); }
    class riscv_VRGATHER_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VRGATHER_VV, VA_FORMAT, ARITHMETIC, RVV); } // VRGATHER
    class riscv_VRGATHER_VX_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VRGATHER_VX, VA_FORMAT, ARITHMETIC, RVV); } // VRGATHER
    class riscv_VRGATHER_VI_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VRGATHER_VI, VA_FORMAT, ARITHMETIC, RVV); } // VRGATHER
+   // class riscv_VRGATHEREI16_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VRGATHEREI16,    VA_FORMAT, ARITHMETIC, RVV, VV); }
+   class riscv_VRGATHEREI16_VV_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VRGATHEREI16_VV, VA_FORMAT, ARITHMETIC, RVV); } // VRGATHEREI16
    // class riscv_VCOMPRESS_instr: riscv_vector_instr   // { mixin RISCV_VA_INSTR_MIXIN!(VCOMPRESS,   VA_FORMAT, ARITHMETIC, RVV, VM); }
    class riscv_VCOMPRESS_VM_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VCOMPRESS_VM, VA_FORMAT, ARITHMETIC, RVV); } // VCOMPRESS
 
@@ -675,16 +732,126 @@ version (RISCV_INSTR_STRING_MIXIN) {
    class riscv_VMV4R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV4R_V, VS2_FORMAT, ARITHMETIC, RVV); }
    class riscv_VMV8R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VMV8R_V, VS2_FORMAT, ARITHMETIC, RVV); }
 
+   class riscv_VS1R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VS1R_V, VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VS2R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VS2R_V, VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VS4R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VS4R_V, VS2_FORMAT, ARITHMETIC, RVV); }
+   class riscv_VS8R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VS8R_V, VS2_FORMAT, ARITHMETIC, RVV); }
+
    // -------------------------------------------------------------------------
    //  Section 7. Vector Loads and Stores
    // -------------------------------------------------------------------------
    // Section 7.4 - Vector Unit-Stride Instructions
-   //    class riscv_VLE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE_V, VL_FORMAT, LOAD, RVV); }   // mismatch with riscv-opcodes
-   // class riscv_VSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE_V, VS_FORMAT, STORE, RVV); }   // mismatch with riscv-opcodes
+   class riscv_VLM_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLM_V, VL_FORMAT, LOAD, RVV); }   // mismatch with riscv-opcodes
+   class riscv_VLE1_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE1_V, VL_FORMAT, LOAD, RVV); }   // mismatch with riscv-opcodes
+   class riscv_VSM_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSM_V, VS_FORMAT, STORE, RVV); }   // mismatch with riscv-opcodes
+   class riscv_VSE1_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE1_V, VS_FORMAT, STORE, RVV); }   // mismatch with riscv-opcodes
 
    // // Section 7.5 - Vector Strided Instructions
-   // class riscv_VLSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE_V, VLS_FORMAT, LOAD, RVV); }
-   // class riscv_VSSE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE_V, VSS_FORMAT, STORE, RVV); }
+   class riscv_VLE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VLE8FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE8FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE16FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE16FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE32FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE32FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE64FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE64FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE128FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE128FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE256FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE256FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE512FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE512FF_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLE1024FF_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLE1024FF_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VSE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSE1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSE1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VLSE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLSE1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLSE1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VSSE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSSE1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSSE1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VLOXEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLOXEI1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLOXEI1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VLUXEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VLUXEI1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLUXEI1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VSOXEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSOXEI1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSOXEI1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VSUXEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI64_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI128_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI128_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI256_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI256_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI512_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI512_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSUXEI1024_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSUXEI1024_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VL1R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL1R_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL1RE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL1RE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL1RE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL1RE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL1RE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL1RE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL1RE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL1RE64_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VL2R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL2R_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL2RE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL2RE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL2RE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL2RE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL2RE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL2RE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL2RE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL2RE64_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VL4R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL4R_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL4RE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL4RE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL4RE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL4RE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL4RE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL4RE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL4RE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL4RE64_V, VLS_FORMAT, LOAD, RVV); }
+
+   class riscv_VL8R_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL8R_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL8RE8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL8RE8_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL8RE16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL8RE16_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL8RE32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL8RE32_V, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VL8RE64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VL8RE64_V, VLS_FORMAT, LOAD, RVV); }
+
    // // Section 7.6 - Vector Indexed Instructions
    // class riscv_VLXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VLXEI_V, VLX_FORMAT, LOAD, RVV); }
    // class riscv_VSXEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSXEI_V, VSX_FORMAT, STORE, RVV); }
@@ -704,17 +871,53 @@ version (RISCV_INSTR_STRING_MIXIN) {
    // class riscv_VSXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSXSEGEI_V, VSX_FORMAT, STORE, RVV); }
    // class riscv_VSUXSEGEI_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvlsseg", VSUXSEGEI_V, VSX_FORMAT, STORE, RVV); }
 
+   class riscv_VSEXT_VF2_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSEXT_VF2, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSEXT_VF4_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSEXT_VF4, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VSEXT_VF8_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VSEXT_VF8, VLS_FORMAT, LOAD, RVV); }
+   
+   class riscv_VZEXT_VF2_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VZEXT_VF2, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VZEXT_VF4_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VZEXT_VF4, VLS_FORMAT, LOAD, RVV); }
+   class riscv_VZEXT_VF8_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!(VZEXT_VF8, VLS_FORMAT, LOAD, RVV); }
+   
+
    // // -------------------------------------------------------------------------
    // //  Section 8. Vector AMO Operations (Zvamo)
    // // -------------------------------------------------------------------------
    // // EEW vector AMOs
-   // class riscv_VAMOSWAPE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOADDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOXORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXORE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOANDE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOORE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOORE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOMINE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOMAXE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOMINUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUE_V, VAMO_FORMAT, AMO, RVV); }
-   // class riscv_VAMOMAXUE_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUE_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOADDEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOADDEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOADDEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOADDEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOADDEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOANDEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOANDEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOANDEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOANDEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOANDEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXUEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXUEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXUEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMAXUEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMAXUEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINUEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINUEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINUEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOMINUEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOMINUEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOOREI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOOREI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOOREI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOOREI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOOREI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOOREI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOOREI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOOREI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOSWAPEI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPEI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOSWAPEI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPEI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOSWAPEI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPEI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOSWAPEI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOSWAPEI64_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOXOREI8_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXOREI8_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOXOREI16_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXOREI16_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOXOREI32_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXOREI32_V, VAMO_FORMAT, AMO, RVV); }
+   // class riscv_VAMOXOREI64_V_instr: riscv_vector_instr   { mixin RISCV_VA_INSTR_MIXIN!("zvamo", VAMOXOREI64_V, VAMO_FORMAT, AMO, RVV); }
  }

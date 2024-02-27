@@ -98,6 +98,8 @@ class riscv_instr_registry: uvm_object
       if (!cfg.enable_sfence && instr_name == riscv_instr_name_t.SFENCE_VMA) continue;
       if (cfg.no_fence && (instr_name.inside(riscv_instr_name_t.FENCE,
 					     riscv_instr_name_t.FENCE_I,
+					     riscv_instr_name_t.FENCE_TSO,
+					     riscv_instr_name_t.PAUSE,
 					     riscv_instr_name_t.SFENCE_VMA))) continue;
       if (canFind(supported_isa, instr_inst.group) &&
           !(cfg.disable_compressed_instr &&

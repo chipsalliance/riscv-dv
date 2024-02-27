@@ -65,6 +65,9 @@ void register_isa(riscv_instr_registry registry) {
   import riscv.gen.isa.rv32zbb_instr;
   import riscv.gen.isa.rv32zbc_instr;
   import riscv.gen.isa.rv32zbs_instr;
+  import riscv.gen.isa.rvzpn_instr;
+  import riscv.gen.isa.rv32zpn_instr;
+  import riscv.gen.isa.rv64zpn_instr;
 
   register_module!(riscv.gen.isa.rv128c_instr)(registry);
   register_module!(riscv.gen.isa.rv32a_instr)(registry);
@@ -84,4 +87,7 @@ void register_isa(riscv_instr_registry registry) {
   register_module!(riscv.gen.isa.rv64f_instr)(registry);
   register_module!(riscv.gen.isa.rv64i_instr)(registry);
   register_module!(riscv.gen.isa.rv64m_instr)(registry);
+  register_module!(riscv.gen.isa.rvzpn_instr)(registry);
+  register_module!(riscv.gen.isa.rv32zpn_instr)(registry);
+  register_module!(riscv.gen.isa.rv64zpn_instr)(registry);
 }

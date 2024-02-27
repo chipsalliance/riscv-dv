@@ -72,10 +72,14 @@ version (RISCV_INSTR_STRING_MIXIN) {
   // SYNCH instructions
   mixin (riscv_instr_mixin(FENCE,  I_FORMAT, SYNCH, RV32I));
   mixin (riscv_instr_mixin(FENCE_I, I_FORMAT, SYNCH, RV32I));
+  mixin (riscv_instr_mixin(FENCE_TSO, I_FORMAT, SYNCH, RV32I));
+  mixin (riscv_instr_mixin(PAUSE, I_FORMAT, SYNCH, RV32I));
   mixin (riscv_instr_mixin(SFENCE_VMA, R_FORMAT, SYNCH, RV32I));
   // SYSTEM instructions
   mixin (riscv_instr_mixin(ECALL,   I_FORMAT, SYSTEM, RV32I));
+  mixin (riscv_instr_mixin(SCALL,   I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(EBREAK,  I_FORMAT, SYSTEM, RV32I));
+  mixin (riscv_instr_mixin(SBREAK,  I_FORMAT, SYSTEM, RV32I));
   // mixin (riscv_instr_mixin(URET,    I_FORMAT, SYSTEM, RV32I));  -- deprecated
   mixin (riscv_instr_mixin(SRET,    I_FORMAT, SYSTEM, RV32I));
   mixin (riscv_instr_mixin(MRET,    I_FORMAT, SYSTEM, RV32I));
@@ -88,6 +92,16 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_csr_instr_mixin(CSRRWI, I_FORMAT, CSR, RV32I, UIMM));
   mixin (riscv_csr_instr_mixin(CSRRSI, I_FORMAT, CSR, RV32I, UIMM));
   mixin (riscv_csr_instr_mixin(CSRRCI, I_FORMAT, CSR, RV32I, UIMM));
+
+  mixin (riscv_csr_instr_mixin(FRCSR,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(FRFLAGS,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(FRRM,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDCYCLE,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDCYCLEH,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDINSTRET,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDINSTRETH,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDTIME,  R_FORMAT, CSR, RV32I, UIMM));
+  mixin (riscv_csr_instr_mixin(RDTIMEH,  R_FORMAT, CSR, RV32I, UIMM));
  }
  else {
    // LOAD instructions
@@ -179,13 +193,21 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(FENCE,  I_FORMAT, SYNCH, RV32I); }
    class riscv_FENCE_I_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(FENCE_I, I_FORMAT, SYNCH, RV32I); }
+   class riscv_FENCE_TSO_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(FENCE_TSO, I_FORMAT, SYNCH, RV32I); }
+   class riscv_PAUSE_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(PAUSE, I_FORMAT, SYNCH, RV32I); }
    class riscv_SFENCE_VMA_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(SFENCE_VMA, R_FORMAT, SYNCH, RV32I); }
    // SYSTEM instructions
    class riscv_ECALL_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(ECALL,   I_FORMAT, SYSTEM, RV32I); }
+   class riscv_SCALL_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SCALL,   I_FORMAT, SYSTEM, RV32I); }
    class riscv_EBREAK_instr: riscv_instr
    { mixin RISCV_INSTR_MIXIN!(EBREAK,  I_FORMAT, SYSTEM, RV32I); }
+   class riscv_SBREAK_instr: riscv_instr
+   { mixin RISCV_INSTR_MIXIN!(SBREAK,  I_FORMAT, SYSTEM, RV32I); }
    // class riscv_URET_instr: riscv_instr -- deprecated
    // { mixin RISCV_INSTR_MIXIN!(URET,    I_FORMAT, SYSTEM, RV32I); }
    class riscv_SRET_instr: riscv_instr
@@ -209,4 +231,36 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(CSRRSI, I_FORMAT, CSR, RV32I, UIMM); }
    class riscv_CSRRCI_instr: riscv_csr_instr
    { mixin RISCV_INSTR_MIXIN!(CSRRCI, I_FORMAT, CSR, RV32I, UIMM); }
+
+   class riscv_FSCSR_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FSCSR,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_FSFLAGS_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FSFLAGS,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_FSRM_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FSRM,  R_FORMAT, CSR, RV32I, UIMM); }
+
+   class riscv_FRCSR_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FRCSR,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_FRFLAGS_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FRFLAGS,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_FRRM_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FRRM,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDCYCLE_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDCYCLE,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDCYCLEH_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDCYCLEH,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDINSTRET_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDINSTRET,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDINSTRETH_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDINSTRETH,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDTIME_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDTIME,  R_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_RDTIMEH_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(RDTIMEH,  R_FORMAT, CSR, RV32I, UIMM); }
+
+   class riscv_FSFLAGSI_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FSFLAGSI, I_FORMAT, CSR, RV32I, UIMM); }
+   class riscv_FSRMI_instr: riscv_csr_instr
+   { mixin RISCV_INSTR_MIXIN!(FSRMI, I_FORMAT, CSR, RV32I, UIMM); }
+   
  }

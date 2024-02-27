@@ -41,6 +41,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_fp_instr_mixin(FCVT_W_S,  I_FORMAT, ARITHMETIC, RV32F));
   mixin (riscv_fp_instr_mixin(FCVT_WU_S, I_FORMAT, ARITHMETIC, RV32F));
   mixin (riscv_fp_instr_mixin(FMV_X_W,   I_FORMAT, ARITHMETIC, RV32F));
+  mixin (riscv_fp_instr_mixin(FMV_X_S,   I_FORMAT, ARITHMETIC, RV32F));
   mixin (riscv_fp_instr_mixin(FEQ_S,     R_FORMAT, COMPARE, RV32F));
   mixin (riscv_fp_instr_mixin(FLT_S,     R_FORMAT, COMPARE, RV32F));
   mixin (riscv_fp_instr_mixin(FLE_S,     R_FORMAT, COMPARE, RV32F));
@@ -48,6 +49,7 @@ version (RISCV_INSTR_STRING_MIXIN) {
   mixin (riscv_fp_instr_mixin(FCVT_S_W,  I_FORMAT, ARITHMETIC, RV32F));
   mixin (riscv_fp_instr_mixin(FCVT_S_WU, I_FORMAT, ARITHMETIC, RV32F));
   mixin (riscv_fp_instr_mixin(FMV_W_X,   I_FORMAT, ARITHMETIC, RV32F));
+  mixin (riscv_fp_instr_mixin(FMV_S_X,   I_FORMAT, ARITHMETIC, RV32F));
  }
  else {
    class riscv_FLW_instr: riscv_floating_point_instr
@@ -88,6 +90,8 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(FCVT_WU_S, I_FORMAT, ARITHMETIC, RV32F); }
    class riscv_FMV_X_W_instr: riscv_floating_point_instr
    { mixin RISCV_INSTR_MIXIN!(FMV_X_W,   I_FORMAT, ARITHMETIC, RV32F); }
+   class riscv_FMV_X_S_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FMV_X_S,   I_FORMAT, ARITHMETIC, RV32F); }
    class riscv_FEQ_S_instr: riscv_floating_point_instr
    { mixin RISCV_INSTR_MIXIN!(FEQ_S,     R_FORMAT, COMPARE, RV32F); }
    class riscv_FLT_S_instr: riscv_floating_point_instr
@@ -102,4 +106,6 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(FCVT_S_WU, I_FORMAT, ARITHMETIC, RV32F); }
    class riscv_FMV_W_X_instr: riscv_floating_point_instr
    { mixin RISCV_INSTR_MIXIN!(FMV_W_X,   I_FORMAT, ARITHMETIC, RV32F); }
+   class riscv_FMV_S_X_instr: riscv_floating_point_instr
+   { mixin RISCV_INSTR_MIXIN!(FMV_S_X,   I_FORMAT, ARITHMETIC, RV32F); }
  }

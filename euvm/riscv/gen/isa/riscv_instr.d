@@ -366,7 +366,9 @@ class riscv_instr: uvm_object
     //   riscv_instr_name_t.REM,
     //   riscv_instr_name_t.REMU: return UBVEC!(7, 0b0110011);
     case riscv_instr_name_t.FENCE,
-      riscv_instr_name_t.FENCE_I:      return UBVEC!(7, 0b0001111);
+      riscv_instr_name_t.FENCE_I,
+      riscv_instr_name_t.PAUSE,
+      riscv_instr_name_t.FENCE_TSO:      return UBVEC!(7, 0b0001111);
     case riscv_instr_name_t.ADDW,
       riscv_instr_name_t.SUBW,
       riscv_instr_name_t.SLLW,
@@ -378,7 +380,9 @@ class riscv_instr: uvm_object
       riscv_instr_name_t.REMW,
       riscv_instr_name_t.REMUW:        return UBVEC!(7, 0b0111011);
     case riscv_instr_name_t.ECALL,
+      riscv_instr_name_t.SCALL,
       riscv_instr_name_t.EBREAK,
+      riscv_instr_name_t.SBREAK,
       // riscv_instr_name_t.URET,
       riscv_instr_name_t.SRET,
       riscv_instr_name_t.MRET,
@@ -429,6 +433,8 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.AND:        return UBVEC!(3, 0b111);
     case riscv_instr_name_t.FENCE:      return UBVEC!(3, 0b000);
     case riscv_instr_name_t.FENCE_I:    return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.FENCE_TSO:  return UBVEC!(3, 0b001);
+    case riscv_instr_name_t.PAUSE:  return UBVEC!(3, 0b001);
       // case riscv_instr_name_t.ECALL:      return UBVEC!(3, 0b000);
       // case riscv_instr_name_t.EBREAK:     return UBVEC!(3, 0b000);
     case riscv_instr_name_t.LWU:        return UBVEC!(3, 0b110);
@@ -457,7 +463,9 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.REMW:       return UBVEC!(3, 0b110);
     case riscv_instr_name_t.REMUW:      return UBVEC!(3, 0b111);
     case riscv_instr_name_t.ECALL,
+      riscv_instr_name_t.SCALL,
       riscv_instr_name_t.EBREAK,
+      riscv_instr_name_t.SBREAK,
       // riscv_instr_name_t.URET,
       riscv_instr_name_t.SRET,
       riscv_instr_name_t.MRET,
@@ -486,6 +494,8 @@ class riscv_instr: uvm_object
     case riscv_instr_name_t.AND:        return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.FENCE:      return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.FENCE_I:    return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.FENCE_TSO:  return UBVEC!(7, 0b0000000);
+    case riscv_instr_name_t.PAUSE:  return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.SLLIW:      return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.SRLIW:      return UBVEC!(7, 0b0000000);
     case riscv_instr_name_t.SRAIW:      return UBVEC!(7, 0b0100000);
@@ -520,6 +530,10 @@ class riscv_instr: uvm_object
     }
   }
 
+  ubvec!32 get_bin() {
+    return UBVEC!(32, 0);
+  }
+  
   // Convert the instruction to assembly code
   string convert2bin(string prefix = "") {
     import std.conv: to;

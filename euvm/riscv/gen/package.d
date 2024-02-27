@@ -18,6 +18,7 @@ public import riscv.gen.riscv_instr_sequence;
 public import riscv.gen.riscv_instr_stream;
 public import riscv.gen.riscv_load_store_instr_lib;
 public import riscv.gen.riscv_loop_instr;
+public import riscv.gen.riscv_opcodes_pkg;
 public import riscv.gen.riscv_page_table;
 public import riscv.gen.riscv_page_table_entry;
 public import riscv.gen.riscv_page_table_exception_cfg;

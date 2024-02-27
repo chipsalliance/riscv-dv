@@ -18,8 +18,10 @@
 
 
 module riscv.gen.riscv_instr_pkg;
+public import riscv.gen.riscv_opcodes_pkg;
 
 import riscv.gen.target: XLEN, NUM_HARTS, SATP_MODE, implemented_csr;
+
 import std.traits: EnumMembers;
 
 import esdl.data.bvec: bvec, ubvec, toubvec, UBVEC, isBitVector;
@@ -111,821 +113,990 @@ enum riscv_instr_group_t: ubyte {
   RV64ZBC,
   RV64ZBS,
   RV32X,
-  RV64X
+  RV64X,
+  RVZPN,
+  RV32ZPN,
+  RV64ZPN
 }
 
 
-enum riscv_instr_name_t: ushort {
-  // RV32I instructions
-  LUI,
-  AUIPC,
-  JAL,
-  JALR,
-  BEQ,
-  BNE,
-  BLT,
-  BGE,
-  BLTU,
-  BGEU,
-  LB,
-  LH,
-  LW,
-  LBU,
-  LHU,
-  SB,
-  SH,
-  SW,
-  ADDI,
-  SLTI,
-  SLTIU,
-  XORI,
-  ORI,
-  ANDI,
-  SLLI,
-  SRLI,
-  SRAI,
-  ADD,
-  SUB,
-  SLL,
-  SLT,
-  SLTU,
-  XOR,
-  SRL,
-  SRA,
-  OR,
-  AND,
-  NOP,
-  FENCE,
-  FENCE_I,
-  ECALL,
-  EBREAK,
-  CSRRW,
-  CSRRS,
-  CSRRC,
-  CSRRWI,
-  CSRRSI,
-  CSRRCI,
-  // RV32ZBA instructions
-  SH1ADD,
-  SH2ADD,
-  SH3ADD,
-  // RV32ZBB instructions
-  ANDN,
-  CLZ,
-  CPOP,
-  CTZ,
-  MAX,
-  MAXU,
-  MIN,
-  MINU,
-  ORC_B,
-  ORN,
-  REV8,
-  ROL,
-  ROR,
-  RORI,
-  SEXT_B,
-  SEXT_H,
-  XNOR,
-  ZEXT_H,
-  // RV32ZBC instructions
-  CLMUL,
-  CLMULH,
-  CLMULR,
-  // RV32ZBS instructions
-  BCLR,
-  BCLRI,
-  BEXT,
-  BEXTI,
-  BINV,
-  BINVI,
-  BSET,
-  BSETI,
-  // RV32B instructions
-  // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
-  GORC,
-  GORCI,
-  CMIX,
-  CMOV,
-  PACK,
-  PACKU,
-  PACKH,
-  XPERM4,
-  XPERM8,
-  XPERM16,
-  SLO,
-  SRO,
-  SLOI,
-  SROI,
-  GREV,
-  GREVI,
-  FSL,
-  FSR,
-  FSRI,
-  CRC32_B,
-  CRC32_H,
-  CRC32_W,
-  CRC32C_B,
-  CRC32C_H,
-  CRC32C_W,
-  SHFL,
-  UNSHFL,
-  SHFLI,
-  UNSHFLI,
-  BCOMPRESS,
-  BDECOMPRESS,
-  BFP,
-  // RV64ZBA instructions
-  ADD_UW,
-  SH1ADD_UW,
-  SH2ADD_UW,
-  SH3ADD_UW,
-  SLLI_UW,
-  // RV64ZBB instructions
-  CLZW,
-  CPOPW,
-  CTZW,
-  ROLW,
-  RORW,
-  RORIW,
-  //RV64B instructions
-  // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
-  BMATOR,
-  BMATXOR,
-  BMATFLIP,
-  CRC32_D,
-  CRC32C_D,
-  SHFLW,
-  UNSHFLW,
-  BCOMPRESSW,
-  BDECOMPRESSW,
-  BFPW,
-  SLOW,
-  SROW,
-  SLOIW,
-  SROIW,
-  GREVW,
-  GREVIW,
-  FSLW,
-  FSRW,
-  FSRIW,
-  GORCW,
-  GORCIW,
-  PACKW,
-  PACKUW,
-  XPERM32,
-  // RV32M instructions
-  MUL,
-  MULH,
-  MULHSU,
-  MULHU,
-  DIV,
-  DIVU,
-  REM,
-  REMU,
-  // RV64M instructions
-  MULW,
-  DIVW,
-  DIVUW,
-  REMW,
-  REMUW,
-  // RV32F instructions
-  FLW,
-  FSW,
-  FMADD_S,
-  FMSUB_S,
-  FNMSUB_S,
-  FNMADD_S,
-  FADD_S,
-  FSUB_S,
-  FMUL_S,
-  FDIV_S,
-  FSQRT_S,
-  FSGNJ_S,
-  FSGNJN_S,
-  FSGNJX_S,
-  FMIN_S,
-  FMAX_S,
-  FCVT_W_S,
-  FCVT_WU_S,
-  FMV_X_W,
-  FEQ_S,
-  FLT_S,
-  FLE_S,
-  FCLASS_S,
-  FCVT_S_W,
-  FCVT_S_WU,
-  FMV_W_X,
-  // RV64F instruction
-  FCVT_L_S,
-  FCVT_LU_S,
-  FCVT_S_L,
-  FCVT_S_LU,
-  // RV32D instructions
-  FLD,
-  FSD,
-  FMADD_D,
-  FMSUB_D,
-  FNMSUB_D,
-  FNMADD_D,
-  FADD_D,
-  FSUB_D,
-  FMUL_D,
-  FDIV_D,
-  FSQRT_D,
-  FSGNJ_D,
-  FSGNJN_D,
-  FSGNJX_D,
-  FMIN_D,
-  FMAX_D,
-  FCVT_S_D,
-  FCVT_D_S,
-  FEQ_D,
-  FLT_D,
-  FLE_D,
-  FCLASS_D,
-  FCVT_W_D,
-  FCVT_WU_D,
-  FCVT_D_W,
-  FCVT_D_WU,
-  // RV64D
-  FCVT_L_D,
-  FCVT_LU_D,
-  FMV_X_D,
-  FCVT_D_L,
-  FCVT_D_LU,
-  FMV_D_X,
-  // RV64I
-  LWU,
-  LD,
-  SD,
-  ADDIW,
-  SLLIW,
-  SRLIW,
-  SRAIW,
-  ADDW,
-  SUBW,
-  SLLW,
-  SRLW,
-  SRAW,
-  // RV32C
-  C_LW,
-  C_SW,
-  C_LWSP,
-  C_SWSP,
-  C_ADDI4SPN,
-  C_ADDI,
-  C_LI,
-  C_ADDI16SP,
-  C_LUI,
-  C_SRLI,
-  C_SRAI,
-  C_ANDI,
-  C_SUB,
-  C_XOR,
-  C_OR,
-  C_AND,
-  C_BEQZ,
-  C_BNEZ,
-  C_SLLI,
-  C_MV,
-  C_EBREAK,
-  C_ADD,
-  C_NOP,
-  C_J,
-  C_JAL,
-  C_JR,
-  C_JALR,
-  // RV64C
-  C_ADDIW,
-  C_SUBW,
-  C_ADDW,
-  C_LD,
-  C_SD,
-  C_LDSP,
-  C_SDSP,
-  // RV128C
-  C_SRLI64,
-  C_SRAI64,
-  C_SLLI64,
-  C_LQ,
-  C_SQ,
-  C_LQSP,
-  C_SQSP,
-  // RV32FC
-  C_FLW,
-  C_FSW,
-  C_FLWSP,
-  C_FSWSP,
-  // RV32DC
-  C_FLD,
-  C_FSD,
-  C_FLDSP,
-  C_FSDSP,
-  // RV32A
-  LR_W,
-  SC_W,
-  AMOSWAP_W,
-  AMOADD_W,
-  AMOAND_W,
-  AMOOR_W,
-  AMOXOR_W,
-  AMOMIN_W,
-  AMOMAX_W,
-  AMOMINU_W,
-  AMOMAXU_W,
-  // RV64A
-  LR_D,
-  SC_D,
-  AMOSWAP_D,
-  AMOADD_D,
-  AMOAND_D,
-  AMOOR_D,
-  AMOXOR_D,
-  AMOMIN_D,
-  AMOMAX_D,
-  AMOMINU_D,
-  AMOMAXU_D,
-  // Vector instructions
-  VSETVL,
-  VSETVLI,
-  VADD_VV,
-  VADD_VX,
-  VADD_VI,
-  // // // VADD,  #  #  #
-  VSUB_VV,
-  VSUB_VX,
-  // // VSUB,  #  #
-  VRSUB_VX,
-  VRSUB_VI,
-  // // VRSUB,  #  #
-  VWADDU_VV,
-  VWADDU_VX,
-  VWADDU_WV,
-  VWADDU_WX,
-  // // // // VWADDU,  #  #  #  #
-  VWSUBU_VV,
-  VWSUBU_VX,
-  VWSUBU_WV,
-  VWSUBU_WX,
-  // // // // VWSUBU,  #  #  #  #
-  VWADD_VV,
-  VWADD_VX,
-  VWADD_WV,
-  VWADD_WX,
-  // // // // VWADD,  #  #  #  #
-  VWSUB_VV,
-  VWSUB_VX,
-  VWSUB_WV,
-  VWSUB_WX,
-  // // // // VWSUB,  #  #  #  #
-  VADC_VVM,
-  VADC_VXM,
-  VADC_VIM,
-  // // // VADC,  #  #  #
-  VMADC_VVM,
-  VMADC_VXM,
-  VMADC_VIM,
-  VMADC_VV,
-  VMADC_VX,
-  VMADC_VI,
-  // // // // // // VMADC,  #  #  #  #  #  #
-  VSBC_VVM,
-  VSBC_VXM,
-  // // VSBC,  #  #
-  VMSBC_VVM,
-  VMSBC_VXM,
-  VMSBC_VV,
-  VMSBC_VX,
-  // // // // VMSBC,  #  #  #  #
-  VAND_VV,
-  VAND_VX,
-  VAND_VI,
-  // // // VAND,  #  #  #
-  VOR_VV,
-  VOR_VX,
-  VOR_VI,
-  // // // VOR,  #  #  #
-  VXOR_VV,
-  VXOR_VX,
-  VXOR_VI,
-  // // // VXOR,  #  #  #
-  VSLL_VV,
-  VSLL_VX,
-  VSLL_VI,
-  // // // VSLL,  #  #  #
-  VSRL_VV,
-  VSRL_VX,
-  VSRL_VI,
-  // // // VSRL,  #  #  #
-  VSRA_VV,
-  VSRA_VX,
-  VSRA_VI,
-  // // // VSRA,  #  #  #
-  VNSRL_WV,
-  VNSRL_WX,
-  VNSRL_WI,
-  // // // VNSRL,  #  #  #
-  VNSRA_WV,
-  VNSRA_WX,
-  VNSRA_WI,
-  // // // VNSRA,  #  #  #
-  VMSEQ_VV,
-  VMSEQ_VX,
-  VMSEQ_VI,
-  // // // VMSEQ,  #  #  #
-  VMSNE_VV,
-  VMSNE_VX,
-  VMSNE_VI,
-  // // // VMSNE,  #  #  #
-  VMSLTU_VV,
-  VMSLTU_VX,
-  // // VMSLTU,  #  #
-  VMSLT_VV,
-  VMSLT_VX,
-  // // VMSLT,  #  #
-  VMSLEU_VV,
-  VMSLEU_VX,
-  VMSLEU_VI,
-  // // // VMSLEU,  #  #  #
-  VMSLE_VV,
-  VMSLE_VX,
-  VMSLE_VI,
-  // // // VMSLE,  #  #  #
-  VMSGTU_VX,
-  VMSGTU_VI,
-  // // VMSGTU,  #  #
-  VMSGT_VX,
-  VMSGT_VI,
-  // // VMSGT,  #  #
-  VMINU_VV,
-  VMINU_VX,
-  // // VMINU,  #  #
-  VMIN_VV,
-  VMIN_VX,
-  // // VMIN,  #  #
-  VMAXU_VV,
-  VMAXU_VX,
-  // // VMAXU,  #  #
-  VMAX_VV,
-  VMAX_VX,
-  // // VMAX,  #  #
-  VMUL_VV,
-  VMUL_VX,
-  // // VMUL,  #  #
-  VMULH_VV,
-  VMULH_VX,
-  // // VMULH,  #  #
-  VMULHU_VV,
-  VMULHU_VX,
-  // // VMULHU,  #  #
-  VMULHSU_VV,
-  VMULHSU_VX,
-  // // VMULHSU,  #  #
-  VDIVU_VV,
-  VDIVU_VX,
-  // // VDIVU,  #  #
-  VDIV_VV,
-  VDIV_VX,
-  // // VDIV,  #  #
-  VREMU_VV,
-  VREMU_VX,
-  // // VREMU,  #  #
-  VREM_VV,
-  VREM_VX,
-  // // VREM,  #  #
-  VWMUL_VV,
-  VWMUL_VX,
-  // // VWMUL,  #  #
-  VWMULU_VV,
-  VWMULU_VX,
-  // // VWMULU,  #  #
-  VWMULSU_VV,
-  VWMULSU_VX,
-  // // VWMULSU,  #  #
-  VMACC_VV,
-  VMACC_VX,
-  // // VMACC,  #  #
-  VNMSAC_VV,
-  VNMSAC_VX,
-  // // VNMSAC,  #  #
-  VMADD_VV,
-  VMADD_VX,
-  // // VMADD,  #  #
-  VNMSUB_VV,
-  VNMSUB_VX,
-  // // VNMSUB,  #  #
-  VWMACCU_VV,
-  VWMACCU_VX,
-  // // VWMACCU,  #  #
-  VWMACC_VV,
-  VWMACC_VX,
-  // // VWMACC,  #  #
-  VWMACCSU_VV,
-  VWMACCSU_VX,
-  // // VWMACCSU,  #  #
-  VWMACCUS_VX,
-  // VWMACCUS,  #
-  //VQMACCU,
-  //VQMACC,
-  //VQMACCSU,
-  //VQMACCUS,
-  VMERGE_VVM,
-  VMERGE_VXM,
-  VMERGE_VIM,
-  // // // VMERGE,  #  #  #
-  VMV_V_V,
-  VMV_V_X,
-  VMV_V_I,
-  // // // VMV,  #  #  #
-  VSADDU_VV,
-  VSADDU_VX,
-  VSADDU_VI,
-  // // // VSADDU,  #  #  #
-  VSADD_VV,
-  VSADD_VX,
-  VSADD_VI,
-  // // // VSADD,  #  #  #
-  VSSUBU_VV,
-  VSSUBU_VX,
-  // // VSSUBU,  #  #
-  VSSUB_VV,
-  VSSUB_VX,
-  // // VSSUB,  #  #
-  VAADDU_VV,
-  VAADDU_VX,
-  // // VAADDU,  #  #
-  VAADD_VV,
-  VAADD_VX,
-  // // VAADD,  #  #
-  VASUBU_VV,
-  VASUBU_VX,
-  // // VASUBU,  #  #
-  VASUB_VV,
-  VASUB_VX,
-  // // VASUB,  #  #
-  VSSRL_VV,
-  VSSRL_VX,
-  VSSRL_VI,
-  // // // VSSRL,  #  #  #
-  VSSRA_VV,
-  VSSRA_VX,
-  VSSRA_VI,
-  // // // VSSRA,  #  #  #
-  VNCLIPU_WV,
-  VNCLIPU_WX,
-  VNCLIPU_WI,
-  // // // VNCLIPU,  #  #  #
-  VNCLIP_WV,
-  VNCLIP_WX,
-  VNCLIP_WI,
-  // // // VNCLIP,  #  #  #
-  // 14. Vector Floating-Point Instructions
-  VFADD_VV,
-  VFADD_VF,
-  // // VFADD,  #  #
-  VFSUB_VV,
-  VFSUB_VF,
-  // // VFSUB,  #  #
-  VFRSUB_VF,
-  // VFRSUB,  #
-  VFMUL_VV,
-  VFMUL_VF,
-  // // VFMUL,  #  #
-  VFDIV_VV,
-  VFDIV_VF,
-  // // VFDIV,  #  #
-  VFRDIV_VF,
-  // VFRDIV,  #
-  VFWMUL_VV,
-  VFWMUL_VF,
-  // // VFWMUL,  #  #
-  VFMACC_VV,
-  VFMACC_VF,
-  // // VFMACC,  #  #
-  VFNMACC_VV,
-  VFNMACC_VF,
-  // // VFNMACC,  #  #
-  VFMSAC_VV,
-  VFMSAC_VF,
-  // // VFMSAC,  #  #
-  VFNMSAC_VV,
-  VFNMSAC_VF,
-  // // VFNMSAC,  #  #
-  VFMADD_VV,
-  VFMADD_VF,
-  // // VFMADD,  #  #
-  VFNMADD_VV,
-  VFNMADD_VF,
-  // // VFNMADD,  #  #
-  VFMSUB_VV,
-  VFMSUB_VF,
-  // // VFMSUB,  #  #
-  VFNMSUB_VV,
-  VFNMSUB_VF,
-  // // VFNMSUB,  #  #
-  VFWMACC_VV,
-  VFWMACC_VF,
-  // // VFWMACC,  #  #
-  VFWNMACC_VV,
-  VFWNMACC_VF,
-  // // VFWNMACC,  #  #
-  VFWMSAC_VV,
-  VFWMSAC_VF,
-  // // VFWMSAC,  #  #
-  VFWNMSAC_VV,
-  VFWNMSAC_VF,
-  // // VFWNMSAC,  #  #
-  VFSQRT_V,
-  VFMIN_VV,
-  VFMIN_VF,
-  // // VFMIN,  #  #
-  VFMAX_VV,
-  VFMAX_VF,
-  // // VFMAX,  #  #
-  VFSGNJ_VV,
-  VFSGNJ_VF,
-  // // VFSGNJ,  #  #
-  VFSGNJN_VV,
-  VFSGNJN_VF,
-  // // VFSGNJN,  #  #
-  VFSGNJX_VV,
-  VFSGNJX_VF,
-  // // VFSGNJX,  #  #
-  VMFEQ_VV,
-  VMFEQ_VF,
-  // // VMFEQ,  #  #
-  VMFNE_VV,
-  VMFNE_VF,
-  // // VMFNE,  #  #
-  VMFLT_VV,
-  VMFLT_VF,
-  // // VMFLT,  #  #
-  VMFLE_VV,
-  VMFLE_VF,
-  // // VMFLE,  #  #
-  VMFGT_VF,
-  // VMFGT,  #
-  VMFGE_VF,
-  // VMFGE,  #
-  VFCLASS_V,
-  VFMERGE_VFM,
-  // VFMERGE,  #
-  VFMV_V_F,
-  // VFMV,  #
-  VFCVT_XU_F_V,
-  VFCVT_X_F_V,
-  VFCVT_F_XU_V,
-  VFCVT_F_X_V,
-  VFWCVT_XU_F_V,
-  VFWCVT_X_F_V,
-  VFWCVT_F_XU_V,
-  VFWCVT_F_X_V,
-  VFWCVT_F_F_V,
-  VFNCVT_XU_F_W,
-  VFNCVT_X_F_W,
-  VFNCVT_F_XU_W,
-  VFNCVT_F_X_W,
-  VFNCVT_F_F_W,
-  VFNCVT_ROD_F_F_W,
-  // 15. Vector reduction instruction
-  VREDSUM_VS,
-  VREDMAXU_VS,
-  VREDMAX_VS,
-  VREDMINU_VS,
-  VREDMIN_VS,
-  VREDAND_VS,
-  VREDOR_VS,
-  VREDXOR_VS,
-  VWREDSUMU_VS,
-  VWREDSUM_VS,
-  VFREDOSUM_VS,
-  VFREDSUM_VS,
-  VFREDMAX_VS,
-  VFWREDOSUM_VS,
-  VFWREDSUM_VS,
-  // Vector mask instruction
-  VMAND_MM,
-  VMNAND_MM,
-  VMANDNOT_MM,
-  VMXOR_MM,
-  VMOR_MM,
-  VMNOR_MM,
-  VMORNOT_MM,
-  VMXNOR_MM,
-  VPOPC_M,
-  VFIRST_M,
-  VMSBF_M,
-  VMSIF_M,
-  VMSOF_M,
-  VIOTA_M,
-  VID_V,
-  // Vector permutation instruction
-  VMV_X_S,
-  VMV_S_X,
-  VFMV_F_S,
-  VFMV_S_F,
-  VSLIDEUP_VI,
-  VSLIDEUP_VX,
-  // // VSLIDEUP,  #  #
-  VSLIDEDOWN_VI,
-  VSLIDEDOWN_VX,
-  // // VSLIDEDOWN,  #  #
-  VSLIDE1UP_VX,
-  // VSLIDE1UP,  #
-  VSLIDE1DOWN_VX,
-  // VSLIDE1DOWN,  #
-  VRGATHER_VV,
-  VRGATHER_VX,
-  VRGATHER_VI,
-  // // // VRGATHER,  #  #  #
-  VCOMPRESS_VM,
-  // VCOMPRESS,  #
-  VMV1R_V,
-  VMV2R_V,
-  VMV4R_V,
-  VMV8R_V,
-  // Vector load/store instruction
-  // VLE1_V,
-  // VLE8_V,
-  // VLE16_V,
-  // VLE32_V,
-  // VLE64_V,
-  // VLE128_V,
-  // VLE256_V,
-  // VLE512_V,
-  // VLE1024_V,
-  // VLE8FF_V,
-  // VLE16FF_V,
-  // VLE32FF_V,
-  // VLE64FF_V,
-  // VLE128FF_V,
-  // VLE256FF_V,
-  // VLE512FF_V,
-  // VLE1024FF_V,
-  // VSE1_V,
-  // VSE8_V,
-  // VSE16_V,
-  // VSE32_V,
-  // VSE64_V,
-  // VSE128_V,
-  // VSE256_V,
-  // VSE512_V,
-  // VSE1024_V,
+// enum riscv_instr_name_t: ushort {
+//   // RV32I instructions
+//   LUI,
+//   AUIPC,
+//   JAL,
+//   JALR,
+//   BEQ,
+//   BNE,
+//   BLT,
+//   BGE,
+//   BLTU,
+//   BGEU,
+//   LB,
+//   LH,
+//   LW,
+//   LBU,
+//   LHU,
+//   SB,
+//   SH,
+//   SW,
+//   ADDI,
+//   SLTI,
+//   SLTIU,
+//   XORI,
+//   ORI,
+//   ANDI,
+//   SLLI,
+//   SRLI,
+//   SRAI,
+//   ADD,
+//   SUB,
+//   SLL,
+//   SLT,
+//   SLTU,
+//   XOR,
+//   SRL,
+//   SRA,
+//   OR,
+//   AND,
+//   NOP,
+//   FENCE,
+//   FENCE_I,
+//   FENCE_TSO,
+//   PAUSE,
+//   ECALL,
+//   SCALL,
+//   EBREAK,
+//   SBREAK,
+//   // RV32ZBA instructions
+//   SH1ADD,
+//   SH2ADD,
+//   SH3ADD,
+//   // RV32ZBB instructions
+//   ANDN,
+//   CLZ,
+//   CPOP,
+//   CTZ,
+//   MAX,
+//   MAXU,
+//   MIN,
+//   MINU,
+//   ORC_B,
+//   ORN,
+//   REV8,
+//   ROL,
+//   ROR,
+//   RORI,
+//   SEXT_B,
+//   SEXT_H,
+//   XNOR,
+//   ZEXT_H,
+//   // RV32ZBC instructions
+//   CLMUL,
+//   CLMULH,
+//   CLMULR,
+//   // RV32ZBS instructions
+//   BCLR,
+//   BCLRI,
+//   BEXT,
+//   BEXTI,
+//   BINV,
+//   BINVI,
+//   BSET,
+//   BSETI,
+//   // RV32B instructions
+//   // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
+//   GORC,
+//   GORCI,
+//   CMIX,
+//   CMOV,
+//   PACK,
+//   PACKU,
+//   PACKH,
+//   XPERM4,
+//   XPERM8,
+//   XPERM16,
+//   SLO,
+//   SRO,
+//   SLOI,
+//   SROI,
+//   GREV,
+//   GREVI,
+//   FSL,
+//   FSR,
+//   FSRI,
+//   CRC32_B,
+//   CRC32_H,
+//   CRC32_W,
+//   CRC32C_B,
+//   CRC32C_H,
+//   CRC32C_W,
+//   SHFL,
+//   UNSHFL,
+//   SHFLI,
+//   UNSHFLI,
+//   UNZIP8,
+//   UNZIP16,
+//   BCOMPRESS,
+//   BDECOMPRESS,
+//   BFP,
+//   // RV64ZBA instructions
+//   ADD_UW,
+//   SH1ADD_UW,
+//   SH2ADD_UW,
+//   SH3ADD_UW,
+//   SLLI_UW,
+//   // RV64ZBB instructions
+//   CLZW,
+//   CPOPW,
+//   CTZW,
+//   ROLW,
+//   RORW,
+//   RORIW,
+//   //RV64B instructions
+//   // Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
+//   BMATOR,
+//   BMATXOR,
+//   BMATFLIP,
+//   CRC32_D,
+//   CRC32C_D,
+//   SHFLW,
+//   UNSHFLW,
+//   BCOMPRESSW,
+//   BDECOMPRESSW,
+//   BFPW,
+//   SLOW,
+//   SROW,
+//   SLOIW,
+//   SROIW,
+//   GREVW,
+//   GREVIW,
+//   FSLW,
+//   FSRW,
+//   FSRIW,
+//   GORCW,
+//   GORCIW,
+//   PACKW,
+//   PACKUW,
+//   XPERM32,
+//   // RV32M instructions
+//   MUL,
+//   MULH,
+//   MULHSU,
+//   MULHU,
+//   DIV,
+//   DIVU,
+//   REM,
+//   REMU,
+//   // RV64M instructions
+//   MULW,
+//   DIVW,
+//   DIVUW,
+//   REMW,
+//   REMUW,
+//   // RV32F instructions
+//   FLW,
+//   FSW,
+//   FMADD_S,
+//   FMSUB_S,
+//   FNMSUB_S,
+//   FNMADD_S,
+//   FADD_S,
+//   FSUB_S,
+//   FMUL_S,
+//   FDIV_S,
+//   FSQRT_S,
+//   FSGNJ_S,
+//   FSGNJN_S,
+//   FSGNJX_S,
+//   FMIN_S,
+//   FMAX_S,
+//   FCVT_W_S,
+//   FCVT_WU_S,
+//   FMV_X_W,
+//   FMV_X_S,
+//   FEQ_S,
+//   FLT_S,
+//   FLE_S,
+//   FCLASS_S,
+//   FCVT_S_W,
+//   FCVT_S_WU,
+//   FMV_W_X,
+//   FMV_S_X,
+//   // RV64F instruction
+//   FCVT_L_S,
+//   FCVT_LU_S,
+//   FCVT_S_L,
+//   FCVT_S_LU,
+//   // RV32D instructions
+//   FLD,
+//   FSD,
+//   FMADD_D,
+//   FMSUB_D,
+//   FNMSUB_D,
+//   FNMADD_D,
+//   FADD_D,
+//   FSUB_D,
+//   FMUL_D,
+//   FDIV_D,
+//   FSQRT_D,
+//   FSGNJ_D,
+//   FSGNJN_D,
+//   FSGNJX_D,
+//   FMIN_D,
+//   FMAX_D,
+//   FCVT_S_D,
+//   FCVT_D_S,
+//   FEQ_D,
+//   FLT_D,
+//   FLE_D,
+//   FCLASS_D,
+//   FCVT_W_D,
+//   FCVT_WU_D,
+//   FCVT_D_W,
+//   FCVT_D_WU,
+//   // RV64D
+//   FCVT_L_D,
+//   FCVT_LU_D,
+//   FMV_X_D,
+//   FCVT_D_L,
+//   FCVT_D_LU,
+//   FMV_D_X,
+//   // RV64I
+//   LWU,
+//   LD,
+//   SD,
+//   ADDIW,
+//   SLLIW,
+//   SRLIW,
+//   SRAIW,
+//   ADDW,
+//   SUBW,
+//   SLLW,
+//   SRLW,
+//   SRAW,
+//   // RV32C
+//   C_LW,
+//   C_SW,
+//   C_LWSP,
+//   C_SWSP,
+//   C_ADDI4SPN,
+//   C_ADDI,
+//   C_LI,
+//   C_ADDI16SP,
+//   C_LUI,
+//   C_SRLI,
+//   C_SRAI,
+//   C_ANDI,
+//   C_SUB,
+//   C_XOR,
+//   C_OR,
+//   C_AND,
+//   C_BEQZ,
+//   C_BNEZ,
+//   C_SLLI,
+//   C_MV,
+//   C_EBREAK,
+//   C_ADD,
+//   C_NOP,
+//   C_J,
+//   C_JAL,
+//   C_JR,
+//   C_JALR,
+//   // RV64C
+//   C_ADDIW,
+//   C_SUBW,
+//   C_ADDW,
+//   C_LD,
+//   C_SD,
+//   C_LDSP,
+//   C_SDSP,
+//   // RV128C
+//   C_SRLI64,
+//   C_SRAI64,
+//   C_SLLI64,
+//   C_LQ,
+//   C_SQ,
+//   C_LQSP,
+//   C_SQSP,
+//   // RV32FC
+//   C_FLW,
+//   C_FSW,
+//   C_FLWSP,
+//   C_FSWSP,
+//   // RV32DC
+//   C_FLD,
+//   C_FSD,
+//   C_FLDSP,
+//   C_FSDSP,
+//   // RV32A
+//   LR_W,
+//   SC_W,
+//   AMOSWAP_W,
+//   AMOADD_W,
+//   AMOAND_W,
+//   AMOOR_W,
+//   AMOXOR_W,
+//   AMOMIN_W,
+//   AMOMAX_W,
+//   AMOMINU_W,
+//   AMOMAXU_W,
+//   // RV64A
+//   LR_D,
+//   SC_D,
+//   AMOSWAP_D,
+//   AMOADD_D,
+//   AMOAND_D,
+//   AMOOR_D,
+//   AMOXOR_D,
+//   AMOMIN_D,
+//   AMOMAX_D,
+//   AMOMINU_D,
+//   AMOMAXU_D,
+//   // Vector instructions
+//   VSETVL,
+//   VSETVLI,
+//   VSETIVLI,
+//   VADD_VV,
+//   VADD_VX,
+//   VADD_VI,
+//   // // // VADD,  #  #  #
+//   VSUB_VV,
+//   VSUB_VX,
+//   // // VSUB,  #  #
+//   VRSUB_VX,
+//   VRSUB_VI,
+//   // // VRSUB,  #  #
+//   VWADDU_VV,
+//   VWADDU_VX,
+//   VWADDU_WV,
+//   VWADDU_WX,
+//   // // // // VWADDU,  #  #  #  #
+//   VWSUBU_VV,
+//   VWSUBU_VX,
+//   VWSUBU_WV,
+//   VWSUBU_WX,
+//   // // // // VWSUBU,  #  #  #  #
+//   VWADD_VV,
+//   VWADD_VX,
+//   VWADD_WV,
+//   VWADD_WX,
+//   // // // // VWADD,  #  #  #  #
+//   VWSUB_VV,
+//   VWSUB_VX,
+//   VWSUB_WV,
+//   VWSUB_WX,
+//   // // // // VWSUB,  #  #  #  #
+//   VADC_VVM,
+//   VADC_VXM,
+//   VADC_VIM,
+//   // // // VADC,  #  #  #
+//   VMADC_VVM,
+//   VMADC_VXM,
+//   VMADC_VIM,
+//   VMADC_VV,
+//   VMADC_VX,
+//   VMADC_VI,
+//   // // // // // // VMADC,  #  #  #  #  #  #
+//   VSBC_VVM,
+//   VSBC_VXM,
+//   // // VSBC,  #  #
+//   VMSBC_VVM,
+//   VMSBC_VXM,
+//   VMSBC_VV,
+//   VMSBC_VX,
+//   // // // // VMSBC,  #  #  #  #
+//   VAND_VV,
+//   VAND_VX,
+//   VAND_VI,
+//   // // // VAND,  #  #  #
+//   VOR_VV,
+//   VOR_VX,
+//   VOR_VI,
+//   // // // VOR,  #  #  #
+//   VXOR_VV,
+//   VXOR_VX,
+//   VXOR_VI,
+//   // // // VXOR,  #  #  #
+//   VSLL_VV,
+//   VSLL_VX,
+//   VSLL_VI,
+//   // // // VSLL,  #  #  #
+//   VSRL_VV,
+//   VSRL_VX,
+//   VSRL_VI,
+//   // // // VSRL,  #  #  #
+//   VSRA_VV,
+//   VSRA_VX,
+//   VSRA_VI,
+//   // // // VSRA,  #  #  #
+//   VNSRL_WV,
+//   VNSRL_WX,
+//   VNSRL_WI,
+//   // // // VNSRL,  #  #  #
+//   VNSRA_WV,
+//   VNSRA_WX,
+//   VNSRA_WI,
+//   // // // VNSRA,  #  #  #
+//   VMSEQ_VV,
+//   VMSEQ_VX,
+//   VMSEQ_VI,
+//   // // // VMSEQ,  #  #  #
+//   VMSNE_VV,
+//   VMSNE_VX,
+//   VMSNE_VI,
+//   // // // VMSNE,  #  #  #
+//   VMSLTU_VV,
+//   VMSLTU_VX,
+//   // // VMSLTU,  #  #
+//   VMSLT_VV,
+//   VMSLT_VX,
+//   // // VMSLT,  #  #
+//   VMSLEU_VV,
+//   VMSLEU_VX,
+//   VMSLEU_VI,
+//   // // // VMSLEU,  #  #  #
+//   VMSLE_VV,
+//   VMSLE_VX,
+//   VMSLE_VI,
+//   // // // VMSLE,  #  #  #
+//   VMSGTU_VX,
+//   VMSGTU_VI,
+//   // // VMSGTU,  #  #
+//   VMSGT_VX,
+//   VMSGT_VI,
+//   // // VMSGT,  #  #
+//   VMINU_VV,
+//   VMINU_VX,
+//   // // VMINU,  #  #
+//   VMIN_VV,
+//   VMIN_VX,
+//   // // VMIN,  #  #
+//   VMAXU_VV,
+//   VMAXU_VX,
+//   // // VMAXU,  #  #
+//   VMAX_VV,
+//   VMAX_VX,
+//   // // VMAX,  #  #
+//   VMUL_VV,
+//   VMUL_VX,
+//   // // VMUL,  #  #
+//   VMULH_VV,
+//   VMULH_VX,
+//   // // VMULH,  #  #
+//   VMULHU_VV,
+//   VMULHU_VX,
+//   // // VMULHU,  #  #
+//   VMULHSU_VV,
+//   VMULHSU_VX,
+//   // // VMULHSU,  #  #
+//   VDIVU_VV,
+//   VDIVU_VX,
+//   // // VDIVU,  #  #
+//   VDIV_VV,
+//   VDIV_VX,
+//   // // VDIV,  #  #
+//   VREMU_VV,
+//   VREMU_VX,
+//   // // VREMU,  #  #
+//   VREM_VV,
+//   VREM_VX,
+//   // // VREM,  #  #
+//   VWMUL_VV,
+//   VWMUL_VX,
+//   // // VWMUL,  #  #
+//   VWMULU_VV,
+//   VWMULU_VX,
+//   // // VWMULU,  #  #
+//   VWMULSU_VV,
+//   VWMULSU_VX,
+//   // // VWMULSU,  #  #
+//   VMACC_VV,
+//   VMACC_VX,
+//   // // VMACC,  #  #
+//   VNMSAC_VV,
+//   VNMSAC_VX,
+//   // // VNMSAC,  #  #
+//   VMADD_VV,
+//   VMADD_VX,
+//   // // VMADD,  #  #
+//   VNMSUB_VV,
+//   VNMSUB_VX,
+//   // // VNMSUB,  #  #
+//   VWMACCU_VV,
+//   VWMACCU_VX,
+//   // // VWMACCU,  #  #
+//   VWMACC_VV,
+//   VWMACC_VX,
+//   // // VWMACC,  #  #
+//   VWMACCSU_VV,
+//   VWMACCSU_VX,
+//   // // VWMACCSU,  #  #
+//   VWMACCUS_VX,
+//   // VWMACCUS,  #
+//   //VQMACCU,
+//   //VQMACC,
+//   //VQMACCSU,
+//   //VQMACCUS,
+//   VMERGE_VVM,
+//   VMERGE_VXM,
+//   VMERGE_VIM,
+//   // // // VMERGE,  #  #  #
+//   VMV_V_V,
+//   VMV_V_X,
+//   VMV_V_I,
+//   // // // VMV,  #  #  #
+//   VSADDU_VV,
+//   VSADDU_VX,
+//   VSADDU_VI,
+//   // // // VSADDU,  #  #  #
+//   VSADD_VV,
+//   VSADD_VX,
+//   VSADD_VI,
+//   // VSMUL
+//   VSMUL_VV,
+//   VSMUL_VX,
+//   // // // VSADD,  #  #  #
+//   VSSUBU_VV,
+//   VSSUBU_VX,
+//   // // VSSUBU,  #  #
+//   VSSUB_VV,
+//   VSSUB_VX,
+//   // // VSSUB,  #  #
+//   VAADDU_VV,
+//   VAADDU_VX,
+//   // // VAADDU,  #  #
+//   VAADD_VV,
+//   VAADD_VX,
+//   // // VAADD,  #  #
+//   VASUBU_VV,
+//   VASUBU_VX,
+//   // // VASUBU,  #  #
+//   VASUB_VV,
+//   VASUB_VX,
+//   // // VASUB,  #  #
+//   VSSRL_VV,
+//   VSSRL_VX,
+//   VSSRL_VI,
+//   // // // VSSRL,  #  #  #
+//   VSSRA_VV,
+//   VSSRA_VX,
+//   VSSRA_VI,
+//   // // // VSSRA,  #  #  #
+//   VNCLIPU_WV,
+//   VNCLIPU_WX,
+//   VNCLIPU_WI,
+//   // // // VNCLIPU,  #  #  #
+//   VNCLIP_WV,
+//   VNCLIP_WX,
+//   VNCLIP_WI,
+//   // // // VNCLIP,  #  #  #
+//   // 14. Vector Floating-Point Instructions
+//   VFADD_VV,
+//   VFADD_VF,
+//   // // VFADD,  #  #
+//   VFSUB_VV,
+//   VFSUB_VF,
+//   // // VFSUB,  #  #
+//   VFRSUB_VF,
+//   // VFRSUB,  #
+//   VFMUL_VV,
+//   VFMUL_VF,
+//   // // VFMUL,  #  #
+//   VFDIV_VV,
+//   VFDIV_VF,
+//   // // VFDIV,  #  #
+//   VFRDIV_VF,
+//   // VFRDIV,  #
+//   VFWMUL_VV,
+//   VFWMUL_VF,
+//   // // VFWMUL,  #  #
+//   VFMACC_VV,
+//   VFMACC_VF,
+//   // // VFMACC,  #  #
+//   VFNMACC_VV,
+//   VFNMACC_VF,
+//   // // VFNMACC,  #  #
+//   VFMSAC_VV,
+//   VFMSAC_VF,
+//   // // VFMSAC,  #  #
+//   VFNMSAC_VV,
+//   VFNMSAC_VF,
+//   // // VFNMSAC,  #  #
+//   VFMADD_VV,
+//   VFMADD_VF,
+//   // // VFMADD,  #  #
+//   VFNMADD_VV,
+//   VFNMADD_VF,
+//   // // VFNMADD,  #  #
+//   VFMSUB_VV,
+//   VFMSUB_VF,
+//   // // VFMSUB,  #  #
+//   VFNMSUB_VV,
+//   VFNMSUB_VF,
+//   // // VFNMSUB,  #  #
+//   VFWMACC_VV,
+//   VFWMACC_VF,
+//   // // VFWMACC,  #  #
+//   VFWNMACC_VV,
+//   VFWNMACC_VF,
+//   // // VFWNMACC,  #  #
+//   VFWMSAC_VV,
+//   VFWMSAC_VF,
+//   // // VFWMSAC,  #  #
+//   VFWNMSAC_VV,
+//   VFWNMSAC_VF,
+//   // // VFWNMSAC,  #  #
+//   VFSQRT_V,
+//   VFRSQRT7_V,
+//   VFMIN_VV,
+//   VFMIN_VF,
+//   // // VFMIN,  #  #
+//   VFMAX_VV,
+//   VFMAX_VF,
+//   // // VFMAX,  #  #
+//   VFSGNJ_VV,
+//   VFSGNJ_VF,
+//   // // VFSGNJ,  #  #
+//   VFSGNJN_VV,
+//   VFSGNJN_VF,
+//   // // VFSGNJN,  #  #
+//   VFSGNJX_VV,
+//   VFSGNJX_VF,
+//   // // VFSGNJX,  #  #
+//   VMFEQ_VV,
+//   VMFEQ_VF,
+//   // // VMFEQ,  #  #
+//   VMFNE_VV,
+//   VMFNE_VF,
+//   // // VMFNE,  #  #
+//   VMFLT_VV,
+//   VMFLT_VF,
+//   // // VMFLT,  #  #
+//   VMFLE_VV,
+//   VMFLE_VF,
+//   // // VMFLE,  #  #
+//   VMFGT_VF,
+//   // VMFGT,  #
+//   VMFGE_VF,
+//   // VMFGE,  #
+//   VFCLASS_V,
+//   VFREC7_V,
+//   VFMERGE_VFM,
+//   // VFMERGE,  #
+//   VFMV_V_F,
+//   // VFMV,  #
+//   VFCVT_XU_F_V,
+//   VFCVT_X_F_V,
+//   VFCVT_RTZ_XU_F_V,
+//   VFCVT_RTZ_X_F_V,
+//   VFCVT_F_XU_V,
+//   VFCVT_F_X_V,
+//   VFWCVT_XU_F_V,
+//   VFWCVT_X_F_V,
+//   VFWCVT_F_XU_V,
+//   VFWCVT_F_X_V,
+//   VFWCVT_RTZ_XU_F_V,
+//   VFWCVT_RTZ_X_F_V,
+//   VFWCVT_F_F_V,
+//   VFNCVT_XU_F_W,
+//   VFNCVT_X_F_W,
+//   VFNCVT_RTZ_XU_F_W,
+//   VFNCVT_RTZ_X_F_W,
+//   VFNCVT_F_XU_W,
+//   VFNCVT_F_X_W,
+//   VFNCVT_F_F_W,
+//   VFNCVT_ROD_F_F_W,
+//   // 15. Vector reduction instruction
+//   VREDSUM_VS,
+//   VREDMAXU_VS,
+//   VREDMAX_VS,
+//   VREDMINU_VS,
+//   VREDMIN_VS,
+//   VREDAND_VS,
+//   VREDOR_VS,
+//   VREDXOR_VS,
+//   VWREDSUMU_VS,
+//   VWREDSUM_VS,
+//   VFREDSUM_VS,
+//   VFREDOSUM_VS,
+//   VFREDUSUM_VS,
+//   VFREDMAX_VS,
+//   VFREDMIN_VS,
+//   VFWREDOSUM_VS,
+//   VFWREDUSUM_VS,
+//   VFWREDSUM_VS,
+//   // Vector mask instruction
+//   VMAND_MM,
+//   VMANDN_MM,
+//   VMNAND_MM,
+//   VMANDNOT_MM,
+//   VMXOR_MM,
+//   VMOR_MM,
+//   VMORN_MM,
+//   VMNOR_MM,
+//   VMORNOT_MM,
+//   VMXNOR_MM,
+//   VPOPC_M,
+//   VCPOP_M,
+//   VFIRST_M,
+//   VMSBF_M,
+//   VMSIF_M,
+//   VMSOF_M,
+//   VIOTA_M,
+//   VID_V,
+//   // Vector permutation instruction
+//   VMV_X_S,
+//   VMV_S_X,
+//   VFMV_F_S,
+//   VFMV_S_F,
+//   VSLIDEUP_VI,
+//   VSLIDEUP_VX,
+//   // // VSLIDEUP,  #  #
+//   VSLIDEDOWN_VI,
+//   VSLIDEDOWN_VX,
+//   // // VSLIDEDOWN,  #  #
+//   VSLIDE1UP_VX,
+//   // VSLIDE1UP,  #
+//   VFSLIDE1UP_VF,
+//   // VFSLIDE1UP,  #
+//   VSLIDE1DOWN_VX,
+//   // VFSLIDE1UP,  #
+//   VFSLIDE1DOWN_VF,
+//   // VSLIDE1DOWN,  #
+//   VRGATHER_VV,
+//   VRGATHER_VX,
+//   VRGATHER_VI,
+//   // // // VRGATHER,  #  #  #
+//   VRGATHEREI16_VV,
+//   // VRGATHEREI16,  #
+//   VCOMPRESS_VM,
+//   // VCOMPRESS,  #
+//   VMV1R_V,
+//   VMV2R_V,
+//   VMV4R_V,
+//   VMV8R_V,
+//   VS1R_V,
+//   VS2R_V,
+//   VS4R_V,
+//   VS8R_V,
+//   // Vector load/store instruction
+//   VLE8_V,
+//   VLE16_V,
+//   VLE32_V,
+//   VLE64_V,
+//   VLE128_V,
+//   VLE256_V,
+//   VLE512_V,
+//   VLE1024_V,
 
-  // VLSE8_V,
-  // VLSE16_V,
-  // VLSE32_V,
-  // VLSE64_V,
-  // VLSE128_V,
-  // VLSE256_V,
-  // VLSE512_V,
-  // VLSE1024_V,
-  // VSSE8_V,
-  // VSSE16_V,
-  // VSSE32_V,
-  // VSSE64_V,
-  // VSSE128_V,
-  // VSSE256_V,
-  // VSSE512_V,
-  // VSSE1024_V,
+//   VLE8FF_V,
+//   VLE16FF_V,
+//   VLE32FF_V,
+//   VLE64FF_V,
+//   VLE128FF_V,
+//   VLE256FF_V,
+//   VLE512FF_V,
+//   VLE1024FF_V,
 
-  // VLXEI_V,
-  // VSXEI_V,
-  // VSUXEI_V,
-  // VLEFF_V,
-  // Segmented load/store instruction
-  // VLSEGE_V,
-  // VSSEGE_V,
-  // VLSEGEFF_V,
-  // VLSSEGE_V,
-  // VSSSEGE_V,
-  // VLXSEGEI_V,
-  // VSXSEGEI_V,
-  // VSUXSEGEI_V,
-  // Vector AMO instruction
-  // EEW vector AMOs
-  // VAMOSWAPE_V,
-  // VAMOADDE_V,
-  // VAMOXORE_V,
-  // VAMOANDE_V,
-  // VAMOORE_V,
-  // VAMOMINE_V,
-  // VAMOMAXE_V,
-  // VAMOMINUE_V,
-  // VAMOMAXUE_V,
-  // Supervisor instruction
-  DRET,
-  MRET,
-  // URET,                       // deprecated
-  SRET,
-  WFI,
-  SFENCE_VMA,
-  // Custom instructions
-  // `include "isa/custom/riscv_custom_instr_enum.sv"
-  // You can add other instructions here
-  INVALID_INSTR
-}
+//   VSE8_V,
+//   VSE16_V,
+//   VSE32_V,
+//   VSE64_V,
+//   VSE128_V,
+//   VSE256_V,
+//   VSE512_V,
+//   VSE1024_V,
+
+//   VLSE8_V,
+//   VLSE16_V,
+//   VLSE32_V,
+//   VLSE64_V,
+//   VLSE128_V,
+//   VLSE256_V,
+//   VLSE512_V,
+//   VLSE1024_V,
+
+//   VSSE8_V,
+//   VSSE16_V,
+//   VSSE32_V,
+//   VSSE64_V,
+//   VSSE128_V,
+//   VSSE256_V,
+//   VSSE512_V,
+//   VSSE1024_V,
+
+//   VLOXEI8_V,
+//   VLOXEI16_V,
+//   VLOXEI32_V,
+//   VLOXEI64_V,
+//   VLOXEI128_V,
+//   VLOXEI256_V,
+//   VLOXEI512_V,
+//   VLOXEI1024_V,
+
+//   VLUXEI8_V,
+//   VLUXEI16_V,
+//   VLUXEI32_V,
+//   VLUXEI64_V,
+//   VLUXEI128_V,
+//   VLUXEI256_V,
+//   VLUXEI512_V,
+//   VLUXEI1024_V,
+
+//   VSOXEI8_V,
+//   VSOXEI16_V,
+//   VSOXEI32_V,
+//   VSOXEI64_V,
+//   VSOXEI128_V,
+//   VSOXEI256_V,
+//   VSOXEI512_V,
+//   VSOXEI1024_V,
+
+//   VSUXEI8_V,
+//   VSUXEI16_V,
+//   VSUXEI32_V,
+//   VSUXEI64_V,
+//   VSUXEI128_V,
+//   VSUXEI256_V,
+//   VSUXEI512_V,
+//   VSUXEI1024_V,
+
+//   VL1R_V,
+//   VL1RE8_V,
+//   VL1RE16_V,
+//   VL1RE32_V,
+//   VL1RE64_V,
+
+//   VL2R_V,
+//   VL2RE8_V,
+//   VL2RE16_V,
+//   VL2RE32_V,
+//   VL2RE64_V,
+
+//   VL4R_V,
+//   VL4RE8_V,
+//   VL4RE16_V,
+//   VL4RE32_V,
+//   VL4RE64_V,
+
+//   VL8R_V,
+//   VL8RE8_V,
+//   VL8RE16_V,
+//   VL8RE32_V,
+//   VL8RE64_V,
+
+//   VLM_V,
+//   VLE1_V,
+//   VSM_V,
+//   VSE1_V,
+
+//   VSEXT_VF2,
+//   VSEXT_VF4,
+//   VSEXT_VF8,
+
+//   VZEXT_VF2,
+//   VZEXT_VF4,
+//   VZEXT_VF8,
+
+//   // VLXEI_V,
+//   // VSXEI_V,
+//   // VSUXEI_V,
+//   // VLEFF_V,
+//   // Segmented load/store instruction
+//   // VLSEGE_V,
+//   // VSSEGE_V,
+//   // VLSEGEFF_V,
+//   // VLSSEGE_V,
+//   // VSSSEGE_V,
+//   // VLXSEGEI_V,
+//   // VSXSEGEI_V,
+//   // VSUXSEGEI_V,
+//   // Vector AMO instruction
+//   // EEW vector AMOs
+
+//   // VAMOADDEI8_V,
+//   // VAMOADDEI16_V,
+//   // VAMOADDEI32_V,
+//   // VAMOADDEI64_V,
+//   // VAMOANDEI8_V,
+//   // VAMOANDEI16_V,
+//   // VAMOANDEI32_V,
+//   // VAMOANDEI64_V,
+//   // VAMOMAXEI8_V,
+//   // VAMOMAXEI16_V,
+//   // VAMOMAXEI32_V,
+//   // VAMOMAXEI64_V,
+//   // VAMOMAXUEI8_V,
+//   // VAMOMAXUEI16_V,
+//   // VAMOMAXUEI32_V,
+//   // VAMOMAXUEI64_V,
+//   // VAMOMINEI8_V,
+//   // VAMOMINEI16_V,
+//   // VAMOMINEI32_V,
+//   // VAMOMINEI64_V,
+//   // VAMOMINUEI8_V,
+//   // VAMOMINUEI16_V,
+//   // VAMOMINUEI32_V,
+//   // VAMOMINUEI64_V,
+//   // VAMOOREI8_V,
+//   // VAMOOREI16_V,
+//   // VAMOOREI32_V,
+//   // VAMOOREI64_V,
+//   // VAMOSWAPEI8_V,
+//   // VAMOSWAPEI16_V,
+//   // VAMOSWAPEI32_V,
+//   // VAMOSWAPEI64_V,
+//   // VAMOXOREI8_V,
+//   // VAMOXOREI16_V,
+//   // VAMOXOREI32_V,
+//   // VAMOXOREI64_V,
+//   VFWADD_VF,
+//   VFWADD_VV,
+//   VFWADD_WF,
+//   VFWADD_WV,
+//   VFWSUB_VF,
+//   VFWSUB_VV,
+//   VFWSUB_WF,
+//   VFWSUB_WV,
+//   // Supervisor instruction
+//   DRET,
+//   MRET,
+//   // URET,                       // deprecated
+//   SRET,
+//   WFI,
+//   SFENCE_VMA,
+//   // rv_zicsr
+//   CSRRC,
+//   CSRRCI,
+//   CSRRS,
+//   CSRRSI,
+//   CSRRW,
+//   CSRRWI,
+
+//   FRCSR,
+//   FRFLAGS,
+//   FRRM,
+//   RDCYCLE,
+//   RDCYCLEH,
+//   RDINSTRET,
+//   RDINSTRETH,
+//   RDTIME,
+//   RDTIMEH,
+
+//   FSCSR,
+//   FSFLAGS,
+//   FSRM,
+
+//   FSFLAGSI,
+//   FSRMI,
+
+  
+//   // Custom instructions
+//   // `include "isa/custom/riscv_custom_instr_enum.sv"
+//   // You can add other instructions here
+//   INVALID_INSTR
+// }
 
 
 enum va_base_instr: byte {
@@ -983,6 +1154,7 @@ enum va_base_instr: byte {
   VMV,
   VSADDU,
   VSADD,
+  VSMUL,
   VSSUBU,
   VSSUB,
   VAADDU,
@@ -1028,11 +1200,16 @@ enum va_base_instr: byte {
   VSLIDEUP,
   VSLIDEDOWN,
   VSLIDE1UP,
+  VFSLIDE1UP,
   VSLIDE1DOWN,
+  VFSLIDE1DOWN,
   VRGATHER,
+  VRGATHEREI16,
   VCOMPRESS,
+  VFWADD,
+  VFWSUB,
   // Not every Vector Instruction has a base
-  VA_NO_BASE
+  VA_NO_BASE,
 }
 
 va_base_instr va_get_base(riscv_instr_name_t INSTR) {
@@ -1180,6 +1357,8 @@ va_base_instr va_get_base(riscv_instr_name_t INSTR) {
   case riscv_instr_name_t.VSSUBU_VX: return va_base_instr.VSSUBU;
   case riscv_instr_name_t.VSSUB_VV: return va_base_instr.VSSUB;
   case riscv_instr_name_t.VSSUB_VX: return va_base_instr.VSSUB;
+  case riscv_instr_name_t.VSMUL_VV: return va_base_instr.VSMUL;
+  case riscv_instr_name_t.VSMUL_VX: return va_base_instr.VSMUL;
   case riscv_instr_name_t.VAADDU_VV: return va_base_instr.VAADDU;
   case riscv_instr_name_t.VAADDU_VX: return va_base_instr.VAADDU;
   case riscv_instr_name_t.VAADD_VV: return va_base_instr.VAADD;
@@ -1262,12 +1441,24 @@ va_base_instr va_get_base(riscv_instr_name_t INSTR) {
   case riscv_instr_name_t.VSLIDEUP_VX: return va_base_instr.VSLIDEUP;
   case riscv_instr_name_t.VSLIDEDOWN_VI: return va_base_instr.VSLIDEDOWN;
   case riscv_instr_name_t.VSLIDEDOWN_VX: return va_base_instr.VSLIDEDOWN;
+  case riscv_instr_name_t.VFSLIDE1UP_VF: return va_base_instr.VFSLIDE1UP;
   case riscv_instr_name_t.VSLIDE1UP_VX: return va_base_instr.VSLIDE1UP;
+  case riscv_instr_name_t.VFSLIDE1DOWN_VF: return va_base_instr.VFSLIDE1DOWN;
   case riscv_instr_name_t.VSLIDE1DOWN_VX: return va_base_instr.VSLIDE1DOWN;
   case riscv_instr_name_t.VRGATHER_VV: return va_base_instr.VRGATHER;
   case riscv_instr_name_t.VRGATHER_VX: return va_base_instr.VRGATHER;
   case riscv_instr_name_t.VRGATHER_VI: return va_base_instr.VRGATHER;
+  case riscv_instr_name_t.VRGATHEREI16_VV: return va_base_instr.VRGATHEREI16;
   case riscv_instr_name_t.VCOMPRESS_VM: return va_base_instr.VCOMPRESS;
+  case riscv_instr_name_t.VFWADD_VF: return va_base_instr.VFWADD;
+  case riscv_instr_name_t.VFWADD_VV: return va_base_instr.VFWADD;
+  case riscv_instr_name_t.VFWADD_WF: return va_base_instr.VFWADD;
+  case riscv_instr_name_t.VFWADD_WV: return va_base_instr.VFWADD;
+  case riscv_instr_name_t.VFWSUB_VF: return va_base_instr.VFWSUB;
+  case riscv_instr_name_t.VFWSUB_VV: return va_base_instr.VFWSUB;
+  case riscv_instr_name_t.VFWSUB_WF: return va_base_instr.VFWSUB;
+  case riscv_instr_name_t.VFWSUB_WV: return va_base_instr.VFWSUB;
+    
   default: return va_base_instr.VA_NO_BASE;
   }
 }

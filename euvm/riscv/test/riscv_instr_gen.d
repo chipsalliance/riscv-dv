@@ -41,7 +41,6 @@ int main(string[] args) {
   testbench.multicore(thread_index, thread_count);
   testbench.elaborate("test", args);
   testbench.set_seed(random_seed);
-  testbench.set_async_mode();
 
   return testbench.start();
 }

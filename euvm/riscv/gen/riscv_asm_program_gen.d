@@ -519,7 +519,9 @@ class riscv_asm_program_gen : uvm_object
       case riscv_instr_group_t.RV32ZBA,	riscv_instr_group_t.RV32ZBB,
 	riscv_instr_group_t.RV32ZBC, riscv_instr_group_t.RV32ZBS,
         riscv_instr_group_t.RV64ZBA, riscv_instr_group_t.RV64ZBB,
-	riscv_instr_group_t.RV64ZBC, riscv_instr_group_t.RV64ZBS: break; // No Misa bit for Zb* extensions
+	riscv_instr_group_t.RV64ZBC, riscv_instr_group_t.RV64ZBS,
+	riscv_instr_group_t.RVZPN, riscv_instr_group_t.RV32ZPN,
+	riscv_instr_group_t.RV64ZPN : break; // No Misa bit for Zb* extensions
       default : uvm_fatal(get_full_name(), format("%0s is not yet supported", sisa));
       }
     }

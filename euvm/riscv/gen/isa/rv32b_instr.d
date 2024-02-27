@@ -123,6 +123,10 @@ version (RISCV_INSTR_STRING_MIXIN) {
    { mixin RISCV_INSTR_MIXIN!(SHFLI,       I_FORMAT, ARITHMETIC, RV32B, UIMM); }
    class riscv_UNSHFLI_instr: riscv_b_instr
    { mixin RISCV_INSTR_MIXIN!(UNSHFLI,     I_FORMAT, ARITHMETIC, RV32B, UIMM); }
+   class riscv_UNZIP8_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(UNZIP8,     I_FORMAT, ARITHMETIC, RV32B, UIMM); }
+   class riscv_UNZIP16_instr: riscv_b_instr
+   { mixin RISCV_INSTR_MIXIN!(UNZIP16,     I_FORMAT, ARITHMETIC, RV32B, UIMM); }
    class riscv_BCOMPRESS_instr: riscv_b_instr
    { mixin RISCV_INSTR_MIXIN!(BCOMPRESS,   R_FORMAT, ARITHMETIC, RV32B); }
    class riscv_BDECOMPRESS_instr: riscv_b_instr

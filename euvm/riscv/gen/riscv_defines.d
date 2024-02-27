@@ -16,6 +16,7 @@
  */
 
 module riscv.gen.riscv_defines;
+import riscv.gen.riscv_opcodes_pkg;
 
 public import riscv.gen.riscv_instr_pkg: riscv_instr_name_t, riscv_instr_group_t,
   riscv_instr_category_t, riscv_instr_format_t, va_variant_t, imm_t;
@@ -144,6 +145,24 @@ void print_class_info(T)(T inst) {
   }
 }
 
+// string riscv_instr_var_return_mixin(riscv_instr_var_t VAR) {
+//   import std.format: format;
+//   return format("return _%s;\n", VAR);
+// }
+
+string riscv_instr_var_mixin(riscv_instr_var_t[] vars)
+{
+  import std.format: format;
+  string var_decls;
+  foreach (var; vars) {
+    riscv_instr_var_params_s params = riscv_instr_var_params[var];
+    assert (params._arg == var);
+    var_decls ~= (format("@rand ubvec!%s _%s;\n",
+			 params._msb - params._lsb, var));
+  }
+  return var_decls;
+}
+
 mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
 				 riscv_instr_format_t instr_format,
 				 riscv_instr_category_t instr_category,
@@ -151,33 +170,69 @@ mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
 				 imm_t imm_tp=imm_t.IMM)
 {
   import riscv.gen.riscv_opcodes_pkg;
+  import esdl: rand, ubvec;
 
-  static bool hasReg(riscv_opcodes_args_t r, riscv_opcodes_args_t[] vars) {
+  static bool hasReg(riscv_instr_var_t r, riscv_instr_var_t[] vars) {
     foreach (var; vars) if (var is r) return true;
       else continue;
     return false;
   }
 
-  static bool hasReg(riscv_opcodes_args_t[] regs, riscv_opcodes_args_t[] vars) {
+  static bool hasReg(riscv_instr_var_t[] regs, riscv_instr_var_t[] vars) {
     foreach (r; regs) if (hasReg(r, vars)) return true;
       else continue;
     return false;
   }
 
-  // static if (hasReg(riscv_opcodes_args_t.rs1)) {
+  auto get_var_value(riscv_instr_var_t VAR)() {
+    import std.format: format;
+    return __traits(getMember, this, format("_%s", VAR));
+  }
+
+  void fill_var_val(riscv_instr_var_t[] VL)(ref ubvec!32 match) {
+    static if (VL.length == 0) return;
+    else {
+      enum VAR = VL[0];
+      enum lsb = riscv_instr_var_params[VAR]._lsb;
+      enum msb = riscv_instr_var_params[VAR]._msb;
+      // pragma(msg, "lsb: ", lsb, ", msb: ", msb);
+      match[lsb..msb] = get_var_value!VAR;
+      fill_var_val!(VL[1..$])(match);
+    }
+  }
+
+  override ubvec!32 get_bin() {
+    enum params = riscv_instr_params[instr_n];
+    ubvec!32 mask = params._mask;
+    ubvec!32 match = params._match;
+
+    ubvec!32 retval = match;
+    
+    
+    enum var_list = params._var_list;
+
+    fill_var_val!(var_list)(retval);
+    
+    return retval;
+  }
+
+  // static if (hasReg(riscv_instr_var_t.rs1)) {
   //   @rand ubvec!5 rs1;
   // }
 
   
   enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
-  // enum RISCV_OPCODES_ARGS_T = riscv_opcode_params_list[instr_n]._args_t;
+  // enum RISCV_INSTR_VAR_T = riscv_opcode_params_list[instr_n]._var_t;
   // pragma (msg, riscv_opcode_params_list[instr_n]);
-  // enum RISCV_ARGS = riscv_instr_variables[instr_n];
-  // enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_ARGS);
+  // enum RISCV_VAR = riscv_instr_variables[instr_n];
+  // enum HAS_RS1 = hasReg(riscv_instr_var_t.rs1, RISCV_VAR);
 
   enum RISCV_PARAMS = riscv_instr_params[instr_n];
   static assert (RISCV_PARAMS._name == instr_n);
-  enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_PARAMS._args);
+  enum HAS_RS1 = hasReg(riscv_instr_var_t.rs1, RISCV_PARAMS._var_list);
+
+  // pragma(msg, riscv_instr_var_mixin(RISCV_PARAMS._var_list));
+  mixin(riscv_instr_var_mixin(RISCV_PARAMS._var_list));
 
   // pragma(msg, instr_n.stringof ~ " " ~ HAS_RS1.stringof);
   mixin uvm_object_utils;
@@ -195,7 +250,6 @@ mixin template RISCV_INSTR_MIXIN(riscv_instr_name_t instr_n,
   // override void post_randomize() {
   //   print_class_info(this);
   // }
-
 
   static if (instr_n == riscv_instr_name_t.SLLIW ||
 	     instr_n == riscv_instr_name_t.SRLIW ||
@@ -236,28 +290,29 @@ mixin template RISCV_C_INSTR_MIXIN(riscv_instr_name_t instr_n,
   import esdl.rand: constraint;
   import riscv.gen.riscv_instr_pkg: riscv_reg_t;
 
-  static bool hasReg(riscv_opcodes_args_t r, riscv_opcodes_args_t[] vars) {
+  static bool hasReg(riscv_instr_var_t r, riscv_instr_var_t[] vars) {
     foreach (var; vars) if (var is r) return true;
       else continue;
     return false;
   }
 
-  static bool hasReg(riscv_opcodes_args_t[] regs, riscv_opcodes_args_t[] vars) {
+  static bool hasReg(riscv_instr_var_t[] regs, riscv_instr_var_t[] vars) {
     foreach (r; regs) if (hasReg(r, vars)) return true;
       else continue;
     return false;
   }
 
   enum riscv_instr_name_t RISCV_INSTR_NAME = instr_n;
-  // enum RISCV_OPCODES_ARGS_T = riscv_opcode_params_list[instr_n]._args_t;
+  // enum RISCV_INSTR_VAR_T = riscv_opcode_params_list[instr_n]._var_t;
   // pragma (msg, riscv_opcode_params_list[instr_n]);
-  // enum RISCV_ARGS = riscv_instr_variables[instr_n];
-  // enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_ARGS);
+  // enum RISCV_VAR = riscv_instr_variables[instr_n];
+  // enum HAS_RS1 = hasReg(riscv_instr_var_t.rs1, RISCV_VAR);
 
   enum RISCV_PARAMS = riscv_instr_params[instr_n];
   static assert (RISCV_PARAMS._name == instr_n);
-  enum HAS_RS1 = hasReg(riscv_opcodes_args_t.rs1, RISCV_PARAMS._args);
+  enum HAS_RS1 = hasReg(riscv_instr_var_t.rs1, RISCV_PARAMS._var_list);
 
+  // pragma(msg, instr_n.stringof ~ " " ~ HAS_RS1.stringof);
   mixin uvm_object_utils;
   this(string name="") {
     super(name);
@@ -273,7 +328,6 @@ mixin template RISCV_C_INSTR_MIXIN(riscv_instr_name_t instr_n,
   // override void post_randomize() {
   //   print_class_info(this);
   // }
-
 
   static if (imm_tp == imm_t.NZIMM || imm_tp == imm_t.NZUIMM) {
     constraint! q{
@@ -351,23 +405,23 @@ mixin template RISCV_C_INSTR_MIXIN(riscv_instr_name_t instr_n,
     } c_rdnsp_cst;
   }
   
-  static if (hasReg(riscv_opcodes_args_t.rs1_p, RISCV_PARAMS._args) ||
-	     hasReg(riscv_opcodes_args_t.rd_rs1_p, RISCV_PARAMS._args) ||
-	     hasReg(riscv_opcodes_args_t.c_sreg1, RISCV_PARAMS._args)) {
+  static if (hasReg(riscv_instr_var_t.rs1_p, RISCV_PARAMS._var_list) ||
+	     hasReg(riscv_instr_var_t.rd_rs1_p, RISCV_PARAMS._var_list) ||
+	     hasReg(riscv_instr_var_t.c_sreg1, RISCV_PARAMS._var_list)) {
     constraint! q{
       rs1 inside [riscv_reg_t.S0:riscv_reg_t.A5];
     } c_rs1_cst;
   }
 
-  static if (hasReg(riscv_opcodes_args_t.rs2_p, RISCV_PARAMS._args) ||
-	     hasReg(riscv_opcodes_args_t.c_sreg2, RISCV_PARAMS._args)) {
+  static if (hasReg(riscv_instr_var_t.rs2_p, RISCV_PARAMS._var_list) ||
+	     hasReg(riscv_instr_var_t.c_sreg2, RISCV_PARAMS._var_list)) {
     constraint! q{
       rs2 inside [riscv_reg_t.S0:riscv_reg_t.A5];
     } c_rs2_cst;
   }
 
-  static if (hasReg(riscv_opcodes_args_t.rd_p, RISCV_PARAMS._args) ||
-	     hasReg(riscv_opcodes_args_t.rd_rs1_p, RISCV_PARAMS._args)) {
+  static if (hasReg(riscv_instr_var_t.rd_p, RISCV_PARAMS._var_list) ||
+	     hasReg(riscv_instr_var_t.rd_rs1_p, RISCV_PARAMS._var_list)) {
     constraint! q{
       rd inside [riscv_reg_t.S0:riscv_reg_t.A5];
     } c_rd_cst;
