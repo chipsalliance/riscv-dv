@@ -36,6 +36,9 @@ public import riscv.gen.isa.rv32zba_instr;
 public import riscv.gen.isa.rv32zbb_instr;
 public import riscv.gen.isa.rv32zbc_instr;
 public import riscv.gen.isa.rv32zbs_instr;
+public import riscv.gen.isa.rvzpn_instr;
+public import riscv.gen.isa.rv32zpn_instr;
+public import riscv.gen.isa.rv64zpn_instr;
 
 public import riscv.gen.isa.custom.riscv_custom_instr;
 public import riscv.gen.isa.custom.riscv_custom_instr_enum;
