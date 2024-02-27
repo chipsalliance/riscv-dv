@@ -130,7 +130,15 @@
 `define CSR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rd          : coverpoint instr.rd; \
+    cp_rs1 : coverpoint instr.rs1; \
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard;)
+
+`define CSRI_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_rd          : coverpoint instr.rd; \
+    `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
+      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
+    })
 
 `define CR_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
@@ -330,6 +338,7 @@
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
     cp_fs1         : coverpoint instr.fs1; \
     cp_fd          : coverpoint instr.fd;  \
+    cp_rm          : coverpoint instr.rm;  \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
     cp_fd_sign     : coverpoint instr.fd_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
@@ -481,7 +490,7 @@
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
     } \
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
-      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD, WAW_HAZARD}; \
+      bins valid_hazard[] = {NO_HAZARD, WAR_HAZARD}; \
     })
 
 // Copy of B_R_INSTR_CG_BEGIN
@@ -614,7 +623,12 @@ class riscv_instr_cover_group;
   `U_INSTR_CG_BEGIN(lui)
   `CG_END
 
-  `U_INSTR_CG_BEGIN(auipc)
+  `INSTR_CG_BEGIN(auipc)
+    cp_rd          : coverpoint instr.rd;
+    cp_rd_sign     : coverpoint instr.rd_sign;
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard {
+      bins valid_hazard[] = {NO_HAZARD,WAR_HAZARD, WAW_HAZARD};
+    })
   `CG_END
 
   // Shift instructions
@@ -1645,24 +1659,21 @@ class riscv_instr_cover_group;
 
   // CSR instructions
   `CSR_INSTR_CG_BEGIN(csrrw)
-    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrs)
-    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
   `CSR_INSTR_CG_BEGIN(csrrc)
-    cp_rs1 : coverpoint instr.rs1;
   `CG_END
 
-  `CSR_INSTR_CG_BEGIN(csrrwi)
+  `CSRI_INSTR_CG_BEGIN(csrrwi)
   `CG_END
 
-  `CSR_INSTR_CG_BEGIN(csrrsi)
+  `CSRI_INSTR_CG_BEGIN(csrrsi)
   `CG_END
 
-  `CSR_INSTR_CG_BEGIN(csrrci)
+  `CSRI_INSTR_CG_BEGIN(csrrci)
   `CG_END
 
   covergroup rv32i_misc_cg with function sample(riscv_instr instr);
@@ -1933,7 +1944,7 @@ class riscv_instr_cover_group;
       ignore_bins non_zero = {ZERO};
     }
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard {
-      bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD};
+      bins valid_hazard[] = {NO_HAZARD, WAW_HAZARD};
     })
   `CG_END
 
@@ -2042,7 +2053,6 @@ class riscv_instr_cover_group;
   `CG_END
 
   `ZBKB_I_INSTR_CG_BEGIN(brev8)
-    `CP_VALUE_RANGE(reverse_mode, instr.imm, 0, XLEN-1)
   `CG_END
 
   `ZBKB_I_INSTR_CG_BEGIN(zip)

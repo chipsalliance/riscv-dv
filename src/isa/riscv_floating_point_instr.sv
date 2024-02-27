@@ -205,6 +205,10 @@ class riscv_floating_point_instr extends riscv_instr;
       super.update_src_regs(operands);
       return;
     end
+    if(operands.size() > 2) begin
+      $display("rm? %0s", operands[operands.size()-1]);
+      rm = get_rm(operands[operands.size()-1].toupper());
+    end
     case(format)
       I_FORMAT: begin
         // TODO ovpsim has an extra operand rte as below
@@ -237,9 +241,9 @@ class riscv_floating_point_instr extends riscv_instr;
         end
 
         if (has_fs2 || category == CSR) begin
-          `DV_CHECK_FATAL(operands.size() == 3)
+          `DV_CHECK_FATAL((operands.size() == 3 || operands.size() == 4))
         end else begin
-          `DV_CHECK_FATAL(operands.size() == 2)
+          `DV_CHECK_FATAL((operands.size() == 2 || operands.size() == 3))
         end
         if(category != CSR) begin
           fs1 = get_fpr(operands[1]);
@@ -251,7 +255,7 @@ class riscv_floating_point_instr extends riscv_instr;
         end
       end
       R4_FORMAT: begin
-        `DV_CHECK_FATAL(operands.size() == 4)
+        `DV_CHECK_FATAL((operands.size() == 4 || operands.size() == 5))
         fs1 = get_fpr(operands[1]);
         fs1_value = get_gpr_state(operands[1]);
         fs2 = get_fpr(operands[2]);
@@ -273,6 +277,10 @@ class riscv_floating_point_instr extends riscv_instr;
       rd_value = get_gpr_state(reg_name);
     end
   endfunction : update_dst_regs
+
+  virtual function f_rounding_mode_t get_rm(input string str);
+    uvm_enum_wrapper#(f_rounding_mode_t)::from_name(str, get_rm);
+  endfunction : get_rm
 
   virtual function riscv_fpr_t get_fpr(input string str);
     str = str.toupper();
