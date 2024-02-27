@@ -44,6 +44,10 @@ version(RV32IMCB) {
    pragma (msg, "Using target: RV32IMC");
    public import riscv.gen.target.rv32imc.riscv_core_setting;
  }
+ else version(RV64IMP) {
+   pragma (msg, "Using target: RV64IMP");
+   public import riscv.gen.target.rv64imp.riscv_core_setting;
+ }
  else {
    pragma (msg, "Using Default target: RV64IMC");
    public import riscv.gen.target.rv64imc.riscv_core_setting;
