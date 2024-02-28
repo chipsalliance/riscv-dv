@@ -206,7 +206,6 @@ class riscv_floating_point_instr extends riscv_instr;
       return;
     end
     if(operands.size() > 2) begin
-      $display("rm? %0s", operands[operands.size()-1]);
       rm = get_rm(operands[operands.size()-1].toupper());
     end
     case(format)
