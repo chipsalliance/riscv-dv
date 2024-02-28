@@ -1388,7 +1388,7 @@ class riscv_instr_cover_group;
     `CP_VALUE_RANGE(num_bit_rotate, instr.imm, 0, XLEN/2-1)
   `CG_END
 
-  `ZBB_R_INSTR_CG_BEGIN(rev8)
+  `ZBB_I_INSTR_CG_BEGIN(rev8)
   `CG_END
 
   `ZBC_R_INSTR_CG_BEGIN(clmulr)
@@ -2471,42 +2471,52 @@ class riscv_instr_cover_group;
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV32ZFA)
-      fli_h_cg       = new();
       fli_s_cg       = new();
-      fli_d_cg       = new();
-      fli_q_cg       = new();
-      fminm_h_cg       = new();
-      fminm_s_cg       = new();
-      fminm_d_cg       = new();
-      fminm_q_cg       = new();
-      fmaxm_h_cg       = new();
       fmaxm_s_cg       = new();
-      fmaxm_d_cg       = new();
-      fmaxm_q_cg       = new();
-      fround_h_cg       = new();
-      froundnx_h_cg       = new();
       fround_s_cg       = new();
       froundnx_s_cg       = new();
-      fround_d_cg       = new();
-      froundnx_d_cg       = new();
-      fround_q_cg       = new();
-      froundnx_q_cg       = new();
-      fcvtmod_w_d_cg       = new();
-      fmvh_x_d_cg       = new();
-      fmvp_d_x_cg       = new();
-      fleq_h_cg       = new();
-      fltq_h_cg       = new();
+      fminm_s_cg       = new();
       fleq_s_cg       = new();
       fltq_s_cg       = new();
-      fleq_d_cg       = new();
-      fltq_d_cg       = new();
-      fleq_q_cg       = new();
-      fltq_q_cg       = new();
+      if(RV32ZFH inside {supported_isa}) begin
+        fli_h_cg       = new();
+        fminm_h_cg       = new();
+        fmaxm_h_cg       = new();
+        fround_h_cg       = new();
+        froundnx_h_cg       = new();
+        fleq_h_cg       = new();
+        fltq_h_cg       = new();
+      end
+      if(RV32D inside {supported_isa}) begin
+        fli_d_cg       = new();
+        fminm_d_cg       = new();
+        fmaxm_d_cg       = new();
+        fround_d_cg       = new();
+        froundnx_d_cg       = new();
+        fcvtmod_w_d_cg       = new();
+        fleq_d_cg       = new();
+        fltq_d_cg       = new();
+        if(XLEN == 32) begin
+          fmvh_x_d_cg       = new();
+          fmvp_d_x_cg       = new();
+        end
+      end
+      if (RV32Q inside {supported_isa}) begin
+        fminm_q_cg       = new();
+        fmaxm_q_cg       = new();
+        fround_q_cg       = new();
+        froundnx_q_cg       = new();
+        fli_q_cg       = new();
+        fleq_q_cg       = new();
+        fltq_q_cg       = new();
+      end
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV64ZFA)
-      fmvh_x_q_cg       = new();
-      fmvp_q_x_cg       = new();
+      if (RV32Q inside {supported_isa}) begin
+        fmvh_x_q_cg       = new();
+        fmvp_q_x_cg       = new();
+      end
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV64F)
@@ -2591,8 +2601,10 @@ class riscv_instr_cover_group;
       pack_cg        = new();
       packh_cg       = new();
       brev8_cg       = new();
-      zip_cg         = new();
-      unzip_cg       = new();
+      if(XLEN == 32) begin
+        zip_cg         = new();
+        unzip_cg       = new();
+      end
     `CG_SELECTOR_END
 
     `CG_SELECTOR_BEGIN(RV32ZBKC)
