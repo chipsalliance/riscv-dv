@@ -478,9 +478,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "rev16":
         instr_name = "grevi"
         operands += ",16"
-    elif instr_name == "rev8":
-        instr_name = "grevi"
-        operands += ",24"
     elif instr_name == "rev4":
         instr_name = "grevi"
         operands += ",28"
