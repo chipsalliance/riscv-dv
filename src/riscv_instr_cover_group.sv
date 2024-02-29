@@ -85,7 +85,9 @@
     cp_rs1         : coverpoint instr.rs1 { \
         `DV(ignore_bins zero = {ZERO};) \
     } \
-    cp_rs2         : coverpoint instr.rs2; \
+    cp_rs2         : coverpoint instr.rs2 { \
+        `DV(ignore_bins zero = {ZERO};) \
+    } \
     cp_imm_sign    : coverpoint instr.imm_sign; \
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
