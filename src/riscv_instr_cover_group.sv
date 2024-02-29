@@ -323,7 +323,6 @@
     cp_fs2         : coverpoint instr.fs2; \
     cp_fd          : coverpoint instr.fd;  \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
-    cp_rm          : coverpoint instr.rm; \
     cp_fs2_sign    : coverpoint instr.fs2_sign; \
     cp_fd_sign     : coverpoint instr.fd_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
@@ -817,50 +816,62 @@ class riscv_instr_cover_group;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fadd_s)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
   
   `FP_R_INSTR_CG_BEGIN(fadd_h, H)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fadd_d, D)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_s)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_h, H)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_d, D)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fmul_s)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fmul_h, H)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fmul_d, D)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fdiv_s)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fdiv_d, D)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fdiv_h, H)
+    cp_rm          : coverpoint instr.rm;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
@@ -948,7 +959,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_s_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
-    cp_rm          : coverpoint instr.rm;
+    // cp_rm          : coverpoint instr.rm; //not supported by the compiler yet
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -970,7 +981,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_d_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
-    cp_rm          : coverpoint instr.rm;
+    // cp_rm          : coverpoint instr.rm; //not supported by the compiler yet
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -992,7 +1003,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_q_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
-    cp_rm          : coverpoint instr.rm;
+    // cp_rm          : coverpoint instr.rm; //not supported by the compiler yet
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -1014,7 +1025,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_d_s, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
-    cp_rm          : coverpoint instr.rm;
+    // cp_rm          : coverpoint instr.rm; //not supported by the compiler yet
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, S)
