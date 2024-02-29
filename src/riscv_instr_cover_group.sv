@@ -106,7 +106,7 @@
     `DV(cp_gpr_hazard  : coverpoint instr.gpr_hazard;) \
     `DV(cp_lsu_hazard  : coverpoint instr.lsu_hazard { \
       bins valid_hazard[] = {NO_HAZARD, RAW_HAZARD}; \
-    }) \
+    })
 
 `define I_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
@@ -120,8 +120,9 @@
 `define U_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rd          : coverpoint instr.rd; \
-    cp_rd_sign     : coverpoint instr.rd_sign; \
-    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard { \
+      bins valid_hazard[] = {NO_HAZARD, WAW_HAZARD, WAR_HAZARD}; \
+    })
 
 `define J_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
@@ -627,7 +628,6 @@ class riscv_instr_cover_group;
 
   `INSTR_CG_BEGIN(auipc)
     cp_rd          : coverpoint instr.rd;
-    cp_rd_sign     : coverpoint instr.rd_sign;
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard {
       bins valid_hazard[] = {NO_HAZARD,WAR_HAZARD, WAW_HAZARD};
     })
