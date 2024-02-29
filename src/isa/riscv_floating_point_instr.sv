@@ -326,6 +326,10 @@ class riscv_floating_point_instr extends riscv_instr;
     end else if (instr_name == FCVT_D_S) begin
       fs1_sign = get_fp_operand_sign(fs1_value, 31);
       fd_sign = get_fp_operand_sign(fd_value, 63);
+    end else if (instr_name == FCVT_H_L) begin
+      fd_sign = get_fp_operand_sign(fd_value, 15);
+    end else if (instr_name == FCVT_L_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
     end else begin
       fs1_sign = get_fp_operand_sign(fs1_value, 63);
       fs2_sign = get_fp_operand_sign(fs2_value, 63);
