@@ -323,6 +323,7 @@
     cp_fs2         : coverpoint instr.fs2; \
     cp_fd          : coverpoint instr.fd;  \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
+    cp_rm          : coverpoint instr.rm; \
     cp_fs2_sign    : coverpoint instr.fs2_sign; \
     cp_fd_sign     : coverpoint instr.fd_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
@@ -336,7 +337,6 @@
     cp_imm_tbl_idx : coverpoint instr.imm_tbl_idx; \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
-// TODO add rm field as coverpoint
 `define FP_FROUND_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
     cp_fs1         : coverpoint instr.fs1; \
@@ -354,6 +354,7 @@
     cp_fs2         : coverpoint instr.fs2; \
     cp_fs3         : coverpoint instr.fs3; \
     cp_fd          : coverpoint instr.fd;  \
+    cp_rm          : coverpoint instr.rm;  \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
     cp_fs2_sign    : coverpoint instr.fs2_sign; \
     cp_fs3_sign    : coverpoint instr.fs3_sign; \
@@ -369,8 +370,8 @@
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
     cp_fs1         : coverpoint instr.fs1; \
     cp_fd          : coverpoint instr.fd;  \
+    cp_rm          : coverpoint instr.rm; \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
-    cp_fd_sign     : coverpoint instr.fd_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
     `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
@@ -936,6 +937,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_s_d, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, D)
@@ -946,6 +948,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_s_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -956,6 +959,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_h_s, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, S)
@@ -966,6 +970,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_d_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -976,6 +981,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_h_d, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, D)
@@ -986,6 +992,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_q_h, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
@@ -996,6 +1003,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_h_q, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, Q)
@@ -1006,6 +1014,7 @@ class riscv_instr_cover_group;
   `INSTR_CG_BEGIN(fcvt_d_s, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
     cp_fd          : coverpoint instr.fd;
+    cp_rm          : coverpoint instr.rm;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, S)
@@ -1014,39 +1023,51 @@ class riscv_instr_cover_group;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_w_h)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_wu_h, H , UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_l_h, H)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_lu_h, H, UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_w_s)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
   
   `FP_F2I_INSTR_CG_BEGIN(fcvt_wu_s, , UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_l_s)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_lu_s, UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_l_d, D)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_lu_d, D, UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_w_d, D)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_F2I_INSTR_CG_BEGIN(fcvt_wu_d, D, UNSIGN)
+    cp_rm          : coverpoint instr.rm;
   `CG_END
 
   `FP_I2F_INSTR_CG_BEGIN(fcvt_s_w)
@@ -1179,7 +1200,6 @@ class riscv_instr_cover_group;
 
   `FP_FLI_INSTR_CG_BEGIN(fli_q, Q)
   `CG_END
-  // <- TODO
 
   // fminm/fmaxm
   `FP_R_INSTR_CG_BEGIN(fminm_h, H)
