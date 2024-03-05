@@ -362,7 +362,6 @@
     cp_fs2_sign    : coverpoint instr.fs2_sign; \
     cp_fs3_sign    : coverpoint instr.fs3_sign; \
     cp_fd_sign     : coverpoint instr.fd_sign; \
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign, cp_fd_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
     `FP_SPECIAL_VALUES_CP(instr.fs2_value, fs2_value, PRECISION) \
     `FP_SPECIAL_VALUES_CP(instr.fs3_value, fs3_value, PRECISION) \
@@ -821,32 +820,32 @@ class riscv_instr_cover_group;
 
   `FP_R_INSTR_CG_BEGIN(fadd_s)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
   
   `FP_R_INSTR_CG_BEGIN(fadd_h, H)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fadd_d, D)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_s)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_h, H)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fsub_d, D)
     cp_rm          : coverpoint instr.rm;
-    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fd_sign;
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign;
   `CG_END
 
   `FP_R_INSTR_CG_BEGIN(fmul_s)
@@ -913,39 +912,51 @@ class riscv_instr_cover_group;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmadd_s)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmadd_d, D)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmadd_h, H)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmadd_s)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmadd_d, D)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmadd_h, H)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmsub_s)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmsub_d, D)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fmsub_h, H)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmsub_s)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmsub_d, D)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   `FP_R4_INSTR_CG_BEGIN(fnmsub_h, H)
+    cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
   // FCVT floating to floating
