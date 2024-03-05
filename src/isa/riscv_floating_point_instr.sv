@@ -334,30 +334,54 @@ class riscv_floating_point_instr extends riscv_instr;
       fs1_sign = get_fp_operand_sign(fs1_value, 15);
     end else if (instr_name == FMV_H_X) begin
       fd_sign = get_fp_operand_sign(fd_value, 15);
+    end else if (instr_name == FMINM_S) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 31);
+      fs2_sign = get_fp_operand_sign(fs2_value, 31);
+      fd_sign = get_fp_operand_sign(fd_value, 31);
     end else if (instr_name == FSGNJX_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FSGNJ_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FSGNJN_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMUL_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FDIV_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMIN_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMAX_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMINM_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMINM_S) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 31);
+      fs2_sign = get_fp_operand_sign(fs2_value, 31);
       fd_sign = get_fp_operand_sign(fd_value, 31);
     end else if (instr_name == FMAXM_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMAXM_S) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 31);
+      fs2_sign = get_fp_operand_sign(fs2_value, 31);
       fd_sign = get_fp_operand_sign(fd_value, 31);
-    end else if (instr_name == FMSUB_H) begin
-      fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FROUND_H) begin
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FROUNDNX_H) begin
@@ -366,17 +390,33 @@ class riscv_floating_point_instr extends riscv_instr;
       fd_sign = get_fp_operand_sign(fd_value, 31);
     end else if (instr_name == FROUNDNX_S) begin
       fd_sign = get_fp_operand_sign(fd_value, 31);
-    end else if (instr_name == FADD_S) begin
-      fd_sign = get_fp_operand_sign(fd_value, 31);
     end else if (instr_name == FADD_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FSUB_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FMADD_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
+      fs3_sign = get_fp_operand_sign(fs3_value, 15);
+      fd_sign = get_fp_operand_sign(fd_value, 15);
+    end else if (instr_name == FMSUB_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
+      fs3_sign = get_fp_operand_sign(fs3_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FNMSUB_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
+      fs3_sign = get_fp_operand_sign(fs3_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else if (instr_name == FNMADD_H) begin
+      fs1_sign = get_fp_operand_sign(fs1_value, 15);
+      fs2_sign = get_fp_operand_sign(fs2_value, 15);
+      fs3_sign = get_fp_operand_sign(fs3_value, 15);
       fd_sign = get_fp_operand_sign(fd_value, 15);
     end else begin
       fs1_sign = get_fp_operand_sign(fs1_value, 63);
