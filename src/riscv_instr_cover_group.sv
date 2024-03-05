@@ -251,6 +251,7 @@
     cp_imm_sign : coverpoint instr.imm_sign;
 
 // half/single/double precision floating point special values coverpoint
+  //non quiet NaN removed since "if the result of a floating-point operation is NaN, it is the canonical NaN"
 `define FP_SPECIAL_VALUES_CP(VAR, NAME, PRECISION = S) \
     cp_sfp_special_values_on_``NAME`` : coverpoint VAR[31:0] { \
       option.weight = (`"PRECISION`" == "S"); \
@@ -258,7 +259,7 @@
       bins infinity[] = {32'h7f80_0000, 32'hff80_0000}; \
       bins largest[]  = {32'h7f7f_ffff, 32'hff7f_ffff}; \
       bins zeros[]    = {32'h0000_0000, 32'h8000_0000}; \
-      bins NaN[]      = {32'h7f80_0001, 32'h7fc0_0000}; \
+      bins NaN[]      = {32'h7fc0_0000}; \
     } \
     cp_sfp_subnormal_on_``NAME`` : coverpoint VAR[30:SINGLE_PRECISION_FRACTION_BITS] == 0 { \
       option.weight = (`"PRECISION`" == "S"); \
@@ -270,7 +271,7 @@
       bins infinity[] = {64'h7ff0_0000_0000_0000, 64'hfff0_0000_0000_0000}; \
       bins largest[]  = {64'h7fef_ffff_ffff_ffff, 64'hffef_ffff_ffff_ffff}; \
       bins zeros[]    = {64'h0000_0000_0000_0000, 64'h8000_0000_0000_0000}; \
-      bins NaN[]      = {64'h7ff0_0000_0000_0001, 64'h7ff8_0000_0000_0000}; \
+      bins NaN[]      = {64'h7ff8_0000_0000_0000}; \
     } \
     cp_dfp_subnormal_on_``NAME`` : coverpoint VAR[62:DOUBLE_PRECISION_FRACTION_BITS] == 0 { \
       option.weight = (`"PRECISION`" == "D"); \
@@ -282,7 +283,7 @@
       bins infinity[] = {16'h7c00, 16'hfc00}; \
       bins largest[]  = {16'h7bff, 16'hfbff}; \
       bins zero[]     = {16'h0000, 32'h8000}; \
-      bins NaN[]      = {16'h7c01, 32'h7e00}; \
+      bins NaN[]      = {32'h7e00}; \
     } \
     cp_hfp_subnormal_on_``NAME`` : coverpoint VAR[14:HALF_PRECISION_FRACTION_BITS] == 0 { \
       option.weight = (`"PRECISION`" == "H"); \
@@ -368,6 +369,42 @@
     `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
+// half/single/double precision floating point special values coverpoint for square root result
+`define FSQRT_SPECIAL_VALUES_CP(VAR, NAME, PRECISION = S) \
+    cp_sfp_special_values_on_``NAME`` : coverpoint VAR[31:0] { \
+      option.weight = (`"PRECISION`" == "S"); \
+      type_option.weight = (`"PRECISION`" == "S"); \
+      bins infinity[] = {32'h7f80_0000}; \
+      bins zeros[]    = {32'h0000_0000, 32'h8000_0000}; \
+      bins NaN[]      = {32'h7fc0_0000}; \
+    } \
+    cp_sfp_subnormal_on_``NAME`` : coverpoint VAR[30:SINGLE_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "S"); \
+      type_option.weight = (`"PRECISION`" == "S"); \
+    } \
+    cp_dfp_special_values_on_``NAME`` : coverpoint VAR { \
+      option.weight = (`"PRECISION`" == "D"); \
+      type_option.weight = (`"PRECISION`" == "D"); \
+      bins infinity[] = {64'h7ff0_0000_0000_0000}; \
+      bins zeros[]    = {64'h0000_0000_0000_0000, 64'h8000_0000_0000_0000}; \
+      bins NaN[]      = {64'h7ff8_0000_0000_0000}; \
+    } \
+    cp_dfp_subnormal_on_``NAME`` : coverpoint VAR[62:DOUBLE_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "D"); \
+      type_option.weight = (`"PRECISION`" == "D"); \
+    } \
+    cp_hfp_special_values_on_``NAME`` : coverpoint VAR[15:0] { \
+      option.weight = (`"PRECISION`" == "H"); \
+      type_option.weight = (`"PRECISION`" == "H"); \
+      bins infinity[] = {16'h7c00}; \
+      bins zero[]     = {16'h0000, 32'h8000}; \
+      bins NaN[]      = {32'h7e00}; \
+    } \
+    cp_hfp_subnormal_on_``NAME`` : coverpoint VAR[14:HALF_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "H"); \
+      type_option.weight = (`"PRECISION`" == "H"); \
+    }
+
 `define FSQRT_INSTR_CG_BEGIN(INSTR_NAME, PRECISION = S) \
   `INSTR_CG_BEGIN(INSTR_NAME, riscv_floating_point_instr) \
     cp_fs1         : coverpoint instr.fs1; \
@@ -375,7 +412,7 @@
     cp_rm          : coverpoint instr.rm; \
     cp_fs1_sign    : coverpoint instr.fs1_sign; \
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, PRECISION) \
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
+    `FSQRT_SPECIAL_VALUES_CP(instr.fd_value, fd_value, PRECISION) \
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 // FCVT integer to floating
@@ -959,6 +996,41 @@ class riscv_instr_cover_group;
     cp_sign_cross: cross cp_fs1_sign, cp_fs2_sign, cp_fs3_sign;
   `CG_END
 
+`define FP_NONINF_SPECIAL_VALUES_CP(VAR, NAME, PRECISION = S) \
+    cp_sfp_special_values_on_``NAME`` : coverpoint VAR[31:0] { \
+      option.weight = (`"PRECISION`" == "S"); \
+      type_option.weight = (`"PRECISION`" == "S"); \
+      bins largest[]  = {32'h7f7f_ffff, 32'hff7f_ffff}; \
+      bins zeros[]    = {32'h0000_0000, 32'h8000_0000}; \
+      bins NaN[]      = {32'h7fc0_0000}; \
+    } \
+    cp_sfp_subnormal_on_``NAME`` : coverpoint VAR[30:SINGLE_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "S"); \
+      type_option.weight = (`"PRECISION`" == "S"); \
+    } \
+    cp_dfp_special_values_on_``NAME`` : coverpoint VAR { \
+      option.weight = (`"PRECISION`" == "D"); \
+      type_option.weight = (`"PRECISION`" == "D"); \
+      bins largest[]  = {64'h7fef_ffff_ffff_ffff, 64'hffef_ffff_ffff_ffff}; \
+      bins zeros[]    = {64'h0000_0000_0000_0000, 64'h8000_0000_0000_0000}; \
+      bins NaN[]      = {64'h7ff8_0000_0000_0000}; \
+    } \
+    cp_dfp_subnormal_on_``NAME`` : coverpoint VAR[62:DOUBLE_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "D"); \
+      type_option.weight = (`"PRECISION`" == "D"); \
+    } \
+    cp_hfp_special_values_on_``NAME`` : coverpoint VAR[15:0] { \
+      option.weight = (`"PRECISION`" == "H"); \
+      type_option.weight = (`"PRECISION`" == "H"); \
+      bins largest[]  = {16'h7bff, 16'hfbff}; \
+      bins zero[]     = {16'h0000, 32'h8000}; \
+      bins NaN[]      = {32'h7e00}; \
+    } \
+    cp_hfp_subnormal_on_``NAME`` : coverpoint VAR[14:HALF_PRECISION_FRACTION_BITS] == 0 { \
+      option.weight = (`"PRECISION`" == "H"); \
+      type_option.weight = (`"PRECISION`" == "H"); \
+    }
+
   // FCVT floating to floating
   `INSTR_CG_BEGIN(fcvt_s_d, riscv_floating_point_instr)
     cp_fs1         : coverpoint instr.fs1;
@@ -978,7 +1050,7 @@ class riscv_instr_cover_group;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, S)
+    `FP_NONINF_SPECIAL_VALUES_CP(instr.fd_value, fd_value, S)
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
   `CG_END
 
@@ -1000,7 +1072,7 @@ class riscv_instr_cover_group;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, D)
+    `FP_NONINF_SPECIAL_VALUES_CP(instr.fd_value, fd_value, D)
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
   `CG_END
 
@@ -1022,7 +1094,7 @@ class riscv_instr_cover_group;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, H)
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, Q)
+    `FP_NONINF_SPECIAL_VALUES_CP(instr.fd_value, fd_value, Q)
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
   `CG_END
 
@@ -1044,7 +1116,7 @@ class riscv_instr_cover_group;
     cp_fs1_sign    : coverpoint instr.fs1_sign;
     cp_fd_sign     : coverpoint instr.fd_sign;
     `FP_SPECIAL_VALUES_CP(instr.fs1_value, fs1_value, S)
-    `FP_SPECIAL_VALUES_CP(instr.fd_value, fd_value, D)
+    `FP_NONINF_SPECIAL_VALUES_CP(instr.fd_value, fd_value, D)
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
   `CG_END
 
@@ -2158,14 +2230,21 @@ class riscv_instr_cover_group;
       wildcard bins c_reserv_1 = {16'b1001_11xx_x11x_xx01};
       wildcard bins c_jr       = {16'b1000_0000_0000_0010};
       wildcard bins c_lwsp     = {16'b010x_0000_0xxx_xx10};
-      wildcard bins c_lqsp     = {16'b001x_0000_0xxx_xx10};
       wildcard bins c_ldsp     = {16'b011x_0000_0xxx_xx10};
+    }
+  endgroup
+
+  covergroup illegal_compressed_instr_q_cg with function sample(bit [31:0] binary);
+    cp_point : coverpoint binary[15:0] {
+      wildcard bins c_lqsp     = {16'b001x_0000_0xxx_xx10};
     }
   endgroup
 
   // Cover all non-compressed opcode
   covergroup opcode_cg with function sample(bit [4:0] opcode);
-    cp_opcode: coverpoint opcode;
+    cp_opcode: coverpoint opcode{
+      ignore_bins opcode = {5'b01011};
+    }
   endgroup
 
   // Cover all compressed instruction opcode
@@ -2344,6 +2423,9 @@ class riscv_instr_cover_group;
         hint_cg = new();
         if (!cfg.disable_compressed_instr) begin
           illegal_compressed_instr_cg = new();
+          if(RV32Q inside {supported_isa}) begin
+            illegal_compressed_instr_q_cg = new();
+          end 
         end
       end
     end
@@ -2784,6 +2866,9 @@ class riscv_instr_cover_group;
       `SAMPLE(hint_cg, instr);
       `SAMPLE(compressed_opcode_cg, instr.binary[15:0]);
       `SAMPLE(illegal_compressed_instr_cg, instr.binary);
+      if (RV32C inside {supported_isa}) begin
+        `SAMPLE(illegal_compressed_instr_q_cg, instr.binary);
+      end
     end
     if (instr.binary[1:0] == 2'b11) begin
       `SAMPLE(opcode_cg, instr.binary[6:2]);
