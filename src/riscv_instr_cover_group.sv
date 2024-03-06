@@ -788,18 +788,18 @@ class riscv_instr_cover_group;
   `CG_END
 
   `LOAD_INSTR_CG_BEGIN(lh)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `LOAD_INSTR_CG_BEGIN(lw)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `LOAD_INSTR_CG_BEGIN(lbu)
   `CG_END
 
   `LOAD_INSTR_CG_BEGIN(lhu)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   // Store instruction
@@ -807,11 +807,11 @@ class riscv_instr_cover_group;
   `CG_END
 
   `STORE_INSTR_CG_BEGIN(sh)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `STORE_INSTR_CG_BEGIN(sw)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   // JUMP instruction
@@ -1911,15 +1911,15 @@ class riscv_instr_cover_group;
 
   // RV64I
   `LOAD_INSTR_CG_BEGIN(lwu)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `LOAD_INSTR_CG_BEGIN(ld)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `STORE_INSTR_CG_BEGIN(sd)
-    // cp_align: coverpoint instr.unaligned_mem_access; // removed to allow NOEL-V to cover everything
+    cp_align: coverpoint instr.unaligned_mem_access;
   `CG_END
 
   `R_INSTR_CG_BEGIN(sraw)
