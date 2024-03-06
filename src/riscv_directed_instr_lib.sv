@@ -475,7 +475,7 @@ class riscv_int_numeric_corner_stream extends riscv_directed_instr_stream;
       riscv_instr instr = riscv_instr::get_rand_instr(
         .include_category({ARITHMETIC}),
         .exclude_group({RV32C, RV64C, RV32ZCB, RV64ZCB, RV32ZFH,
-                        RV64ZFH, RV32F, RV64F, RV32D, RV64D}));
+                        RV64ZFH, RV32ZFA, RV64ZFA, RV32F, RV64F, RV32D, RV64D}));
       randomize_gpr(instr);
       instr_list.push_back(instr);
     end
@@ -483,3 +483,60 @@ class riscv_int_numeric_corner_stream extends riscv_directed_instr_stream;
   endfunction
 
 endclass : riscv_int_numeric_corner_stream
+
+// Strees the numeric corner cases of float zfa operations
+class riscv_zfa_numeric_corner_stream extends riscv_directed_instr_stream;
+  typedef enum {
+    S,
+    H,
+    D
+  } fli_siz_e;
+
+  int unsigned num_of_avail_regs = 10;
+  rand int unsigned   num_of_instr;
+  rand fli_siz_e   fli_siz;
+  rand bit [4:0]  init_val_type[];
+  riscv_zfa_instr  init_instr[];
+
+  constraint init_val_c {
+    init_val_type.size() == num_of_avail_regs;
+    num_of_instr inside {[15:30]};
+  }
+
+  `uvm_object_utils(riscv_zfa_numeric_corner_stream)
+  `uvm_object_new
+
+  function void pre_randomize();
+    avail_regs = new[num_of_avail_regs];
+    super.pre_randomize();
+  endfunction : pre_randomize
+
+  function void post_randomize();
+    if (RV32ZFA inside {supported_isa}) begin
+      init_instr = new[num_of_avail_regs];
+      foreach (init_val_type[i]) begin
+        init_instr[i] = new();
+        if(fli_siz == D && RV32D inside {supported_isa}) begin
+          init_instr[i].instr_name = FLI_D;
+        end else if (fli_siz == H && RV32ZFH inside {supported_isa}) begin
+          init_instr[i].instr_name = FLI_H;
+        end else begin // fli_siz == S
+          init_instr[i].instr_name = FLI_S;
+        end
+        init_instr[i].format = I_FORMAT;
+        init_instr[i].imm_tbl_idx = init_val_type[i];
+        instr_list.push_back(init_instr[i]);
+      end
+      for (int i = 0; i < num_of_instr; i++) begin
+        riscv_instr instr = riscv_instr::get_rand_instr(
+          .include_group({RV32ZFH, RV64ZFH, RV32ZFA, RV64ZFA, RV32F, RV64F, RV32D, RV64D}),
+          .exclude_category({BRANCH, JUMP, LOAD, STORE}));
+        randomize_gpr(instr);
+        instr_list.push_back(instr);
+      end
+    end
+    super.post_randomize();
+  endfunction
+
+endclass : riscv_zfa_numeric_corner_stream
+

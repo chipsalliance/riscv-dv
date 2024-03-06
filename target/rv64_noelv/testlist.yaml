@@ -36,11 +36,23 @@
 - test: riscv_machine_mode_rand_test
   description: >
     Machine mode random instruction test
-  iterations: 2
+  iterations: 100
   gen_test: riscv_instr_base_test
   gen_opts: >
     +instr_cnt=10000
     +num_of_sub_program=5
+    +directed_instr_0=riscv_load_store_rand_instr_stream,4
+    +directed_instr_1=riscv_loop_instr,4
+    +directed_instr_2=riscv_hazard_instr_stream,4
+    +directed_instr_3=riscv_load_store_hazard_instr_stream,4
+    +directed_instr_4=riscv_multi_page_load_store_instr_stream,4
+    +directed_instr_5=riscv_mem_region_stress_test,4
+    +directed_instr_6=riscv_jal_instr,4
+    +directed_instr_7=riscv_int_numeric_corner_stream,4
+    +directed_instr_8=riscv_zfa_numeric_corner_stream,20
+    +illegal_instr_ratio=4
+    +hint_instr_ratio=5
+    +no_ebreak=0
     +boot_mode=m
   rtl_test: core_base_test
 
@@ -89,7 +101,6 @@
   gen_opts: >
     +allow_sfence_exception=1
   rtl_test: core_base_test
-
 
 - test: riscv_amo_test
   description: >
@@ -221,7 +232,6 @@
     +compare_final_value_only=1
     #+enable_illegal_csr_instruction=1
     
-
 - test: riscv_legal_interrupt_test
   description: >
     Random instruction test with complete interrupt handling

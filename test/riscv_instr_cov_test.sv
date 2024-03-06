@@ -136,6 +136,7 @@ class riscv_instr_cov_test extends uvm_test;
                                  RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
                                  RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS,
                                  RV32ZCB, RV64ZCB, RV32ZFH, RV64ZFH,
+                                 RV32ZFA, RV64ZFA,
                                  RV32ZBKB, RV64ZBKB, RV32ZBKC, RV32ZBKX}) &&
             (instr.group inside {supported_isa})) begin
           assign_trace_info_to_instr(instr);

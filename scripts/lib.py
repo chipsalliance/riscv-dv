@@ -478,9 +478,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "rev16":
         instr_name = "grevi"
         operands += ",16"
-    elif instr_name == "rev8":
-        instr_name = "grevi"
-        operands += ",24"
     elif instr_name == "rev4":
         instr_name = "grevi"
         operands += ",28"
@@ -492,7 +489,7 @@ def convert_pseudo_instr(instr_name, operands, binary):
         operands += ",31"
     elif instr_name == "gorci" and ",7" in operands:
         instr_name = "orc.b"
-        operands = operands.replace(",7","") # new addition
+        operands = operands.replace(",7","")
     elif instr_name == "orc.p":
         instr_name = "gorci"
         operands += ",1"
@@ -508,9 +505,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "orc2.b":
         instr_name = "gorci"
         operands += ",6"
-    elif instr_name == "orc.b":
-        instr_name = "gorci"
-        operands += ",7"
     elif instr_name == "orc8.h":
         instr_name = "gorci"
         operands += ",8"
@@ -538,13 +532,6 @@ def convert_pseudo_instr(instr_name, operands, binary):
     elif instr_name == "orc":
         instr_name = "gorci"
         operands += ",31"
-    elif instr_name == "zext.b":
-        instr_name = "andi"
-        operands += ",255"
-    elif instr_name == "zext.h":
-        # TODO: support for RV64B
-        instr_name = "pack"
-        operands += ",zero"
     elif instr_name == "zext.w":
         instr_name = "pack"
         operands += ",zero"
