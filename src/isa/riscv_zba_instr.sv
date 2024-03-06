@@ -36,10 +36,10 @@ class riscv_zba_instr extends riscv_instr;
 
   function bit[6:0] get_opcode();
     case (instr_name) inside
-      SH1ADD, SH2ADD, SH3ADD :          get_opcode = 7'b0110011;
-      SH1ADD_UW, SH2ADD_UW, SH3ADD_UW : get_opcode = 7'b0111011;
-      SLLI_UW :                         get_opcode = 7'b0011011;
-      default :                         get_opcode = super.get_opcode();
+      SH1ADD, SH2ADD, SH3ADD :                  get_opcode = 7'b0110011;
+      SH1ADD_UW, SH2ADD_UW, SH3ADD_UW, ADD_UW : get_opcode = 7'b0111011;
+      SLLI_UW :                                 get_opcode = 7'b0011011;
+      default :                                 get_opcode = super.get_opcode();
     endcase
   endfunction : get_opcode
 
