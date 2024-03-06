@@ -28,9 +28,10 @@ from riscv_trace_csv import *
 from lib import *
 
 RD_RE = re.compile(
-    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+" \
-    r"\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)" \
-    r"(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
+    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
+# for implicit csr writes scenarios
+RD_IMP_RE = re.compile(
+    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+\((?P<bin>.*?)\)\s+((?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)")
 CORE_RE = re.compile(
     r"core\s+\d+:\s+0x(?P<addr>[a-f0-9]+?)\s+\(0x(?P<bin>.*?)\)\s+(?P<instr>.*?)$")
 ADDR_RE = re.compile(
@@ -183,6 +184,16 @@ def read_spike_trace(path, full_trace):
                     instr.csr.append(groups["csr"] + ":" + groups["csr_val"])
 
                 instr.mode = commit_match.group('pri')
+
+            # Processing intructions that have implicit csr writes (e.g. float)
+            # write in csr is not being used yet
+            imp_match = RD_IMP_RE.match(line)
+            if imp_match:
+                groups = imp_match.groupdict()
+                instr.gpr.append(gpr_to_abi(groups["reg"].replace(' ', '')) +
+                                 ":" + groups["val"])
+
+                instr.mode = imp_match.group('pri')
 
         # At EOF, we might have an instruction in hand. Yield it if so.
         if instr is not None:

@@ -109,11 +109,24 @@ class riscv_instr extends uvm_object;
       end
       if (!cfg.enable_sfence && instr_name == SFENCE_VMA) continue;
       if (cfg.no_fence && (instr_name inside {FENCE, FENCE_I, SFENCE_VMA})) continue;
+      if ((XLEN != 32) && (instr_name inside {UNZIP, ZIP})) continue;
+      if (!((RV32D inside {supported_isa}) || (XLEN != 32)) && (instr_name inside {FMVH_X_D, FMVP_D_X })) continue;
+      if (!((RV64Q inside {supported_isa}) || (XLEN != 32)) && (instr_name inside {FMVH_X_Q, FMVP_Q_X })) continue;
+      if (!(RV32D inside {supported_isa} || RV64D inside {supported_isa}) && 
+         (instr_name inside {FLI_D, FMINM_D, FMAXM_D, FROUND_D, 
+         FROUNDNX_D, FCVTMOD_W_D, FLEQ_D, FLTQ_D})) continue;
+      if (!(RV32Q inside {supported_isa} || RV64Q inside {supported_isa}) && 
+         (instr_name inside {FLI_Q, FMINM_Q, FMAXM_Q, FROUND_Q, FROUNDNX_Q, 
+         FLEQ_Q, FLTQ_Q})) continue;
+      if (!cfg.enable_zfh_extension && (instr_name inside {FLI_H, FMINM_H, FMAXM_H, 
+         FROUND_H, FROUNDNX_H, FLEQ_H, FLTQ_H})) continue;
+      if (!(RV32Q inside {supported_isa}) && instr_name inside {FCVT_H_Q, FCVT_Q_H}) continue;
+      if (!cfg.enable_zfh_extension && instr_inst.group inside {RV32ZFH, RV64ZFH}) continue;
       if ((instr_inst.group inside {supported_isa}) &&
           !(cfg.disable_compressed_instr &&
-            (instr_inst.group inside {RV32C, RV64C, RV32DC, RV32FC, RV128C})) &&
+            (instr_inst.group inside {RV32C, RV64C, RV32DC, RV32FC, RV128C, RV32ZCB, RV64ZCB})) &&
           !(!cfg.enable_floating_point &&
-            (instr_inst.group inside {RV32F, RV64F, RV32D, RV64D})) &&
+            (instr_inst.group inside {RV32ZFH, RV64ZFH, RV32F, RV64F, RV32D, RV64D})) &&
           !(!cfg.enable_vector_extension &&
             (instr_inst.group inside {RVV})) &&
           !(cfg.vector_instr_only &&
@@ -292,10 +305,13 @@ class riscv_instr extends uvm_object;
   endfunction
 
   function void pre_randomize();
-    rs1.rand_mode(has_rs1);
+    // rs1 and imm should be randomized when instructions is of type csr, otherwise,
+    // contraint of order for random generation would not work for some simulators
+    // (because if rand_mode(0) -> not random variable) 
+    rs1.rand_mode(has_rs1 || category == CSR);
     rs2.rand_mode(has_rs2);
     rd.rand_mode(has_rd);
-    imm.rand_mode(has_imm);
+    imm.rand_mode(has_imm || category == CSR);
     if (category != CSR) begin
       csr.rand_mode(0);
     end
@@ -390,9 +406,7 @@ class riscv_instr extends uvm_object;
       ADD, SUB, SLL, SLT, SLTU, XOR, SRL, SRA, OR, AND, MUL,
       MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
       ADDIW, SLLIW, SRLIW, SRAIW                                   : get_opcode = 7'b0011011;
-      MULH, MULHSU, MULHU, DIV, DIVU, REM, REMU                    : get_opcode = 7'b0110011;
       FENCE, FENCE_I                                               : get_opcode = 7'b0001111;
-      ECALL, EBREAK                                                : get_opcode = 7'b1110011;
       ADDW, SUBW, SLLW, SRLW, SRAW, MULW, DIVW, DIVUW, REMW, REMUW : get_opcode = 7'b0111011;
       ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA       : get_opcode = 7'b1110011;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
@@ -465,7 +479,7 @@ class riscv_instr extends uvm_object;
       DIVUW      : get_func3 = 3'b101;
       REMW       : get_func3 = 3'b110;
       REMUW      : get_func3 = 3'b111;
-      ECALL, EBREAK, URET, SRET, MRET, DRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
+      URET, SRET, MRET, DRET, WFI, SFENCE_VMA : get_func3 = 3'b000;
       default : `uvm_fatal(`gfn, $sformatf("Unsupported instruction %0s", instr_name.name()))
     endcase
   endfunction

@@ -31,6 +31,17 @@ Sample .bashrc setup::
     export RISCV_OBJCOPY="$RISCV_TOOLCHAIN/bin/riscv64-unknown-elf-objcopy"
     export SPIKE_PATH="$RISCV_TOOLCHAIN/bin"
 
+Run crypto bitmab code generation
+------------------------
+
+Crypto bit manipulation tests are added in target "rv32_noelv" or "rv64_noelv" as custom target. 
+Here is the example to run zbkb extension, but is similar procedure for any other extension (zbkc, zbkx)::
+
+    run --test riscv_machine_mode_rand_test --simulator vcs -ct ./target/rv64_noelv --sim_opts "+enable_zbkb_extension=1"
+
+Run option "+enable_zbkb_extension=1" allows user to only enable one or some groups of crypto 
+bit manipulation instructions.
+
 Run bitmanip simulation
 ------------------------
 

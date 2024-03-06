@@ -1,0 +1,54 @@
+# riscOVPsim configuration file converted from YAML
+--variant RV64GCB
+--addressbits 32
+--override riscvOVPsim/cpu/add_Extensions=K
+--override riscvOVPsim/cpu/misa_MXL=2
+--override riscvOVPsim/cpu/misa_Extensions_mask=0x0
+--override riscvOVPsim/cpu/unaligned=F
+--override riscvOVPsim/cpu/mtvec_mask=0x0 # 0
+--override riscvOVPsim/cpu/user_version=2.3
+--override riscvOVPsim/cpu/priv_version=1.12
+--override riscvOVPsim/cpu/mvendorid=0
+--override riscvOVPsim/cpu/marchid=0
+--override riscvOVPsim/cpu/mimpid=0
+--override riscvOVPsim/cpu/mhartid=0
+--override riscvOVPsim/cpu/cycle_undefined=F
+--override riscvOVPsim/cpu/instret_undefined=F
+--override riscvOVPsim/cpu/time_undefined=T
+--override riscvOVPsim/cpu/reset_address=0x00000000
+--override riscvOVPsim/cpu/simulateexceptions=T
+--override riscvOVPsim/cpu/defaultsemihost=F
+--override riscvOVPsim/cpu/wfi_is_nop=T
+--override riscvOVPsim/cpu/PMP_grain=10 
+--override riscvOVPsim/cpu/PMP_registers=8 
+--override riscvOVPsim/cpu/PMP_undefined=T
+# Crypto stuff
+--override riscvOVPsim/cpu/crypto_version=1.0.0-rc5
+--override riscvOVPsim/cpu/Zba=T
+--override riscvOVPsim/cpu/Zbb=T
+--override riscvOVPsim/cpu/Zbc=T
+--override riscvOVPsim/cpu/Zbs=T
+--override riscvOVPsim/cpu/Zbkb=T 
+--override riscvOVPsim/cpu/Zbkc=T 
+--override riscvOVPsim/cpu/Zbkx=T 
+--override riscvOVPsim/cpu/Zknd=F 
+--override riscvOVPsim/cpu/Zkne=F 
+--override riscvOVPsim/cpu/Zkr=F 
+--override riscvOVPsim/cpu/Zknh=F 
+--override riscvOVPsim/cpu/Zksed=F 
+--override riscvOVPsim/cpu/Zksh=F 
+
+--override riscvOVPsim/cpu/Zfh=T # half precision floats
+--override riscvOVPsim/cpu/Zfa=T
+--override riscvOVPsim/cpu/Zcb=T 
+--override riscvOVPsim/cpu/tvec_align=8 
+#--exitonsymbol _exit
+--finishonwritetohost
+--override riscvOVPsim/cpu/verbose=T
+--override riscvOVPsim/cpu/updatePTEA=T
+--override riscvOVPsim/cpu/updatePTED=T
+--override riscvOVPsim/cpu/numHarts=0
+--override riscvOVPsim/cpu/mstatus_fs_mode=write_1 #(Enumeration) (default=write_1) (default) Specify conditions causing update of mstatus.FS to dirty
+--override riscvOVPsim/cpu/enable_fflags_i=T #fflags_i (set flags on every instruction)
+--memory ram:0x00000000:0xfffffff:rwx
+--override riscvOVPsim/cpu/Smepmp_version=1.0

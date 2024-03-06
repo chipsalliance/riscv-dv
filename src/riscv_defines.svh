@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 Google LLC
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +81,11 @@
   class riscv_``instr_n``_instr extends riscv_floating_point_instr;  \
     `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
 
+// ZFA instruction
+`define DEFINE_ZFA_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM)  \
+  class riscv_``instr_n``_instr extends riscv_zfa_instr;  \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
 // A-extension instruction
 `define DEFINE_AMO_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM)  \
   class riscv_``instr_n``_instr extends riscv_amo_instr;  \
@@ -128,4 +134,24 @@
 //Zbs-extension instruction
 `define DEFINE_ZBS_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
   class riscv_``instr_n``_instr extends riscv_zbs_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+ 
+//Zbkb-extension instruction
+`define DEFINE_ZBKB_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zbkb_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
+//Zcb-extension instruction
+`define DEFINE_ZCB_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zcb_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
+//Zbkc-extension instruction
+`define DEFINE_ZBKC_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zbkc_instr; \
+    `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)
+
+//Zbkx-extension instruction
+`define DEFINE_ZBKX_INSTR(instr_n, instr_format, instr_category, instr_group, imm_tp = IMM) \
+  class riscv_``instr_n``_instr extends riscv_zbkx_instr; \
     `INSTR_BODY(instr_n, instr_format, instr_category, instr_group, imm_tp)

@@ -112,14 +112,16 @@ class riscv_b_instr extends riscv_instr;
       GORCI, SLOI, SROI, GREVI, CMIX, CMOV, FSL: get_opcode = 7'b0010011;
       FSR, FSRI, BMATFLIP, CRC32_B, CRC32_H, CRC32_W, CRC32C_B, CRC32C_H: get_opcode = 7'b0010011;
       CRC32C_W, CRC32_D, CRC32C_D: get_opcode = 7'b0010011;
-      SHFL, UNSHFL, BCOMPRESS, BDECOMPRESS, PACK, PACKU, BMATOR, BMATXOR, PACKH, BFP: get_opcode
+      // PACK, PACKH (now in zbkb)
+      SHFL, UNSHFL, BCOMPRESS, BDECOMPRESS,  PACKU, BMATOR, BMATXOR, BFP: get_opcode
           = 7'b0110011;
       SHFLI, UNSHFLI: get_opcode = 7'b0010011;
       SLOW, SROW, GORCW, GREVW: get_opcode = 7'b0111011;
       SLOIW, SROIW, GORCIW, GREVIW: get_opcode = 7'b0011011;
       FSLW, FSRW: get_opcode = 7'b0111011;
       FSRIW: get_opcode = 7'b0011011;
-      SHFLW, UNSHFLW, BCOMPRESSW, BDECOMPRESSW, PACKW, PACKUW, BFPW: get_opcode = 7'b0111011;
+      // PACKW,
+      SHFLW, UNSHFLW, BCOMPRESSW, BDECOMPRESSW, PACKUW, BFPW: get_opcode = 7'b0111011;
       default: get_opcode = super.get_opcode();
     endcase
   endfunction
@@ -152,11 +154,11 @@ class riscv_b_instr extends riscv_instr;
       UNSHFL: get_func3 = 3'b101;
       BCOMPRESS: get_func3 = 3'b110;
       BDECOMPRESS: get_func3 = 3'b110;
-      PACK: get_func3 = 3'b100;
+      //PACK: get_func3 = 3'b100;
       PACKU: get_func3 = 3'b100;
       BMATOR: get_func3 = 3'b011;
       BMATXOR: get_func3 = 3'b011;
-      PACKH: get_func3 = 3'b111;
+      //PACKH: get_func3 = 3'b111;
       BFP: get_func3 = 3'b111;
       SHFLI: get_func3 = 3'b001;
       UNSHFLI: get_func3 = 3'b101;
@@ -177,7 +179,7 @@ class riscv_b_instr extends riscv_instr;
       UNSHFLW: get_func3 = 3'b101;
       BCOMPRESSW: get_func3 = 3'b110;
       BDECOMPRESSW: get_func3 = 3'b110;
-      PACKW: get_func3 = 3'b100;
+      //PACKW: get_func3 = 3'b100;
       PACKUW: get_func3 = 3'b100;
       BFPW: get_func3 = 3'b111;
       XPERM_N: get_func3 = 3'b010;
@@ -213,11 +215,11 @@ class riscv_b_instr extends riscv_instr;
       UNSHFL: get_func7 = 7'b0000100;
       BCOMPRESS: get_func7 = 7'b0000100;
       BDECOMPRESS: get_func7 = 7'b0100100;
-      PACK: get_func7 = 7'b0000100;
+      //PACK: get_func7 = 7'b0000100;
       PACKU: get_func7 = 7'b0100100;
       BMATOR: get_func7 = 7'b0000100;
       BMATXOR: get_func7 = 7'b0100100;
-      PACKH: get_func7 = 7'b0000100;
+      //PACKH: get_func7 = 7'b0000100;
       BFP: get_func7 = 7'b0100100;
       SLOW: get_func7 = 7'b0010000;
       SROW: get_func7 = 7'b0010000;
@@ -231,7 +233,7 @@ class riscv_b_instr extends riscv_instr;
       UNSHFLW: get_func7 = 7'b0000100;
       BCOMPRESSW: get_func7 = 7'b0000100;
       BDECOMPRESSW: get_func7 = 7'b0100100;
-      PACKW: get_func7 = 7'b0000100;
+      //PACKW: get_func7 = 7'b0000100;
       PACKUW: get_func7 = 7'b0100100;
       BFPW: get_func7 = 7'b0100100;
       XPERM_N: get_func7 = 7'b0010100;

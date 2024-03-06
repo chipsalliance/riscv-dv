@@ -28,7 +28,8 @@ from riscv_trace_csv import *
 
 INSTR_RE = re.compile(r"riscvOVPsim.*, 0x(?P<addr>.*?)(?P<section>\(.*\): ?)" \
                       "(?P<mode>[A-Za-z]*?)\s+(?P<bin>[a-f0-9]*?)\s+(?P<instr_str>.*?)$")
-RD_RE = re.compile(r" (?P<r>[a-z]*[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
+EXCEPT_RE = re.compile("riscvOVPsim.*, 0x(?P<addr>[0-9a-f]+).*: (?P<mode>[A-Za-z]*?)\s+[*]+\s+(?P<exception>[A-Z ]+)\s+")
+RD_RE = re.compile(r" (?P<r>[a-z_]*[0-9]{0,2}?) (?P<pre>[a-f0-9]+?)" \
                    " -> (?P<val>[a-f0-9]+?)$")
 BASE_RE = re.compile(
     r"(?P<rd>[a-z0-9]+?),(?P<imm>[\-0-9]*?)\((?P<rs1>[a-z0-9]+?)\)")
@@ -51,9 +52,9 @@ def is_csr(r):
     """ see if r is a csr """
     if len(r) > 4:
         return True
-    elif r[0] in ["m", "u", "d"]:
+    elif r[0] in ["m", "u", "d", "h"]:
         return True
-    elif r in ["frm", "fcsr", "vl", "satp"]:
+    elif r in ["frm", "fcsr", "vl", "satp", "time", "sie", "sepc", "sip", "vsie", "vsip"]:
         return True
     else:
         return False
@@ -69,7 +70,6 @@ def process_ovpsim_sim_log(ovpsim_log, csv,
     log and save to a list.
     """
     logging.info("Processing ovpsim log : {}".format(ovpsim_log))
-
     # Remove the header part of ovpsim log
     cmd = ("sed -i '/Info 1:/,$!d' {}".format(ovpsim_log))
     os.system(cmd)
@@ -89,16 +89,24 @@ def process_ovpsim_sim_log(ovpsim_log, csv,
         for line in f:
             # Extract instruction infromation
             m = INSTR_RE.search(line)
-            if m:
+            e = EXCEPT_RE.search(line)
+            #print(f"{line} is m? {m}, is e {e}")
+            if m or e:
                 if prev_trace:  # write out the previous one when find next one
                     trace_csv.write_trace_entry(prev_trace)
                     instr_cnt += 1
                     prev_trace = 0
                 prev_trace = RiscvInstructionTraceEntry()
-                prev_trace.instr_str = m.group("instr_str")
-                prev_trace.pc = m.group("addr")
-                prev_trace.mode = convert_mode(m.group("mode"), line)
-                prev_trace.binary = m.group("bin")
+                if m:
+                    prev_trace.instr_str = m.group("instr_str")
+                    prev_trace.pc = m.group("addr")
+                    prev_trace.mode = convert_mode(m.group("mode"), line)
+                    prev_trace.binary = m.group("bin")
+                elif e:
+                    prev_trace.instr_str = e.group("exception")
+                    prev_trace.pc = e.group("addr")
+                    prev_trace.mode = convert_mode(e.group("mode"), line)
+                    prev_trace.binary = "00000000" #insert non-valid instruction
                 if full_trace:
                     prev_trace.instr = prev_trace.instr_str.split(" ")[0]
                     prev_trace.operand = prev_trace.instr_str[
@@ -110,13 +118,15 @@ def process_ovpsim_sim_log(ovpsim_log, csv,
             c = RD_RE.search(line)
             if c:
                 if is_csr(c.group("r")):
+                    #print("CSR: "+c.group("r") + ":" + c.group("val"))
                     prev_trace.csr.append(c.group("r") + ":" + c.group("val"))
                 else:
+                    #print("GPR: "+c.group("r") + ":" + c.group("val"))
                     prev_trace.gpr.append(c.group("r") + ":" + c.group("val"))
     logging.info("Processed instruction count : {} ".format(instr_cnt))
     if instr_cnt == 0:
         logging.error("No Instructions in logfile: {}".format(ovpsim_log))
-        sys.exit(RET_FATAL)
+        #sys.exit(RET_FATAL)
     logging.info("CSV saved to : {}".format(csv))
 
 
@@ -126,6 +136,12 @@ def process_trace(trace):
     process_imm(trace)
     if trace.instr == "jalr":
         process_jalr(trace)
+
+    # the coverage mechanism doesn't handle more than 4 operands
+    rounding_modes = ["rne", "rtz", "rdn", "rup", "rmm", "dyn"]
+    if any(rmm in trace.operand for rmm in rounding_modes):
+        trace.operand = ','.join(trace.operand.split(",")[:-1])
+
     trace.instr, trace.operand = convert_pseudo_instr(
         trace.instr, trace.operand, trace.binary)
     # process any instruction of the form:

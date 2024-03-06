@@ -242,7 +242,7 @@ class riscv_zbb_instr extends riscv_instr;
     // All ZBB I_FORMAT instructions other than RORI use the immediate to specify the operation,
     // rather than being an explicit operand. Handle this case here, otherwise use the normal
     // `update_src_regs`
-    if ((format == I_FORMAT) && (instr_name != RORI)) begin
+    if ((format == I_FORMAT) && !(instr_name inside {RORI, RORIW} )) begin
       `DV_CHECK_FATAL(operands.size() == 2, instr_name)
       rs1 = get_gpr(operands[1]);
       rs1_value = get_gpr_state(operands[1]);

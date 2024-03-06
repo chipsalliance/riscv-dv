@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 Google LLC
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +53,7 @@ class riscv_instr_gen_config extends uvm_object;
   rand bit               m_mode_interrupt_delegation[interrupt_cause_t];
   rand bit               s_mode_interrupt_delegation[interrupt_cause_t];
 
-  // Priviledged mode after boot
+  // Privileged mode after boot
   rand privileged_mode_t init_privileged_mode;
 
   rand bit[XLEN-1:0]     mstatus, mie,
@@ -161,7 +162,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    no_load_store;      // No load/store instruction
   bit                    no_csr_instr;       // No csr instruction
   bit                    no_ebreak = 1;      // No ebreak instruction
-  // Only enable ecall if you have overriden the test_done mechanism.
+  // Only enable ecall if you have overridden the test_done mechanism.
   bit                    no_ecall = 1;       // No ecall instruction
   bit                    no_dret = 1;        // No dret instruction
   bit                    no_fence;           // No fence instruction
@@ -264,6 +265,12 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_zbb_extension;
   bit                    enable_zbc_extension;
   bit                    enable_zbs_extension;
+  bit                    enable_zbkb_extension;
+  bit                    enable_zbkc_extension;
+  bit                    enable_zbkx_extension;
+  bit                    enable_zcb_extension;
+  bit                    enable_zfh_extension;
+  bit                    enable_zfa_extension;
 
   b_ext_group_t          enable_bitmanip_groups[] = {ZBB, ZBS, ZBP, ZBE, ZBF, ZBC, ZBR, ZBM, ZBT,
                                                      ZB_TMP};
@@ -283,8 +290,8 @@ class riscv_instr_gen_config extends uvm_object;
       sub_program_instr_cnt[i] inside {[10 : instr_cnt]};
     }
     // Disable sfence if the program is not boot to supervisor mode
-    // If sfence exception is allowed, we can enable sfence instruction in any priviledged mode.
-    // When MSTATUS.TVM is set, executing sfence.vma will be treate as illegal instruction
+    // If sfence exception is allowed, we can enable sfence instruction in any privileged mode.
+    // When MSTATUS.TVM is set, executing sfence.vma will be treated as illegal instruction
     if(allow_sfence_exception) {
       enable_sfence == 1'b1;
       (init_privileged_mode != SUPERVISOR_MODE) || (mstatus_tvm == 1'b1);
@@ -344,7 +351,7 @@ class riscv_instr_gen_config extends uvm_object;
     if (mtvec_mode == DIRECT) {
      soft tvec_alignment == 2;
     } else {
-     // Setting MODE = Vectored may impose an additional alignmentconstraint on BASE,
+     // Setting MODE = Vectored may impose an additional alignment constraint on BASE,
      // requiring up to 4×XLEN-byte alignment
      soft tvec_alignment == $clog2((XLEN * 4) / 8);
     }
@@ -365,7 +372,7 @@ class riscv_instr_gen_config extends uvm_object;
 
   // Exception delegation setting
   constraint exception_delegation_c {
-    // Do not delegate instructino page fault to supervisor/user mode because this may introduce
+    // Do not delegate instruction page fault to supervisor/user mode because this may introduce
     // dead loop. All the subsequent instruction fetches may fail and program cannot recover.
     m_mode_exception_delegation[INSTRUCTION_PAGE_FAULT] == 1'b0;
     if(force_m_delegation) {
@@ -541,6 +548,12 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_zbb_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbs_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkb_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkc_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zbkx_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zcb_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zfh_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zfa_extension, UVM_DEFAULT)
     `uvm_field_int(use_push_data_section, UVM_DEFAULT)
   `uvm_object_utils_end
 
@@ -610,7 +623,13 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
     get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
     get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
+    get_bool_arg_value("+enable_zbkc_extension=", enable_zbkc_extension);
+    get_bool_arg_value("+enable_zbkx_extension=", enable_zbkx_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
+    get_bool_arg_value("+enable_zbkb_extension=", enable_zbkb_extension);
+    get_bool_arg_value("+enable_zcb_extension=", enable_zcb_extension);
+    get_bool_arg_value("+enable_zfh_extension=", enable_zfh_extension);
+    get_bool_arg_value("+enable_zfa_extension=", enable_zfa_extension);
     cmdline_enum_processor #(b_ext_group_t)::get_array_values("+enable_bitmanip_groups=",
                                                               1'b0, enable_bitmanip_groups);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
@@ -652,9 +671,39 @@ class riscv_instr_gen_config extends uvm_object;
       enable_zbc_extension = 0;
     end
 
+    if (!((RV32ZBKC inside {supported_isa}))) begin
+      enable_zbkc_extension = 0;
+    end
+
+    if (!((RV32ZBKX inside {supported_isa}))) begin
+      enable_zbkx_extension = 0;
+    end
+
     if (!((RV32ZBS inside {supported_isa}) ||
           (RV64ZBS inside {supported_isa}))) begin
       enable_zbs_extension = 0;
+    end
+
+    if (!((RV32ZBKB inside {supported_isa}) ||
+          (RV64ZBKB inside {supported_isa}))) begin
+      enable_zbkb_extension = 0;
+    end
+
+    if (!((RV32ZCB inside {supported_isa}) ||
+          (RV64ZCB inside {supported_isa}))) begin
+      enable_zcb_extension = 0;
+    end
+
+    if (!(((RV32ZFH inside {supported_isa}) ||
+          (RV64ZFH inside {supported_isa})) &&
+          (RV32F inside {supported_isa}))) begin
+      enable_zfh_extension = 0;
+    end
+
+    if (!(((RV32ZFA inside {supported_isa}) ||
+          (RV64ZFA inside {supported_isa})) &&
+          (RV32F inside {supported_isa}))) begin
+      enable_zfa_extension = 0;
     end
 
     vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");

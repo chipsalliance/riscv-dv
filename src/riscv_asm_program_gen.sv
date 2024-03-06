@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
+ * Copyright 2023 Frontgrade Gaisler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -457,8 +458,11 @@ class riscv_asm_program_gen extends uvm_object;
         RV32D, RV64D, RV32DC : misa[MISA_EXT_D] = 1'b1;
         RVV                  : misa[MISA_EXT_V] = 1'b1;
         RV32X, RV64X         : misa[MISA_EXT_X] = 1'b1;
-        RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS,
-        RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS : ; // No Misa bit for Zb* extensions
+        RV32ZBA, RV32ZBB, RV32ZBKB, RV32ZBC, RV32ZBKC, RV32ZBKX, RV32ZBS,
+        RV64ZBA, RV64ZBB, RV64ZBKB, RV64ZBC,                     RV64ZBS : ; // No Misa bit for Zb* extensions
+        RV32ZCB, RV64ZCB : ;
+        RV32ZFH, RV64ZFH : ;
+        RV32ZFA, RV64ZFA : ;
         default : `uvm_fatal(`gfn, $sformatf("%0s is not yet supported",
                                    supported_isa[i].name()))
       endcase
@@ -605,10 +609,20 @@ class riscv_asm_program_gen extends uvm_object;
       randcase
         1: init_floating_point_gpr_with_spf(i);
         RV64D inside {supported_isa}: init_floating_point_gpr_with_dpf(i);
+        RV64ZFH inside {supported_isa}: init_floating_point_gpr_with_hpf(i);
       endcase
     end
     // Initialize rounding mode of FCSR
     str = $sformatf("%0sfsrmi %0d", indent, cfg.fcsr_rm);
+    instr_stream.push_back(str);
+  endfunction
+
+  virtual function void init_floating_point_gpr_with_hpf(int int_floating_gpr);
+    string str;
+    bit [15:0] imm = get_rand_hpf_value();
+    str = $sformatf("%0sli x%0d, %0d", indent, cfg.gpr[0], imm);
+    instr_stream.push_back(str);
+    str = $sformatf("%0sfmv.h.x f%0d, x%0d", indent, int_floating_gpr, cfg.gpr[0]);
     instr_stream.push_back(str);
   endfunction
 
@@ -642,6 +656,33 @@ class riscv_asm_program_gen extends uvm_object;
     instr_stream.push_back(str);
     str = $sformatf("%0sfmv.d.x f%0d, x%0d", indent, int_floating_gpr, int_gpr2);
     instr_stream.push_back(str);
+  endfunction
+
+  // get a random half precision floating value
+  virtual function bit [XLEN-1:0] get_rand_hpf_value();
+    bit [15:0] value;
+
+    randcase
+      // infinity
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7c00, 16'hfc00};)
+      // largest
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7bff, 16'hfbff};)
+      // zero
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h0000, 32'h8000};)
+      // NaN
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value inside {16'h7c01, 32'h7e00};)
+      // normal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[14:HALF_PRECISION_FRACTION_BITS] > 0;)
+      // subnormal
+      1: `DV_CHECK_STD_RANDOMIZE_WITH_FATAL(value,
+                                            value[14:HALF_PRECISION_FRACTION_BITS] == 0;)
+    endcase
+    return value;
   endfunction
 
   // get a random single precision floating value
@@ -1308,11 +1349,76 @@ class riscv_asm_program_gen extends uvm_object;
   // Only extend this function if the core utilizes a PLIC for handling interrupts
   // In this case, the core will write to a specific location as the response to the interrupt, and
   // external PLIC unit can detect this response and process the interrupt clean up accordingly.
-  virtual function void gen_plic_section(ref string interrupt_handler_instr[$]);
+  virtual function void gen_plic_section(ref string interrupt_handler_instr[$], privileged_mode_t mode);
+
+    if ( mode == MACHINE_MODE ) 
+      interrupt_handler_instr.push_back($sformatf("csrr x%0d, %0s # %0s", cfg.gpr[0], "mcause", "mcause"));
+    else 
+      interrupt_handler_instr.push_back($sformatf("csrr x%0d, %0s # %0s", cfg.gpr[0], "scause", "scause"));
+    interrupt_handler_instr.push_back($sformatf("slli x%0d, x%0d, 1", cfg.gpr[0], cfg.gpr[0])); // shift out the interrupt bit
+    interrupt_handler_instr.push_back($sformatf("srli x%0d, x%0d, 1", cfg.gpr[0], cfg.gpr[0])); // shift back
+    // GPR[0] holds the interrupt value, check if 9 or 11, then perform the
+    // plic claim. Keep GPR[0] to select what to claim, since this is also
+    // known.
+    //PLIC_BASE and PLIC_CLAIM_0 are defined in init.s in riscv-dv
+    interrupt_handler_instr.push_back($sformatf("li x%0d, 11 #M ext irq", cfg.gpr[1])); //11 = M external interrupt 
+    interrupt_handler_instr.push_back($sformatf("beq x%0d, x%0d, %0s", cfg.gpr[0], cfg.gpr[1], "1f")); 
+    interrupt_handler_instr.push_back($sformatf("li x%0d, 9 #S ext irq", cfg.gpr[1])); //9 = S external interrupt 
+    interrupt_handler_instr.push_back($sformatf("beq x%0d, x%0d, %0s", cfg.gpr[0], cfg.gpr[1], "2f")); 
+    //plic base address
+    //CLEAR S EXTERNAL INTERRUPT
+    interrupt_handler_instr.push_back($sformatf("1: #M ext irq"));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, PLIC_BASE", cfg.gpr[0]));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, PLIC_CLAIM_0", cfg.gpr[1]));
+    // claim register
+    interrupt_handler_instr.push_back($sformatf("add x%0d, x%0d, x%0d", cfg.gpr[2], cfg.gpr[1], cfg.gpr[0]));
+    // Should we do something with the read value?
+    interrupt_handler_instr.push_back($sformatf("lw x%0d, 0(x%0d)", cfg.gpr[1], cfg.gpr[2]));
+    interrupt_handler_instr.push_back($sformatf("sw x%0d, 0(x%0d)", cfg.gpr[1], cfg.gpr[2]));
+    // Don't run the next section
+    interrupt_handler_instr.push_back($sformatf("j 3f"));
+
+    //CLEAR S EXTERNAL INTERRUPT
+    interrupt_handler_instr.push_back($sformatf("2: #S ext irq"));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, PLIC_BASE", cfg.gpr[0]));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, PLIC_CLAIM_1", cfg.gpr[1]));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, START_PA #START_PHYSICAL_ADDRESS", cfg.gpr[2]));
+    interrupt_handler_instr.push_back($sformatf("add x%0d, x%0d, x%0d", cfg.gpr[1], cfg.gpr[1], cfg.gpr[0]));
+    // Compensate for memory translation, PA: f820_0000 -> VA: b820_0000
+    interrupt_handler_instr.push_back($sformatf("sub x%0d, x%0d, x%0d", cfg.gpr[1], cfg.gpr[1], cfg.gpr[2]));
+    interrupt_handler_instr.push_back($sformatf("lw x%0d, 0(x%0d)", cfg.gpr[0], cfg.gpr[1]));
+    // write back the id to the complete the plic clean up
+    interrupt_handler_instr.push_back($sformatf("sw x%0d, 0(x%0d)", cfg.gpr[0], cfg.gpr[1]));
+
+    // END
+    interrupt_handler_instr.push_back($sformatf("3:"));
+
     // Utilize the memory mapped handshake scheme to signal the testbench that the interrupt
     // handling has been completed and we are about to xRET out of the handler
     gen_signature_handshake(.instr(interrupt_handler_instr), .signature_type(CORE_STATUS),
                             .core_status(FINISHED_IRQ));
+  endfunction
+
+  // This function adds support for timer interrupts by confirming the
+  // interrupt type and mode and then reseting the mtimer_cmp register
+  virtual function void gen_timer_section(ref string interrupt_handler_instr[$], privileged_mode_t mode);
+    if ( mode == MACHINE_MODE ) 
+      interrupt_handler_instr.push_back($sformatf("csrr x%0d, %0s # %0s", cfg.gpr[0], "mcause", "mcause"));
+    else 
+      interrupt_handler_instr.push_back($sformatf("csrr x%0d, %0s # %0s", cfg.gpr[0], "scause", "scause"));
+    interrupt_handler_instr.push_back($sformatf("slli x%0d, x%0d, 1", cfg.gpr[0], cfg.gpr[0])); // shift out the interrupt bit
+    interrupt_handler_instr.push_back($sformatf("srli x%0d, x%0d, 1", cfg.gpr[0], cfg.gpr[0])); // shift back
+    interrupt_handler_instr.push_back($sformatf("li x%0d, 7", cfg.gpr[1])); //7 = mtimer interrupt 
+    interrupt_handler_instr.push_back($sformatf("bne x%0d, x%0d, %0s", cfg.gpr[0], cfg.gpr[1], "1f")); 
+    interrupt_handler_instr.push_back($sformatf("li x%0d, MTIMER_CMP_0", cfg.gpr[1]));
+    interrupt_handler_instr.push_back($sformatf("li x%0d, 0xffffffffff", cfg.gpr[0]));
+    interrupt_handler_instr.push_back($sformatf("sw x%0d, 0(x%0d) # %0s", cfg.gpr[0], cfg.gpr[1], "set mtimecmp(31 dt 0) to max value")); 
+    interrupt_handler_instr.push_back($sformatf("sw x%0d, 4(x%0d) # %0s", cfg.gpr[0], cfg.gpr[1], "set mtimecmp(63 dt 32) to max value")); 
+    interrupt_handler_instr.push_back($sformatf("1:"));
+  endfunction;
+
+
+  virtual function void gen_custom_section(ref string interrupt_handler_instr[$], privileged_mode_t mode);
   endfunction
 
   // Interrupt handler routine
@@ -1379,7 +1485,7 @@ class riscv_asm_program_gen extends uvm_object;
            $sformatf("csrrc x%0d, 0x%0x, x%0d # %0s;",
                      cfg.gpr[0], ip, cfg.gpr[0], ip.name())
     };
-    gen_plic_section(interrupt_handler_instr);
+    gen_custom_section(interrupt_handler_instr,mode);
     // Restore user mode GPR value from kernel stack before return
     pop_gpr_from_kernel_stack(status, scratch, cfg.mstatus_mprv,
                               cfg.sp, cfg.tp, interrupt_handler_instr);
