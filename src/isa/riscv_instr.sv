@@ -236,6 +236,8 @@ class riscv_instr extends uvm_object;
      end
      // Shallow copy for all relevant fields, avoid using create() to improve performance
      instr_h = new instr_template[name];
+     // Put instruction RNG in unique state
+     instr_h.srandom($urandom());
      return instr_h;
   endfunction : get_rand_instr
 
@@ -265,6 +267,8 @@ class riscv_instr extends uvm_object;
      name = load_store_instr[idx];
      // Shallow copy for all relevant fields, avoid using create() to improve performance
      instr_h = new instr_template[name];
+     // Put instruction RNG in unique state
+     instr_h.srandom($urandom());
      return instr_h;
   endfunction : get_load_store_instr
 
