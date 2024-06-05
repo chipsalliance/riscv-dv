@@ -681,20 +681,24 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
       for (int i = 0; i < index_emul; i++) begin
         cfg.vector_cfg.reserved_vregs.pop_back();
       end
-      // Initialize vs2 with random/pre-defined indexes
-      // randomize_indexed_byte_offset();
-      // add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
-      add_init_vector_gpr_random(
-        .vreg       ( vs2_reg                                                           ),
-        .seed       ( vseed                                                             ),
-        .vtemp      ( vtemp                                                             ),
-        .reseed     ( 1'b1                                                              ),
-        .min_value  ( 0                                                                 ),
-        .max_value  ( data_page[data_page_id].size_in_bytes - data_page_base_offset - 1 ),
-        .align_by   ( data_eew / 8                                                      ),
-        .sew        ( index_eew                                                         ),
-        .insert_idx ( 0                                                                 )
-      );
+      if (cfg.vreg_ls_index_init == LS_INDEX_INIT_LFSR) begin
+        // Initialize vs2 with randomly calculated indexes
+        add_init_vector_gpr_random(
+          .vreg       ( vs2_reg                                                           ),
+          .seed       ( vseed                                                             ),
+          .vtemp      ( vtemp                                                             ),
+          .reseed     ( 1'b1                                                              ),
+          .min_value  ( 0                                                                 ),
+          .max_value  ( data_page[data_page_id].size_in_bytes - data_page_base_offset - 1 ),
+          .align_by   ( data_eew / 8                                                      ),
+          .sew        ( index_eew                                                         ),
+          .insert_idx ( 0                                                                 )
+        );
+      end else if (cfg.vreg_ls_index_init == LS_INDEX_INIT_SLIDE) begin
+        // Initialize vs2 with random/pre-defined indexes
+        randomize_indexed_byte_offset();
+        add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
+      end
     end
     super.post_randomize();
   endfunction

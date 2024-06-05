@@ -43,6 +43,12 @@ package riscv_instr_pkg;
     RANDOM_VALUES_LOAD
   } vreg_init_method_t;
 
+  // Initialisation of the index vreg for indexed vector load/stores
+  typedef enum {
+    LS_INDEX_INIT_LFSR,
+    LS_INDEX_INIT_SLIDE
+  } vreg_ls_index_init_t;
+
   typedef enum bit [3:0] {
     BARE = 4'b0000,
     SV32 = 4'b0001,

@@ -256,6 +256,10 @@ class riscv_instr_gen_config extends uvm_object;
   // RANDOM_VALUES_VMV     - Using vmv.v.x + vslide1down.vx to randomize the contents of each vector element
   // RANDOM_VALUES_LOAD    - Using vle.v, same approach as RANDOM_VALUES_VMV but more efficient for big VLEN
   vreg_init_method_t     vreg_init_method = RANDOM_VALUES_VMV;
+  // Initialization of the index register for vector indexed loads/stores
+  // LS_INDEX_INIT_LFSR  - Calculation of random indexes through the use of an lfsr
+  // LS_INDEX_INIT_SLIDE - Using multiple vslide1down instructions to prefill the vector one by one
+  vreg_ls_index_init_t   vreg_ls_index_init = LS_INDEX_INIT_LFSR;
   // Bit manipulation extension support
   bit                    enable_b_extension;
 
@@ -535,6 +539,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_vector_extension, UVM_DEFAULT)
     `uvm_field_int(vector_instr_only, UVM_DEFAULT)
     `uvm_field_enum(vreg_init_method_t, vreg_init_method, UVM_DEFAULT)
+    `uvm_field_enum(vreg_ls_index_init_t, vreg_ls_index_init, UVM_DEFAULT)
     `uvm_field_int(enable_b_extension, UVM_DEFAULT)
     `uvm_field_array_enum(b_ext_group_t, enable_bitmanip_groups, UVM_DEFAULT)
     `uvm_field_int(enable_zba_extension, UVM_DEFAULT)
@@ -610,6 +615,8 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+vector_instr_only=", vector_instr_only);
     cmdline_enum_processor #(vreg_init_method_t)::get_value("+vreg_init_method=",
                                                             1'b0, vreg_init_method);
+    cmdline_enum_processor #(vreg_ls_index_init_t)::get_value("+vreg_ls_index_init=",
+                                                            1'b0, vreg_ls_index_init);
     get_bool_arg_value("+enable_b_extension=", enable_b_extension);
     get_bool_arg_value("+enable_zba_extension=", enable_zba_extension);
     get_bool_arg_value("+enable_zbb_extension=", enable_zbb_extension);
