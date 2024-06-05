@@ -286,6 +286,27 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     )
   endfunction
 
+  // Get a random vreg that is aligned to non fractional emul and is not already reserved
+  // Optionally add random vreg to list of reserved vregs
+  function riscv_vreg_t get_random_vreg (int emul, int reserve_vreg);
+    // Get random start register and align to emul
+    int base = $urandom_range(31) / emul * emul;
+    for (int i = 0; i < 32; i += emul) begin
+      for (int idx = 0; idx < emul; idx++) begin
+        if (riscv_vreg_t'(base + idx) inside {cfg.vector_cfg.reserved_vregs}) break;
+        if (reserve_vreg) begin
+          for (int i = 0; i < emul; i++) begin
+            cfg.vector_cfg.reserved_vregs.push_back(riscv_vreg_t'(base + i));
+          end
+        end
+        return riscv_vreg_t'(base);
+      end
+      base += emul;
+      base %= 32;
+    end
+    `uvm_fatal(`gfn, $sformatf("Cannot find random vector register with emul = %0d that is not already reserved", emul))
+  endfunction
+
   function riscv_instr get_init_gpr_instr(riscv_reg_t gpr, bit [XLEN-1:0] val);
     riscv_pseudo_instr li_instr;
     li_instr = riscv_pseudo_instr::type_id::create("li_instr");
