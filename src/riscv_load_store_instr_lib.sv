@@ -547,10 +547,15 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   rand riscv_reg_t    rs2_reg;
   // Indexes - randomized by instructions
   riscv_vreg_t        vs2_reg;
+  // Temporary random index calculation registers
+  riscv_vreg_t        vseed;
+  riscv_vreg_t        vtemp;
   // Generated load/store instruction
   riscv_vector_instr  load_store_instr;
   // Generated index byte offsets
   logic [XLEN-1:0]    indexed_byte_offset [];
+  // Emul of index register
+  int                 index_emul;
 
   constraint solve_order_c {
     solve address_mode          before data_page_id;
@@ -653,7 +658,15 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     randomize_avail_regs();
     // Generate a random load/store instruction
     // Exit and skip directed test if there is no load/store instruction for current config
-    if (gen_load_store_instr()) return;
+    if (gen_load_store_instr()) begin
+      if (address_mode == INDEXED) begin
+        // Unreserve index vector register
+        for (int i = 0; i < index_emul; i++) begin
+          cfg.vector_cfg.reserved_vregs.pop_back();
+        end
+      end
+      return;
+    end
     // Insert a random-mixed instruction stream
     add_mixed_instr(num_mixed_instr);
     // Insert the load/store instruction at a random place in the instruction stream
@@ -664,13 +677,24 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
       // Initialize rs2 with the stride
       insert_instr(get_init_gpr_instr(rs2_reg, byte_stride), 0);
     end else if (address_mode == INDEXED) begin
-      // Unreserve index vector registers
-      for (int i = 0; i < load_store_instr.emul_non_frac(index_eew); i++) begin
+      // Unreserve index vector register
+      for (int i = 0; i < index_emul; i++) begin
         cfg.vector_cfg.reserved_vregs.pop_back();
       end
       // Initialize vs2 with random/pre-defined indexes
-      randomize_indexed_byte_offset();
-      add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
+      // randomize_indexed_byte_offset();
+      // add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
+      add_init_vector_gpr_random(
+        .vreg       ( vs2_reg                                                           ),
+        .seed       ( vseed                                                             ),
+        .vtemp      ( vtemp                                                             ),
+        .reseed     ( 1'b1                                                              ),
+        .min_value  ( 0                                                                 ),
+        .max_value  ( data_page[data_page_id].size_in_bytes - data_page_base_offset - 1 ),
+        .align_by   ( data_eew / 8                                                      ),
+        .sew        ( index_eew                                                         ),
+        .insert_idx ( 0                                                                 )
+      );
     end
     super.post_randomize();
   endfunction
@@ -727,8 +751,16 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     if (address_mode == INDEXED) begin
       vs2_reg = load_store_instr.vs2;
       // Make sure that indexes are not overwritten
-      for (int i = 0; i < load_store_instr.emul_non_frac(index_eew); i++) begin
+      index_emul = load_store_instr.emul_non_frac(index_eew);
+      for (int i = 0; i < index_emul; i++) begin
         cfg.vector_cfg.reserved_vregs.push_back(riscv_vreg_t'(vs2_reg + i));
+      end
+      // Find seed and temporary vector registers
+      vseed = get_random_vreg(index_emul, 1);
+      vtemp = get_random_vreg(index_emul, 0);
+      // Unreserve vseed register
+      for (int i = 0; i < index_emul; i++) begin
+        cfg.vector_cfg.reserved_vregs.pop_back();
       end
     end
     load_store_instr.process_load_store = 0;
