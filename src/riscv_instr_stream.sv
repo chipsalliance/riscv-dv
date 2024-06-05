@@ -332,8 +332,8 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
   function void add_init_vector_gpr_random(riscv_vreg_t vreg, riscv_vreg_t seed, riscv_vreg_t vtemp,
                                            int reseed, int min_value, int max_value,
                                            int align_by, int sew, int insert_idx = instr_list.size());
-    // The LSFR is based on the fibonacci lsfr (https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
-    // The polinomial parameters are based on a paper by Xilinx (http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf)
+    // The LFSR is based on the fibonacci lfsr (https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
+    // The polynomial parameters are based on a paper by Xilinx (http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf)
     //
     // LFSR
     // Feedback polynomial
@@ -349,12 +349,12 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     riscv_instr init_instr_list [$];
     riscv_vector_instr vinstr;
     riscv_instr_gen_config init_cfg;
-    int polinomial[];
+    int polynomial[];
 
     unique case (sew)
-      8:  polinomial = {6,   5, 4};
-      16: polinomial = {15, 13, 4};
-      32: polinomial = {22,  2, 1};
+      8:  polynomial = {6,   5, 4};
+      16: polynomial = {15, 13, 4};
+      32: polynomial = {22,  2, 1};
       default: `uvm_fatal("add_init_vector_gpr_random",
                   $sformatf("Error: Unable to initialize vector with randomised values of SEW == %0d", sew))
     endcase
@@ -412,8 +412,8 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     )
     init_instr_list.push_back(vinstr);
 
-    foreach (polinomial[i]) begin
-      // vtemp = seed >> (sew - polinomial[i])
+    foreach (polynomial[i]) begin
+      // vtemp = seed >> (sew - polynomial[i])
       $cast(vinstr, riscv_instr::get_instr(VSRL));
       vinstr.avoid_reserved_vregs_c.constraint_mode(0);
       vinstr.m_cfg = init_cfg;
@@ -422,7 +422,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         vm  == 1'b1;
         vd  == vtemp;
         vs2 == seed;
-        imm == sew - polinomial[i];
+        imm == sew - polynomial[i];
       )
       init_instr_list.push_back(vinstr);
 
