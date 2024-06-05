@@ -521,8 +521,18 @@ endclass
 
 class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
 
+  // List of vector load/store instructions (grouped into different address modes)
+  localparam riscv_instr_name_t unit_strided[] = {VLE_V, VSE_V, VLEFF_V,
+                                                  VLM_V, VSM_V, VLRE_V, VSR_V,
+                                                  VLSEGE_V, VSSEGE_V, VLSEGEFF_V};
+  localparam riscv_instr_name_t strided[]      = {VLSE_V, VSSE_V, VLSSEGE_V, VSSSEGE_V};
+  localparam riscv_instr_name_t indexed[]      = {VLUXEI_V, VLOXEI_V, VSUXEI_V, VSOXEI_V,
+                                                  VLUXSEGEI_V, VLOXSEGEI_V, VSUXSEGEI_V, VSOXSEGEI_V};
+
   // Types of vector load/store address modes
   typedef enum {UNIT_STRIDED, STRIDED, INDEXED} address_mode_e;
+  // List of allowed address modes
+  address_mode_e allowed_address_modes[];
 
   rand int unsigned   data_eew;
   rand int unsigned   index_eew;
@@ -552,6 +562,11 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     solve index_eew             before data_page_base_offset;
     solve data_page_id          before data_page_base_offset;
     solve data_page_base_offset before byte_stride;
+  }
+
+  // Find legal address modes
+  constraint address_mode_c {
+    address_mode inside {allowed_address_modes};
   }
 
   // Choose from available data pages
@@ -608,12 +623,37 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   `uvm_object_utils(riscv_vector_load_store_instr_stream)
   `uvm_object_new
 
+  function void pre_randomize();
+    super.pre_randomize();
+
+    // Build list of allowed address modes (according to unsupported_instr list)
+    foreach(unit_strided[i]) begin
+      if (!(unit_strided[i] inside {unsupported_instr})) begin
+        allowed_address_modes = {allowed_address_modes, UNIT_STRIDED};
+        break;
+      end
+    end
+    foreach(strided[i]) begin
+      if (!(strided[i] inside {unsupported_instr})) begin
+        allowed_address_modes = {allowed_address_modes, STRIDED};
+        break;
+      end
+    end
+    foreach(indexed[i]) begin
+      if (!(indexed[i] inside {unsupported_instr})) begin
+        allowed_address_modes = {allowed_address_modes, INDEXED};
+        break;
+      end
+    end
+  endfunction
+
   function void post_randomize();
     // Randomize the available registers
     reserved_rd = {reserved_rd, rs1_reg, rs2_reg};
     randomize_avail_regs();
     // Generate a random load/store instruction
-    gen_load_store_instr();
+    // Exit and skip directed test if there is no load/store instruction for current config
+    if (gen_load_store_instr()) return;
     // Insert a random-mixed instruction stream
     add_mixed_instr(num_mixed_instr);
     // Insert the load/store instruction at a random place in the instruction stream
@@ -636,9 +676,12 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   endfunction
 
   // Generate a load/store instruction
-  virtual function void gen_load_store_instr();
+  virtual function int gen_load_store_instr();
     build_allowed_instr();
+    // If there are no allowed instructions, do not try to randomize and return early
+    if (allowed_instr.size() == 0) return 1;
     randomize_vector_load_store_instr();
+    return 0;
   endfunction
 
   // Choose allowed load/store instructions for current address mode
@@ -648,22 +691,20 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     // Get instructions for selected address mode
     case (address_mode)
       UNIT_STRIDED : begin
-        possible_instr = {VLE_V, VSE_V, VLEFF_V,
-                          VLM_V, VSM_V, VLRE_V, VSR_V,
-                          VLSEGE_V, VSSEGE_V, VLSEGEFF_V};
+        possible_instr = {unit_strided};
       end
       STRIDED : begin
-        possible_instr = {VLSE_V, VSSE_V, VLSSEGE_V, VSSSEGE_V};
+        possible_instr = {strided};
       end
       INDEXED : begin
-        possible_instr = {VLUXEI_V, VLOXEI_V, VSUXEI_V, VSOXEI_V,
-                          VLUXSEGEI_V, VLOXSEGEI_V, VSUXSEGEI_V, VSOXSEGEI_V};
+        possible_instr = {indexed};
       end
     endcase
 
     // Filter out illegal instructions for current config
     foreach (possible_instr[i]) begin
       riscv_instr instr_inst;
+      if (possible_instr[i] inside {unsupported_instr}) continue;
       instr_inst = instr_inst.create_instr(possible_instr[i]);
       if (instr_inst.is_supported(cfg)) begin
         allowed_instr = {allowed_instr, possible_instr[i]};
