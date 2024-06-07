@@ -19,9 +19,6 @@ class riscv_vector_cfg extends uvm_object;
 
   rand vtype_t           vtype;
   rand bit [XLEN-1:0]    vl;
-  rand bit [XLEN-1:0]    vstart;
-  rand vxrm_t            vxrm;
-  rand bit               vxsat;
   riscv_vreg_t           reserved_vregs[$];
 
   // Zvl* extension
@@ -44,19 +41,14 @@ class riscv_vector_cfg extends uvm_object;
   // on current SEW and LMUL setting
   int unsigned legal_ls_eew[$];
 
+  // Random value solve order
   constraint solve_order_c {
     solve vtype.vsew before vtype.vlmul;
-    solve vl before vstart;
   }
 
   // vl has to be within VLMAX
   constraint vl_c {
     vl inside {[0 : vlmax(vtype)]};
-  }
-
-  // vstart has to be within vl
-  constraint vstart_c {
-    vstart inside {[0 : vl]};
   }
 
   // Select valid vlmul
@@ -83,9 +75,6 @@ class riscv_vector_cfg extends uvm_object;
     `uvm_field_int(vtype.vlmul, UVM_DEFAULT)
     `uvm_field_int(vtype.fractional_lmul, UVM_DEFAULT)
     `uvm_field_int(vl, UVM_DEFAULT)
-    `uvm_field_int(vstart, UVM_DEFAULT)
-    `uvm_field_enum(vxrm_t,vxrm, UVM_DEFAULT)
-    `uvm_field_int(vxsat, UVM_DEFAULT)
     `uvm_field_queue_enum(riscv_vreg_t, reserved_vregs, UVM_DEFAULT)
     `uvm_field_string(zve_extension, UVM_DEFAULT)
     `uvm_field_int(enable_fp_support, UVM_DEFAULT)

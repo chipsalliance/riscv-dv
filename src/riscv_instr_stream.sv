@@ -330,7 +330,6 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     if (instr.instr_name != VSETIVLI && instr.rs1 == ZERO && instr.rd != ZERO) begin
       // Set vl to vlmax
       cfg.vector_cfg.vl = cfg.vector_cfg.vlmax();
-      cfg.vector_cfg.vstart = 0;
     end
     cfg.vector_cfg.vl.rand_mode(1);
 

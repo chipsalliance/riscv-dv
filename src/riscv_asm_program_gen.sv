@@ -595,8 +595,8 @@ class riscv_asm_program_gen extends uvm_object;
     endcase
 
     // Initialize vector CSRs
-    instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", cfg.vector_cfg.vxsat)});
-    instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", cfg.vector_cfg.vxrm)});
+    instr_stream.push_back({indent, $sformatf("csrwi vxsat, %0d", $urandom() & 'b1)});
+    instr_stream.push_back({indent, $sformatf("csrwi vxrm, %0d", $urandom() & 'b11)});
 
     // Initialize vector configuration
     instr_stream.push_back($sformatf("%0sli x%0d, %0d", indent, cfg.gpr[1], cfg.vector_cfg.vl));
