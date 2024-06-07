@@ -541,6 +541,7 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   rand int unsigned   num_mixed_instr;
   rand int            byte_stride;
   rand address_mode_e address_mode;
+  rand bit [XLEN-1:0] vstart;
   // Base address
   rand riscv_reg_t    rs1_reg;
   // Stride
@@ -616,6 +617,14 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
       // Addresses have to be data width aligned
       byte_stride % (data_eew / 8) == 0;
     }
+  }
+
+  // Find a suitable vstart
+  constraint vstart_c {
+    // vstart has to be within vl
+    vstart inside {[0 : cfg.vector_cfg.vl]};
+    // Generate as many zero vstart as non zero
+    vstart dist { 0 := 1, [1:cfg.vector_cfg.vl] :/ 1 };
   }
 
   // Do not use reserved xregs for base address and stride
@@ -700,7 +709,34 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
         add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
       end
     end
+    add_init_vstart();
     super.post_randomize();
+  endfunction
+
+  // Initialize the vstart CSR
+  function void add_init_vstart();
+    riscv_instr csr_instr;
+    int last_rvv_idx = -1;
+    // Find position of last vector instruction before load/store
+    // After last rvv instruction it is save to insert vstart CSR write
+    foreach (instr_list[i]) begin
+      if (instr_list[i].group == RVV) begin
+        // We have reached the vector load/store instruction, end here
+        if (instr_list[i].category inside {LOAD, STORE}) begin
+          break;
+        end
+        // Set index of last rvv instruction
+        last_rvv_idx = i;
+      end
+    end
+    // Preload vstart value to temporary register and write to CSR
+    $cast(csr_instr, riscv_instr::get_instr(CSRRW));
+    csr_instr.m_cfg = cfg;
+    randomize_gpr(csr_instr);
+    csr_instr.csr   = VSTART;
+    csr_instr.rs1   = csr_instr.rd;
+    insert_instr(csr_instr, last_rvv_idx+1);
+    insert_instr(get_init_gpr_instr(csr_instr.rd, vstart), last_rvv_idx+1);
   endfunction
 
   // Generate a load/store instruction
