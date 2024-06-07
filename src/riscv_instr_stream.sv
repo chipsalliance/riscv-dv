@@ -304,7 +304,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
 
   // Handle vset{i}vl{i} instructions
   // Regenerate vector configuration and initialize rs1/rs2
-  function handle_vector_configuration_instr(int idx);
+  function void handle_vector_configuration_instr(int idx);
     riscv_instr instr;
     instr = instr_list[idx];
 
