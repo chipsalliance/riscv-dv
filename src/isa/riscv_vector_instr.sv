@@ -731,10 +731,10 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       has_vs1 = 1'b0;
       has_vs2 = 1'b0;
       has_vd  = 1'b0;
-      has_rs1 = name != "VSETIVLI";
-      has_rs2 = name == "VSETVL";
+      has_rs1 = instr_name != VSETIVLI;
+      has_rs2 = instr_name == VSETVL;
       has_rd  = 1'b1;
-      has_imm = name == "VSETIVLI";
+      has_imm = instr_name == VSETIVLI;
     end
     if (format == VA_FORMAT) begin
       has_imm = 1'b1;
