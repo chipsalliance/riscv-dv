@@ -213,7 +213,15 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     }
   }
 
-  // Oder to solve load and store constraints in
+  // Section 6: Configuration-Setting Instructions
+  // RS2 of vsetvl can only be x0 if vtype is zero
+  constraint vsetvl_rs2_c {
+    if (instr_name == VSETVL) {
+      m_cfg.vector_cfg.vtype != '0 -> rs2 != ZERO;
+    }
+  }
+
+  // Order to solve load and store constraints in
   constraint load_store_solve_order_c {
     solve ls_eew           before ls_emul_non_frac;
     solve ls_emul_non_frac before vd;
