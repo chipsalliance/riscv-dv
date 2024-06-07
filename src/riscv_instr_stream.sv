@@ -218,7 +218,15 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                                   bit is_debug_program = 1'b0);
     setup_allowed_instr(no_branch, no_load_store);
     foreach(instr_list[i]) begin
+      if (instr_list[i] != null) continue;
       randomize_instr(instr_list[i], is_debug_program);
+      // Handle special instructions
+      if (instr_list[i].group == RVV && instr_list[i].category == CSR) begin
+        handle_vector_configuration_instr(i);
+        // Regenerate list of supported instruction
+        riscv_instr::create_instr_list(cfg);
+        setup_allowed_instr(no_branch, no_load_store);
+      end
     end
     // Do not allow branch instruction as the last instruction because there's no
     // forward branch target
@@ -273,6 +281,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         if (format == CB_FORMAT) {
           rs1 != reserved_rd[i];
         }
+        if (format == VSET_FORMAT) {
+          has_rs1 -> rs1 != reserved_rd[i];
+          has_rs2 -> rs2 != reserved_rd[i];
+        }
       }
       foreach (cfg.reserved_regs[i]) {
         if (has_rd) {
@@ -281,9 +293,61 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         if (format == CB_FORMAT) {
           rs1 != cfg.reserved_regs[i];
         }
+        if (format == VSET_FORMAT) {
+          has_rs1 -> rs1 != cfg.reserved_regs[i];
+          has_rs2 -> rs2 != cfg.reserved_regs[i];
+        }
       }
       // TODO: Add constraint for CSR, floating point register
     )
+  endfunction
+
+  // Handle vset{i}vl{i} instructions
+  // Regenerate vector configuration and initialize rs1/rs2
+  function handle_vector_configuration_instr(int idx);
+    riscv_instr instr;
+    instr = instr_list[idx];
+
+    // Create new config instance and deep copy old config
+    cfg = new ();
+    cfg.copy(instr.m_cfg);
+    // Set instruction config to new instance
+    instr.m_cfg = cfg;
+
+    // Randomize cfg
+    if (instr.rs1 == ZERO && instr.instr_name != VSETIVLI) begin
+      if (instr.rd == ZERO) begin
+        // Keep existing vl
+        cfg.vector_cfg.vl.rand_mode(0);
+      end
+    end
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(cfg.vector_cfg,
+      if (instr.instr_name == VSETIVLI) {
+        cfg.vector_cfg.vl < 2**5;
+      }
+    )
+    // Special vsetvl{¡} conditions
+    if (instr.instr_name != VSETIVLI && instr.rs1 == ZERO && instr.rd != ZERO) begin
+      // Set vl to vlmax
+      cfg.vector_cfg.vl = cfg.vector_cfg.vlmax();
+      cfg.vector_cfg.vstart = 0;
+    end
+    cfg.vector_cfg.vl.rand_mode(1);
+
+    // Handle not fully immediate instructions
+    if (instr.instr_name != VSETIVLI) begin
+      // Copy vsetvl{i} instruction to position further back
+      instr_list[idx+(instr.instr_name == VSETVL ? 2 : 1) - (instr.rs1 == ZERO)] = instr;
+
+      // Setup rs1 (avl)
+      if (instr.rs1 != ZERO) begin
+        instr_list[idx] = get_init_gpr_instr(instr.rs1, cfg.vector_cfg.vl);
+      end
+      // Setup rs2 (vtype)
+      if (instr.instr_name == VSETVL) begin
+        instr_list[idx+(instr.rs1 != ZERO)] = get_init_gpr_instr(instr.rs2, cfg.vector_cfg.get_vtype_content());
+      end
+    end
   endfunction
 
   // Get a random vreg that is aligned to non fractional emul and is not already reserved
