@@ -38,6 +38,21 @@ class riscv_directed_instr_stream extends riscv_rand_instr_stream;
     end
   endfunction
 
+  // Insert some other instructions to mix with mem_access instruction
+  virtual function void add_mixed_instr(int instr_cnt, int insert_idx = -1);
+    riscv_instr instr;
+    int         i = 0;
+    setup_allowed_instr(1, 1);
+    while (i < instr_cnt) begin
+      instr = riscv_instr::type_id::create("instr");
+      randomize_instr(instr);
+      if (instr.is_supported(cfg)) begin
+        insert_instr(instr, insert_idx);
+        i++;
+      end
+    end
+  endfunction
+
 endclass
 
 // Base class for memory access stream
@@ -78,21 +93,6 @@ class riscv_mem_access_stream extends riscv_directed_instr_stream;
                                    hart_prefix(hart), cfg.mem_region[id].name, base);
     end
     instr_list.push_front(la_instr);
-  endfunction
-
-  // Insert some other instructions to mix with mem_access instruction
-  virtual function void add_mixed_instr(int instr_cnt);
-    riscv_instr instr;
-    int         i = 0;
-    setup_allowed_instr(1, 1);
-    while (i < instr_cnt) begin
-      instr = riscv_instr::type_id::create("instr");
-      randomize_instr(instr);
-      if (instr.is_supported(cfg)) begin
-        insert_instr(instr);
-        i++;
-      end
-    end
   endfunction
 
 endclass
