@@ -40,7 +40,7 @@ class riscv_instr extends uvm_object;
   bit [4:0]                  imm_len;
 
   // Operands
-  rand bit [11:0]            csr;
+  rand privileged_reg_t      csr;
   rand riscv_reg_t           rs2;
   rand riscv_reg_t           rs1;
   rand riscv_reg_t           rd;

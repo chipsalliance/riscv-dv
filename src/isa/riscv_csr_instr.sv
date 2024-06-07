@@ -144,9 +144,9 @@ class riscv_csr_instr extends riscv_instr;
 
     case(format)
         I_FORMAT: // instr rd,rs1,imm
-          asm_str = $sformatf("%0s%0s, 0x%0x, %0s", asm_str, rd.name(), csr, get_imm());
+          asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), csr.name(), get_imm());
         R_FORMAT: // instr rd,rs1,rs2
-          asm_str = $sformatf("%0s%0s, 0x%0x, %0s", asm_str, rd.name(), csr, rs1.name());
+          asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), csr.name(), rs1.name());
         default:
           `uvm_fatal(`gfn, $sformatf("Unsupported format %0s [%0s]", format.name(),
                                      instr_name.name()))
