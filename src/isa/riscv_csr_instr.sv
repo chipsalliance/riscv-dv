@@ -98,6 +98,7 @@ class riscv_csr_instr extends riscv_instr;
 
       create_include_write_reg(cfg.add_csr_write, cfg.remove_csr_write, default_include_csr_write);
     end else begin
+      allow_ro_write = 0;
       // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
       if (cfg.init_privileged_mode == MACHINE_MODE) begin
         include_reg = {MSCRATCH};
@@ -105,6 +106,10 @@ class riscv_csr_instr extends riscv_instr;
         include_reg = {SSCRATCH};
       end else begin
         include_reg = {USCRATCH};
+      end
+      // Add vector CSRs
+      if (cfg.enable_vector_extension) begin
+        include_reg = {include_reg, VXSAT, VXRM, VCSR, VL, VTYPE, VLENB};
       end
     end
   endfunction : create_csr_filter
