@@ -543,13 +543,6 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         end
       end
     end
-    // Check vector configuration-setting
-    if (instr_name == VSETIVLI) begin
-      // Immediate vsetivli can only be used if VL fits into space of immediate value
-      if (cfg.vector_cfg.vl >= 2**5) begin
-        return 0;
-      end
-    end
     return 1'b1;
   endfunction
 
