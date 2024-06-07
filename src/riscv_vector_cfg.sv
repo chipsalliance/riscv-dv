@@ -46,7 +46,6 @@ class riscv_vector_cfg extends uvm_object;
 
   constraint solve_order_c {
     solve vtype.vsew before vtype.vlmul;
-    solve vtype before vl;
     solve vl before vstart;
   }
 
