@@ -200,4 +200,13 @@ class riscv_vector_cfg extends uvm_object;
     return vlmax;
   endfunction
 
+  // Get flat register state of vtype csr
+  function logic [XLEN-1:0] get_vtype_content(vtype_t _vtype = vtype);
+    get_vtype_content = '0;
+    get_vtype_content[2:0] = _vtype.fractional_lmul ? 3'(-$clog2(_vtype.vlmul)) : 3'($clog2(_vtype.vlmul));
+    get_vtype_content[5:3] = $clog2(_vtype.vsew / 8);
+    get_vtype_content[  6] = _vtype.vta;
+    get_vtype_content[  7] = _vtype.vma;
+  endfunction
+
 endclass : riscv_vector_cfg
