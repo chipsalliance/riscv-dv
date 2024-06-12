@@ -718,7 +718,7 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     riscv_instr csr_instr;
     int last_rvv_idx = -1;
     // Find position of last vector instruction before load/store
-    // After last rvv instruction it is save to insert vstart CSR write
+    // After last rvv instruction it is safe to insert vstart CSR write
     foreach (instr_list[i]) begin
       if (instr_list[i].group == RVV) begin
         // We have reached the vector load/store instruction, end here
