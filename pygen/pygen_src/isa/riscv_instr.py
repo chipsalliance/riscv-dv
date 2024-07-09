@@ -15,7 +15,7 @@ import copy
 import sys
 import random
 import vsc
-from imp import reload
+from importlib import reload
 from collections import defaultdict
 from bitstring import BitArray
 from importlib import import_module
