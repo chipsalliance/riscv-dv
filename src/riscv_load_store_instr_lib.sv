@@ -622,7 +622,7 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
   // Find a suitable vstart
   constraint vstart_c {
     // vstart has to be within vl
-    vstart inside {[0 : cfg.vector_cfg.vl]};
+    vstart inside {[0 : cfg.vector_cfg.vl-1]};
     // Generate as many zero vstart as non zero
     vstart dist { 0 := 1, [1:cfg.vector_cfg.vl] :/ 1 };
   }
