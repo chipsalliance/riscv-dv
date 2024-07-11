@@ -446,7 +446,12 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             if 'gen_opts' in test:
                 # Disable compressed instruction
                 if re.search('disable_compressed_instr', test['gen_opts']):
-                    test_isa = re.sub("c", "", test_isa)
+                    # Note that this substitution assumes the cannonical order
+                    # of extensions, i.e. that extensions with preceding
+                    # underscores will be provided after all letter extensions.
+                    # This assumption should hold true, as this is a
+                    # requirement enforced by e.g. gcc
+                    test_isa = re.sub(r"(rv.+?)c", r"\1", test_isa)
             # If march/mabi is not defined in the test gcc_opts, use the default
             # setting from the command line.
             if not re.search('march', cmd):
