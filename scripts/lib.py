@@ -88,7 +88,7 @@ def get_env_var(var, debug_cmd=None):
     return val
 
 
-def run_cmd(cmd, timeout_s=999, exit_on_error=1, check_return_code=True,
+def run_cmd(cmd, timeout_s=3600, exit_on_error=1, check_return_code=True,
             debug_cmd=None):
     """Run a command and return output
 
