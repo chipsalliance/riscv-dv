@@ -709,7 +709,9 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
         add_init_vector_gpr(vs2_reg, indexed_byte_offset, index_eew, 0);
       end
     end
-    add_init_vstart();
+    if (cfg.enable_vstart_randomisation) begin
+      add_init_vstart();
+    end
     super.post_randomize();
   endfunction
 

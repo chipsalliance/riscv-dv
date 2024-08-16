@@ -251,6 +251,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_vector_extension;
   // Only generate vector instructions
   bit                    vector_instr_only;
+  // Randomise vstart during vector load and store tests
+  bit                    enable_vstart_randomisation = 1'b0;
   // Initialization of the vregs
   // SAME_VALUES_ALL_ELEMS - Using vmv.v.x to fill all the elements of the vreg with the same value as the one in the GPR selected
   // RANDOM_VALUES_VMV     - Using vmv.v.x + vslide1down.vx to randomize the contents of each vector element
@@ -613,6 +615,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_floating_point=", enable_floating_point);
     get_bool_arg_value("+enable_vector_extension=", enable_vector_extension);
     get_bool_arg_value("+vector_instr_only=", vector_instr_only);
+    get_bool_arg_value("+enable_vstart_randomisation=", enable_vstart_randomisation);
     cmdline_enum_processor #(vreg_init_method_t)::get_value("+vreg_init_method=",
                                                             1'b0, vreg_init_method);
     cmdline_enum_processor #(vreg_ls_index_init_t)::get_value("+vreg_ls_index_init=",
