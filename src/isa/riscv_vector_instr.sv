@@ -59,12 +59,12 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + whole_register_move_cnt - 1]});
         } else if (category inside {LOAD, STORE}) {
           if (format inside {VLX_FORMAT, VSX_FORMAT}) {
-            !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vlmul) * nfields - 1]});
+            !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vsew) * nfields - 1]});
           } else {
             !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(ls_eew) * nfields - 1]});
           }
         } else {
-          !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vlmul) - 1]});
+          !(m_cfg.vector_cfg.reserved_vregs[i] inside {[vd : vd + emul_non_frac(m_cfg.vector_cfg.vtype.vsew) - 1]});
         }
       }
     }
