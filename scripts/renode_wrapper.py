@@ -10,11 +10,11 @@ REPL_TEMPLATE = """
 memory: Memory.MappedMemory @ sysbus 0x80000000
     size: {mem}
 
-cpu: CPU.RiscV32 @ sysbus
+cpu: CPU.{cpu_type} @ sysbus
     cpuType: "{isa}"
     timeProvider: clint
     hartId: 0
-    allowUnalignedAccesses: true
+    {additional_cpu_parameters}
 
 clint: IRQControllers.CoreLevelInterruptor  @ sysbus 0x02000000
     [0,1] -> cpu@[3,7]
@@ -77,6 +77,20 @@ def main():
         default="0x100000",
         help="Memory size",
     )
+    parser.add_argument(
+        "--cpu-type",
+        type=str,
+        default="Riscv32",
+        help="Renode CPU type",
+    )
+    # Some CPUs might not expose these parameters as configurable
+    # allow the testing software to ignore/override them if needed
+    parser.add_argument(
+        "--additional-cpu-parameters",
+        type=str,
+        default="allowUnalignedAccesses: true",
+        help="Additional CPU parameters",
+    )
 
     args = parser.parse_args()
 
@@ -93,6 +107,8 @@ def main():
             "resc": resc,
             "log":  args.log,
             "mem":  args.mem_size,
+            "cpu_type": args.cpu_type,
+            "additional_cpu_parameters": args.additional_cpu_parameters,
         }
 
         # Render REPL template
