@@ -665,6 +665,7 @@ def iss_sim(test_list, output_dir, iss_list, iss_yaml, iss_opts,
     for iss in iss_list.split(","):
         log_dir = ("{}/{}_sim".format(output_dir, iss))
         base_cmd = parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd)
+        base_cmd += iss_opts
         logging.info("{} sim log dir: {}".format(iss, log_dir))
         run_cmd_output(["mkdir", "-p", log_dir])
         for test in test_list:
