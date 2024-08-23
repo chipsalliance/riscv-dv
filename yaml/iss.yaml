@@ -40,4 +40,4 @@
 - iss: renode
   path_var: RENODE_PATH
   cmd: >
-    python3 <scripts_path>/renode_wrapper.py --renode "<path_var>" --elf <elf> --isa <variant> --mem-size 0x80000000
+    python3 <scripts_path>/renode_wrapper.py --renode "<path_var>" --elf <elf> --isa <variant> --priv=m<priv> --mem-size 0x80000000
