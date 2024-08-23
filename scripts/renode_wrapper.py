@@ -14,6 +14,7 @@ cpu: CPU.{cpu_type} @ sysbus
     cpuType: "{isa}"
     timeProvider: clint
     hartId: 0
+    {priv_levels}
     {additional_cpu_parameters}
 
 clint: IRQControllers.CoreLevelInterruptor  @ sysbus 0x02000000
@@ -83,6 +84,12 @@ def main():
         default="Riscv32",
         help="Renode CPU type",
     )
+    parser.add_argument(
+        "--priv",
+        type=str,
+        default="",
+        help="Supported privilege levels",
+    )
     # Some CPUs might not expose these parameters as configurable
     # allow the testing software to ignore/override them if needed
     parser.add_argument(
@@ -99,6 +106,16 @@ def main():
         repl = os.path.join(tmpdir, "riscv.repl")
         resc = os.path.join(tmpdir, "riscv.resc")
 
+        priv_levels = ""
+        if args.priv:
+            priv_levels += "privilegeLevels: PrivilegeLevels."
+            if "m" in args.priv:
+                priv_levels += "Machine"
+            if "s" in args.priv:
+                priv_levels += "Supervisor"
+            if "u" in args.priv:
+                priv_levels += "User"
+
         params = {
             "renode": args.renode,
             "isa":  args.isa,
@@ -108,6 +125,7 @@ def main():
             "log":  args.log,
             "mem":  args.mem_size,
             "cpu_type": args.cpu_type,
+            "priv_levels": priv_levels,
             "additional_cpu_parameters": args.additional_cpu_parameters,
         }
 
