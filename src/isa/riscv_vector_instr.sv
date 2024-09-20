@@ -85,11 +85,13 @@ class riscv_vector_instr extends riscv_floating_point_instr;
         !(instr_name inside {VMV_X_S, VMV_S_X, VFMV_F_S, VFMV_S_F}) &&
         !(instr_name inside {VRGATHEREI16}) &&
         !(category inside {LOAD, STORE})) {
-      if (!is_mask_producing_instr) {
+      if (!(is_mask_producing_instr || is_reduction_instr)) {
         vd % m_cfg.vector_cfg.vtype.vlmul == 0;
       }
       if (!is_mask_operands) {
-        (instr_name != VCOMPRESS) -> vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
+        if (instr_name != VCOMPRESS && !is_reduction_instr) {
+          vs1 % m_cfg.vector_cfg.vtype.vlmul == 0;
+        }
         vs2 % m_cfg.vector_cfg.vtype.vlmul == 0;
       }
       vs3 % m_cfg.vector_cfg.vtype.vlmul == 0;
