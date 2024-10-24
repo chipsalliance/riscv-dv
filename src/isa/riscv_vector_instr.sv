@@ -441,6 +441,17 @@ class riscv_vector_instr extends riscv_floating_point_instr;
     !m_cfg.vector_cfg.enable_fp_support -> !(va_variant inside {VF, WF, VFM});
   }
 
+  // Section 6.2: AVL encoding
+  // Make special cases appear more often
+  constraint rs_rd_distribution_vsetvli_c {
+    if (instr_name inside {VSETVL, VSETVLI}) {
+      rd dist {0 :/ 50, [1:31] :/ 50};
+      rd == 0 -> rs1 dist {0 :/ 50, [1:31] :/ 50};
+      // Limit the amount of vl == vlmax to 10%
+      rd != 0 -> rs1 dist {0 :/ 10, [1:31] :/ 90};
+    }
+  }
+
   // Filter unsupported instructions based on configuration
   virtual function bit is_supported(riscv_instr_gen_config cfg);
     // Check that current LMUL and SEW are valid for narrowing and widening instruction
