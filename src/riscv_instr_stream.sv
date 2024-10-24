@@ -306,6 +306,9 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
   // Regenerate vector configuration and initialize rs1/rs2
   function void handle_vector_configuration_instr(int idx);
     riscv_instr instr;
+    int unsigned vsew;
+
+    // Get relevant instruction
     instr = instr_list[idx];
 
     // Create new config instance and deep copy old config
@@ -314,13 +317,26 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     // Set instruction config to new instance
     instr.m_cfg = cfg;
 
-    // Randomize cfg
-    if (instr.rs1 == ZERO && instr.instr_name != VSETIVLI) begin
-      if (instr.rd == ZERO) begin
-        // Keep existing vl
-        cfg.vector_cfg.vl.rand_mode(0);
+    if (instr.instr_name != VSETIVLI && instr.rs1 == ZERO && instr.rd == ZERO) begin
+      // Keep vl but vtype might change, provided vtype ratio does not change
+      cfg.vector_cfg.vl.rand_mode(0);
+      cfg.vector_cfg.vtype.rand_mode(0);
+
+      // Find a random new vsew
+      vsew = $urandom_range(3,$clog2(cfg.vector_cfg.max_int_sew));
+      vsew = 2**vsew;
+      // If there is no legal vlmul for new vsew, set vsew to known legal value.
+      // For every current vtype config, there will always be a legal vlmul when vsew
+      // is reduced, since there is always space for at least one element in a fractional
+      // register. So setting to smallest vsew here is always possible.
+      if (!cfg.vector_cfg.vtype.fractional_lmul && vsew/8 > cfg.vector_cfg.vtype.vsew/cfg.vector_cfg.vtype.vlmul) begin
+        vsew = 8;
       end
+      // Calculate new vlmul and update vtype, while vl remains constant
+      cfg.vector_cfg.update_vsew_keep_vl(vsew);
     end
+
+    // Randomize cfg
     `DV_CHECK_RANDOMIZE_WITH_FATAL(cfg.vector_cfg,
       if (instr.instr_name == VSETIVLI) {
         cfg.vector_cfg.vl < 2**5;
@@ -332,6 +348,7 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
       cfg.vector_cfg.vl = cfg.vector_cfg.vlmax();
     end
     cfg.vector_cfg.vl.rand_mode(1);
+    cfg.vector_cfg.vtype.rand_mode(1);
 
     // Handle not fully immediate instructions
     if (instr.instr_name != VSETIVLI) begin
