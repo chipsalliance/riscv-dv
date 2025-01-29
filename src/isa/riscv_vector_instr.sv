@@ -543,14 +543,16 @@ class riscv_vector_instr extends riscv_floating_point_instr;
       // Segmented l/s need at least two segments
       if (is_segmented_ls_instr) begin
         if (format inside {VLX_FORMAT, VSX_FORMAT}) begin
+          // For indexed, data EMUL == LMUL
           if (!cfg.vector_cfg.vtype.fractional_lmul && cfg.vector_cfg.vtype.vlmul == 8) begin
             return 0;
           end
         end else begin
+          // For (unit)-strided, data EMUL == EEW/SEW*LMUL, but with LMUL not fractional
+          // (since we always need a full register for every field)
           int unsigned max_eew [$] = cfg.vector_cfg.legal_ls_eew.max();
           if (int'(real'(max_eew.pop_front()) / real'(cfg.vector_cfg.vtype.vsew) *
-                   (cfg.vector_cfg.vtype.fractional_lmul ? 1.0 / real'(cfg.vector_cfg.vtype.vlmul) :
-                                                           real'(cfg.vector_cfg.vtype.vlmul))) == 8) begin
+                   (cfg.vector_cfg.vtype.fractional_lmul ? 1.0  : real'(cfg.vector_cfg.vtype.vlmul))) >= 8) begin
             return 0;
           end
         end
