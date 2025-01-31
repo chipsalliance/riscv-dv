@@ -592,7 +592,7 @@ class riscv_vector_instr extends riscv_floating_point_instr;
           asm_str = $sformatf("%0s%0s, %0s, e%0d, m%0s%0d, t%0s, m%0s",
                               asm_str,
                               rd.name(),
-                              instr_name == VSETIVLI ? get_imm() : rs1.name(),
+                              instr_name == VSETIVLI ? $sformatf("%0d", m_cfg.vector_cfg.vl) : rs1.name(),
                               m_cfg.vector_cfg.vtype.vsew,
                               m_cfg.vector_cfg.vtype.fractional_lmul ? "f" : "",
                               m_cfg.vector_cfg.vtype.vlmul,
