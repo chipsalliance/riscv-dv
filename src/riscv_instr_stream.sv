@@ -403,15 +403,16 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
   // seed: register that contains initial seed (cannot be equal to vreg)
   // vtemp: temporary vector register used during calculation (cannot be equal to vreg or seed)
   // reseed: reseed the original seed with the vector element index (seed += vid)
-  // min_value: lower bound of random value (inclusive)
-  // max_value: upper bound of random value (inclusive)
   // align_by: align random value by number of bytes (e.g align_by == 2 would clear the lowest bit)
   // sew: element width
+  // min_value: lower bound of random value (inclusive), default (INT_MIN)
+  // max_value: upper bound of random value (inclusive), default (INT_MAX)
   // insert_idx: position in instruction stream to insert instruction at
   //             (-1: random, 0: front, instr_list.size(): back (default))
   function void add_init_vector_gpr_random(riscv_vreg_t vreg, riscv_vreg_t seed, riscv_vreg_t vtemp,
-                                           int reseed, int min_value, int max_value,
-                                           int align_by, int sew, int insert_idx = instr_list.size());
+                                           int reseed, int align_by, int sew,
+                                           longint min_value = 64'd1 << 63, longint max_value = '1 >> 1,
+                                           int insert_idx = instr_list.size());
     // The LFSR is based on the fibonacci lfsr (https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
     // The polynomial parameters are based on a paper by Xilinx (http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf)
     //
@@ -560,34 +561,33 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     init_instr_list.push_back(vinstr);
 
     // Cast to range
-    if (min_value > 0) begin
-      init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], min_value));
-      $cast(vinstr, riscv_instr::get_instr(VMAXU));
-      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
-      vinstr.m_cfg = init_cfg;
-      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
-        va_variant == VX;
-        vm  == 1'b1;
-        vd  == vreg;
-        vs2 == vreg;
-        rs1 == cfg.gpr[0];
-      )
-      init_instr_list.push_back(vinstr);
-    end
-    if (max_value > 0) begin
-      init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], max_value));
-      $cast(vinstr, riscv_instr::get_instr(VMINU));
-      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
-      vinstr.m_cfg = init_cfg;
-      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
-        va_variant == VX;
-        vm  == 1'b1;
-        vd  == vreg;
-        vs2 == vreg;
-        rs1 == cfg.gpr[0];
-      )
-      init_instr_list.push_back(vinstr);
-    end
+    // Min bound
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], min_value));
+    $cast(vinstr, riscv_instr::get_instr(VMAX));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VX;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vreg;
+      rs1 == cfg.gpr[0];
+    )
+    init_instr_list.push_back(vinstr);
+    // Max bound
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], max_value));
+    $cast(vinstr, riscv_instr::get_instr(VMIN));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VX;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vreg;
+      rs1 == cfg.gpr[0];
+    )
+    init_instr_list.push_back(vinstr);
+    // Value alignment
     if (align_by > 1) begin
       init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], '1 << $clog2(align_by)));
       $cast(vinstr, riscv_instr::get_instr(VAND));
