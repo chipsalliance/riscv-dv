@@ -22,11 +22,13 @@ jobs:
         name: Prepare test types
         run: |
           python3 -m pip install pyyaml
-          echo "tests=$(python3 .github/scripts/parse_testlist.py $RISCV_TARGET)" | tee -a $GITHUB_OUTPUT
+          python3 .github/scripts/parse_testlist.py $RISCV_TARGET > tests.list
+          echo "tests=$(cat tests.list)" | tee -a $GITHUB_OUTPUT
       - id: hash
         name: Prepare files' hash
         run: |
-          echo "files-hash=$(sha256sum **/*.sv **/*.py **/*.yml **/*.yaml | cut -d\  -f1 | sha256sum | cut -d\  -f1)" | tee -a $GITHUB_OUTPUT
+          sha256sum **/*.sv **/*.py **/*.yaml > file.hash
+          echo "files-hash=$(cat file.hash | cut -d\  -f1 | sha256sum | cut -d\  -f1)" | tee -a $GITHUB_OUTPUT
 
 
   generate-code:
