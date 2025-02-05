@@ -27,7 +27,7 @@ jobs:
         name: Prepare files' hash
         run: |
           echo "files-hash=$(sha256sum **/*.sv **/*.py **/*.yml **/*.yaml | cut -d\  -f1 | sha256sum | cut -d\  -f1)" | tee -a $GITHUB_OUTPUT
-          
+
 
   generate-code:
     runs-on: [ self-hosted, Linux, X64, gcp-custom-runners ]
@@ -39,7 +39,7 @@ jobs:
         test: ${{ fromJSON(needs.generate-config.outputs.test-types) }}
         version: [ uvm ]
         include:
-          - test: riscv_arithmetic_basic_test 
+          - test: riscv_arithmetic_basic_test
             version: pyflow
     env:
       GHA_EXTERNAL_DISK: additional-tools
@@ -89,9 +89,10 @@ jobs:
             --isa $RISCV_TARGET --mabi ilp32 --steps gen -v -o test 2>&1 | tee test/generate.log
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: generate_code_${{ matrix.test }}_${{ matrix.version }}
           path: |
             test/asm_test/*.S
 
@@ -174,9 +175,10 @@ jobs:
             --isa $RISCV_TARGET --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
+          name: run_tests_log_${{ matrix.test }}_${{ matrix.version }}
           path: |
             test/asm_test/*.log
             test/*.log
