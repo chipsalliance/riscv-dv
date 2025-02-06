@@ -189,5 +189,5 @@ jobs:
         with:
           name: run_tests_log_${{ matrix.test }}_${{ matrix.version }}
           path: |
-            test/asm_test/*.log
             test/*.log
+            test/**/${{ matrix.test }}*.log
