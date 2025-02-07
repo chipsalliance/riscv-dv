@@ -827,7 +827,7 @@ def parse_args(cwd):
                             command is not specified")
     parser.add_argument("--isa", type=str, default="",
                         help="RISC-V ISA subset")
-    parser.add_argument("--priv", type=str, default="",
+    parser.add_argument("--priv", type=str, default="m",
                         help="RISC-V privilege modes enabled in simulation [su]")
     parser.add_argument("-m", "--mabi", type=str, default="",
                         help="mabi used for compilation", dest="mabi")
@@ -951,40 +951,40 @@ def load_config(args, cwd):
             args.core_setting_dir = cwd + "/target/" + args.target
         if args.target == "rv32imc":
             args.mabi = "ilp32"
-            args.isa = "rv32imc"
+            args.isa = "rv32imc_zicsr_zifencei"
         elif args.target == "rv32imafdc":
             args.mabi = "ilp32"
-            args.isa = "rv32imafdc"
+            args.isa = "rv32imafdc_zicsr_zifencei"
         elif args.target == "rv32imc_sv32":
             args.mabi = "ilp32"
-            args.isa = "rv32imc"
+            args.isa = "rv32imc_zicsr_zifencei"
         elif args.target == "multi_harts":
             args.mabi = "ilp32"
-            args.isa = "rv32gc"
+            args.isa = "rv32gc_zicsr_zifencei"
         elif args.target == "rv32imcb":
             args.mabi = "ilp32"
-            args.isa = "rv32imcb"
+            args.isa = "rv32imcb_zicsr_zifencei"
         elif args.target == "rv32i":
             args.mabi = "ilp32"
-            args.isa = "rv32i"
+            args.isa = "rv32i_zicsr_zifencei"
         elif args.target == "rv64imc":
             args.mabi = "lp64"
-            args.isa = "rv64imc"
+            args.isa = "rv64imc_zicsr_zifencei"
         elif args.target == "rv64imcb":
             args.mabi = "lp64"
-            args.isa = "rv64imcb"
+            args.isa = "rv64imcb_zicsr_zifencei"
         elif args.target == "rv64gc":
             args.mabi = "lp64"
-            args.isa = "rv64gc"
+            args.isa = "rv64gc_zicsr_zifencei"
         elif args.target == "rv64gcv":
             args.mabi = "lp64"
-            args.isa = "rv64gcv"
+            args.isa = "rv64gcv_zicsr_zifencei"
         elif args.target == "ml":
             args.mabi = "lp64"
-            args.isa = "rv64imc"
+            args.isa = "rv64imc_zicsr_zifencei"
         elif args.target == "rv64imafdc":
             args.mabi = "lp64"
-            args.isa = "rv64imafdc"
+            args.isa = "rv64imafdc_zicsr_zifencei"
         else:
             sys.exit("Unsupported pre-defined target: {}".format(args.target))
     else:
