@@ -166,8 +166,8 @@ def get_rs1_val(iteration, xlen):
         return bitarray(hex="0x{}".format('5a' * int(xlen / 8)))
     elif iteration == 2:
         val = bitarray(uint=0, length=xlen)
-        # Must randomize all 32 bits, due to randomization library limitations
-        for i in range(32):
+        # Must randomize all 'xlen' bits, due to randomization library limitations
+        for i in range(xlen):
             bit = random.randint(0, 1)
             val.set(bit, i)
         return val
