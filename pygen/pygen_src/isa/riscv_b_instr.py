@@ -35,15 +35,10 @@ class riscv_b_instr(riscv_instr):
         super().set_rand_mode()
         self.has_rs3 = 0
         if self.format == riscv_instr_format_t.R_FORMAT:
-            if self.instr_name in [riscv_instr_name_t.CLZW,
-                                   riscv_instr_name_t.CTZW, riscv_instr_name_t.PCNTW,
-                                   riscv_instr_name_t.SEXT_B, riscv_instr_name_t.SEXT_H,
-                                   riscv_instr_name_t.CLZ, riscv_instr_name_t.CTZ,
-                                   riscv_instr_name_t.PCNT, riscv_instr_name_t.BMATFLIP,
-                                   riscv_instr_name_t.CRC32_B, riscv_instr_name_t.CRC32_H,
-                                   riscv_instr_name_t.CRC32_W, riscv_instr_name_t.CRC32C_B,
-                                   riscv_instr_name_t.CRC32C_H, riscv_instr_name_t.CRC32C_W,
-                                   riscv_instr_name_t.CRC32_D, riscv_instr_name_t.CRC32C_D]:
+            if self.instr_name in [riscv_instr_name_t.BMATFLIP, riscv_instr_name_t.CRC32_B,
+                                   riscv_instr_name_t.CRC32_H, riscv_instr_name_t.CRC32_W,
+                                   riscv_instr_name_t.CRC32C_B, riscv_instr_name_t.CRC32C_H,
+                                   riscv_instr_name_t.CRC32C_W, riscv_instr_name_t.CRC32_D]:
                 self.has_rs2 = 0
         elif self.format == riscv_instr_format_t.R4_FORMAT:
             self.has_imm = 0
@@ -61,23 +56,15 @@ class riscv_b_instr(riscv_instr):
     def set_imm_len(self):
         if self.format == riscv_instr_format_t.I_FORMAT:
             if self.category in [riscv_instr_category_t.SHIFT, riscv_instr_category_t.LOGICAL]:
-                if (self.group.name == riscv_instr_group_t.RV64B and
-                        self.instr_name != riscv_instr_name_t.SLLIU_W):
-                    self.imm_len = math.ceil(math.log2(rcs.XLEN)) - 1
-                else:
-                    self.imm_len = math.ceil(math.log2(rcs.XLEN))
+                self.imm_len = math.ceil(math.log2(rcs.XLEN))
             # ARITHMETIC RV32B
             if self.instr_name in [riscv_instr_name_t.SHFLI, riscv_instr_name_t.UNSHFLI]:
                 self.imm_len = math.ceil(math.log2(rcs.XLEN)) - 1
-            # ARITHMETIC RV64B
-            if self.instr_name == riscv_instr_name_t.ADDIWU:
-                self.imm_len = 12
-        self.imm_mask = self.imm_mask << self.imm_len
+                self.imm_mask = self.imm_mask << self.imm_len
 
     # Convert the instruction to assembly code
     def convert2asm(self, prefix = " "):
         asm_str_final = ""
-        asm_str = ""
         asm_str = pkg_ins.format_string(self.get_instr_name(), pkg_ins.MAX_INSTR_STR_LEN)
         if self.format == riscv_instr_format_t.I_FORMAT:
             if self.instr_name in [riscv_instr_name_t.FSRI,
@@ -100,77 +87,25 @@ class riscv_b_instr(riscv_instr):
             asm_str_final = asm_str_final + " #" + self.comment
         return asm_str_final.lower()
 
-    def get_opcode(self):
-        # TODO
-        pass
-
-    def get_func3(self):
-        # TODO
-        pass
-
-    def get_func5(self):
-        # TODO
-        pass
-
-    def get_func2(self):
-        # TODO
-        pass
-
-    # Convert the instruction to assembly code
-    def convert2bin(self, prefix):
-        pass
-
     def is_supported(self, cfg):
         return (cfg.enable_b_extension and
-                ("ZBB" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["CLZ", "CTZ", "CLZW", "CTZW", "PCNT", "PCNTW",
-                  "SLO", "SLOI", "SLOW", "SLOIW",
-                  "SRO", "SROI", "SROW", "SROIW",
-                  "MIN", "MINU", "MAX", "MAXU",
-                  "ADDWU", "ADDIWU", "SUBWU",
-                  "ADDU_W", "SUBU_W",
-                  "SLLIU_W",
-                  "ANDN", "ORN",
-                  "XNOR", "PACK", "PACKW", "PACKU", "PACKUW", "PACKH",
-                  "ROL", "ROLW", "ROR", "RORW", "RORI", "RORIW"
-                  ]) or
-                ("ZBS" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["SBSET", "SBSETW", "SBSETI", "SBSETIW",
-                  "SBCLR", "SBCLRW", "SBCLRI", "SBCLRIW",
-                  "SBINV", "SBINVW", "SBINVI", "SBINVIW",
-                  "SBEXT", "SBEXTW", "SBEXTI"
-                  ]) or
                 ("ZBP" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["GREV", "GREVW", "GREVI", "GREVIW",
-                  "GORC", "GORCW", "GORCI", "GORCIW",
-                  "SHFL", "SHFLW", "UNSHFL", "UNSHFLW", "SHFLI", "UNSHFLI"
-                  ]) or
-                ("ZBE" in cfg.enable_bitmanip_groups and self.instr_name in
-                 ["BEXT", "BEXTW",
-                  "BDEP", "BDEPW"
-                  ]) or
+                 ["GREV", "GREVW", "GREVI", "GREVIW", "GORC", "GORCW", "GORCI",
+                  "GORCIW", "SHFL", "SHFLW", "UNSHFL", "UNSHFLW", "SHFLI", "UNSHFLI",
+                  "XPERM_N", "XPERM_B", "XPERM_H", "XPERM_W", "SLO", "SLOW", "SLOI",
+                  "SLOIW", "SRO", "SROW", "SROI", "SROIW"]) or
+                ("ZBE" in cfg.enable_bitmanip_groups and self.instr_name.name in
+                 ["BCOMPRESS", "BCOMPRESSW", "BDECOMPRESS", "BDECOMPRESSW"]) or
                 ("ZBF" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["BFP", "BFPW"
-                  ]) or
-                ("ZBC" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["CLMUL", "CLMULW", "CLMULH", "CLMULHW", "CLMULR", "CLMULRW"
-                  ]) or
-                ("ZBR" in cfg.enable_bitmanip_groups and self.instr_name.name in
+                 ["BFP", "BFPW"]) or
+                ("ZBR" in cfg.enable_bitmanip_groups and self.instr_name in
                  ["CRC32_B", "CRC32_H", "CRC32_W", "CRC32_D",
-                  "CRC32C_B", "CRC32C_H", "CRC32C_W", "CRC32C_D"
-                  ]) or
+                  "CRC32C_B", "CRC32C_H", "CRC32C_W", "CRC32C_D"]) or
                 ("ZBM" in cfg.enable_bitmanip_groups and self.instr_name.name in
                  ["BMATOR", "BMATXOR", "BMATFLIP"
                   ]) or
                 ("ZBT" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["CMOV", "CMIX",
-                  "FSL", "FSLW", "FSR", "FSRW", "FSRI", "FSRIW"
-                  ]) or
-                # TODO, spec 0.92 doesn't categorize these 2 instr, put them in ZB_TMP #572
-                ("ZB_TMP" in cfg.enable_bitmanip_groups and self.instr_name.name in
-                 ["SEXT_B", "SEXT_H"
-                  ])
-                )
+                 ["CMOV", "CMIX", "FSL", "FSLW", "FSR", "FSRW", "FSRI", "FSRIW"]))
 
     # Coverage related functions
     def update_src_regs(self, operands):
