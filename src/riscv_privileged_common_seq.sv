@@ -138,6 +138,7 @@ class riscv_privileged_common_seq extends uvm_sequence;
       sstatus.set_field("UXL", 2'b10);
     end
     sstatus.set_field("FS", cfg.mstatus_fs);
+    sstatus.set_field("VS", cfg.mstatus_vs);
     sstatus.set_field("XS", 0);
     sstatus.set_field("SD", 0);
     sstatus.set_field("UIE", 0);
