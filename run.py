@@ -436,7 +436,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
                 logging.error("Cannot find assembly test: {}\n".format(asm))
                 sys.exit(RET_FAIL)
             # gcc compilation
-            cmd = ("{} -static -mcmodel=medany \
+            cmd = ("{} -static -mcmodel=medlow \
              -fvisibility=hidden -nostdlib \
              -nostartfiles {} \
              -I{}/user_extension \
@@ -500,7 +500,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     logging.info("Compiling assembly test : {}".format(asm_test))
 
     # gcc compilation
-    cmd = ("{} -static -mcmodel=medany \
+    cmd = ("{} -static -mcmodel=medlow \
          -fvisibility=hidden -nostdlib \
          -nostartfiles {} \
          -I{}/user_extension \
@@ -593,7 +593,7 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     logging.info("Compiling c test : {}".format(c_test))
 
     # gcc compilation
-    cmd = ("{} -mcmodel=medany -nostdlib \
+    cmd = ("{} -mcmodel=medlow -nostdlib \
          -nostartfiles {} \
          -I{}/user_extension \
          -T{}/scripts/link.ld {} -o {} ".format(
