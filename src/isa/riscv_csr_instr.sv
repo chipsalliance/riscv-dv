@@ -46,25 +46,25 @@ class riscv_csr_instr extends riscv_instr;
     }
   }
 
-  constraint csr_csrrw {
+  constraint csr_csrrw_c {
     if (instr_name == CSRRW || instr_name == CSRRWI) {
       write_csr == 1'b1;
     }
   }
 
-  constraint csr_csrrsc {
+  constraint csr_csrrsc_c {
     if (instr_name == CSRRS || instr_name == CSRRC) {
       (write_csr == 1'b1) || rs1 == 0;
     }
   }
 
-  constraint csr_csrrsci {
+  constraint csr_csrrsci_c {
     if(instr_name == CSRRSI || instr_name == CSRRCI) {
       (write_csr == 1'b1) || imm == 0;
     }
   }
 
-  constraint order {
+  constraint order_c {
     // Choose a CSR before deciding whether we want to write to the CSR values. Then choose whether
     // to read or write before choosing the rs1 and imm values. This ensures read-only accesses to
     // read-only CSRs with similar probability to other CSR accesses and ensures a reasonable write

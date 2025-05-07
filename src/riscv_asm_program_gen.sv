@@ -581,17 +581,18 @@ class riscv_asm_program_gen extends uvm_object;
           `uvm_fatal(`gfn, "Couldn't find a memory region big enough to initialize the vector registers")
 
         for (int v = 0; v < NUM_VEC_GPR; v++) begin
-					// Select random region
+          // Select random region
           int region = $urandom_range(0, valid_mem_region.size()-1);
-					// Get valid start offset in region
+          // Get valid start offset in region
           int offset = $urandom_range(0, (valid_mem_region[region].size_in_bytes - (cfg.vector_cfg.vlen / 8)) /
-																					(sew / 8)) * (sew / 8);
-					// Generate load
+                                          (sew / 8)) * (sew / 8);
+          // Generate load
           instr_stream.push_back($sformatf("%0sla x%0d, %0s+%0d", indent, cfg.gpr[0],
                                            valid_mem_region[region].name, offset));
           instr_stream.push_back($sformatf("%0svle%0d.v v%0d, (x%0d)", indent, sew, v, cfg.gpr[0]));
         end
       end
+      default: ;
     endcase
 
     // Initialize vector CSRs

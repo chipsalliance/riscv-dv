@@ -330,7 +330,8 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
       // For every current vtype config, there will always be a legal vlmul when vsew
       // is reduced, since there is always space for at least one element in a fractional
       // register. So setting to smallest vsew here is always possible.
-      if (!cfg.vector_cfg.vtype.fractional_lmul && vsew/8 > cfg.vector_cfg.vtype.vsew/cfg.vector_cfg.vtype.vlmul) begin
+      if (!cfg.vector_cfg.vtype.fractional_lmul &&
+          vsew/8 > cfg.vector_cfg.vtype.vsew/cfg.vector_cfg.vtype.vlmul) begin
         vsew = 8;
       end
       // Calculate new vlmul and update vtype, while vl remains constant

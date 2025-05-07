@@ -142,7 +142,7 @@ class riscv_illegal_instr extends uvm_object;
     }
   }
 
-  constraint legal_rv32_c_slli {
+  constraint legal_rv32_c_slli_c {
     if ((c_msb == 3'b000) && (c_op == 2'b10) && (XLEN == 32)) {
       if (exception == kReservedCompressedInstr) {
         instr_bin[12] == 1;

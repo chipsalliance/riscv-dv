@@ -523,11 +523,11 @@ endclass
 class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
 
   // List of vector load/store instructions (grouped into different address modes)
-  localparam riscv_instr_name_t unit_strided[] = {VLE_V, VSE_V, VLEFF_V,
-                                                  VLM_V, VSM_V, VLRE_V, VSR_V,
-                                                  VLSEGE_V, VSSEGE_V, VLSEGEFF_V};
-  localparam riscv_instr_name_t strided[]      = {VLSE_V, VSSE_V, VLSSEGE_V, VSSSEGE_V};
-  localparam riscv_instr_name_t indexed[]      = {VLUXEI_V, VLOXEI_V, VSUXEI_V, VSOXEI_V,
+  localparam riscv_instr_name_t UnitStrided[] = {VLE_V, VSE_V, VLEFF_V,
+                                                 VLM_V, VSM_V, VLRE_V, VSR_V,
+                                                 VLSEGE_V, VSSEGE_V, VLSEGEFF_V};
+  localparam riscv_instr_name_t Strided[]      = {VLSE_V, VSSE_V, VLSSEGE_V, VSSSEGE_V};
+  localparam riscv_instr_name_t Indexed[]      = {VLUXEI_V, VLOXEI_V, VSUXEI_V, VSOXEI_V,
                                                   VLUXSEGEI_V, VLOXSEGEI_V, VSUXSEGEI_V, VSOXSEGEI_V};
 
   // Types of vector load/store address modes
@@ -642,20 +642,20 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     super.pre_randomize();
 
     // Build list of allowed address modes (according to unsupported_instr list)
-    foreach(unit_strided[i]) begin
-      if (!(unit_strided[i] inside {unsupported_instr})) begin
+    foreach(UnitStrided[i]) begin
+      if (!(UnitStrided[i] inside {unsupported_instr})) begin
         allowed_address_modes = {allowed_address_modes, UNIT_STRIDED};
         break;
       end
     end
-    foreach(strided[i]) begin
-      if (!(strided[i] inside {unsupported_instr})) begin
+    foreach(Strided[i]) begin
+      if (!(Strided[i] inside {unsupported_instr})) begin
         allowed_address_modes = {allowed_address_modes, STRIDED};
         break;
       end
     end
-    foreach(indexed[i]) begin
-      if (!(indexed[i] inside {unsupported_instr})) begin
+    foreach(Indexed[i]) begin
+      if (!(Indexed[i] inside {unsupported_instr})) begin
         allowed_address_modes = {allowed_address_modes, INDEXED};
         break;
       end
@@ -758,14 +758,15 @@ class riscv_vector_load_store_instr_stream extends riscv_mem_access_stream;
     // Get instructions for selected address mode
     case (address_mode)
       UNIT_STRIDED : begin
-        possible_instr = {unit_strided};
+        possible_instr = {UnitStrided};
       end
       STRIDED : begin
-        possible_instr = {strided};
+        possible_instr = {Strided};
       end
       INDEXED : begin
-        possible_instr = {indexed};
+        possible_instr = {Indexed};
       end
+      default: ;
     endcase
 
     // Filter out illegal instructions for current config
