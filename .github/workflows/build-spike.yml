@@ -26,7 +26,7 @@ jobs:
           echo "cache_name=$cache_name" >> "$GITHUB_ENV"
 
       - name: Setup cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache
         timeout-minutes: 60
         with:
