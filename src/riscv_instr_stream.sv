@@ -434,9 +434,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     int polynomial[];
 
     unique case (sew)
-      8:  polynomial = {6,   5, 4};
-      16: polynomial = {15, 13, 4};
-      32: polynomial = {22,  2, 1};
+      8:  polynomial = {6,   5,  4};
+      16: polynomial = {15, 13,  4};
+      32: polynomial = {22,  2,  1};
+      64: polynomial = {63, 61, 60};
       default: `uvm_fatal("add_init_vector_gpr_random",
                   $sformatf("Error: Unable to initialize vector with randomised values of SEW == %0d", sew))
     endcase
