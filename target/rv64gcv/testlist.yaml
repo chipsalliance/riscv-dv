@@ -112,8 +112,8 @@
     +num_of_sub_program=0
     +enable_floating_point=1
     +enable_vector_extension=1
+    +vreg_init_method=RANDOM_VALUES_LOAD
     +no_fence=1
-    +no_data_page=1
     +no_branch_jump=1
     +boot_mode=m
     +no_csr_instr=1
@@ -130,11 +130,11 @@
     +enable_floating_point=1
     +enable_vector_extension=1
     +vector_instr_only=1
+    +vreg_init_method=RANDOM_VALUES_LOAD
     +no_fence=1
-    +no_data_page=1
     +no_branch_jump=1
     +boot_mode=m
-    +no_csr_instr=1
+    +no_csr_instr=0
   iterations: 2
   gen_test: riscv_instr_base_test
   rtl_test: core_base_test
@@ -148,6 +148,8 @@
     +enable_floating_point=1
     +enable_vector_extension=1
     +vreg_init_method=RANDOM_VALUES_LOAD
+    +vreg_ls_index_init=LS_INDEX_INIT_LFSR
+    +enable_vstart_randomisation=1
     +directed_instr_0=riscv_vector_load_store_instr_stream,10
     +no_branch_jump=1
     +boot_mode=m
