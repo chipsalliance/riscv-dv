@@ -65,22 +65,8 @@ parameter int NUM_VEC_GPR = 32;
 // Vector extension configuration
 // ----------------------------------------------------------------------------
 
-// Parameter for vector extension
-parameter int VECTOR_EXTENSION_ENABLE = 1;
-
+// Vector Register Length
 parameter int VLEN = 512;
-
-// Maximum size of a single vector element
-parameter int ELEN = 32;
-
-// Minimum size of a sub-element, which must be at most 8-bits.
-parameter int SELEN = 8;
-
-// Maximum size of a single vector element (encoded in vsew format)
-parameter int VELEN = int'($ln(ELEN)/$ln(2)) - 3;
-
-// Maxium LMUL supported by the core
-parameter int MAX_LMUL = 8;
 
 // ----------------------------------------------------------------------------
 // Multi-harts configuration
@@ -139,7 +125,15 @@ const privileged_reg_t implemented_csr[] = {
     MTVAL,      // Machine bad address or instruction
     MIP,        // Machine interrupt pending
     // Floating point CSR
-    FCSR        // Floating point control and status
+    FCSR,       // Floating point control and status
+    // Vector CSRVSTART
+    VSTART,     // Vector start position
+    VXSAT,      // Fixed point saturate flag
+    VXRM,       // Fixed point rounding mode
+    VCSR,       // Vector control and status register
+    VL,         // Vector length
+    VTYPE,      // Vector data type register
+    VLENB       // VLEN/8 (vector register length in bytes)
 };
 
 // Implementation-specific custom CSRs
