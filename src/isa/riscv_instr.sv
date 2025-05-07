@@ -40,7 +40,7 @@ class riscv_instr extends uvm_object;
   bit [4:0]                  imm_len;
 
   // Operands
-  rand bit [11:0]            csr;
+  rand privileged_reg_t      csr;
   rand riscv_reg_t           rs2;
   rand riscv_reg_t           rs1;
   rand riscv_reg_t           rd;
@@ -236,6 +236,8 @@ class riscv_instr extends uvm_object;
      end
      // Shallow copy for all relevant fields, avoid using create() to improve performance
      instr_h = new instr_template[name];
+     // Put instruction RNG in unique state
+     instr_h.srandom($urandom());
      return instr_h;
   endfunction : get_rand_instr
 
@@ -265,6 +267,8 @@ class riscv_instr extends uvm_object;
      name = load_store_instr[idx];
      // Shallow copy for all relevant fields, avoid using create() to improve performance
      instr_h = new instr_template[name];
+     // Put instruction RNG in unique state
+     instr_h.srandom($urandom());
      return instr_h;
   endfunction : get_load_store_instr
 

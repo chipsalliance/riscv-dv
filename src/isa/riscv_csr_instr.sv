@@ -46,25 +46,25 @@ class riscv_csr_instr extends riscv_instr;
     }
   }
 
-  constraint csr_csrrw {
+  constraint csr_csrrw_c {
     if (instr_name == CSRRW || instr_name == CSRRWI) {
       write_csr == 1'b1;
     }
   }
 
-  constraint csr_csrrsc {
+  constraint csr_csrrsc_c {
     if (instr_name == CSRRS || instr_name == CSRRC) {
       (write_csr == 1'b1) || rs1 == 0;
     }
   }
 
-  constraint csr_csrrsci {
+  constraint csr_csrrsci_c {
     if(instr_name == CSRRSI || instr_name == CSRRCI) {
       (write_csr == 1'b1) || imm == 0;
     }
   }
 
-  constraint order {
+  constraint order_c {
     // Choose a CSR before deciding whether we want to write to the CSR values. Then choose whether
     // to read or write before choosing the rs1 and imm values. This ensures read-only accesses to
     // read-only CSRs with similar probability to other CSR accesses and ensures a reasonable write
@@ -98,6 +98,7 @@ class riscv_csr_instr extends riscv_instr;
 
       create_include_write_reg(cfg.add_csr_write, cfg.remove_csr_write, default_include_csr_write);
     end else begin
+      allow_ro_write = 0;
       // Use scratch register to avoid the side effect of modifying other privileged mode CSR.
       if (cfg.init_privileged_mode == MACHINE_MODE) begin
         include_reg = {MSCRATCH};
@@ -105,6 +106,10 @@ class riscv_csr_instr extends riscv_instr;
         include_reg = {SSCRATCH};
       end else begin
         include_reg = {USCRATCH};
+      end
+      // Add vector CSRs
+      if (cfg.enable_vector_extension) begin
+        include_reg = {include_reg, VXSAT, VXRM, VCSR, VL, VTYPE, VLENB};
       end
     end
   endfunction : create_csr_filter
@@ -139,9 +144,9 @@ class riscv_csr_instr extends riscv_instr;
 
     case(format)
         I_FORMAT: // instr rd,rs1,imm
-          asm_str = $sformatf("%0s%0s, 0x%0x, %0s", asm_str, rd.name(), csr, get_imm());
+          asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), csr.name(), get_imm());
         R_FORMAT: // instr rd,rs1,rs2
-          asm_str = $sformatf("%0s%0s, 0x%0x, %0s", asm_str, rd.name(), csr, rs1.name());
+          asm_str = $sformatf("%0s%0s, %0s, %0s", asm_str, rd.name(), csr.name(), rs1.name());
         default:
           `uvm_fatal(`gfn, $sformatf("Unsupported format %0s [%0s]", format.name(),
                                      instr_name.name()))

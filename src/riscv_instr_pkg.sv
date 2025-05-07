@@ -1,6 +1,7 @@
 /*
  * Copyright 2018 Google LLC
  * Copyright 2020 Andes Technology Co., Ltd.
+ * Copyright 2025 Axelera AI BV.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +43,12 @@ package riscv_instr_pkg;
     RANDOM_VALUES_VMV,
     RANDOM_VALUES_LOAD
   } vreg_init_method_t;
+
+  // Initialisation of the index vreg for indexed vector load/stores
+  typedef enum {
+    LS_INDEX_INIT_LFSR,
+    LS_INDEX_INIT_SLIDE
+  } vreg_ls_index_init_t;
 
   typedef enum bit [3:0] {
     BARE = 4'b0000,
@@ -443,9 +450,32 @@ package riscv_instr_pkg;
     AMOMAX_D,
     AMOMINU_D,
     AMOMAXU_D,
-    // Vector instructions
-    VSETVL,
+    // RVV
     VSETVLI,
+    VSETIVLI,
+    VSETVL,
+    VLE_V,
+    VSE_V,
+    VLM_V,
+    VSM_V,
+    VLSE_V,
+    VSSE_V,
+    VLUXEI_V,
+    VLOXEI_V,
+    VSUXEI_V,
+    VSOXEI_V,
+    VLEFF_V,
+    VLSEGE_V,
+    VSSEGE_V,
+    VLSSEGE_V,
+    VSSSEGE_V,
+    VLSEGEFF_V,
+    VLUXSEGEI_V,
+    VLOXSEGEI_V,
+    VSUXSEGEI_V,
+    VSOXSEGEI_V,
+    VLRE_V,
+    VSR_V,
     VADD,
     VSUB,
     VRSUB,
@@ -453,6 +483,12 @@ package riscv_instr_pkg;
     VWSUBU,
     VWADD,
     VWSUB,
+    VZEXT_VF2,
+    VZEXT_VF4,
+    VZEXT_VF8,
+    VSEXT_VF2,
+    VSEXT_VF4,
+    VSEXT_VF8,
     VADC,
     VMADC,
     VSBC,
@@ -496,12 +532,10 @@ package riscv_instr_pkg;
     VWMACC,
     VWMACCSU,
     VWMACCUS,
-    //VQMACCU,
-    //VQMACC,
-    //VQMACCSU,
-    //VQMACCUS,
     VMERGE,
-    VMV,
+    VMV_V_V,
+    VMV_V_X,
+    VMV_V_I,
     VSADDU,
     VSADD,
     VSSUBU,
@@ -510,14 +544,16 @@ package riscv_instr_pkg;
     VAADD,
     VASUBU,
     VASUB,
+    VSMUL,
     VSSRL,
     VSSRA,
     VNCLIPU,
     VNCLIP,
-    // 14. Vector Floating-Point Instructions
     VFADD,
     VFSUB,
     VFRSUB,
+    VFWADD,
+    VFWSUB,
     VFMUL,
     VFDIV,
     VFRDIV,
@@ -535,6 +571,8 @@ package riscv_instr_pkg;
     VFWMSAC,
     VFWNMSAC,
     VFSQRT_V,
+    VFRSQRT7_V,
+    VFREC7_V,
     VFMIN,
     VFMAX,
     VFSGNJ,
@@ -548,23 +586,28 @@ package riscv_instr_pkg;
     VMFGE,
     VFCLASS_V,
     VFMERGE,
-    VFMV,
+    VFMV_V_F,
     VFCVT_XU_F_V,
     VFCVT_X_F_V,
+    VFCVT_RTZ_XU_F_V,
+    VFCVT_RTZ_X_F_V,
     VFCVT_F_XU_V,
     VFCVT_F_X_V,
     VFWCVT_XU_F_V,
     VFWCVT_X_F_V,
+    VFWCVT_RTZ_XU_F_V,
+    VFWCVT_RTZ_X_F_V,
     VFWCVT_F_XU_V,
     VFWCVT_F_X_V,
     VFWCVT_F_F_V,
     VFNCVT_XU_F_W,
     VFNCVT_X_F_W,
+    VFNCVT_RTZ_XU_F_W,
+    VFNCVT_RTZ_X_F_W,
     VFNCVT_F_XU_W,
     VFNCVT_F_X_W,
     VFNCVT_F_F_W,
     VFNCVT_ROD_F_F_W,
-    // 15. Vector reduction instruction
     VREDSUM_VS,
     VREDMAXU_VS,
     VREDMAX_VS,
@@ -576,27 +619,26 @@ package riscv_instr_pkg;
     VWREDSUMU_VS,
     VWREDSUM_VS,
     VFREDOSUM_VS,
-    VFREDSUM_VS,
+    VFREDUSUM_VS,
     VFREDMAX_VS,
+    VFREDMIN_VS,
     VFWREDOSUM_VS,
-    VFWREDSUM_VS,
-    // Vector mask instruction
+    VFWREDUSUM_VS,
     VMAND_MM,
     VMNAND_MM,
-    VMANDNOT_MM,
+    VMANDN_MM,
     VMXOR_MM,
     VMOR_MM,
     VMNOR_MM,
-    VMORNOT_MM,
+    VMORN_MM,
     VMXNOR_MM,
-    VPOPC_M,
+    VCPOP_M,
     VFIRST_M,
     VMSBF_M,
     VMSIF_M,
     VMSOF_M,
     VIOTA_M,
     VID_V,
-    // Vector permutation instruction
     VMV_X_S,
     VMV_S_X,
     VFMV_F_S,
@@ -605,41 +647,15 @@ package riscv_instr_pkg;
     VSLIDEDOWN,
     VSLIDE1UP,
     VSLIDE1DOWN,
+    VFSLIDE1UP,
+    VFSLIDE1DOWN,
     VRGATHER,
+    VRGATHEREI16,
     VCOMPRESS,
     VMV1R_V,
     VMV2R_V,
     VMV4R_V,
     VMV8R_V,
-    // Vector load/store instruction
-    VLE_V,
-    VSE_V,
-    VLSE_V,
-    VSSE_V,
-    VLXEI_V,
-    VSXEI_V,
-    VSUXEI_V,
-    VLEFF_V,
-    // Segmented load/store instruction
-    VLSEGE_V,
-    VSSEGE_V,
-    VLSEGEFF_V,
-    VLSSEGE_V,
-    VSSSEGE_V,
-    VLXSEGEI_V,
-    VSXSEGEI_V,
-    VSUXSEGEI_V,
-    // Vector AMO instruction
-    // EEW vector AMOs
-    VAMOSWAPE_V,
-    VAMOADDE_V,
-    VAMOXORE_V,
-    VAMOANDE_V,
-    VAMOORE_V,
-    VAMOMINE_V,
-    VAMOMAXE_V,
-    VAMOMINUE_V,
-    VAMOMAXUE_V,
     // Supervisor instruction
     DRET,
     MRET,
@@ -703,7 +719,8 @@ package riscv_instr_pkg;
     VSX_FORMAT,
     VLS_FORMAT,
     VSS_FORMAT,
-    VAMO_FORMAT
+    VLR_FORMAT,
+    VSR_FORMAT
   } riscv_instr_format_t;
 
 
@@ -716,6 +733,7 @@ package riscv_instr_pkg;
     WV,
     WI,
     WX,
+    WF,
     VVM,
     VIM,
     VXM,
@@ -740,7 +758,6 @@ package riscv_instr_pkg;
     CHANGELEVEL,
     TRAP,
     INTERRUPT,
-    `VECTOR_INCLUDE("riscv_instr_pkg_inc_riscv_instr_category_t.sv")
     AMO // (last one)
   } riscv_instr_category_t;
 
@@ -1093,8 +1110,9 @@ package riscv_instr_pkg;
     DSCRATCH0       = 'h7B2,  // Debug scratch register
     DSCRATCH1       = 'h7B3,  // Debug scratch register (last one)
     VSTART          = 'h008,  // Vector start position
-    VXSTAT          = 'h009,  // Fixed point saturate flag
+    VXSAT           = 'h009,  // Fixed point saturate flag
     VXRM            = 'h00A,  // Fixed point rounding mode
+    VCSR            = 'h00F,  // Vector control and status register
     VL              = 'hC20,  // Vector length
     VTYPE           = 'hC21,  // Vector data type register
     VLENB           = 'hC22   // VLEN/8 (vector register length in bytes)
@@ -1279,10 +1297,10 @@ package riscv_instr_pkg;
 
   typedef struct packed {
     bit ill;
-    bit fractional_lmul;
-    bit [XLEN-2:7] reserved;
-    int vediv;
+    bit vma;
+    bit vta;
     int vsew;
+    bit fractional_lmul;
     int vlmul;
   } vtype_t;
 
@@ -1292,6 +1310,11 @@ package riscv_instr_pkg;
     RoundDown,
     RoundToOdd
   } vxrm_t;
+
+  typedef struct packed {
+    vxrm_t vxrm;
+    bit    vxsat;
+  } vcsr_t;
 
   typedef enum int {
     ZBA,
@@ -1307,8 +1330,6 @@ package riscv_instr_pkg;
     ZB_TMP // for uncategorized instructions
   } b_ext_group_t;
 
-  `VECTOR_INCLUDE("riscv_instr_pkg_inc_variables.sv")
-
   typedef bit [15:0] program_id_t;
 
   // xSTATUS bit mask
@@ -1322,7 +1343,7 @@ package riscv_instr_pkg;
   parameter int DATA_WIDTH  = 32;
 
   // Parameters for output assembly program formatting
-  parameter int MAX_INSTR_STR_LEN = 13;
+  parameter int MAX_INSTR_STR_LEN = 18;
   parameter int LABEL_STR_LEN     = 18;
 
   // Parameter for program generation
@@ -1380,7 +1401,7 @@ package riscv_instr_pkg;
     string store_instr = (XLEN == 32) ? "sw" : "sd";
     if (scratch inside {implemented_csr}) begin
       // Push USP from gpr.SP onto the kernel stack
-      instr.push_back($sformatf("addi x%0d, x%0d, -4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, -%0d", tp, tp, XLEN/8));
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", store_instr, sp, tp));
       // Move KSP to gpr.SP
       instr.push_back($sformatf("add x%0d, x%0d, zero", sp, tp));
@@ -1435,7 +1456,7 @@ package riscv_instr_pkg;
       instr.push_back($sformatf("add x%0d, x%0d, zero", tp, sp));
       // Pop USP from the kernel stack, move back to gpr.SP
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", load_instr, sp, tp));
-      instr.push_back($sformatf("addi x%0d, x%0d, 4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, %0d", tp, tp, XLEN/8));
     end
   endfunction
 
@@ -1487,6 +1508,26 @@ package riscv_instr_pkg;
             `uvm_fatal("riscv_instr_pkg", $sformatf(
                 "Invalid value (%0s) specified in command line: %0s", cmdline_list[i], cmdline_str))
           end
+        end
+      end
+    endfunction
+
+    static function void get_value(string cmdline_str, bit allow_raw_vals, ref T val);
+      string s;
+      void'(inst.get_arg_value(cmdline_str, s));
+      if(s != "") begin
+        T value;
+        if (allow_raw_vals && s.substr(0, 1) == "0x") begin
+          logic[$bits(T)-1:0] raw_val;
+
+          string raw_val_hex_digits = s.substr(2, s.len()-1);
+          raw_val = raw_val_hex_digits.atohex();
+          val = T'(raw_val);
+        end else if (uvm_enum_wrapper#(T)::from_name(s.toupper(), value)) begin
+          val = value;
+        end else begin
+          `uvm_fatal("riscv_instr_pkg", $sformatf(
+              "Invalid value (%0s) specified in command line: %0s", s, cmdline_str))
         end
       end
     endfunction

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 Google LLC
+ * Copyright 2025 Axelera AI BV.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,7 +219,15 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
                                   bit is_debug_program = 1'b0);
     setup_allowed_instr(no_branch, no_load_store);
     foreach(instr_list[i]) begin
+      if (instr_list[i] != null) continue;
       randomize_instr(instr_list[i], is_debug_program);
+      // Handle special instructions
+      if (instr_list[i].group == RVV && instr_list[i].category == CSR) begin
+        handle_vector_configuration_instr(i);
+        // Regenerate list of supported instruction
+        riscv_instr::create_instr_list(cfg);
+        setup_allowed_instr(no_branch, no_load_store);
+      end
     end
     // Do not allow branch instruction as the last instruction because there's no
     // forward branch target
@@ -273,6 +282,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         if (format == CB_FORMAT) {
           rs1 != reserved_rd[i];
         }
+        if (format == VSET_FORMAT) {
+          has_rs1 -> rs1 != reserved_rd[i];
+          has_rs2 -> rs2 != reserved_rd[i];
+        }
       }
       foreach (cfg.reserved_regs[i]) {
         if (has_rd) {
@@ -281,9 +294,99 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         if (format == CB_FORMAT) {
           rs1 != cfg.reserved_regs[i];
         }
+        if (format == VSET_FORMAT) {
+          has_rs1 -> rs1 != cfg.reserved_regs[i];
+          has_rs2 -> rs2 != cfg.reserved_regs[i];
+        }
       }
       // TODO: Add constraint for CSR, floating point register
     )
+  endfunction
+
+  // Handle vset{i}vl{i} instructions
+  // Regenerate vector configuration and initialize rs1/rs2
+  function void handle_vector_configuration_instr(int idx);
+    riscv_instr instr;
+    int unsigned vsew;
+
+    // Get relevant instruction
+    instr = instr_list[idx];
+
+    // Create new config instance and deep copy old config
+    cfg = new ();
+    cfg.copy(instr.m_cfg);
+    // Set instruction config to new instance
+    instr.m_cfg = cfg;
+
+    if (instr.instr_name != VSETIVLI && instr.rs1 == ZERO && instr.rd == ZERO) begin
+      // Keep vl but vtype might change, provided vtype ratio does not change
+      cfg.vector_cfg.vl.rand_mode(0);
+      cfg.vector_cfg.vtype.rand_mode(0);
+
+      // Find a random new vsew
+      vsew = $urandom_range(3,$clog2(cfg.vector_cfg.max_int_sew));
+      vsew = 2**vsew;
+      // If there is no legal vlmul for new vsew, set vsew to known legal value.
+      // For every current vtype config, there will always be a legal vlmul when vsew
+      // is reduced, since there is always space for at least one element in a fractional
+      // register. So setting to smallest vsew here is always possible.
+      if (!cfg.vector_cfg.vtype.fractional_lmul &&
+          vsew/8 > cfg.vector_cfg.vtype.vsew/cfg.vector_cfg.vtype.vlmul) begin
+        vsew = 8;
+      end
+      // Calculate new vlmul and update vtype, while vl remains constant
+      cfg.vector_cfg.update_vsew_keep_vl(vsew);
+    end
+
+    // Randomize cfg
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(cfg.vector_cfg,
+      if (instr.instr_name == VSETIVLI) {
+        cfg.vector_cfg.vl < 2**5;
+      }
+    )
+    // Special vsetvl{¡} conditions
+    if (instr.instr_name != VSETIVLI && instr.rs1 == ZERO && instr.rd != ZERO) begin
+      // Set vl to vlmax
+      cfg.vector_cfg.vl = cfg.vector_cfg.vlmax();
+    end
+    cfg.vector_cfg.vl.rand_mode(1);
+    cfg.vector_cfg.vtype.rand_mode(1);
+
+    // Handle not fully immediate instructions
+    if (instr.instr_name != VSETIVLI) begin
+      // Copy vsetvl{i} instruction to position further back
+      instr_list[idx+(instr.instr_name == VSETVL ? 2 : 1) - (instr.rs1 == ZERO)] = instr;
+
+      // Setup rs1 (avl)
+      if (instr.rs1 != ZERO) begin
+        instr_list[idx] = get_init_gpr_instr(instr.rs1, cfg.vector_cfg.vl);
+      end
+      // Setup rs2 (vtype)
+      if (instr.instr_name == VSETVL) begin
+        instr_list[idx+(instr.rs1 != ZERO)] = get_init_gpr_instr(instr.rs2, cfg.vector_cfg.get_vtype_content());
+      end
+    end
+  endfunction
+
+  // Get a random vreg that is aligned to non fractional emul and is not already reserved
+  // Optionally add random vreg to list of reserved vregs
+  function riscv_vreg_t get_random_vreg (int emul, int reserve_vreg);
+    // Get random start register and align to emul
+    int base = $urandom_range(31) / emul * emul;
+    for (int i = 0; i < 32; i += emul) begin
+      for (int idx = 0; idx < emul; idx++) begin
+        if (riscv_vreg_t'(base + idx) inside {cfg.vector_cfg.reserved_vregs}) break;
+        if (reserve_vreg) begin
+          for (int i = 0; i < emul; i++) begin
+            cfg.vector_cfg.reserved_vregs.push_back(riscv_vreg_t'(base + i));
+          end
+        end
+        return riscv_vreg_t'(base);
+      end
+      base += emul;
+      base %= 32;
+    end
+    `uvm_fatal(`gfn, $sformatf("Cannot find random vector register with emul = %0d that is not already reserved", emul))
   endfunction
 
   function riscv_instr get_init_gpr_instr(riscv_reg_t gpr, bit [XLEN-1:0] val);
@@ -297,18 +400,324 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     return li_instr;
   endfunction
 
-  function void add_init_vector_gpr_instr(riscv_vreg_t gpr, bit [XLEN-1:0] val);
-    riscv_vector_instr instr;
-    $cast(instr, riscv_instr::get_instr(VMV));
-    instr.m_cfg = cfg;
-    instr.avoid_reserved_vregs_c.constraint_mode(0);
-    `DV_CHECK_RANDOMIZE_WITH_FATAL(instr,
+  // Initialize a v-register with random values (determined through a linear feedback shift register)
+  // vreg: register with randomised elements
+  // seed: register that contains initial seed (cannot be equal to vreg)
+  // vtemp: temporary vector register used during calculation (cannot be equal to vreg or seed)
+  // reseed: reseed the original seed with the vector element index (seed += vid)
+  // align_by: align random value by number of bytes (e.g align_by == 2 would clear the lowest bit)
+  // sew: element width
+  // min_value: lower bound of random value (inclusive), default (INT_MIN)
+  // max_value: upper bound of random value (inclusive), default (INT_MAX)
+  // insert_idx: position in instruction stream to insert instruction at
+  //             (-1: random, 0: front, instr_list.size(): back (default))
+  function void add_init_vector_gpr_random(riscv_vreg_t vreg, riscv_vreg_t seed, riscv_vreg_t vtemp,
+                                           int reseed, int align_by, int sew,
+                                           longint min_value = 64'd1 << 63, longint max_value = '1 >> 1,
+                                           int insert_idx = instr_list.size());
+    // The LFSR is based on the fibonacci lfsr (https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
+    // The polynomial parameters are based on a paper by Xilinx (http://www.xilinx.com/support/documentation/application_notes/xapp052.pdf)
+    //
+    // LFSR
+    // Feedback polynomial
+    //   i8:  x^8  + x^6  + x^5  + x^4 + 1
+    //   i16: x^16 + x^15 + x^13 + x^4 + 1
+    //   i32: x^32 + x^22 + x^2  + x^1 + 1
+    //
+    // Calculation (example for i16):
+    // # taps: 16 15 13 4; feedback polynomial: x^16 + x^15 + x^13 + x^4 + 1
+    //   bit = (lfsr ^ (lfsr >> 1) ^ (lfsr >> 3) ^ (lfsr >> 12)) & 1
+    //   lfsr = (lfsr >> 1) | (bit << 15)
+
+    riscv_instr init_instr_list [$];
+    riscv_vector_instr vinstr;
+    riscv_instr_gen_config init_cfg;
+    int polynomial[];
+
+    unique case (sew)
+      8:  polynomial = {6,   5,  4};
+      16: polynomial = {15, 13,  4};
+      32: polynomial = {22,  2,  1};
+      64: polynomial = {63, 61, 60};
+      default: `uvm_fatal("add_init_vector_gpr_random",
+                  $sformatf("Error: Unable to initialize vector with randomised values of SEW == %0d", sew))
+    endcase
+
+    // Clone current configuration
+    init_cfg = new();
+    init_cfg.copy(cfg);
+
+    // Set vtype to new vsew and vl to VLMAX
+    init_cfg.vector_cfg.update_vsew_keep_vl(sew);
+    $cast(vinstr, riscv_instr::get_instr(VSETVLI));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      rs1 == 0;
+      rd  == cfg.gpr[0];
+    )
+    init_instr_list.push_back(vinstr);
+
+    // Add vid to seed values
+    if (reseed) begin
+      // vtemp = vid
+      $cast(vinstr, riscv_instr::get_instr(VID_V));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        vm == 1'b1;
+        vd == vtemp;
+      )
+      init_instr_list.push_back(vinstr);
+
+      // seed = seed + vtemp
+      $cast(vinstr, riscv_instr::get_instr(VADD));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        va_variant == VV;
+        vm  == 1'b1;
+        vd  == seed;
+        vs1 == vtemp;
+        vs2 == seed;
+      )
+      init_instr_list.push_back(vinstr);
+    end
+
+    // vreg = seed
+    $cast(vinstr, riscv_instr::get_instr(VMV_V_V));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VV;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs1 == seed;
+    )
+    init_instr_list.push_back(vinstr);
+
+    foreach (polynomial[i]) begin
+      // vtemp = seed >> (sew - polynomial[i])
+      $cast(vinstr, riscv_instr::get_instr(VSRL));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        va_variant == VI;
+        vm  == 1'b1;
+        vd  == vtemp;
+        vs2 == seed;
+        imm == sew - polynomial[i];
+      )
+      init_instr_list.push_back(vinstr);
+
+      // vreg = vtemp ^ vreg
+      $cast(vinstr, riscv_instr::get_instr(VXOR));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        va_variant == VV;
+        vm  == 1'b1;
+        vd  == vreg;
+        vs2 == vtemp;
+        vs1 == vreg;
+      )
+      init_instr_list.push_back(vinstr);
+    end
+
+    // vreg = vreg << sew - 1
+    $cast(vinstr, riscv_instr::get_instr(VSLL));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VI;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vreg;
+      imm == sew - 1;
+    )
+    init_instr_list.push_back(vinstr);
+
+    // vtemp = seed >> 1
+    $cast(vinstr, riscv_instr::get_instr(VSRL));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VI;
+      vm  == 1'b1;
+      vd  == vtemp;
+      vs2 == seed;
+      imm == 1;
+    )
+    init_instr_list.push_back(vinstr);
+
+    // vreg = vreg | vtemp
+    $cast(vinstr, riscv_instr::get_instr(VOR));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VV;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vtemp;
+      vs1 == vreg;
+    )
+    init_instr_list.push_back(vinstr);
+
+    // Cast to range
+    // Min bound
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], min_value));
+    $cast(vinstr, riscv_instr::get_instr(VMAX));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
       va_variant == VX;
-      vd == gpr;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vreg;
       rs1 == cfg.gpr[0];
     )
-    instr_list.push_front(instr);
-    instr_list.push_front(get_init_gpr_instr(cfg.gpr[0], val));
+    init_instr_list.push_back(vinstr);
+    // Max bound
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], max_value));
+    $cast(vinstr, riscv_instr::get_instr(VMIN));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      va_variant == VX;
+      vm  == 1'b1;
+      vd  == vreg;
+      vs2 == vreg;
+      rs1 == cfg.gpr[0];
+    )
+    init_instr_list.push_back(vinstr);
+    // Value alignment
+    if (align_by > 1) begin
+      init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], '1 << $clog2(align_by)));
+      $cast(vinstr, riscv_instr::get_instr(VAND));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        va_variant == VX;
+        vm  == 1'b1;
+        vd  == vreg;
+        vs2 == vreg;
+        rs1 == cfg.gpr[0];
+      )
+      init_instr_list.push_back(vinstr);
+    end
+
+    // Reset vtype
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], cfg.vector_cfg.vl));
+    $cast(vinstr, riscv_instr::get_instr(VSETVLI));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      rs1 == cfg.gpr[0];
+      !(rd inside {cfg.reserved_regs, reserved_rd});
+      vd  == 0;
+    )
+    init_instr_list.push_back(vinstr);
+
+    // Add instructions to instruction stream
+    insert_instr_stream(init_instr_list, insert_idx);
+  endfunction
+
+  // Initialize a v-register with pre-defined values
+  // Instructions will be inserted at defined index (-1: random, 0: front, instr_list.size(): back)
+  function void add_init_vector_gpr(riscv_vreg_t vreg, logic [XLEN-1:0] values [], int sew, int idx = instr_list.size());
+    riscv_instr init_instr_list [$];
+    riscv_vector_instr vinstr;
+    riscv_instr_gen_config init_cfg;
+
+    // Clone current configuration
+    init_cfg = new();
+    init_cfg.copy(cfg);
+
+    // Set vtype to new vsew and vl to VLMAX
+    init_cfg.vector_cfg.update_vsew_keep_vl(sew);
+    $cast(vinstr, riscv_instr::get_instr(VSETVLI));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = init_cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      rs1 == 0;
+      rd  == cfg.gpr[0];
+    )
+    init_instr_list.push_back(vinstr);
+
+    // Initialize v-register
+    if (values.size() == 1) begin
+      // Load initialize value to x-register
+      init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], values[0]));
+
+      // Splatter value to v-register
+      $cast(vinstr, riscv_instr::get_instr(VMV_V_X));
+      vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+      vinstr.m_cfg = init_cfg;
+      `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+        vd  == vreg;
+        rs1 == cfg.gpr[0];
+        vm  == 1'b1;
+      )
+      init_instr_list.push_back(vinstr);
+    end else begin
+      int i;
+      // Load all defined values into v-register
+      for (i = 0; i < values.size() && i < init_cfg.vector_cfg.vlmax(); i++) begin
+        // Load initialize value to x-register
+        init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], values[i]));
+
+        // Slide down value in v-register
+        $cast(vinstr, riscv_instr::get_instr(VSLIDE1DOWN));
+        vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+        vinstr.m_cfg = init_cfg;
+        `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+          vd  == vreg;
+          vs2 == vreg;
+          rs1 == cfg.gpr[0];
+          vm  == 1'b1;
+        )
+        init_instr_list.push_back(vinstr);
+      end
+      // Rotate v-register to get init values to correct place
+      for (; i < init_cfg.vector_cfg.vlmax(); i++) begin
+        // Get first value of v-register
+        $cast(vinstr, riscv_instr::get_instr(VMV_X_S));
+        vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+        vinstr.m_cfg = init_cfg;
+        `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+          vs2 == vreg;
+          rd  == cfg.gpr[0];
+        )
+        init_instr_list.push_back(vinstr);
+
+        // Slide down value in v-register
+        $cast(vinstr, riscv_instr::get_instr(VSLIDE1DOWN));
+        vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+        vinstr.m_cfg = init_cfg;
+        `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+          vd  == vreg;
+          vs2 == vreg;
+          rs1 == cfg.gpr[0];
+          vm  == 1'b1;
+        )
+        init_instr_list.push_back(vinstr);
+      end
+    end
+
+    // Reset vtype
+    init_instr_list.push_back(get_init_gpr_instr(cfg.gpr[0], cfg.vector_cfg.vl));
+    $cast(vinstr, riscv_instr::get_instr(VSETVLI));
+    vinstr.avoid_reserved_vregs_c.constraint_mode(0);
+    vinstr.m_cfg = cfg;
+    `DV_CHECK_RANDOMIZE_WITH_FATAL(vinstr,
+      rs1 == cfg.gpr[0];
+      !(rd inside {cfg.reserved_regs, reserved_rd});
+      vd  == 0;
+    )
+    init_instr_list.push_back(vinstr);
+
+    // Add instructions to instruction stream
+    insert_instr_stream(init_instr_list, idx);
   endfunction
 
 endclass

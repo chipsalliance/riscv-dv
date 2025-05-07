@@ -155,7 +155,7 @@ class riscv_lr_sc_instr_stream extends riscv_amo_base_instr_stream;
   // jumps, taken backward branches, JALR, FENCE, and SYSTEM instructions. If the “C”
   // extension is supported, then compressed forms of the aforementioned “I” instructions
   // are also permitted.
-  virtual function void add_mixed_instr(int instr_cnt);
+  virtual function void add_mixed_instr(int instr_cnt, int insert_idx = -1);
     riscv_instr instr;
     int i;
     setup_allowed_instr(.no_branch(1), .no_load_store(1));
@@ -163,7 +163,7 @@ class riscv_lr_sc_instr_stream extends riscv_amo_base_instr_stream;
       instr = riscv_instr::type_id::create("instr");
       randomize_instr(instr, .include_group({RV32I, RV32C}));
       if (!(instr.category inside {SYNCH, SYSTEM})) begin
-        insert_instr(instr);
+        insert_instr(instr, insert_idx);
         i++;
       end
     end
@@ -209,22 +209,3 @@ class riscv_amo_instr_stream extends riscv_amo_base_instr_stream;
   endfunction
 
 endclass : riscv_amo_instr_stream
-
-
-class riscv_vector_amo_instr_stream extends riscv_vector_load_store_instr_stream;
-
-  constraint amo_address_mode_c {
-    // AMO operation uses indexed address mode
-    address_mode == INDEXED;
-  }
-
-  `uvm_object_utils(riscv_vector_amo_instr_stream)
-  `uvm_object_new
-
-  virtual function void add_element_vec_load_stores();
-    allowed_instr = {VAMOSWAPE_V, VAMOADDE_V, VAMOXORE_V,
-                     VAMOANDE_V, VAMOORE_V, VAMOMINE_V,
-                     VAMOMAXE_V, VAMOMINUE_V, VAMOMAXUE_V, allowed_instr};
-  endfunction
-
-endclass : riscv_vector_amo_instr_stream
