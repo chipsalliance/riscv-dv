@@ -47,7 +47,7 @@ jobs:
       GHA_EXTERNAL_DISK: additional-tools
       CACHE_HASH: ${{ needs.generate-config.outputs.hash }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Cache Metadata
         id: cache_metadata
