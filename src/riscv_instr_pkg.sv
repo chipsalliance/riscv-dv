@@ -110,6 +110,8 @@ package riscv_instr_pkg;
     RV64ZBS,
     RV32ZCB,
     RV64ZCB,
+    RV32ZCMP,
+    RV64ZCMP,
     RV32ZMMUL,
     RV64ZMMUL,
     RV32X,
@@ -289,6 +291,13 @@ package riscv_instr_pkg;
     C_MUL,
     // RV64ZCB instructions
     C_ZEXT_W,
+    // RV32ZCMP
+    CM_PUSH,
+    CM_POP,
+    CM_POPRETZ,
+    CM_POPRET,
+    CM_MVA01S,
+    CM_MVSA01,
     // RV32M instructions
     MUL,
     MULH,
@@ -683,6 +692,8 @@ package riscv_instr_pkg;
     S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, T3, T4, T5, T6
   } riscv_reg_t;
 
+  typedef riscv_reg_t riscv_reglist_t[$];
+
   typedef enum bit [4:0] {
     FT0, FT1, FT2, FT3, FT4, FT5, FT6, FT7, FS0, FS1, FA0, FA1, FA2, FA3, FA4, FA5,
     FA6, FA7, FS2, FS3, FS4, FS5, FS6, FS7, FS8, FS9, FS10, FS11, FT8, FT9, FT10, FT11
@@ -717,6 +728,8 @@ package riscv_instr_pkg;
     CLH_FORMAT,
     CSH_FORMAT,
     CU_FORMAT,
+    CMMV_FORMAT,
+    CMPP_FORMAT,
     // Vector instruction format
     VSET_FORMAT,
     VA_FORMAT,
@@ -1557,6 +1570,7 @@ package riscv_instr_pkg;
   typedef class riscv_zbc_instr;
   typedef class riscv_zbs_instr;
   typedef class riscv_zcb_instr;
+  typedef class riscv_zcmp_instr;
   typedef class riscv_b_instr;
   `include "riscv_instr_gen_config.sv"
   `include "isa/riscv_instr.sv"
@@ -1585,6 +1599,8 @@ package riscv_instr_pkg;
   `include "isa/riscv_zcb_instr.sv"
   `include "isa/rv32zcb_instr.sv"
   `include "isa/rv64zcb_instr.sv"
+  `include "isa/riscv_zcmp_instr.sv"
+  `include "isa/rv32zcmp_instr.sv"
   `include "isa/rv32m_instr.sv"
   `include "isa/rv64a_instr.sv"
   `include "isa/rv64b_instr.sv"

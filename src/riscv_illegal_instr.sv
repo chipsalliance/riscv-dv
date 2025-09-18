@@ -244,6 +244,22 @@ class riscv_illegal_instr extends uvm_object;
     }
   }
 
+  constraint zcmp_extension_c {
+    // zcmp adds instructions where funct3/c_msb = 3'b101 and c2/c_op = 2'b10
+    // Those codes are legal if they match a valid Zcmp instruction
+    if (RV32ZCMP inside {supported_isa}) {
+      if (exception inside {kIllegalCompressedOpcode, kReservedCompressedInstr}) {
+        if (c_op == 2'b10 && c_msb == 3'b101) {
+          !(instr_bin[12:8] inside {5'b11000, 5'b11010, 5'b11100, 5'b11110}); // push/pop
+          if (instr_bin[12:10] == 3'b011) {
+            // double move instructions
+            !(instr_bin[6:5] inside {2'b01, 2'b11});
+          }
+        }
+      }
+    }
+  }
+
   constraint illegal_compressed_op_c {
     if (exception == kIllegalCompressedOpcode) {
       c_op != 2'b01;
