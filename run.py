@@ -338,7 +338,10 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                             cmd += test['gen_opts']
                         else:
                             cmd += test['gen_opts']
-                    if not re.search("c", isa):
+                    # If ISA string does not include the compressed 'c'
+                    # extension, then append the plusarg to disable compressed
+                    # instructions
+                    if not re.search(r"^(rv(?:32|64|128)[a-z]+?)c(?=_|$)", isa):
                         cmd += "+disable_compressed_instr=1 "
                     if lsf_cmd:
                         cmd_list.append(cmd)
@@ -446,14 +449,12 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
             if 'gcc_opts' in test:
                 cmd += test['gcc_opts']
             if 'gen_opts' in test:
-                # Disable compressed instruction
-                if re.search('disable_compressed_instr', test['gen_opts']):
-                    # Note that this substitution assumes the cannonical order
-                    # of extensions, i.e. that extensions with preceding
-                    # underscores will be provided after all letter extensions.
-                    # This assumption should hold true, as this is a
-                    # requirement enforced by e.g. gcc
-                    test_isa = re.sub(r"(rv.+?)c", r"\1", test_isa)
+                # Remove the compressed 'c' extension from the ISA string if
+                # the plusarg `+disable_compressed_instr=1` is set in the
+                # generator options
+                if re.search('\+disable_compressed_instr=1', test['gen_opts']):
+                    test_isa = re.sub(r"^(rv(?:32|64|128)[a-z]+?)c(?=_|$)",
+                                      r"\1", test_isa)
             # If march/mabi is not defined in the test gcc_opts, use the default
             # setting from the command line.
             if not re.search('march', cmd):
