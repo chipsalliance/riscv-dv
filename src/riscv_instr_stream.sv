@@ -234,6 +234,12 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         ((avail_regs.size() > 0) && !(SP inside {avail_regs}))) begin
       exclude_instr = {exclude_instr, C_ADDI4SPN, C_ADDI16SP, C_LWSP, C_LDSP};
     end
+    if ((A0 inside {reserved_rd, cfg.reserved_regs}) ||
+        (A1 inside {reserved_rd, cfg.reserved_regs}) ||
+        ((avail_regs.size() > 0) && (!(A0 inside {avail_regs}) || !(A1 inside {avail_regs})))) begin
+      // MVA01S instruction needs both A0 and A1 to be writable
+      exclude_instr = {exclude_instr, CM_MVA01S};
+    end
     // Post-process the exclude_instr lists to handle adding ebreak instructions to the debug rom.
     if (is_in_debug) begin
       if (!cfg.no_ebreak && !cfg.enable_ebreak_in_debug_rom) begin
