@@ -1380,7 +1380,7 @@ package riscv_instr_pkg;
     string store_instr = (XLEN == 32) ? "sw" : "sd";
     if (scratch inside {implemented_csr}) begin
       // Push USP from gpr.SP onto the kernel stack
-      instr.push_back($sformatf("addi x%0d, x%0d, -4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, -%0d", tp, tp, XLEN/8));
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", store_instr, sp, tp));
       // Move KSP to gpr.SP
       instr.push_back($sformatf("add x%0d, x%0d, zero", sp, tp));
@@ -1435,7 +1435,7 @@ package riscv_instr_pkg;
       instr.push_back($sformatf("add x%0d, x%0d, zero", tp, sp));
       // Pop USP from the kernel stack, move back to gpr.SP
       instr.push_back($sformatf("%0s  x%0d, (x%0d)", load_instr, sp, tp));
-      instr.push_back($sformatf("addi x%0d, x%0d, 4", tp, tp));
+      instr.push_back($sformatf("addi x%0d, x%0d, %0d", tp, tp, XLEN/8));
     end
   endfunction
 
