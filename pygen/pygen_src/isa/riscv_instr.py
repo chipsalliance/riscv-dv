@@ -15,7 +15,10 @@ import copy
 import sys
 import random
 import vsc
-from imp import reload
+if sys.version_info >= (3, 12):
+    from importlib import reload
+else
+    from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
 from importlib import import_module
