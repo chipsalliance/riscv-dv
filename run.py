@@ -153,26 +153,26 @@ def parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd):
         if entry['iss'] == iss:
             logging.info("Found matching ISS: {}".format(entry['iss']))
             cmd = entry['cmd'].rstrip()
-            cmd = re.sub("\<path_var\>",
+            cmd = re.sub(r"\<path_var\>",
                          get_env_var(entry['path_var'], debug_cmd=debug_cmd),
                          cmd)
             m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-zA-Z_]+?)$", isa)
             if m:
-                cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
+                cmd = re.sub(r"\<xlen\>", m.group('xlen'), cmd)
             else:
                 logging.error("Illegal ISA {}".format(isa))
             if iss == "ovpsim":
-                cmd = re.sub("\<cfg_path\>", setting_dir, cmd)
+                cmd = re.sub(r"\<cfg_path\>", setting_dir, cmd)
             elif iss == "whisper":
                 if m:
                     # TODO: Support u/s mode
                     variant = re.sub('g', 'imafd', m.group('variant'))
-                    cmd = re.sub("\<variant\>", variant, cmd)
+                    cmd = re.sub(r"\<variant\>", variant, cmd)
             else:
-                cmd = re.sub("\<variant\>", isa, cmd)
-            cmd = re.sub("\<priv\>", priv, cmd)
-            cmd = re.sub("\<scripts_path\>", scripts_dir, cmd)
-            cmd = re.sub("\<config_path\>", yaml_dir, cmd)
+                cmd = re.sub(r"\<variant\>", isa, cmd)
+            cmd = re.sub(r"\<priv\>", priv, cmd)
+            cmd = re.sub(r"\<scripts_path\>", scripts_dir, cmd)
+            cmd = re.sub(r"\<config_path\>", yaml_dir, cmd)
             return cmd
     logging.error("Cannot find ISS {}".format(iss))
     sys.exit(RET_FAIL)
@@ -189,7 +189,7 @@ def get_iss_cmd(base_cmd, elf, log):
     Returns:
       cmd      : Command for ISS simulation
     """
-    cmd = re.sub("\<elf\>", elf, base_cmd)
+    cmd = re.sub(r"\<elf\>", elf, base_cmd)
     cmd += (" &> {}".format(log))
     return cmd
 
@@ -333,7 +333,7 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                     sim_seed[test_id] = str(rand_seed)
                     if "gen_opts" in test:
                         if simulator == "pyflow":
-                            test['gen_opts'] = re.sub("\+", "--",
+                            test['gen_opts'] = re.sub(r"\+", "--",
                                                       test['gen_opts'])
                             cmd += test['gen_opts']
                         else:
