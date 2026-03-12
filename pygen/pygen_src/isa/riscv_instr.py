@@ -17,7 +17,7 @@ import random
 import vsc
 if sys.version_info >= (3, 12):
     from importlib import reload
-else
+else:
     from imp import reload
 from collections import defaultdict
 from bitstring import BitArray
