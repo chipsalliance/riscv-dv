@@ -28,9 +28,13 @@ from riscv_trace_csv import *
 from lib import *
 
 RD_RE = re.compile(
-    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+?)\s+" \
-    r"\((?P<bin>.*?)\)\s+(?P<reg>[xf]\s*\d*?)\s+0x(?P<val>[a-f0-9]+)" \
-    r"(\s+(?P<csr>\S+)\s+0x(?P<csr_val>[a-f0-9]+))?")
+    r"(core\s+\d+:\s+)?(?P<pri>\d)\s+0x(?P<addr>[a-f0-9]+)\s+"
+    r"\((?P<bin>.*?)\)\s+"
+    r"(?:(?P<reg1>[xf]\s*\d*?)\s+0x(?P<val1>[a-f0-9]+)\s+)?"
+    r"(?:(?P<csr1>\S+)\s+0x(?P<csr_val1>[a-f0-9]+)\s+)?"
+    r"(?:(?P<reg2>[xf]\s*\d*?)\s+0x(?P<val2>[a-f0-9]+)\s*)?"
+    r"(?:(?P<csr2>\S+)\s+0x(?P<csr_val2>[a-f0-9]+))?"
+)
 CORE_RE = re.compile(
     r"core\s+\d+:\s+0x(?P<addr>[a-f0-9]+?)\s+\(0x(?P<bin>.*?)\)\s+(?P<instr>.*?)$")
 ADDR_RE = re.compile(
@@ -176,14 +180,18 @@ def read_spike_trace(path, full_trace):
             commit_match = RD_RE.match(line)
             if commit_match:
                 groups = commit_match.groupdict()
-                instr.gpr.append(gpr_to_abi(groups["reg"].replace(' ', '')) +
-                                 ":" + groups["val"])
 
-                if groups["csr"] and groups["csr_val"]:
-                    instr.csr.append(groups["csr"] + ":" + groups["csr_val"])
+                reg = groups["reg1"] or groups["reg2"]
+                val = groups["val1"] or groups["val2"]
+                if reg and val:
+                    instr.gpr.append(gpr_to_abi(reg.replace(' ', '')) + ":" + val)
 
-                instr.mode = commit_match.group('pri')
+                csr = groups["csr1"] or groups["csr2"]
+                csr_val = groups["csr_val1"] or groups["csr_val2"]
+                if csr and csr_val:
+                    instr.csr.append(csr + ":" + csr_val)
 
+                instr.mode = groups["pri"]
         # At EOF, we might have an instruction in hand. Yield it if so.
         if instr is not None:
             yield (instr, False)
