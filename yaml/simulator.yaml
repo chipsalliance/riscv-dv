@@ -58,8 +58,10 @@
       - "vlog -64
         +incdir+<setting>
         +incdir+<user_extension>
+	+incdir+${UVM_HOME}
         -f <cwd>/files.f
         -sv
+	-L ${QUESTA_HOME}/uvm-1.2
         -mfcu -cuname design_cuname
         +define+UVM_REGEX_NO_DPI
         -writetoplevels <out>/top.list
@@ -73,6 +75,9 @@
       vsim -64 -c <cov_opts> -do <cwd>/questa_sim.tcl design_opt <sim_opts>  -sv_seed <seed>
     cov_opts: >
       -do "coverage save -onexit <out>/cov.ucdb;"
+# Somewhere in your setup, do not forget to:
+# properly set UVM_HOME and QUESTA_HOME variables
+# add the following command: set questasim_version = vsim -version | perl -ne 'if(/Questa/){@t_tmp=split(" ",$_);print($t_tmp[3]."\n")}'
 
 - tool: dsim
   env_var: DSIM,DSIM_LIB_PATH
