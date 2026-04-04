@@ -153,26 +153,26 @@ def parse_iss_yaml(iss, iss_yaml, isa, priv, setting_dir, debug_cmd):
         if entry['iss'] == iss:
             logging.info("Found matching ISS: {}".format(entry['iss']))
             cmd = entry['cmd'].rstrip()
-            cmd = re.sub("\<path_var\>",
+            cmd = re.sub(r"\<path_var\>",
                          get_env_var(entry['path_var'], debug_cmd=debug_cmd),
                          cmd)
             m = re.search(r"rv(?P<xlen>[0-9]+?)(?P<variant>[a-zA-Z_]+?)$", isa)
             if m:
-                cmd = re.sub("\<xlen\>", m.group('xlen'), cmd)
+                cmd = re.sub(r"\<xlen\>", m.group('xlen'), cmd)
             else:
                 logging.error("Illegal ISA {}".format(isa))
             if iss == "ovpsim":
-                cmd = re.sub("\<cfg_path\>", setting_dir, cmd)
+                cmd = re.sub(r"\<cfg_path\>", setting_dir, cmd)
             elif iss == "whisper":
                 if m:
                     # TODO: Support u/s mode
                     variant = re.sub('g', 'imafd', m.group('variant'))
-                    cmd = re.sub("\<variant\>", variant, cmd)
+                    cmd = re.sub(r"\<variant\>", variant, cmd)
             else:
-                cmd = re.sub("\<variant\>", isa, cmd)
-            cmd = re.sub("\<priv\>", priv, cmd)
-            cmd = re.sub("\<scripts_path\>", scripts_dir, cmd)
-            cmd = re.sub("\<config_path\>", yaml_dir, cmd)
+                cmd = re.sub(r"\<variant\>", isa, cmd)
+            cmd = re.sub(r"\<priv\>", priv, cmd)
+            cmd = re.sub(r"\<scripts_path\>", scripts_dir, cmd)
+            cmd = re.sub(r"\<config_path\>", yaml_dir, cmd)
             return cmd
     logging.error("Cannot find ISS {}".format(iss))
     sys.exit(RET_FAIL)
@@ -189,7 +189,7 @@ def get_iss_cmd(base_cmd, elf, log):
     Returns:
       cmd      : Command for ISS simulation
     """
-    cmd = re.sub("\<elf\>", elf, base_cmd)
+    cmd = re.sub(r"\<elf\>", elf, base_cmd)
     cmd += (" &> {}".format(log))
     return cmd
 
@@ -213,14 +213,14 @@ def do_compile(compile_cmd, test_list, core_setting_dir, cwd, ext_dir,
             test_list[0]['test'] == 'riscv_csr_test')):
         logging.info("Building RISC-V instruction generator")
         for cmd in compile_cmd:
-            cmd = re.sub("<out>", os.path.abspath(output_dir), cmd)
-            cmd = re.sub("<setting>", core_setting_dir, cmd)
+            cmd = re.sub(r"<out>", os.path.abspath(output_dir), cmd)
+            cmd = re.sub(r"<setting>", core_setting_dir, cmd)
             if ext_dir == "":
-                cmd = re.sub("<user_extension>", "<cwd>/user_extension", cmd)
+                cmd = re.sub(r"<user_extension>", "<cwd>/user_extension", cmd)
             else:
-                cmd = re.sub("<user_extension>", ext_dir, cmd)
-            cmd = re.sub("<cwd>", cwd, cmd)
-            cmd = re.sub("<cmp_opts>", cmp_opts, cmd)
+                cmd = re.sub(r"<user_extension>", ext_dir, cmd)
+            cmd = re.sub(r"<cwd>", cwd, cmd)
+            cmd = re.sub(r"<cmp_opts>", cmp_opts, cmd)
             if lsf_cmd:
                 cmd = lsf_cmd + " " + cmd
                 run_parallel_cmd([cmd], debug_cmd=debug_cmd)
@@ -274,9 +274,9 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
       debug_cmd             : Produce the debug cmd log without running
     """
     cmd_list = []
-    sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
-    sim_cmd = re.sub("<cwd>", cwd, sim_cmd)
-    sim_cmd = re.sub("<sim_opts>", sim_opts, sim_cmd)
+    sim_cmd = re.sub(r"<out>", os.path.abspath(output_dir), sim_cmd)
+    sim_cmd = re.sub(r"<cwd>", cwd, sim_cmd)
+    sim_cmd = re.sub(r"<sim_opts>", sim_opts, sim_cmd)
 
     logging.info("Running RISC-V instruction generator")
     sim_seed = {}
@@ -304,7 +304,7 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                     else:
                         test_cnt = iterations - i * batch_size
                     if simulator == "pyflow":
-                        sim_cmd = re.sub("<test_name>", test['gen_test'],
+                        sim_cmd = re.sub(r"<test_name>", test['gen_test'],
                                          sim_cmd)
                         cmd = lsf_cmd + " " + sim_cmd.rstrip() + \
                               (" --num_of_tests={}".format(test_cnt)) + \
@@ -328,12 +328,12 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                                   output_dir, test['test'], i, log_suffix))
                     if verbose and simulator != "pyflow":
                         cmd += "+UVM_VERBOSITY=UVM_HIGH "
-                    cmd = re.sub("<seed>", str(rand_seed), cmd)
-                    cmd = re.sub("<test_id>", test_id, cmd)
+                    cmd = re.sub(r"<seed>", str(rand_seed), cmd)
+                    cmd = re.sub(r"<test_id>", test_id, cmd)
                     sim_seed[test_id] = str(rand_seed)
                     if "gen_opts" in test:
                         if simulator == "pyflow":
-                            test['gen_opts'] = re.sub("\+", "--",
+                            test['gen_opts'] = re.sub(r"\+", "--",
                                                       test['gen_opts'])
                             cmd += test['gen_opts']
                         else:
