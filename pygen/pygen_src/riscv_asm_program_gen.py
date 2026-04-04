@@ -130,7 +130,7 @@ class riscv_asm_program_gen:
             if(hart == 0 and not(rcs.support_pmp)):
                 self.gen_test_done()
             # Shuffle the sub programs and insert to the instruction stream
-            self.insert_sub_program(self.sub_program[hart], self.instr_stream)
+            self.insert_sub_program(self.instr_stream)
             logging.info("Main/sub program generation...done")
             # program end
             self.gen_program_end(hart)
@@ -229,7 +229,7 @@ class riscv_asm_program_gen:
                       sub_program_name, num_sub_program):
         if num_sub_program != 0:
             callstack_gen = riscv_callstack_gen()
-            self.callstack_gen.init(num_sub_program + 1)
+            callstack_gen.init(num_sub_program + 1)
             if callstack_gen.randomize():
                 idx = 0
                 # Insert the jump instruction based on the call stack

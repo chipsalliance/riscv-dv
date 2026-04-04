@@ -82,7 +82,7 @@ class riscv_callstack_gen:
         self.program_cnt = program_cnt
         self.program_h = [0] * program_cnt
         for i in range(len(self.program_h)):
-            self.program_h[i] = riscv_program("program_{}".format(i))
+            self.program_h[i] = riscv_program()
 
 # In the randomization stage, only the stack level of each program is specified. The call stack
 # generation process is to build the call relationship between different programs. This is
