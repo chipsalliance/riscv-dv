@@ -89,8 +89,16 @@ class riscv_instr_group_t(IntEnum):
     RV128C = auto()
     RV32V = auto()
     RV32B = auto()
+    RV32ZBA = auto()
+    RV32ZBB = auto()
+    RV32ZBC = auto()
+    RV32ZBS = auto()
     RV64V = auto()
     RV64B = auto()
+    RV64ZBA = auto()
+    RV64ZBB = auto()
+    RV64ZBC = auto()
+    RV64ZBS = auto()
     RV32X = auto()
     RV64X = auto()
     RVV = auto()
@@ -146,109 +154,116 @@ class riscv_instr_name_t(IntEnum):
     CSRRWI = auto()
     CSRRSI = auto()
     CSRRCI = auto()
-    # RV32B instructions
+    # RV32ZBA instructions
+    SH1ADD = auto()
+    SH2ADD = auto()
+    SH3ADD = auto()
+    # RV32ZBB instructions
     ANDN = auto()
+    CLZ = auto()
+    CPOP = auto()
+    CTZ = auto()
+    MAX = auto()
+    MAXU = auto()
+    MIN = auto()
+    MINU = auto()
+    ORC_B = auto()
     ORN = auto()
-    XNOR = auto()
-    GORC = auto()
-    SLO = auto()
-    SRO = auto()
+    REV8 = auto()
     ROL = auto()
     ROR = auto()
-    SBCLR = auto()
-    SBSET = auto()
-    SBINV = auto()
-    SBEXT = auto()
-    GREV = auto()
-    SLOI = auto()
-    SROI = auto()
     RORI = auto()
-    SBCLRI = auto()
-    SBSETI = auto()
-    SBINVI = auto()
-    SBEXTI = auto()
+    SEXT_B = auto()
+    SEXT_H = auto()
+    XNOR = auto()
+    ZEXT_H = auto()
+    # RV32ZBC instructions
+    CLMUL = auto()
+    CLMULH = auto()
+    CLMULR = auto()
+    # RV32ZBS instructions
+    BCLR = auto()
+    BCLRI = auto()
+    BEXT = auto()
+    BEXTI = auto()
+    BINV = auto()
+    BINVI = auto()
+    BSET = auto()
+    BSETI = auto()
+    # RV32B instructions
+    # Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
+    GORC = auto()
     GORCI = auto()
-    GREVI = auto()
     CMIX = auto()
     CMOV = auto()
+    PACK = auto()
+    PACKU = auto()
+    PACKH = auto()
+    XPERM_N = auto()
+    XPERM_B = auto()
+    XPERM_H = auto()
+    SLO = auto()
+    SRO = auto()
+    SLOI = auto()
+    SROI = auto()
+    GREV = auto()
+    GREVI = auto()
     FSL = auto()
     FSR = auto()
     FSRI = auto()
-    CLZ = auto()
-    CTZ = auto()
-    PCNT = auto()
-    SEXT_B = auto()
-    SEXT_H = auto()
     CRC32_B = auto()
     CRC32_H = auto()
     CRC32_W = auto()
     CRC32C_B = auto()
     CRC32C_H = auto()
     CRC32C_W = auto()
-    CLMUL = auto()
-    CLMULR = auto()
-    CLMULH = auto()
-    MIN = auto()
-    MAX = auto()
-    MINU = auto()
-    MAXU = auto()
     SHFL = auto()
     UNSHFL = auto()
-    BDEP = auto()
-    BEXT = auto()
-    PACK = auto()
-    PACKU = auto()
-    BMATOR = auto()
-    BMATXOR = auto()
-    PACKH = auto()
-    BFP = auto()
     SHFLI = auto()
     UNSHFLI = auto()
-    # RV64B instructions
-    ADDIWU = auto()
-    SLLIU_W = auto()
-    ADDWU = auto()
-    SUBWU = auto()
+    BCOMPRESS = auto()
+    BDECOMPRESS = auto()
+    BFP = auto()
+    # RV64ZBA instructions
+    ADD_UW = auto()
+    SH1ADD_UW = auto()
+    SH2ADD_UW = auto()
+    SH3ADD_UW = auto()
+    SLLI_UW = auto()
+    # RV64ZBB instructions
+    CLZW = auto()
+    CPOPW = auto()
+    CTZW = auto()
+    ROLW = auto()
+    RORW = auto()
+    RORIW = auto()
+   # RV64B instructions
+   # Remaining bitmanip instructions of draft v.0.93 not ratified in v.1.00 (Zba, Zbb, Zbc, Zbs).
+    BMATOR = auto()
+    BMATXOR = auto()
     BMATFLIP = auto()
     CRC32_D = auto()
     CRC32C_D = auto()
-    ADDU_W = auto()
-    SUBU_W = auto()
+    SHFLW = auto()
+    UNSHFLW = auto()
+    BCOMPRESSW = auto()
+    BDECOMPRESSW = auto()
+    BFPW = auto()
     SLOW = auto()
     SROW = auto()
-    ROLW = auto()
-    RORW = auto()
-    SBCLRW = auto()
-    SBSETW = auto()
-    SBINVW = auto()
-    SBEXTW = auto()
-    GORCW = auto()
-    GREVW = auto()
     SLOIW = auto()
     SROIW = auto()
-    RORIW = auto()
-    SBCLRIW = auto()
-    SBSETIW = auto()
-    SBINVIW = auto()
-    GORCIW = auto()
+    GREVW = auto()
     GREVIW = auto()
     FSLW = auto()
     FSRW = auto()
     FSRIW = auto()
-    CLZW = auto()
-    CTZW = auto()
-    PCNTW = auto()
-    CLMULW = auto()
-    CLMULRW = auto()
-    CLMULHW = auto()
-    SHFLW = auto()
-    UNSHFLW = auto()
-    BDEPW = auto()
-    BEXTW = auto()
+    GORCW = auto()
+    GORCIW = auto()
     PACKW = auto()
     PACKUW = auto()
-    BFPW = auto()
-    # RV32M instructions
+    XPERM_W = auto()
+   # RV32M instructions
     MUL = auto()
     MULH = auto()
     MULHSU = auto()
@@ -1546,6 +1561,205 @@ def get_attr_list(instr_name):
         riscv_instr_name_t.CSRRCI: [riscv_instr_format_t.I_FORMAT,
                                     riscv_instr_category_t.CSR,
                                     riscv_instr_group_t.RV32I, imm_t.UIMM],
+
+        # RV32ZBA
+        riscv_instr_name_t.SH1ADD: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBA],
+        riscv_instr_name_t.SH2ADD: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBA],
+        riscv_instr_name_t.SH3ADD: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBA],
+        # RV32ZBB
+        riscv_instr_name_t.ANDN: [riscv_instr_format_t.R_FORMAT, 
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.CLZ: [riscv_instr_format_t.I_FORMAT, 
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.CPOP: [riscv_instr_format_t.I_FORMAT,
+                                  riscv_instr_category_t.ARITHMETIC,
+                                  riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.CTZ: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.MAX: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.MAXU: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.MIN: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.MINU: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.ORC_B: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.LOGICAL,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.ORN: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.LOGICAL,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.REV8: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.ROL: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.ROR: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.RORI: [riscv_instr_format_t.I_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBB, imm_t.UIMM],
+        riscv_instr_name_t.SEXT_B: [riscv_instr_format_t.I_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.SEXT_H: [riscv_instr_format_t.I_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.XNOR: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32ZBB],
+        riscv_instr_name_t.ZEXT_H: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBB],
+        # RV32ZBC
+        riscv_instr_name_t.CLMUL: [riscv_instr_format_t.R_FORMAT,
+                                   riscv_instr_category_t.ARITHMETIC,
+                                   riscv_instr_group_t.RV32ZBC],
+        riscv_instr_name_t.CLMULH: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBC],
+        riscv_instr_name_t.CLMULR: [riscv_instr_format_t.R_FORMAT,
+                                    riscv_instr_category_t.ARITHMETIC,
+                                    riscv_instr_group_t.RV32ZBC],
+        # RV32ZBS
+        riscv_instr_name_t.BCLR: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBS],
+        riscv_instr_name_t.BCLRI: [riscv_instr_format_t.I_FORMAT,
+                                   riscv_instr_category_t.SHIFT,
+                                   riscv_instr_group_t.RV32ZBS, imm_t.UIMM],
+        riscv_instr_name_t.BEXT: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBS],
+        riscv_instr_name_t.BEXTI: [riscv_instr_format_t.I_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBS, imm_t.UIMM],
+        riscv_instr_name_t.BINV: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBS],
+        riscv_instr_name_t.BINVI: [riscv_instr_format_t.I_FORMAT,
+                                   riscv_instr_category_t.SHIFT,
+                                   riscv_instr_group_t.RV32ZBS, imm_t.UIMM],
+        riscv_instr_name_t.BSET: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.SHIFT,
+                                  riscv_instr_group_t.RV32ZBS],
+        riscv_instr_name_t.BSETI: [riscv_instr_format_t.I_FORMAT,
+                                   riscv_instr_category_t.SHIFT,
+                                   riscv_instr_group_t.RV32ZBS, imm_t.UIMM],
+
+        # RV32B
+        riscv_instr_name_t.GORC: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.GORCI: [riscv_instr_format_t.I_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.CMIX: [riscv_instr_format_t.R4_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CMOV: [riscv_instr_format_t.R4_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.PACK: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.PACKU: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.PACKH: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.XPERM_N: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.XPERM_B: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.XPERM_H: [riscv_instr_format_t.R_FORMAT,
+                                  riscv_instr_category_t.LOGICAL,
+                                  riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.SLO: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.SRO: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.GREV: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.GREVI: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.SLOI: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.SROI: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.FSL: [riscv_instr_format_t.R4_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.FSR: [riscv_instr_format_t.R4_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.FSRI: [riscv_instr_format_t.I_FORMAT,
+                                 riscv_instr_category_t.SHIFT,
+                                 riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.CRC32_B: [riscv_instr_format_t.R_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CRC32_H: [riscv_instr_format_t.R_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CRC32_W: [riscv_instr_format_t.R_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CRC32C_B: [riscv_instr_format_t.R_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CRC32C_H: [riscv_instr_format_t.R_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.CRC32C_W: [riscv_instr_format_t.R_FORMAT,
+                                      riscv_instr_category_t.ARITHMETIC,
+                                      riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.SHFL: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.UNSHFL: [riscv_instr_format_t.R_FORMAT,
+                                   riscv_instr_category_t.ARITHMETIC,
+                                   riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.BFP: [riscv_instr_format_t.R_FORMAT,
+                                 riscv_instr_category_t.ARITHMETIC,
+                                 riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.BCOMPRESS: [riscv_instr_format_t.R_FORMAT,
+                                       riscv_instr_category_t.ARITHMETIC,
+                                       riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.BDECOMPRESS: [riscv_instr_format_t.R_FORMAT,
+                                         riscv_instr_category_t.ARITHMETIC,
+                                         riscv_instr_group_t.RV32B],
+        riscv_instr_name_t.SHFLI: [riscv_instr_format_t.I_FORMAT,
+                                   riscv_instr_category_t.ARITHMETIC,
+                                   riscv_instr_group_t.RV32B, imm_t.UIMM],
+        riscv_instr_name_t.UNSHFLI: [riscv_instr_format_t.I_FORMAT,
+                                     riscv_instr_category_t.ARITHMETIC,
+                                     riscv_instr_group_t.RV32B, imm_t.UIMM],
         # RV32M
         riscv_instr_name_t.MUL: [riscv_instr_format_t.R_FORMAT,
                                  riscv_instr_category_t.ARITHMETIC,
@@ -1919,7 +2133,7 @@ class riscv_instr_pkg:
     IMM12_WIDTH = 12
     INSTR_WIDTH = 32
     DATA_WIDTH = 32
-    MAX_INSTR_STR_LEN = 11
+    MAX_INSTR_STR_LEN = 13
     LABEL_STR_LEN = 18
     MAX_CALLSTACK_DEPTH = 20
     MAX_SUB_PROGRAM_CNT = 20
