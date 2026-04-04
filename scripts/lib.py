@@ -260,6 +260,7 @@ def create_output(output, noclean, prefix="out_"):
 
     logging.info("Creating output directory: {}".format(output))
     subprocess.run(["mkdir", "-p", output])
+    subprocess.run(["ln", "-sfn", output, prefix + "latest"])
     return output
 
 
