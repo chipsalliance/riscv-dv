@@ -39,6 +39,7 @@
 `define SAMPLE_ZBC(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbc_instr)
 `define SAMPLE_ZBS(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zbs_instr)
 `define SAMPLE_ZCB(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zcb_instr)
+`define SAMPLE_ZCMP(cg, val) `SAMPLE_W_TYPE(cg, val, riscv_zcmp_instr)
 
 `define INSTR_CG_BEGIN(INSTR_NAME, INSTR_CLASS = riscv_instr) \
   covergroup ``INSTR_NAME``_cg with function sample(INSTR_CLASS instr);
@@ -435,6 +436,13 @@
     `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;) \
 
 `define ZCB_I_INSTR_CG_BEGIN(INSTR_NAME) \
+  `INSTR_CG_BEGIN(INSTR_NAME) \
+    cp_rs1      : coverpoint instr.rs1 { \
+      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+    } \
+    `DV(cp_gpr_hazard : coverpoint instr.gpr_hazard;)
+
+`define ZCMP_I_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rs1      : coverpoint instr.rs1 { \
       bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
@@ -1692,6 +1700,26 @@ class riscv_instr_cover_group;
   // RV64ZCB
   `ZCB_I_INSTR_CG_BEGIN(c_zext_w)
   `CG_END
+
+  // TODO This needs more thought and probably different defines per type
+  `ZCMP_I_INSTR_CG_BEGIN(cm_push)
+  `CG_END
+
+  `ZCMP_I_INSTR_CG_BEGIN(cm_pop)
+  `CG_END
+
+  `ZCMP_I_INSTR_CG_BEGIN(cm_popretz)
+  `CG_END
+
+  `ZCMP_I_INSTR_CG_BEGIN(cm_popret)
+  `CG_END
+
+  `ZCMP_I_INSTR_CG_BEGIN(cm_mva01s)
+  `CG_END
+
+  `ZCMP_I_INSTR_CG_BEGIN(cm_mvsa01)
+  `CG_END
+
   `INSTR_CG_BEGIN(hint)
     cp_hint : coverpoint instr.binary[15:0] {
       wildcard bins addi    = {16'b0000_1xxx_x000_0001,
@@ -2131,6 +2159,15 @@ class riscv_instr_cover_group;
       c_mul_cg     = new();
     `CG_SELECTOR_END
 
+    `CG_SELECTOR_BEGIN(RV32ZCMP)
+      cm_push_cg    = new();
+      cm_pop_cg     = new();
+      cm_popretz_cg = new();
+      cm_popret_cg  = new();
+      cm_mva01s_cg  = new();
+      cm_mvsa01_cg  = new();
+    `CG_SELECTOR_END
+
     `CG_SELECTOR_BEGIN(RV32B)
       pack_cg        = new();
       packh_cg       = new();
@@ -2472,6 +2509,13 @@ class riscv_instr_cover_group;
       C_SEXT_H   : `SAMPLE_ZCB(c_sext_h_cg, instr)
       C_NOT      : `SAMPLE_ZCB(c_not_cg, instr)
       C_MUL      : `SAMPLE_ZCB(c_mul_cg, instr)
+      // RV32ZCMP
+      CM_PUSH    : `SAMPLE_ZCMP(cm_push_cg, instr)
+      CM_POP     : `SAMPLE_ZCMP(cm_pop_cg, instr)
+      CM_POPRETZ : `SAMPLE_ZCMP(cm_popretz_cg, instr)
+      CM_POPRET  : `SAMPLE_ZCMP(cm_popret_cg, instr)
+      CM_MVA01S  : `SAMPLE_ZCMP(cm_mva01s_cg, instr)
+      CM_MVSA01  : `SAMPLE_ZCMP(cm_mvsa01_cg, instr)
       // RV32B
       PACK       : `SAMPLE_B(pack_cg, instr)
       PACKH      : `SAMPLE_B(packh_cg, instr)
@@ -2622,8 +2666,8 @@ class riscv_instr_cover_group;
         if ((instr.group inside {supported_isa}) &&
             (instr.group inside {RV32I, RV32M, RV64M, RV64I, RV32C, RV64C,
                                  RVV, RV64B, RV32B,
-                                 RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS, RV32ZCB,
-                                 RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS, RV64ZCB})) begin
+                                 RV32ZBA, RV32ZBB, RV32ZBC, RV32ZBS, RV32ZCB, RV32ZCMP,
+                                 RV64ZBA, RV64ZBB, RV64ZBC, RV64ZBS, RV64ZCB, RV64ZCMP})) begin
           if (((instr_name inside {URET}) && !support_umode_trap) ||
               ((instr_name inside {SRET, SFENCE_VMA}) &&
               !(SUPERVISOR_MODE inside {supported_privileged_mode})) ||
