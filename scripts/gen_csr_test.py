@@ -101,7 +101,7 @@ def get_csr_map(csr_file, xlen):
 
     Returns:
       A dictionary contining mappings for each CSR, of the form:
-      { csr_name : [csr_address, csr_val_bitarray, csr_write_fields, csr_read_mask_bitarray] }
+      { csr_name : [csr_address, csr_val_bitarray, csr_write_fields, csr_read_mask_bitarray, csr_read_only] }
     """
     rv_string = "rv{}".format(str(xlen))
     csrs = {}
@@ -138,8 +138,13 @@ def get_csr_map(csr_file, xlen):
                         csr_write_fields.append(SimpleWriteCSRField(mask_bitarray,
                             (start_pos, end_pos), read_only))
 
+            # A CSR is read-only if it has fields and none of them are writable.
+            # Writing such a CSR raises an illegal instruction exception, so the
+            # test must only read it (see gen_csr_instr).
+            csr_read_only = (len(csr_write_fields) > 0 and
+                             all(f.read_only for f in csr_write_fields))
             csrs.update({csr_name: [csr_address, csr_value, csr_write_fields,
-                                    csr_read_mask]})
+                                    csr_read_mask, csr_read_only]})
     return csrs
 
 
@@ -324,9 +329,27 @@ def gen_csr_instr(original_csr_map, csr_instructions, xlen,
                   "w") as csr_test_file:
             gen_setup(csr_test_file)
             for csr in csr_list:
-                csr_address, csr_val, csr_write_fields, csr_read_mask = csr_map.get(
-                    csr)
+                csr_address, csr_val, csr_write_fields, csr_read_mask, \
+                    csr_read_only = csr_map.get(csr)
                 csr_test_file.write("\t# {}\n".format(csr))
+                if csr_read_only:
+                    # Writing a read-only CSR raises an illegal instruction
+                    # exception. Only emit non-writing accesses: csrrs/csrrc with
+                    # x0 as the source register read the CSR without any write
+                    # side effect. Check that the value read back matches the
+                    # CSR's (masked) reset value.
+                    read_val = predict_csr_val('csrrs',
+                                               bitarray(uint=0, length=xlen),
+                                               csr_val, csr_write_fields,
+                                               csr_read_mask)
+                    for op in ['csrrs', 'csrrc']:
+                        csr_test_file.write(
+                            "\t{} {}, {}, x0\n".format(op, dest_reg, csr_address))
+                        csr_test_file.write(
+                            "\tli {}, {}\n".format(source_reg, read_val))
+                        csr_test_file.write(
+                            "\tbne {}, {}, csr_fail\n".format(source_reg, dest_reg))
+                    continue
                 for op in csr_instructions:
                     for i in range(3):
                         # hex string
