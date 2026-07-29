@@ -228,23 +228,29 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
     end
   endfunction
 
+  function void update_excluded_instr(ref riscv_instr_name_t exclude_instr[],
+                                      input bit is_in_debug = 1'b0);
+    if ((SP inside {reserved_rd, cfg.reserved_regs}) ||
+        ((avail_regs.size() > 0) && !(SP inside {avail_regs}))) begin
+      exclude_instr = {exclude_instr, C_ADDI4SPN, C_ADDI16SP, C_LWSP, C_LDSP};
+    end
+    // Post-process the exclude_instr lists to handle adding ebreak instructions to the debug rom.
+    if (is_in_debug) begin
+      if (!cfg.no_ebreak && !cfg.enable_ebreak_in_debug_rom) begin
+        exclude_instr = {exclude_instr, EBREAK, C_EBREAK};
+      end
+    end
+  endfunction
+
   function void randomize_instr(output riscv_instr instr,
                                 input  bit is_in_debug = 1'b0,
                                 input  bit disable_dist = 1'b0,
                                 input  riscv_instr_group_t include_group[$] = {});
     riscv_instr_name_t exclude_instr[];
-    if ((SP inside {reserved_rd, cfg.reserved_regs}) ||
-        ((avail_regs.size() > 0) && !(SP inside {avail_regs}))) begin
-      exclude_instr = {C_ADDI4SPN, C_ADDI16SP, C_LWSP, C_LDSP};
-    end
-    // Post-process the allowed_instr and exclude_instr lists to handle
-    // adding ebreak instructions to the debug rom.
-    if (is_in_debug) begin
-      if (cfg.no_ebreak && cfg.enable_ebreak_in_debug_rom) begin
-        allowed_instr = {allowed_instr, EBREAK, C_EBREAK};
-      end else if (!cfg.no_ebreak && !cfg.enable_ebreak_in_debug_rom) begin
-        exclude_instr = {exclude_instr, EBREAK, C_EBREAK};
-      end
+    update_excluded_instr(exclude_instr, is_in_debug);
+    // Post-process the allowed_instr lists to handle adding ebreak instructions to the debug rom.
+    if (is_in_debug && cfg.no_ebreak && cfg.enable_ebreak_in_debug_rom) begin
+      allowed_instr = {allowed_instr, EBREAK, C_EBREAK};
     end
     instr = riscv_instr::get_rand_instr(.include_instr(allowed_instr),
                                         .exclude_instr(exclude_instr),
@@ -270,16 +276,10 @@ class riscv_rand_instr_stream extends riscv_instr_stream;
         if (has_rd) {
           rd != reserved_rd[i];
         }
-        if (format == CB_FORMAT) {
-          rs1 != reserved_rd[i];
-        }
       }
       foreach (cfg.reserved_regs[i]) {
         if (has_rd) {
           rd != cfg.reserved_regs[i];
-        }
-        if (format == CB_FORMAT) {
-          rs1 != cfg.reserved_regs[i];
         }
       }
       // TODO: Add constraint for CSR, floating point register
