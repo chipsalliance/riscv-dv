@@ -262,10 +262,17 @@ test. All other standard tests do not use this description.
 To specify what ISA width should be generated in the test, simply include the
 matching rv32/rv64/rv128 entry and fill in the appropriate CSR field entries.
 
-Privileged CSR Test Generation (optional)
+Privileged CSR Test Generation (deprecated)
 -----------------------------------------
 
-The CSR generation script is located at `scripts/gen_csr_test.py`_.
+A CSR generation script is located at `scripts/deprecated/gen_csr_test.py`_.
+
+Note that ``riscv_csr_test`` has been deprecated and is no longer supported.
+By default, any invocation that requests it will now return with a message
+stating that the test is deprecated, without generating any CSR test code.
+A new command-line option, ``--enable_deprecated_csr_test``, is provided to
+run the generator anyway for users who still depend on it.
+
 The CSR test code that this script generates will execute every CSR instruction
 on every processor implemented CSR, writing values to the CSR and then using a
 prediction function to calculate a reference value that will be written into
@@ -275,9 +282,9 @@ continue executing, allowing it to be completely self checking. This script has
 been integrated with run.py. If you want to run it separately, you can get the
 command reference with --help::
 
-    python3 scripts/gen_csr_test.py --help
+    python3 scripts/deprecated/gen_csr_test.py --help
 
-.. _scripts/gen_csr_test.py: https://github.com/google/riscv-dv/blob/master/scripts/gen_csr_test.py
+.. _scripts/deprecated/gen_csr_test.py: https://github.com/google/riscv-dv/blob/master/scripts/deprecated/gen_csr_test.py
 
 Adding new instruction stream and test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

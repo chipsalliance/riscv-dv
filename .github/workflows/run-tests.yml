@@ -72,6 +72,7 @@ jobs:
         run: |
           yum update -y
           yum install -y python39
+          python3.9 -m pip install --upgrade pip setuptools wheel
           python3.9 -m pip install -r requirements.txt
 
       - name: Generate UVM Tests
