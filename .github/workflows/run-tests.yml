@@ -47,7 +47,7 @@ jobs:
       GHA_EXTERNAL_DISK: additional-tools
       CACHE_HASH: ${{ needs.generate-config.outputs.hash }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Cache Metadata
         id: cache_metadata
@@ -56,7 +56,7 @@ jobs:
           echo "cache_code=${cache_code}_${{ env.CACHE_HASH }}" | tee -a "$GITHUB_ENV"
 
       - name: Cache Code
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-code
         timeout-minutes: 60
         with:
@@ -152,7 +152,7 @@ jobs:
 
       - name: Restore Spike cache
         id: cache-spike-restore
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         with:
           path: |
             /opt/spike
@@ -168,7 +168,7 @@ jobs:
           echo "PYTHONPATH=pygen" >> $GITHUB_ENV
 
       - name: Cache Code Restore
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         id: cache-code-restore
         timeout-minutes: 60
         with:
