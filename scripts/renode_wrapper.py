@@ -81,7 +81,7 @@ def main():
     parser.add_argument(
         "--cpu-type",
         type=str,
-        default="Riscv32",
+        default="RiscV32",
         help="Renode CPU type",
     )
     parser.add_argument(
