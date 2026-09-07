@@ -1,0 +1,66 @@
+name: pyflow tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-spike:
+    uses: ./.github/workflows/build-spike.yml
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: [ build-spike ]
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ rv32i, multi_harts, rv32imc ]
+        test: [ riscv_arithmetic_basic_test ]
+
+    env:
+      RISCV_GCC: riscv64-unknown-elf-gcc
+      RISCV_OBJCOPY: riscv64-unknown-elf-objcopy
+      SPIKE_PATH: /opt/spike/bin
+      PYTHONPATH: pygen
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -qqy update
+          sudo apt-get -qqy install device-tree-compiler gcc-riscv64-unknown-elf
+          riscv64-unknown-elf-gcc --version
+
+      - name: Setup python
+        # python dependencies cannot be properly downloaded with new versions of python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+      - run: python3 -m pip install -r requirements.txt
+
+      - name: Download spike
+        uses: actions/download-artifact@v4
+        with:
+          name: spike
+          path: /opt/spike
+
+      - name: Run Tests
+        run: |
+          set -eo pipefail
+          chmod +x /opt/spike/bin/spike
+          python3 run.py \
+            --target ${{ matrix.target }} --test ${{ matrix.test }} \
+            --iss spike --iss_timeout 60 --gen_timeout 720 --start_seed 999 \
+            --iterations 1 --batch_size 1 --simulator pyflow \
+            -o out 2>&1 | tee -a test/generate.log
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: run_tests_log_pyflow_${{ matrix.target }}_${{ matrix.test }}
+          path: |
+            test/*.log
+            out/**/${{ matrix.test }}*.log

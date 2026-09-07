@@ -4,128 +4,121 @@ on:
   push:
   pull_request:
 
-env:
-  RISCV_TARGET: rv32imc
-
 jobs:
   build-spike:
     uses: ./.github/workflows/build-spike.yml
 
+  build-verilator:
+    uses: ./.github/workflows/build-verilator.yml
+
   generate-config:
     runs-on: ubuntu-latest
     outputs:
-      test-types: ${{ steps.test-types.outputs.tests }}
-      hash: ${{ steps.hash.outputs.files-hash }}
+      targets: ${{ steps.test-types.outputs.targets }}
+      target_tests: ${{ steps.test-types.outputs.target_tests }}
     steps:
       - uses: actions/checkout@v4
       - id: test-types
         name: Prepare test types
         run: |
+          python3 -m venv .venv && source .venv/bin/activate
           python3 -m pip install pyyaml
-          python3 .github/scripts/parse_testlist.py $RISCV_TARGET > tests.list
-          echo "tests=$(cat tests.list)" | tee -a $GITHUB_OUTPUT
-      - id: hash
-        name: Prepare files' hash
-        run: |
-          sha256sum **/*.sv **/*.py **/*.yaml > file.hash
-          echo "files-hash=$(cat file.hash | cut -d\  -f1 | sha256sum | cut -d\  -f1)" | tee -a $GITHUB_OUTPUT
+          targets='["rv32i", "multi_harts", "rv32imc" ]'
+          echo "targets=$targets" | tee -a $GITHUB_OUTPUT
+          python3 .github/scripts/parse_testlist.py  $(echo $targets | jq -r '.[]') > target_tests.list
+          echo "target_tests=$(cat target_tests.list)" | tee -a $GITHUB_OUTPUT
 
-
-  generate-code:
-    runs-on: [ self-hosted, Linux, X64, gcp-custom-runners ]
-    container: centos:8
-    needs: generate-config
+  build-generator:
+    runs-on: ubuntu-latest
+    needs: [ generate-config, build-verilator ]
     strategy:
-      fail-fast: false
-      matrix:
-        test: ${{ fromJSON(needs.generate-config.outputs.test-types) }}
-        version: [ uvm ]
-        include:
-          - test: riscv_arithmetic_basic_test
-            version: pyflow
+        fail-fast: false
+        matrix:
+          target: ${{ fromJSON(needs.generate-config.outputs.targets) }}
     env:
-      GHA_EXTERNAL_DISK: additional-tools
-      CACHE_HASH: ${{ needs.generate-config.outputs.hash }}
+      UVM_VERSION: 578a46777ef0e0c9fa80e26d60ea4d100bb3cc84
+      UVM_HOME: /opt/uvm-verilator
+      CCACHE_DIR: /opt/generator/.ccache
+      CCACHE_MAXSIZE: 2G
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Cache Metadata
-        id: cache_metadata
-        run: |
-          cache_code=cache_${{ matrix.test }}_${{ matrix.version }}
-          echo "cache_code=${cache_code}_${{ env.CACHE_HASH }}" | tee -a "$GITHUB_ENV"
-
-      - name: Cache Code
-        uses: actions/cache@v4
-        id: cache-code
-        timeout-minutes: 60
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
         with:
-          path: test/asm_test
-          key: ${{ env.cache_code }}
+          path: /opt/generator/.ccache
+          key: ccache_${{ matrix.target }}_${{ github.sha }}
+          restore-keys: ccache_${{ matrix.target }}_
 
-      - name: Prepare Environment
-        if: steps.cache-code.outputs.cache-hit != 'true'
-        run: _secret_environment
+      - name: Download Verilator
+        uses: actions/download-artifact@v4
+        with:
+          name: verilator
+          path: /opt/verilator
 
-      - name: Setup Python 3.9
-        if: steps.cache-code.outputs.cache-hit != 'true'
+      - name: Setup Environment
         run: |
-          yum update -y
-          yum install -y python39
-          python3.9 -m pip install -r requirements.txt
+          sudo apt-get update -y
+          sudo apt-get install -y ccache build-essential mold
+          echo "/opt/verilator/bin/" >> $GITHUB_PATH
+          chmod +x /opt/verilator/bin/verilator /opt/verilator/bin/verilator_bin
+          /opt/verilator/bin/verilator --version
 
-      - name: Generate UVM Tests
-        if: steps.cache-code.outputs.cache-hit != 'true' && matrix.version == 'uvm'
-        run: _secret_riscv
-        env:
-          RISCV_TEST: ${{ matrix.test }}
-          RISCV_TARGET: ${{ env.RISCV_TARGET }}
+      - name: Setup UVM
+        run: |
+          git clone https://github.com/antmicro/uvm-verilator --depth 1 --revision "$UVM_VERSION" $UVM_HOME
 
-      - name: Generate PyFlow Tests
-        if: steps.cache-code.outputs.cache-hit != 'true' && matrix.version == 'pyflow'
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          # python dependencies cannot be properly downloaded with new versions of python
+          python-version: '3.9'
+          cache: 'pip'
+      - run: python3 -m pip install -r requirements.txt
+
+      - name: Build Generator
         run: |
           set -eo pipefail
-          python3 run.py --simulator pyflow \
-            --test ${{ matrix.test }} --iss spike \
-            --start_seed 999 --iterations 1 --batch_size 1 \
-            --isa $RISCV_TARGET --mabi ilp32 --steps gen -v -o test 2>&1 | tee test/generate.log
+          python3 run.py --simulator verilator --co \
+            --target ${{ matrix.target }} \
+            -v -o out 2>&1 | tee test/build_generator.log
+
+      - name: Save ccache
+        uses: actions/cache/save@v4
+        with:
+          path: /opt/generator/.ccache
+          key: ccache_${{ matrix.target }}_${{ github.sha }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: generate_code_${{ matrix.test }}_${{ matrix.version }}
+          name: generator_${{ matrix.target }}
           path: |
-            test/asm_test/*.S
-
+            out/Vuvm
+            test/build_generator.log
 
   run-tests:
     runs-on: ubuntu-latest
-    needs: [ build-spike, generate-code, generate-config ]
+    needs: [ build-spike, build-generator, generate-config ]
+    if: ${{ !cancelled() && needs.build-spike.result == 'success' && needs.generate-config.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
-        test: ${{ fromJSON(needs.generate-config.outputs.test-types) }}
-        version:
-          - uvm
-        include:
-          - test: riscv_arithmetic_basic_test
-            version: pyflow
+        include: ${{ fromJSON(needs.generate-config.outputs.target_tests) }}
     env:
-      TOOL_VERSION: d70ea67d
-      CACHE_HASH: ${{ needs.generate-config.outputs.hash }}
+      RISCV_GCC: riscv64-unknown-elf-gcc
+      RISCV_OBJCOPY: riscv64-unknown-elf-objcopy
+      SPIKE_PATH: /opt/spike/bin
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get -qqy update && sudo apt-get -qqy install device-tree-compiler
-
-      - name: Install cross-compiler
-        shell: bash
         run: |
-          echo "deb http://archive.ubuntu.com/ubuntu/ noble main universe" | sudo tee -a /etc/apt/sources.list > /dev/null
-          sudo apt -qqy update && sudo apt -qqy --no-install-recommends install gcc-riscv64-unknown-elf
+          sudo apt-get -qqy update
+          sudo apt-get -qqy install device-tree-compiler z3 gcc-riscv64-unknown-elf
           riscv64-unknown-elf-gcc --version
 
       - name: Setup python
@@ -133,61 +126,37 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+          cache: 'pip'
+      - run: python3 -m pip install -r requirements.txt
 
-      - name: Install python dependencies
-        run: python3 -m pip install -r requirements.txt
-
-      - name: Setup Cache Metadata
-        id: cache_metadata
-        run: |
-          date=$(date +"%Y_%m_%d")
-          time=$(date +"%Y%m%d_%H%M%S_%N")
-          cache_spike_restore_key=cache_spike_
-          cache_spike_key=${cache_spike_restore_key}${{ env.TOOL_VERSION }}_${date}
-          cache_code=cache_${{ matrix.test }}_${{ matrix.version }}
-
-          echo "cache_spike_restore_key=$cache_spike_restore_key" | tee -a "$GITHUB_ENV"
-          echo "cache_spike_key=$cache_spike_key" | tee -a "$GITHUB_ENV"
-          echo "cache_code=${cache_code}_${{ env.CACHE_HASH }}" | tee -a "$GITHUB_ENV"
-
-      - name: Restore Spike cache
-        id: cache-spike-restore
-        uses: actions/cache/restore@v4
+      - name: Download spike
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            /opt/spike
-            /opt/spike/.cache
-          key: ${{ env.cache_spike_key }}
-          restore-keys: ${{ env.cache_spike_restore_key }}
+          name: spike
+          path: /opt/spike
 
-      - name: Set variables
-        run: |
-          echo "RISCV_GCC=riscv64-unknown-elf-gcc" >> $GITHUB_ENV
-          echo "RISCV_OBJCOPY=riscv64-unknown-elf-objcopy" >> $GITHUB_ENV
-          echo "SPIKE_PATH=/opt/spike/bin" >> $GITHUB_ENV
-          echo "PYTHONPATH=pygen" >> $GITHUB_ENV
-
-      - name: Cache Code Restore
-        uses: actions/cache/restore@v4
-        id: cache-code-restore
-        timeout-minutes: 60
+      - name: Download generator
+        uses: actions/download-artifact@v4
         with:
-          path: test/asm_test
-          key: ${{ env.cache_code }}
+          name: generator_${{ matrix.target }}
 
       - name: Run Tests
         run: |
           set -eo pipefail
-          python3 run.py --simulator pyflow \
-            --test ${{ matrix.test }} --iss spike --iss_timeout 60 \
-            --start_seed 999 --iterations 1 --batch_size 1 \
-            --isa $RISCV_TARGET --mabi ilp32 --steps gcc_compile,iss_sim -v -o test 2>&1 | tee -a test/generate.log
+          chmod +x out/Vuvm
+          chmod +x /opt/spike/bin/spike
+          python3 run.py \
+            --target ${{ matrix.target }} --test ${{ matrix.test }} \
+            --iss spike --iss_timeout 60 --gen_timeout 720 --start_seed 999 \
+            --iterations 1 --batch_size 1 --noclean \
+            --simulator verilator \
+            --so -o out 2>&1 | tee -a test/generate.log
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: run_tests_log_${{ matrix.test }}_${{ matrix.version }}
+          name: run_tests_log_verilator_${{ matrix.target }}_${{ matrix.test }}
           path: |
             test/*.log
-            test/**/${{ matrix.test }}*.log
+            out/**/${{ matrix.test }}*.log
