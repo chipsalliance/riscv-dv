@@ -166,6 +166,8 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    no_dret = 1;        // No dret instruction
   bit                    no_fence;           // No fence instruction
   bit                    no_wfi = 1;         // No WFI instruction
+  // Differentiate between end-test "wfi" insns and QoL "wfi" at end of tests
+  bit                    endtest_wfi = 1;
   bit                    enable_unaligned_load_store;
   int                    illegal_instr_ratio;
   int                    hint_instr_ratio;
@@ -495,6 +497,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(no_dret, UVM_DEFAULT)
     `uvm_field_int(no_fence, UVM_DEFAULT)
     `uvm_field_int(no_wfi, UVM_DEFAULT)
+    `uvm_field_int(endtest_wfi, UVM_DEFAULT)
     `uvm_field_int(fix_sp, UVM_DEFAULT)
     `uvm_field_int(enable_unaligned_load_store, UVM_DEFAULT)
     `uvm_field_int(illegal_instr_ratio, UVM_DEFAULT)
@@ -563,6 +566,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+no_ecall=", no_ecall);
     get_bool_arg_value("+no_dret=", no_dret);
     get_bool_arg_value("+no_wfi=", no_wfi);
+    get_bool_arg_value("+endtest_wfi=", endtest_wfi);
     get_bool_arg_value("+no_branch_jump=", no_branch_jump);
     get_bool_arg_value("+no_load_store=", no_load_store);
     get_bool_arg_value("+no_csr_instr=", no_csr_instr);

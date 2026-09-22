@@ -349,10 +349,18 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   virtual function void gen_data_page_begin(int hart);
-    instr_stream.push_back(".section .data");
+    bit atomic_supported = (RV32A inside {supported_isa}) ||
+                           (RV64A inside {supported_isa});
     if (hart == 0) begin
+      instr_stream.push_back(".section .tohost");
       instr_stream.push_back(".align 6; .global tohost; tohost: .dword 0;");
       instr_stream.push_back(".align 6; .global fromhost; fromhost: .dword 0;");
+    end
+    instr_stream.push_back(".section .data");
+    // Shared counter for the atomic ecall barrier across all harts
+    if ((hart == 0) && atomic_supported && (cfg.num_of_harts > 1)) begin
+      instr_stream.push_back(
+        ".align 6; .global ecall_barrier_cnt; ecall_barrier_cnt: .word 0;");
     end
   endfunction
 
@@ -1159,12 +1167,62 @@ class riscv_asm_program_gen extends uvm_object;
   // ECALL trap handler
   // It does some clean up like dump GPRs before communicating with host to terminate the test.
   // User can extend this function if some custom clean up routine is needed.
+  //
+  // If A extension is supported, all harts meet at an atomic-based barrier
+  // before entering their hart-specific end-of-test sequences; else, they go
+  // straight into their corresponding end-of-test sequences.
+  //
+  // The hart-specific end-of-test sequences are:
+  //
+  //   - Only hart 0 jumps to "write_tohost".
+  //   - Other harts park in one of two routines:
+  //       1. If "cfg.endtest_wfi" is set, a "wfi" loop.
+  //       2. If "cfg.endtest_wfi" is not set, an infinite jump loop to the
+  //          same address.
+  //
+  // If doing log-comparison-based verification, the following will cause some
+  // headaches:
+  //
+  //   - Without atomic synchronization between harts, hart 0 may finish its
+  //     test and exit simulation befor the other harts complete, cutting their
+  //     traces short.
+  //   - Without "wfi" implemented or by unsetting "cfg.endtest_wfi", non-zero
+  //     harts will run/log an arbitrary number of jump instructions until hart
+  //     0 terminates simulation (if it hasn't interrupted their execution
+  //     mid-test first, that is).
+  //
   virtual function void gen_ecall_handler(int hart);
     string instr[$];
+    bit atomic_supported = (RV32A inside {supported_isa}) ||
+                           (RV64A inside {supported_isa});
     dump_perf_stats(instr);
     gen_register_dump(instr);
-    instr.push_back($sformatf("la x%0d, write_tohost", cfg.scratch_reg));
-    instr.push_back($sformatf("jalr x0, x%0d, 0", cfg.scratch_reg));
+    if (atomic_supported && (cfg.num_of_harts > 1)) begin
+      instr.push_back($sformatf("la x%0d, ecall_barrier_cnt", cfg.scratch_reg));
+      instr.push_back($sformatf("li x%0d, 1", cfg.gpr[0]));
+      instr.push_back($sformatf(
+        "amoadd.w.aqrl x0, x%0d, (x%0d)", cfg.gpr[0], cfg.scratch_reg
+      ));
+      instr.push_back("fence rw, rw");
+      if (hart == 0) begin
+        instr.push_back($sformatf("li x%0d, %0d", cfg.gpr[1], cfg.num_of_harts));
+        instr.push_back("1:");
+        instr.push_back($sformatf("lw x%0d, 0(x%0d)", cfg.gpr[0], cfg.scratch_reg));
+        instr.push_back($sformatf("blt x%0d, x%0d, 1b", cfg.gpr[0], cfg.gpr[1]));
+      end
+    end
+    if (hart == 0) begin
+      instr.push_back($sformatf("la x%0d, write_tohost", cfg.scratch_reg));
+      instr.push_back($sformatf("jalr x0, x%0d, 0", cfg.scratch_reg));
+    end else begin
+      if (cfg.endtest_wfi) begin
+        instr.push_back("2: wfi");
+        instr.push_back("jal x0, 2b");
+      end else begin
+        instr.push_back("2: nop");
+        instr.push_back("jal x0, 2b");
+      end
+    end
     gen_section(get_label("ecall_handler", hart), instr);
   endfunction
 
