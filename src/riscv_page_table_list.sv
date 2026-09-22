@@ -71,6 +71,8 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
   rand riscv_reg_t tmp_reg;
   rand riscv_reg_t mask_reg;
   rand riscv_reg_t mpp_reg;
+  rand riscv_reg_t fixpteret_reg;
+  rand riscv_reg_t checkmprv_reg;
 
   constraint page_table_exception_handling_reg_c {
     unique {level_reg, fault_vaddr_reg, pte_addr_reg,
@@ -378,15 +380,15 @@ class riscv_page_table_list#(satp_mode_t MODE = SV39) extends uvm_object;
     instr.push_back("sfence.vma");
     // Randomly decide if run some kernel program before exiting from exception handling
     // Use the low 2 bits of x30 to determine whether to skip it or not.
-    instr.push_back($sformatf("slli x30, x30, %0d", XLEN - 2));
+    instr.push_back($sformatf("slli x30, x%0d, %0d", fixpteret_reg, XLEN - 2));
     instr.push_back("beqz x30, fix_pte_ret");
     // Randomly decide if set MPRV to 1
-    instr.push_back($sformatf("slli x31, x31, %0d", XLEN - 2));
-    instr.push_back("beqz x30, check_mprv");
+    instr.push_back($sformatf("slli x31, x%0d, %0d", checkmprv_reg, XLEN - 2));
+    instr.push_back("beqz x31, check_mprv");
     instr.push_back($sformatf("csrr x%0d, 0x%0x", tmp_reg, MSTATUS));
     instr.push_back($sformatf("li x%0d, 0x%0x", mask_reg, MPRV_BIT_MASK));
     instr.push_back($sformatf("not x%0d, x%0d", mask_reg, mask_reg));
-    instr.push_back($sformatf("or x%0d, x%0d, 0x%0x", tmp_reg, tmp_reg, mask_reg));
+    instr.push_back($sformatf("or x%0d, x%0d, x%0d", tmp_reg, tmp_reg, mask_reg));
     instr.push_back($sformatf("csrrw x%0d, 0x%0x, x%0d", tmp_reg, MSTATUS, tmp_reg));
     // Run some kernel mode program before returning from exception handling
     // If MPRV = 0, jump to regular kernel mode program
