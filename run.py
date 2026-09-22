@@ -470,7 +470,7 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
 
 
 def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
-                 setting_dir, debug_cmd):
+                 setting_dir, debug_cmd, iss_timeout):
     """Run a directed assembly test with ISS
 
     Args:
@@ -483,6 +483,7 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
       output_dir  : Output directory of compiled test files
       setting_dir : Generator setting directory
       debug_cmd   : Produce the debug cmd log without running
+      iss_timeout : ISS sim timeout limit in seconds
     """
     if not asm_test.endswith(".S"):
         logging.error("{} is not an assembly .S file".format(asm_test))
@@ -524,26 +525,27 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
         base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
         logging.info("[{}] Running ISS simulation: {}".format(iss, elf))
         cmd = get_iss_cmd(base_cmd, elf, log)
-        run_cmd(cmd, 10, debug_cmd=debug_cmd)
+        run_cmd(cmd, iss_timeout, debug_cmd=debug_cmd)
         logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
     if len(iss_list) == 2:
         compare_iss_log(iss_list, log_list, report)
 
 
 def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
-                          output_dir, setting_dir, debug_cmd):
+                          output_dir, setting_dir, debug_cmd, iss_timeout):
     """Run a directed assembly test from a directory with spike
 
     Args:
-      asm_test_dir    : Assembly test file directory
-      iss_yaml        : ISS configuration file in YAML format
-      isa             : ISA variant passed to the ISS
-      mabi            : MABI variant passed to GCC
-      gcc_opts        : User-defined options for GCC compilation
-      iss             : Instruction set simulators
-      output_dir      : Output directory of compiled test files
-      setting_dir     : Generator setting directory
-      debug_cmd       : Produce the debug cmd log without running
+      asm_test_dir : Assembly test file directory
+      iss_yaml     : ISS configuration file in YAML format
+      isa          : ISA variant passed to the ISS
+      mabi         : MABI variant passed to GCC
+      gcc_opts     : User-defined options for GCC compilation
+      iss          : Instruction set simulators
+      output_dir   : Output directory of compiled test files
+      setting_dir  : Generator setting directory
+      debug_cmd    : Produce the debug cmd log without running
+      iss_timeout  : ISS sim timeout limit in seconds
     """
     result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
     if result:
@@ -552,8 +554,7 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
             len(asm_list), asm_test_dir))
         for asm_file in asm_list:
             run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss,
-                         output_dir,
-                         setting_dir, debug_cmd)
+                         output_dir, setting_dir, debug_cmd, iss_timeout)
             if "," in iss:
                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
                 save_regr_report(report)
@@ -563,7 +564,7 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
 
 
 def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
-          setting_dir, debug_cmd):
+          setting_dir, debug_cmd, iss_timeout):
     """Run a directed c test with ISS
 
     Args:
@@ -576,6 +577,7 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
       output_dir  : Output directory of compiled test files
       setting_dir : Generator setting directory
       debug_cmd   : Produce the debug cmd log without running
+      iss_timeout : ISS sim timeout limit in seconds
     """
     if not c_test.endswith(".c"):
         logging.error("{} is not a .c file".format(c_test))
@@ -616,26 +618,27 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
         base_cmd = parse_iss_yaml(iss, iss_yaml, isa, setting_dir, debug_cmd)
         logging.info("[{}] Running ISS simulation: {}".format(iss, elf))
         cmd = get_iss_cmd(base_cmd, elf, log)
-        run_cmd(cmd, 10, debug_cmd=debug_cmd)
+        run_cmd(cmd, iss_timeout, debug_cmd=debug_cmd)
         logging.info("[{}] Running ISS simulation: {} ...done".format(iss, elf))
     if len(iss_list) == 2:
         compare_iss_log(iss_list, log_list, report)
 
 
 def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
-                   output_dir, setting_dir, debug_cmd):
+                   output_dir, setting_dir, debug_cmd, iss_timeout):
     """Run a directed c test from a directory with spike
 
     Args:
-      c_test_dir      : C test file directory
-      iss_yaml        : ISS configuration file in YAML format
-      isa             : ISA variant passed to the ISS
-      mabi            : MABI variant passed to GCC
-      gcc_opts        : User-defined options for GCC compilation
-      iss             : Instruction set simulators
-      output_dir      : Output directory of compiled test files
-      setting_dir     : Generator setting directory
-      debug_cmd       : Produce the debug cmd log without running
+      c_test_dir  : C test file directory
+      iss_yaml    : ISS configuration file in YAML format
+      isa         : ISA variant passed to the ISS
+      mabi        : MABI variant passed to GCC
+      gcc_opts    : User-defined options for GCC compilation
+      iss         : Instruction set simulators
+      output_dir  : Output directory of compiled test files
+      setting_dir : Generator setting directory
+      debug_cmd   : Produce the debug cmd log without running
+      iss_timeout : ISS sim timeout limit in seconds
     """
     result = run_cmd("find {} -name \"*.c\"".format(c_test_dir))
     if result:
@@ -643,7 +646,7 @@ def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
         logging.info("Found {} c tests under {}".format(len(c_list), c_test_dir))
         for c_file in c_list:
             run_c(c_file, iss_yaml, isa, mabi, gcc_opts, iss, output_dir,
-                  setting_dir, debug_cmd)
+                  setting_dir, debug_cmd, iss_timeout)
             if "," in iss:
                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
                 save_regr_report(report)
@@ -1026,13 +1029,14 @@ def main():
                     run_assembly_from_dir(full_path, args.iss_yaml, args.isa,
                                           args.mabi,
                                           args.gcc_opts, args.iss, output_dir,
-                                          args.core_setting_dir, args.debug)
+                                          args.core_setting_dir, args.debug,
+                                          args.iss_timeout)
                 # path_asm_test is an assembly file
                 elif os.path.isfile(full_path) or args.debug:
                     run_assembly(full_path, args.iss_yaml, args.isa, args.mabi,
                                  args.gcc_opts,
                                  args.iss, output_dir, args.core_setting_dir,
-                                 args.debug)
+                                 args.debug, args.iss_timeout)
                 else:
                     logging.error('{} does not exist'.format(full_path))
                     sys.exit(RET_FAIL)
@@ -1048,13 +1052,14 @@ def main():
                     run_c_from_dir(full_path, args.iss_yaml, args.isa,
                                    args.mabi,
                                    args.gcc_opts, args.iss, output_dir,
-                                   args.core_setting_dir, args.debug)
+                                   args.core_setting_dir, args.debug,
+                                   args.iss_timeout)
                 # path_c_test is a c file
                 elif os.path.isfile(full_path) or args.debug:
                     run_c(full_path, args.iss_yaml, args.isa, args.mabi,
                           args.gcc_opts,
                           args.iss, output_dir, args.core_setting_dir,
-                          args.debug)
+                          args.debug, args.iss_timeout)
                 else:
                     logging.error('{} does not exist'.format(full_path))
                     sys.exit(RET_FAIL)
@@ -1112,13 +1117,15 @@ def main():
                                                   gcc_opts, args.iss,
                                                   output_dir,
                                                   args.core_setting_dir,
-                                                  args.debug)
+                                                  args.debug,
+                                                  args.iss_timeout)
                         # path_asm_test is an assembly file
                         elif os.path.isfile(path_asm_test):
                             run_assembly(path_asm_test, args.iss_yaml, args.isa,
                                          args.mabi, gcc_opts,
                                          args.iss, output_dir,
-                                         args.core_setting_dir, args.debug)
+                                         args.core_setting_dir, args.debug,
+                                         args.iss_timeout)
                         else:
                             if not args.debug:
                                 logging.error(
@@ -1137,13 +1144,14 @@ def main():
                             run_c_from_dir(path_c_test, args.iss_yaml, args.isa,
                                            args.mabi,
                                            gcc_opts, args.iss, output_dir,
-                                           args.core_setting_dir, args.debug)
+                                           args.core_setting_dir, args.debug,
+                                           args.iss_timeout)
                         # path_c_test is a C file
                         elif os.path.isfile(path_c_test):
                             run_c(path_c_test, args.iss_yaml, args.isa,
                                   args.mabi, gcc_opts,
                                   args.iss, output_dir, args.core_setting_dir,
-                                  args.debug)
+                                  args.debug, args.iss_timeout)
                         else:
                             if not args.debug:
                                 logging.error('{} does not exist'.format(path_c_test))
