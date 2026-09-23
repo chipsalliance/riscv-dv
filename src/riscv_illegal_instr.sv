@@ -50,6 +50,19 @@ class riscv_illegal_instr extends uvm_object;
     kReservedC2
   } reserved_c_instr_e;
 
+  typedef enum bit [3:0] {
+    kHintCNop,
+    kHintCAddi,
+    kHintCLi,
+    kHintCLui,
+    kHintCMv,
+    kHintCAdd,
+    kHintCSlli,
+    kHintCSlli64,
+    kHintCSrli64,
+    kHintCSrai64
+  } hint_instr_e;
+
   // Default legal opcode for RV32I instructions
   bit [6:0]  legal_opcode[$] = '{7'b0000011,
                                  7'b0001111,
@@ -74,6 +87,7 @@ class riscv_illegal_instr extends uvm_object;
 
   rand illegal_instr_type_e  exception;
   rand reserved_c_instr_e    reserved_c;
+  rand hint_instr_e          hint_instr;
   rand bit [31:0]            instr_bin;
   rand bit [6:0]             opcode;
   rand bit                   compressed;
@@ -296,28 +310,46 @@ class riscv_illegal_instr extends uvm_object;
   }
 
   constraint hint_instr_c {
+    solve exception  before hint_instr;
+    solve hint_instr before c_msb;
+    solve hint_instr before c_op;
+    solve hint_instr before instr_bin;
     if (exception == kHintInstr) {
-      // C.ADDI
-      ((c_msb == 3'b000) && (c_op == 2'b01) && ({instr_bin[12], instr_bin[6:2]} == 6'b0)) ||
-      // C.LI
-      ((c_msb == 3'b010) && (c_op == 2'b01) && (instr_bin[11:7] == 5'b0)) ||
-      // C.SRAI64, C.SRLI64
-      ((c_msb == 3'b100) && (c_op == 2'b01) && (instr_bin[12:11] == 2'b00) &&
-                                               (instr_bin[6:2] == 5'b0)) ||
-      // C.MV
-      ((c_msb == 3'b100) && (c_op == 2'b10) && (instr_bin[11:7] == 0) &&
-                                               (instr_bin[6:2]  != 0)) ||
-      // C.LUI
-      ((c_msb == 3'b011) && (c_op == 2'b01) && (instr_bin[11:7] == 5'b0) &&
-                                               ({instr_bin[12], instr_bin[6:2]} != 6'b0)) ||
-      // C.SLLI
-      ((c_msb == 3'b000) && (c_op == 2'b10) && (instr_bin[11:7] == 5'b0))  ||
-      // C.SLLI64
-      ((c_msb == 3'b000) && (c_op == 2'b10) && (instr_bin[11:7] != 5'b0) && !instr_bin[12] &&
-                                               (instr_bin[6:2] == 0))  ||
-      // C.ADD
-      ((c_msb == 3'b100) && (c_op == 2'b10) && (instr_bin[11:7] == 5'b0) && instr_bin[12] &&
-                                               (instr_bin[6:2] != 0));
+      compressed == 1'b1;
+      (hint_instr == kHintCNop)    -> ((c_msb == 3'b000) && (c_op == 2'b01) &&
+                                       (instr_bin[11:7] == 5'b0) &&
+                                       ({instr_bin[12], instr_bin[6:2]} != 6'b0));
+      (hint_instr == kHintCAddi)   -> ((c_msb == 3'b000) && (c_op == 2'b01) &&
+                                       (instr_bin[11:7] != 5'b0) &&
+                                       ({instr_bin[12], instr_bin[6:2]} == 6'b0));
+      (hint_instr == kHintCLi)     -> ((c_msb == 3'b010) && (c_op == 2'b01) &&
+                                       (instr_bin[11:7] == 5'b0));
+      (hint_instr == kHintCLui)    -> ((c_msb == 3'b011) && (c_op == 2'b01) &&
+                                       (instr_bin[11:7] == 5'b0) &&
+                                       ({instr_bin[12], instr_bin[6:2]} != 6'b0));
+      (hint_instr == kHintCMv)     -> ((c_msb == 3'b100) && (c_op == 2'b10) &&
+                                       (instr_bin[12] == 1'b0) &&
+                                       (instr_bin[11:7] == 5'b0) &&
+                                       (instr_bin[6:2] != 5'b0));
+      (hint_instr == kHintCAdd)    -> ((c_msb == 3'b100) && (c_op == 2'b10) &&
+                                       (instr_bin[12] == 1'b1) &&
+                                       (instr_bin[11:7] == 5'b0) &&
+                                       (instr_bin[6:2] != 5'b0));
+      (hint_instr == kHintCSlli)   -> ((c_msb == 3'b000) && (c_op == 2'b10) &&
+                                       (instr_bin[11:7] == 5'b0) &&
+                                       ((XLEN != 32) || (instr_bin[12] == 1'b0)));
+      (hint_instr == kHintCSlli64) -> ((c_msb == 3'b000) && (c_op == 2'b10) &&
+                                       (instr_bin[11:7] != 5'b0) &&
+                                       (instr_bin[12] == 1'b0) &&
+                                       (instr_bin[6:2] == 5'b0));
+      (hint_instr == kHintCSrli64) -> ((c_msb == 3'b100) && (c_op == 2'b01) &&
+                                       (instr_bin[12] == 1'b0) &&
+                                       (instr_bin[11:10] == 2'b00) &&
+                                       (instr_bin[6:2] == 5'b0));
+      (hint_instr == kHintCSrai64) -> ((c_msb == 3'b100) && (c_op == 2'b01) &&
+                                       (instr_bin[12] == 1'b0) &&
+                                       (instr_bin[11:10] == 2'b01) &&
+                                       (instr_bin[6:2] == 5'b0));
     }
   }
 
@@ -446,8 +478,8 @@ class riscv_illegal_instr extends uvm_object;
     end else begin
       get_bin_str = $sformatf("%8h", instr_bin[31:0]);
     end
-    `uvm_info(`gfn, $sformatf("Illegal instruction type: %0s, illegal instruction: 0x%0x",
-                               exception.name(), instr_bin), UVM_HIGH)
+    `uvm_info(`gfn, $sformatf("Illegal instruction type: %0s, illegal instruction: 0x%0s",
+                               exception.name(), get_bin_str), UVM_HIGH)
   endfunction
 
   function void post_randomize();
@@ -456,6 +488,8 @@ class riscv_illegal_instr extends uvm_object;
       comment = {comment, " ", reserved_c.name()};
     end else if (exception == kIllegalOpcode) begin
       comment = {comment, " ", $sformatf("%7b", opcode)};
+    end else if (exception == kHintInstr) begin
+      comment = {comment, " ", hint_instr.name()};
     end
   endfunction
 
