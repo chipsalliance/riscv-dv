@@ -865,7 +865,7 @@ def parse_args(cwd):
     parser.add_argument("--stop_on_first_error", dest="stop_on_first_error",
                         action="store_true", default=False,
                         help="Stop on detecting first error")
-    parser.add_argument("--noclean", action="store_true", default=True,
+    parser.add_argument("--noclean", action="store_true", default=False,
                         help="Do not clean the output of the previous runs")
     parser.add_argument("--verilog_style_check", action="store_true",
                         default=False,
