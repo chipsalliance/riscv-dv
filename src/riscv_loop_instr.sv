@@ -149,6 +149,10 @@ class riscv_loop_instr extends riscv_rand_instr_stream;
           .include_category({ARITHMETIC, LOGICAL, COMPARE}),
           .exclude_instr(exclude_instr));
       `DV_CHECK_RANDOMIZE_WITH_FATAL(loop_branch_target_instr[i],
+                                     if (instr_name == CM_MVSA01) {
+                                       !(rs1 inside {reserved_rd, cfg.reserved_regs});
+                                       !(rs2 inside {reserved_rd, cfg.reserved_regs});
+                                     }
                                      if (has_rd) {
                                        !(rd inside {reserved_rd, cfg.reserved_regs});
                                      }, "Cannot randomize branch target instruction")
