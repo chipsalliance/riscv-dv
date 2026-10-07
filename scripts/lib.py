@@ -211,7 +211,7 @@ def run_cmd_output(cmd, debug_cmd=None):
 
 
 def process_regression_list(testlist, test, iterations, matched_list,
-                            riscv_dv_root):
+                            riscv_dv_root, enable_deprecated_csr_test=False):
     """ Get the matched tests from the regression test list
 
     Args:
@@ -219,6 +219,9 @@ def process_regression_list(testlist, test, iterations, matched_list,
       test          : Test to run, "all" means all tests in the list
       iterations    : Number of iterations for each test
       riscv_dv_root : Root directory of RISCV-DV
+      enable_deprecated_csr_test : Allow the deprecated riscv_csr_test to be
+                                   selected even though it is disabled
+                                   (iterations: 0) by default
 
     Returns:
       matched_list : A list of matched tests
@@ -231,10 +234,17 @@ def process_regression_list(testlist, test, iterations, matched_list,
         if 'import' in entry:
             sub_list = re.sub('<riscv_dv_root>', riscv_dv_root, entry['import'])
             process_regression_list(sub_list, test, iterations, matched_list,
-                                    riscv_dv_root)
+                                    riscv_dv_root, enable_deprecated_csr_test)
         else:
             if (entry['test'] in mult_test) or (test == "all"):
                 if iterations > 0 and entry['iterations'] > 0:
+                    entry['iterations'] = iterations
+                # riscv_csr_test is deprecated and disabled (iterations: 0) by
+                # default. When explicitly re-enabled, honor the requested
+                # iteration count so that it can still be run.
+                elif (enable_deprecated_csr_test
+                      and entry['test'] == 'riscv_csr_test'
+                      and iterations > 0):
                     entry['iterations'] = iterations
                 if entry['iterations'] > 0:
                     logging.info("Found matched tests: {}, iterations:{}".format(

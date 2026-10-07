@@ -235,7 +235,7 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
      It calls a separate python script to generate directed CSR test code,
      located at scripts/gen_csr_test.py.
     """
-    cmd = "python3 " + cwd + "/scripts/gen_csr_test.py" + \
+    cmd = "python3 " + cwd + "/scripts/deprecated/gen_csr_test.py" + \
           (" --csr_file {}".format(csr_file)) + \
           (" --xlen {}".format(
               re.search(r"(?P<xlen>[0-9]+)", isa).group("xlen"))) + \
@@ -251,7 +251,8 @@ def run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
 def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
                 csr_file,
                 isa, end_signature_addr, lsf_cmd, timeout_s, log_suffix,
-                batch_size, output_dir, verbose, check_return_code, debug_cmd, target):
+                batch_size, output_dir, verbose, check_return_code, debug_cmd, target,
+                enable_deprecated_csr_test):
     """Run  the instruction generator
 
     Args:
@@ -272,6 +273,7 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
       verbose               : Verbose logging
       check_return_code     : Check return code of the command
       debug_cmd             : Produce the debug cmd log without running
+      enable_deprecated_csr_test : Allow the deprecated riscv_csr_test to run
     """
     cmd_list = []
     sim_cmd = re.sub("<out>", os.path.abspath(output_dir), sim_cmd)
@@ -286,6 +288,12 @@ def do_simulate(sim_cmd, simulator, test_list, cwd, sim_opts, seed_gen,
         if iterations > 0:
             # Running a CSR test
             if test['test'] == 'riscv_csr_test':
+                if not enable_deprecated_csr_test:
+                    logging.warning(
+                        "riscv_csr_test has been deprecated and is no longer "
+                        "supported. Skipping it. Use --enable_deprecated_csr_test "
+                        "if you still need to run it.")
+                    continue
                 run_csr_test(cmd_list, cwd, csr_file, isa, iterations, lsf_cmd,
                              end_signature_addr, timeout_s, output_dir,
                              debug_cmd)
@@ -409,7 +417,8 @@ def gen(test_list, argv, output_dir, cwd):
                     argv.lsf_cmd,
                     gen_timeout, argv.log_suffix, argv.batch_size,
                     output_dir,
-                    argv.verbose, check_return_code, argv.debug, argv.target)
+                    argv.verbose, check_return_code, argv.debug, argv.target,
+                    argv.enable_deprecated_csr_test)
 
 
 def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
@@ -845,6 +854,10 @@ def parse_args(cwd):
                         help="RTL/pyflow simulator setting YAML")
     parser.add_argument("--csr_yaml", type=str, default="",
                         help="CSR description file")
+    parser.add_argument("--enable_deprecated_csr_test", action="store_true",
+                        default=False,
+                        help="Enable the deprecated riscv_csr_test. This test "
+                             "is no longer supported and is disabled by default.")
     parser.add_argument("-ct", "--custom_target", type=str, default="",
                         help="Directory name of the custom target")
     parser.add_argument("-cs", "--core_setting_dir", type=str, default="",
@@ -1069,8 +1082,26 @@ def main():
         c_directed_list = []
 
         if not args.co:
+            # riscv_csr_test has been deprecated. Unless explicitly re-enabled
+            # via --enable_deprecated_csr_test, drop it from the requested tests
+            # and report the deprecation.
+            if not args.enable_deprecated_csr_test:
+                requested_tests = args.test.split(',')
+                if 'riscv_csr_test' in requested_tests:
+                    logging.warning(
+                        "riscv_csr_test has been deprecated and is no longer "
+                        "supported. Use --enable_deprecated_csr_test to run it "
+                        "anyway.")
+                    requested_tests = [t for t in requested_tests
+                                       if t != 'riscv_csr_test']
+                    if not requested_tests:
+                        logging.info("No tests left to run after removing the "
+                                     "deprecated riscv_csr_test. Exiting.")
+                        return
+                    args.test = ','.join(requested_tests)
             process_regression_list(args.testlist, args.test, args.iterations,
-                                    matched_list, cwd)
+                                    matched_list, cwd,
+                                    args.enable_deprecated_csr_test)
             for t in list(matched_list):
                 # Check mutual exclusive between gen_test, asm_test, and c_test
                 if 'asm_test' in t:

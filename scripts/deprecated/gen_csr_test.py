@@ -27,10 +27,14 @@ To install the bitstring library:
   2) pip install bitstring
 """
 import sys
+import os
 import yaml
 import argparse
 import random
 import copy
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
 from lib import *
 
 try:
