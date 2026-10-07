@@ -1,8 +1,7 @@
 name: run-tests
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch: 
 
 env:
   RISCV_TARGET: rv32imc
