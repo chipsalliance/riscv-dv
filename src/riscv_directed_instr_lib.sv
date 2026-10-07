@@ -372,7 +372,7 @@ class riscv_pop_stack_instr extends riscv_rand_instr_stream;
   function void init();
     reserved_rd = {cfg.ra};
     num_of_reg_to_save = saved_regs.size();
-    if(num_of_reg_to_save * 4 > stack_len) begin
+    if(num_of_reg_to_save * (XLEN/8) > stack_len) begin
       `uvm_fatal(get_full_name(), $sformatf("stack len [%0d] is not enough to store %d regs",
                  stack_len, num_of_reg_to_save))
     end
