@@ -1,3 +1,4 @@
+import argparse
 import sys
 from json import dumps
 from yaml import load, Loader
@@ -15,12 +16,23 @@ def parse_yaml(path: str) -> Generator[str, None, None]:
             yield test['test']
 
 
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("targets", nargs="+")
+    args = parser.parse_args()
+
+    target_tests: list[dict] = []
+    for target in args.targets:
+        testlist = list(parse_yaml(f"target/{target}/testlist.yaml"))
+        # riscv_csr_test will cause incomplete sim, need customized RTL
+        target_tests += [
+            {"target": target, "test": test}
+            for test in testlist
+            if test != "riscv_csr_test"
+        ]
+
+    print(dumps(target_tests))
+
+
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        testlist = parse_yaml(f'target/{sys.argv[1]}/testlist.yaml')
-    else:
-        testlist = parse_yaml('yaml/base_testlist.yaml')
-    testlist = list(testlist)
-    # remove, will cause incomplete sim, need customized RTL
-    testlist.remove("riscv_csr_test")
-    print(dumps(testlist))
+    main()

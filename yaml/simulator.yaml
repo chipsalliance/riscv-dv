@@ -150,6 +150,32 @@
           -covscope default
           -covtest <test_id>.<seed>
 
+- tool: verilator
+  compile:
+    cmd:
+      - "verilator
+              --binary
+              --vpi
+              $UVM_HOME/src/uvm.sv
+              $UVM_HOME/src/dpi/uvm_dpi.cc
+              -f <cwd>/files.f
+              +incdir+$UVM_HOME/src
+              +incdir+<setting>
+              +incdir+<user_extension>
+              -j `nproc`
+              -o <out>/Vuvm
+              -Wno-WIDTHTRUNC
+              -Wno-WIDTHEXPAND
+              -Wno-SELRANGE
+              -Wno-ENUMVALUE
+              -Wno-COVERIGN
+              -Wno-CASEINCOMPLETE
+              -Wno-SYMRSVDWORD
+              -Wno-UNSIGNED"
+  sim:
+    cmd: >
+      <out>/Vuvm <sim_opts> +verilator+seed+<seed>
+
 - tool: pyflow
   sim:
     cmd: >

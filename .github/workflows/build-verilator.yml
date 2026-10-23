@@ -1,0 +1,51 @@
+name: Verilator Build
+
+on:
+  workflow_call:
+
+env:
+  TOOL_VERSION: 084977f5df23cf27324dfc3dde540defc7f17ce9
+  DEBIAN_FRONTEND: "noninteractive"
+
+jobs:
+  verilator:
+    name: Prepare Verilator
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            /opt/verilator
+          key: cache_verilator_${{ env.TOOL_VERSION }}
+
+      - name: Install prerequisites
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          sudo apt -qqy update && sudo apt -qqy --no-install-recommends install \
+            git help2man libfl-dev mold build-essential autoconf bison ccache
+
+      - name: Checkout Verilator
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          git clone https://github.com/antmicro/verilator --depth 1 --revision "$TOOL_VERSION" verilator
+
+      - name: Build Verilator
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: |
+          set -eo pipefail
+          pushd verilator
+            autoconf
+            ./configure --prefix=/opt/verilator
+            make -j$(nproc)
+            make install
+            /opt/verilator/bin/verilator --version
+          popd
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: verilator
+          path: /opt/verilator
