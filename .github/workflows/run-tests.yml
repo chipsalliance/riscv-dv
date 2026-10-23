@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/build-verilator.yml
 
   generate-config:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.test-types.outputs.targets }}
       target_tests: ${{ steps.test-types.outputs.target_tests }}
@@ -29,7 +29,7 @@ jobs:
           echo "target_tests=$(cat target_tests.list)" | tee -a $GITHUB_OUTPUT
 
   build-generator:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ generate-config, build-verilator ]
     strategy:
         fail-fast: false
@@ -100,7 +100,7 @@ jobs:
             test/build_generator.log
 
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ build-spike, build-generator, generate-config ]
     if: ${{ !cancelled() && needs.build-spike.result == 'success' && needs.generate-config.result == 'success' }}
     strategy:
