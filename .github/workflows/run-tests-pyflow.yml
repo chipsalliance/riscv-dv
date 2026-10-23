@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/build-spike.yml
 
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ build-spike ]
     strategy:
       fail-fast: false

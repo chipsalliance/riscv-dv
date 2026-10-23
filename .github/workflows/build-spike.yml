@@ -6,7 +6,7 @@ on:
 jobs:
   spike:
     name: Build Spike
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       TOOL_VERSION: d70ea67df7e85a8d92a8baa254afde67c33c43a9
       DEBIAN_FRONTEND: "noninteractive"
