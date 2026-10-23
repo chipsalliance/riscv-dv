@@ -33,10 +33,10 @@ jobs:
           riscv64-unknown-elf-gcc --version
 
       - name: Setup python
-        # python dependencies cannot be properly downloaded with new versions of python
+        # pyboolector only ships wheels up to cp312; Ubuntu 26.04 runners have no Python < 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.12'
           cache: 'pip'
       - run: python3 -m pip install -r requirements.txt
 
