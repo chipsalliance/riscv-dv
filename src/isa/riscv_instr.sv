@@ -215,8 +215,12 @@ class riscv_instr extends uvm_object;
          idx = $urandom_range(0, allowed_instr.size()-1);
          name = allowed_instr[idx];
        end else begin
-         idx = $urandom_range(0, instr_names.size()-1);
-         name = instr_names[idx];
+         if ( include_category.size() > 0 ) begin
+           return null;
+         end else begin
+           idx = $urandom_range(0, instr_names.size()-1);
+           name = instr_names[idx];
+         end
        end
      end else begin
        if (!std::randomize(name) with {
