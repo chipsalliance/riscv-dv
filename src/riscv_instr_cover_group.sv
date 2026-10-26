@@ -185,7 +185,7 @@
 `define CL_SP_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
     cp_rd       : coverpoint instr.rd { \
-      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
+      ignore_bins zero = {ZERO}; \
     }
 
 `define CS_INSTR_CG_BEGIN(INSTR_NAME) \
@@ -205,9 +205,7 @@
 
 `define CS_SP_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
-    cp_rs2      : coverpoint instr.rs2 { \
-      bins gpr[] = {S0, S1, A0, A1, A2, A3, A4, A5}; \
-    }
+    cp_rs2      : coverpoint instr.rs2;
 
 `define CA_INSTR_CG_BEGIN(INSTR_NAME) \
   `INSTR_CG_BEGIN(INSTR_NAME) \
