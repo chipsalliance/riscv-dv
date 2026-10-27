@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 env:
-  TOOL_VERSION: 084977f5df23cf27324dfc3dde540defc7f17ce9
+  TOOL_VERSION: 2e1f99a23e10a6f7ab40230f9fb0230cb1692a7b
   DEBIAN_FRONTEND: "noninteractive"
 
 jobs:
