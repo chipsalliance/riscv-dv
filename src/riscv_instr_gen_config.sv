@@ -265,6 +265,7 @@ class riscv_instr_gen_config extends uvm_object;
   bit                    enable_zbc_extension;
   bit                    enable_zbs_extension;
   bit                    enable_zcb_extension;
+  bit                    enable_zcmp_extension;
 
   b_ext_group_t          enable_bitmanip_groups[] = {ZBB, ZBS, ZBP, ZBE, ZBF, ZBC, ZBR, ZBM, ZBT,
                                                      ZB_TMP};
@@ -543,6 +544,7 @@ class riscv_instr_gen_config extends uvm_object;
     `uvm_field_int(enable_zbc_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zbs_extension, UVM_DEFAULT)
     `uvm_field_int(enable_zcb_extension, UVM_DEFAULT)
+    `uvm_field_int(enable_zcmp_extension, UVM_DEFAULT)
     `uvm_field_int(use_push_data_section, UVM_DEFAULT)
   `uvm_object_utils_end
 
@@ -614,6 +616,7 @@ class riscv_instr_gen_config extends uvm_object;
     get_bool_arg_value("+enable_zbc_extension=", enable_zbc_extension);
     get_bool_arg_value("+enable_zbs_extension=", enable_zbs_extension);
     get_bool_arg_value("+enable_zcb_extension=", enable_zcb_extension);
+    get_bool_arg_value("+enable_zcmp_extension=", enable_zcmp_extension);
     cmdline_enum_processor #(b_ext_group_t)::get_array_values("+enable_bitmanip_groups=",
                                                               1'b0, enable_bitmanip_groups);
     if(inst.get_arg_value("+boot_mode=", boot_mode_opts)) begin
@@ -664,6 +667,11 @@ class riscv_instr_gen_config extends uvm_object;
     if (!((RV32ZCB inside {supported_isa}) ||
           (RV64ZCB inside {supported_isa}))) begin
       enable_zcb_extension = 0;
+    end
+
+    if (!((RV32ZCMP inside {supported_isa}) ||
+          (RV64ZCMP inside {supported_isa}))) begin
+      enable_zcmp_extension = 0;
     end
     vector_cfg = riscv_vector_cfg::type_id::create("vector_cfg");
     pmp_cfg = riscv_pmp_cfg::type_id::create("pmp_cfg");
