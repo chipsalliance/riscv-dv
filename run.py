@@ -412,15 +412,17 @@ def gen(test_list, argv, output_dir, cwd):
                     argv.verbose, check_return_code, argv.debug, argv.target)
 
 
-def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
+def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd,
+                linkerscript_path):
     """Use riscv gcc toolchain to compile the assembly program
 
     Args:
-      test_list  : List of assembly programs to be compiled
-      output_dir : Output directory of the ELF files
-      isa        : ISA variant passed to GCC
-      mabi       : MABI variant passed to GCC
-      debug_cmd  : Produce the debug cmd log without running
+      test_list         : List of assembly programs to be compiled
+      output_dir        : Output directory of the ELF files
+      isa               : ISA variant passed to GCC
+      mabi              : MABI variant passed to GCC
+      debug_cmd         : Produce the debug cmd log without running
+      linkerscript_path : Path to linker script of choice
     """
     cwd = os.path.dirname(os.path.realpath(__file__))
     for test in test_list:
@@ -440,9 +442,9 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
              -fvisibility=hidden -nostdlib \
              -nostartfiles {} \
              -I{}/user_extension \
-             -T{}/scripts/link.ld {} -o {} ".format(
+             -T{} {} -o {} ".format(
                 get_env_var("RISCV_GCC", debug_cmd=debug_cmd), asm, cwd,
-                cwd, opts, elf))
+                linkerscript_path, opts, elf))
             if 'gcc_opts' in test:
                 cmd += test['gcc_opts']
             if 'gen_opts' in test:
@@ -470,19 +472,20 @@ def gcc_compile(test_list, output_dir, isa, mabi, opts, debug_cmd):
 
 
 def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
-                 setting_dir, debug_cmd):
+                 setting_dir, debug_cmd, linkerscript_path):
     """Run a directed assembly test with ISS
 
     Args:
-      asm_test    : Assembly test file
-      iss_yaml    : ISS configuration file in YAML format
-      isa         : ISA variant passed to the ISS
-      mabi        : MABI variant passed to GCC
-      gcc_opts    : User-defined options for GCC compilation
-      iss_opts    : Instruction set simulators
-      output_dir  : Output directory of compiled test files
-      setting_dir : Generator setting directory
-      debug_cmd   : Produce the debug cmd log without running
+      asm_test          : Assembly test file
+      iss_yaml          : ISS configuration file in YAML format
+      isa               : ISA variant passed to the ISS
+      mabi              : MABI variant passed to GCC
+      gcc_opts          : User-defined options for GCC compilation
+      iss_opts          : Instruction set simulators
+      output_dir        : Output directory of compiled test files
+      setting_dir       : Generator setting directory
+      debug_cmd         : Produce the debug cmd log without running
+      linkerscript_path : Path to linker script of choice
     """
     if not asm_test.endswith(".S"):
         logging.error("{} is not an assembly .S file".format(asm_test))
@@ -498,15 +501,14 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     iss_list = iss_opts.split(",")
     run_cmd("mkdir -p {}/directed_asm_test".format(output_dir))
     logging.info("Compiling assembly test : {}".format(asm_test))
-
     # gcc compilation
     cmd = ("{} -static -mcmodel=medany \
          -fvisibility=hidden -nostdlib \
          -nostartfiles {} \
          -I{}/user_extension \
-         -T{}/scripts/link.ld {} -o {} ".format(
+         -T{} {} -o {} ".format(
         get_env_var("RISCV_GCC", debug_cmd=debug_cmd), asm_test, cwd,
-        cwd, gcc_opts, elf))
+        linkerscript_path, gcc_opts, elf))
     cmd += (" -march={}".format(isa))
     cmd += (" -mabi={}".format(mabi))
     run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
@@ -531,19 +533,20 @@ def run_assembly(asm_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
 
 
 def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
-                          output_dir, setting_dir, debug_cmd):
+                          output_dir, setting_dir, debug_cmd, linkerscript_path):
     """Run a directed assembly test from a directory with spike
 
     Args:
-      asm_test_dir    : Assembly test file directory
-      iss_yaml        : ISS configuration file in YAML format
-      isa             : ISA variant passed to the ISS
-      mabi            : MABI variant passed to GCC
-      gcc_opts        : User-defined options for GCC compilation
-      iss             : Instruction set simulators
-      output_dir      : Output directory of compiled test files
-      setting_dir     : Generator setting directory
-      debug_cmd       : Produce the debug cmd log without running
+      asm_test_dir      : Assembly test file directory
+      iss_yaml          : ISS configuration file in YAML format
+      isa               : ISA variant passed to the ISS
+      mabi              : MABI variant passed to GCC
+      gcc_opts          : User-defined options for GCC compilation
+      iss               : Instruction set simulators
+      output_dir        : Output directory of compiled test files
+      setting_dir       : Generator setting directory
+      debug_cmd         : Produce the debug cmd log without running
+      linkerscript_path : Path to linker script of choice
     """
     result = run_cmd("find {} -name \"*.S\"".format(asm_test_dir))
     if result:
@@ -553,7 +556,7 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
         for asm_file in asm_list:
             run_assembly(asm_file, iss_yaml, isa, mabi, gcc_opts, iss,
                          output_dir,
-                         setting_dir, debug_cmd)
+                         setting_dir, debug_cmd, linkerscript_path)
             if "," in iss:
                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
                 save_regr_report(report)
@@ -563,19 +566,20 @@ def run_assembly_from_dir(asm_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
 
 
 def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
-          setting_dir, debug_cmd):
+          setting_dir, debug_cmd, linkerscript_path):
     """Run a directed c test with ISS
 
     Args:
-      c_test      : C test file
-      iss_yaml    : ISS configuration file in YAML format
-      isa         : ISA variant passed to the ISS
-      mabi        : MABI variant passed to GCC
-      gcc_opts    : User-defined options for GCC compilation
-      iss_opts    : Instruction set simulators
-      output_dir  : Output directory of compiled test files
-      setting_dir : Generator setting directory
-      debug_cmd   : Produce the debug cmd log without running
+      c_test            : C test file
+      iss_yaml          : ISS configuration file in YAML format
+      isa               : ISA variant passed to the ISS
+      mabi              : MABI variant passed to GCC
+      gcc_opts          : User-defined options for GCC compilation
+      iss_opts          : Instruction set simulators
+      output_dir        : Output directory of compiled test files
+      setting_dir       : Generator setting directory
+      debug_cmd         : Produce the debug cmd log without running
+      linkerscript_path : Path to linker script of choice
     """
     if not c_test.endswith(".c"):
         logging.error("{} is not a .c file".format(c_test))
@@ -591,14 +595,13 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
     iss_list = iss_opts.split(",")
     run_cmd("mkdir -p {}/directed_c_test".format(output_dir))
     logging.info("Compiling c test : {}".format(c_test))
-
     # gcc compilation
     cmd = ("{} -mcmodel=medany -nostdlib \
          -nostartfiles {} \
          -I{}/user_extension \
-         -T{}/scripts/link.ld {} -o {} ".format(
+         -T{} {} -o {} ".format(
         get_env_var("RISCV_GCC", debug_cmd=debug_cmd), c_test, cwd,
-        cwd, gcc_opts, elf))
+        linkerscript_path, gcc_opts, elf))
     cmd += (" -march={}".format(isa))
     cmd += (" -mabi={}".format(mabi))
     run_cmd_output(cmd.split(), debug_cmd=debug_cmd)
@@ -623,19 +626,20 @@ def run_c(c_test, iss_yaml, isa, mabi, gcc_opts, iss_opts, output_dir,
 
 
 def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
-                   output_dir, setting_dir, debug_cmd):
+                   output_dir, setting_dir, debug_cmd, linkerscript_path):
     """Run a directed c test from a directory with spike
 
     Args:
-      c_test_dir      : C test file directory
-      iss_yaml        : ISS configuration file in YAML format
-      isa             : ISA variant passed to the ISS
-      mabi            : MABI variant passed to GCC
-      gcc_opts        : User-defined options for GCC compilation
-      iss             : Instruction set simulators
-      output_dir      : Output directory of compiled test files
-      setting_dir     : Generator setting directory
-      debug_cmd       : Produce the debug cmd log without running
+      c_test_dir        : C test file directory
+      iss_yaml          : ISS configuration file in YAML format
+      isa               : ISA variant passed to the ISS
+      mabi              : MABI variant passed to GCC
+      gcc_opts          : User-defined options for GCC compilation
+      iss               : Instruction set simulators
+      output_dir        : Output directory of compiled test files
+      setting_dir       : Generator setting directory
+      debug_cmd         : Produce the debug cmd log without running
+      linkerscript_path : Path to linker script of choice
     """
     result = run_cmd("find {} -name \"*.c\"".format(c_test_dir))
     if result:
@@ -643,7 +647,7 @@ def run_c_from_dir(c_test_dir, iss_yaml, isa, mabi, gcc_opts, iss,
         logging.info("Found {} c tests under {}".format(len(c_list), c_test_dir))
         for c_file in c_list:
             run_c(c_file, iss_yaml, isa, mabi, gcc_opts, iss, output_dir,
-                  setting_dir, debug_cmd)
+                  setting_dir, debug_cmd, linkerscript_path)
             if "," in iss:
                 report = ("{}/iss_regr.log".format(output_dir)).rstrip()
                 save_regr_report(report)
@@ -817,6 +821,9 @@ def parse_args(cwd):
                         help="Compile options for the generator")
     parser.add_argument("--sim_opts", type=str, default="",
                         help="Simulation options for the generator")
+    parser.add_argument("--linkerscript_path", type=str,
+                        default=os.path.join(cwd, "scripts", "link.ld"),
+                        help="Path to linker script (default: scripts/link.ld)")
     parser.add_argument("--gcc_opts", type=str, default="",
                         help="GCC compile options")
     parser.add_argument("-s", "--steps", type=str, default="all",
@@ -895,6 +902,11 @@ def parse_args(cwd):
                            "Cannot be used with --start_seed or --seed."))
 
     args = parser.parse_args()
+
+    if not os.path.isfile(args.linkerscript_path):
+        logging.error('--linkerscript_path does not point to an existing file: '
+                      f'{args.linkerscript_path}')
+        sys.exit(RET_FAIL)
 
     if args.seed is not None and args.start_seed is not None:
         logging.error('--start_seed and --seed are mutually exclusive.')
@@ -1026,13 +1038,14 @@ def main():
                     run_assembly_from_dir(full_path, args.iss_yaml, args.isa,
                                           args.mabi,
                                           args.gcc_opts, args.iss, output_dir,
-                                          args.core_setting_dir, args.debug)
+                                          args.core_setting_dir, args.debug,
+                                          args.linkerscript_path)
                 # path_asm_test is an assembly file
                 elif os.path.isfile(full_path) or args.debug:
                     run_assembly(full_path, args.iss_yaml, args.isa, args.mabi,
                                  args.gcc_opts,
                                  args.iss, output_dir, args.core_setting_dir,
-                                 args.debug)
+                                 args.debug, args.linkerscript_path)
                 else:
                     logging.error('{} does not exist'.format(full_path))
                     sys.exit(RET_FAIL)
@@ -1048,13 +1061,14 @@ def main():
                     run_c_from_dir(full_path, args.iss_yaml, args.isa,
                                    args.mabi,
                                    args.gcc_opts, args.iss, output_dir,
-                                   args.core_setting_dir, args.debug)
+                                   args.core_setting_dir, args.debug,
+                                   args.linkerscript_path)
                 # path_c_test is a c file
                 elif os.path.isfile(full_path) or args.debug:
                     run_c(full_path, args.iss_yaml, args.isa, args.mabi,
                           args.gcc_opts,
                           args.iss, output_dir, args.core_setting_dir,
-                          args.debug)
+                          args.debug, args.linkerscript_path)
                 else:
                     logging.error('{} does not exist'.format(full_path))
                     sys.exit(RET_FAIL)
@@ -1112,13 +1126,15 @@ def main():
                                                   gcc_opts, args.iss,
                                                   output_dir,
                                                   args.core_setting_dir,
-                                                  args.debug)
+                                                  args.debug,
+                                                  args.linkerscript_path)
                         # path_asm_test is an assembly file
                         elif os.path.isfile(path_asm_test):
                             run_assembly(path_asm_test, args.iss_yaml, args.isa,
                                          args.mabi, gcc_opts,
                                          args.iss, output_dir,
-                                         args.core_setting_dir, args.debug)
+                                         args.core_setting_dir, args.debug,
+                                         args.linkerscript_path)
                         else:
                             if not args.debug:
                                 logging.error(
@@ -1137,13 +1153,14 @@ def main():
                             run_c_from_dir(path_c_test, args.iss_yaml, args.isa,
                                            args.mabi,
                                            gcc_opts, args.iss, output_dir,
-                                           args.core_setting_dir, args.debug)
+                                           args.core_setting_dir, args.debug,
+                                           args.linkerscript_path)
                         # path_c_test is a C file
                         elif os.path.isfile(path_c_test):
                             run_c(path_c_test, args.iss_yaml, args.isa,
                                   args.mabi, gcc_opts,
                                   args.iss, output_dir, args.core_setting_dir,
-                                  args.debug)
+                                  args.debug, args.linkerscript_path)
                         else:
                             if not args.debug:
                                 logging.error('{} does not exist'.format(path_c_test))
@@ -1156,7 +1173,7 @@ def main():
             # Compile the assembly program to ELF, convert to plain binary
             if args.steps == "all" or re.match(".*gcc_compile.*", args.steps):
                 gcc_compile(matched_list, output_dir, args.isa, args.mabi,
-                            args.gcc_opts, args.debug)
+                            args.gcc_opts, args.debug, args.linkerscript_path)
 
             # Run ISS simulation
             if args.steps == "all" or re.match(".*iss_sim.*", args.steps):
