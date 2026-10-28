@@ -977,6 +977,9 @@ class riscv_asm_program_gen extends uvm_object;
     gen_ebreak_handler(hart);
     // Illegal instruction handler
     gen_illegal_instr_handler(hart);
+    // Misaligned load/store handlers (mcause 4/6)
+    gen_load_misaligned_handler(hart);
+    gen_store_misaligned_handler(hart);
     // Generate page table fault handling routine
     // Page table fault is always handled in machine mode, as virtual address translation may be
     // broken when page fault happens.
@@ -1097,6 +1100,14 @@ class riscv_asm_program_gen extends uvm_object;
              $sformatf("beq x%0d, x%0d, %0spt_fault_handler",
                        cfg.gpr[0], cfg.gpr[1], hart_prefix(hart)),
              // Illegal instruction exception
+             // Misaligned load (mcause=4): emulate byte-by-byte, mret to next instruction
+             $sformatf("li x%0d, 0x4", cfg.gpr[1]),
+             $sformatf("beq x%0d, x%0d, %0sload_misaligned_handler",
+                       cfg.gpr[0], cfg.gpr[1], hart_prefix(hart)),
+             // Misaligned store/AMO (mcause=6): emulate byte-by-byte, mret
+             $sformatf("li x%0d, 0x6", cfg.gpr[1]),
+             $sformatf("beq x%0d, x%0d, %0sstore_misaligned_handler",
+                       cfg.gpr[0], cfg.gpr[1], hart_prefix(hart)),
              $sformatf("li x%0d, 0x%0x # ILLEGAL_INSTRUCTION", cfg.gpr[1], ILLEGAL_INSTRUCTION),
              $sformatf("beq x%0d, x%0d, %0sillegal_instr_handler",
                        cfg.gpr[0], cfg.gpr[1], hart_prefix(hart)),
@@ -1228,6 +1239,244 @@ class riscv_asm_program_gen extends uvm_object;
   endfunction
 
   // TODO: handshake correct csr based on delegation
+
+
+
+  // ---------------------------------------------------------------
+  // gen_load_misaligned_handler  (mcause=4)  v4
+  //
+  // Fix vs v3: advance MEPC BEFORE the byte emulation, while gpr[0]
+  // still holds the original MEPC and gpr[3] still holds the full
+  // 32-bit instruction (xori+bnez avoids clobbering gpr[3]).
+  // ---------------------------------------------------------------
+  virtual function void gen_load_misaligned_handler(int hart);
+    string instr[$];
+    string sd_instr = (XLEN == 32) ? "sw" : "sd";
+    int    idx_shift = $clog2(XLEN/8);
+
+    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+
+    // --- Step 1: read MEPC (gpr0) and faulting address (gpr1) ---
+    instr = {instr,
+      $sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], MEPC),
+      $sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], MTVAL)
+    };
+
+    // --- Step 2: read instruction with lhu (safe for any 2-byte aligned PC) ---
+    // gpr2 = lower 16 bits, gpr3 = full 32-bit instruction
+    instr = {instr,
+      $sformatf("lhu  x%0d, 0(x%0d)",    cfg.gpr[2], cfg.gpr[0]),
+      $sformatf("lhu  x%0d, 2(x%0d)",    cfg.gpr[3], cfg.gpr[0]),
+      $sformatf("slli x%0d, x%0d, 16",   cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[3], cfg.gpr[3], cfg.gpr[2])
+    };
+
+    // --- Step 3: detect compression, advance MEPC immediately ---
+    // xori+bnez: gpr[3] (full instruction) is NOT clobbered.
+    // gpr[0] still = original MEPC.
+    instr = {instr,
+      $sformatf("andi x%0d, x%0d, 0x3",  cfg.gpr[4], cfg.gpr[2]),  // gpr4 = bits[1:0]
+      $sformatf("xori x%0d, x%0d, 0x3",  cfg.gpr[4], cfg.gpr[4]),  // gpr4=0 iff uncompressed
+      $sformatf("bnez x%0d, %0slmh_c",   cfg.gpr[4], hart_prefix(hart))
+    };
+
+    // UNCOMPRESSED path (bits[1:0]==11):
+    instr = {instr,
+      $sformatf("addi x%0d, x%0d, 4",    cfg.gpr[0], cfg.gpr[0]),  // MEPC + 4
+      $sformatf("csrw 0x%0x, x%0d",      MEPC, cfg.gpr[0]),        // advance NOW
+      $sformatf("srli x%0d, x%0d, 12",   cfg.gpr[2], cfg.gpr[3]),  // funct3 = bits[14:12]
+      $sformatf("andi x%0d, x%0d, 0x7",  cfg.gpr[2], cfg.gpr[2]),
+      $sformatf("srli x%0d, x%0d, 7",    cfg.gpr[3], cfg.gpr[3]),  // rd = bits[11:7]
+      $sformatf("andi x%0d, x%0d, 0x1f", cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("j    %0slmh_com",        hart_prefix(hart))
+    };
+
+    // COMPRESSED path (bits[1:0]!=11):
+    instr = {instr,
+      $sformatf("%0slmh_c:",              hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 2",    cfg.gpr[0], cfg.gpr[0]),  // MEPC + 2
+      $sformatf("csrw 0x%0x, x%0d",      MEPC, cfg.gpr[0]),        // advance NOW
+      $sformatf("srli x%0d, x%0d, 2",    cfg.gpr[3], cfg.gpr[2]),  // rd' = bits[4:2]
+      $sformatf("andi x%0d, x%0d, 0x7",  cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("addi x%0d, x%0d, 8",    cfg.gpr[3], cfg.gpr[3]),  // rd = rd' + 8
+      $sformatf("srli x%0d, x%0d, 13",   cfg.gpr[2], cfg.gpr[2]),  // bit[13]→size
+      $sformatf("andi x%0d, x%0d, 0x1",  cfg.gpr[2], cfg.gpr[2]),
+      $sformatf("addi x%0d, x%0d, 2",    cfg.gpr[2], cfg.gpr[2])   // funct3: 2=LW, 3=LD
+    };
+
+    // --- Step 4: common byte accumulation (gpr2=funct3, gpr3=rd, gpr1=addr) ---
+    instr = {instr,
+      $sformatf("%0slmh_com:",            hart_prefix(hart)),
+      $sformatf("li   x%0d, 0",           cfg.gpr[4]),
+      $sformatf("lbu  x%0d, 0(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 1(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 8",    cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 2(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 16",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 3(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 24",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0])
+    };
+
+    // bytes 4-7 for LD (funct3=3)
+    instr = {instr,
+      $sformatf("li   x%0d, 3",           cfg.gpr[0]),
+      $sformatf("bne  x%0d, x%0d, %0slmh_4b", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("lbu  x%0d, 4(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 32",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 5(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 40",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 6(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 48",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("lbu  x%0d, 7(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("slli x%0d, x%0d, 56",   cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[4], cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("%0slmh_4b:",            hart_prefix(hart))
+    };
+
+    // sign-extension per funct3
+    instr = {instr,
+      // LB (0)
+      $sformatf("li   x%0d, 0",           cfg.gpr[0]),
+      $sformatf("bne  x%0d, x%0d, %0slmh_slb", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("slli x%0d, x%0d, 56",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("srai x%0d, x%0d, 56",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("%0slmh_slb:",           hart_prefix(hart)),
+      // LH (1)
+      $sformatf("li   x%0d, 1",           cfg.gpr[0]),
+      $sformatf("bne  x%0d, x%0d, %0slmh_slh", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("slli x%0d, x%0d, 48",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("srai x%0d, x%0d, 48",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("%0slmh_slh:",           hart_prefix(hart)),
+      // LW (2)
+      $sformatf("li   x%0d, 2",           cfg.gpr[0]),
+      $sformatf("bne  x%0d, x%0d, %0slmh_slw", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("slli x%0d, x%0d, 32",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("srai x%0d, x%0d, 32",   cfg.gpr[4], cfg.gpr[4]),
+      $sformatf("%0slmh_slw:",           hart_prefix(hart))
+    };
+
+    // write result to kernel stack slot for x[rd]
+    instr = {instr,
+      $sformatf("beqz x%0d, %0slmh_done",  cfg.gpr[3], hart_prefix(hart)),
+      $sformatf("slli x%0d, x%0d, %0d",   cfg.gpr[0], cfg.gpr[3], idx_shift),
+      $sformatf("add  x%0d, x%0d, x%0d",  cfg.gpr[0], cfg.tp, cfg.gpr[0]),
+      $sformatf("%0s  x%0d, 0(x%0d)",     sd_instr, cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("%0slmh_done:",           hart_prefix(hart))
+    };
+
+    // MEPC already advanced -- just pop and mret
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
+    instr.push_back("mret");
+    gen_section(get_label("load_misaligned_handler", hart), instr);
+  endfunction
+
+  // ---------------------------------------------------------------
+  // gen_store_misaligned_handler  (mcause=6)  v4  -- same advance-early fix
+  // ---------------------------------------------------------------
+  virtual function void gen_store_misaligned_handler(int hart);
+    string instr[$];
+    string ld_instr = (XLEN == 32) ? "lw" : "ld";
+    int    idx_shift = $clog2(XLEN/8);
+
+    gen_signature_handshake(instr, CORE_STATUS, HANDLING_EXCEPTION);
+    gen_signature_handshake(.instr(instr), .signature_type(WRITE_CSR), .csr(MCAUSE));
+
+    // Step 1: read MEPC and faulting address
+    instr = {instr,
+      $sformatf("csrr x%0d, 0x%0x", cfg.gpr[0], MEPC),
+      $sformatf("csrr x%0d, 0x%0x", cfg.gpr[1], MTVAL)
+    };
+
+    // Step 2: read instruction with lhu
+    instr = {instr,
+      $sformatf("lhu  x%0d, 0(x%0d)",    cfg.gpr[2], cfg.gpr[0]),
+      $sformatf("lhu  x%0d, 2(x%0d)",    cfg.gpr[3], cfg.gpr[0]),
+      $sformatf("slli x%0d, x%0d, 16",   cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("or   x%0d, x%0d, x%0d", cfg.gpr[3], cfg.gpr[3], cfg.gpr[2])
+    };
+
+    // Step 3: detect, advance MEPC immediately (xori+bnez keeps gpr[3] intact)
+    instr = {instr,
+      $sformatf("andi x%0d, x%0d, 0x3",  cfg.gpr[4], cfg.gpr[2]),
+      $sformatf("xori x%0d, x%0d, 0x3",  cfg.gpr[4], cfg.gpr[4]),  // 0 iff uncompressed
+      $sformatf("bnez x%0d, %0ssmh_c",   cfg.gpr[4], hart_prefix(hart))
+    };
+
+    // UNCOMPRESSED
+    instr = {instr,
+      $sformatf("addi x%0d, x%0d, 4",    cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("csrw 0x%0x, x%0d",      MEPC, cfg.gpr[0]),
+      $sformatf("srli x%0d, x%0d, 12",   cfg.gpr[2], cfg.gpr[3]),  // funct3
+      $sformatf("andi x%0d, x%0d, 0x7",  cfg.gpr[2], cfg.gpr[2]),
+      $sformatf("srli x%0d, x%0d, 20",   cfg.gpr[3], cfg.gpr[3]),  // rs2=bits[24:20]
+      $sformatf("andi x%0d, x%0d, 0x1f", cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("j    %0ssmh_com",        hart_prefix(hart))
+    };
+
+    // COMPRESSED
+    instr = {instr,
+      $sformatf("%0ssmh_c:",              hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 2",    cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("csrw 0x%0x, x%0d",      MEPC, cfg.gpr[0]),
+      $sformatf("srli x%0d, x%0d, 2",    cfg.gpr[3], cfg.gpr[2]),  // rs2'=bits[4:2]
+      $sformatf("andi x%0d, x%0d, 0x7",  cfg.gpr[3], cfg.gpr[3]),
+      $sformatf("addi x%0d, x%0d, 8",    cfg.gpr[3], cfg.gpr[3]),  // rs2=rs2'+8
+      $sformatf("srli x%0d, x%0d, 13",   cfg.gpr[2], cfg.gpr[2]),
+      $sformatf("andi x%0d, x%0d, 0x1",  cfg.gpr[2], cfg.gpr[2]),
+      $sformatf("addi x%0d, x%0d, 2",    cfg.gpr[2], cfg.gpr[2])
+    };
+
+    // Step 4: read x[rs2] from kernel stack (rs2=0 → value=0)
+    instr = {instr,
+      $sformatf("%0ssmh_com:",            hart_prefix(hart)),
+      $sformatf("li   x%0d, 0",           cfg.gpr[4]),
+      $sformatf("beqz x%0d, %0ssmh_got", cfg.gpr[3], hart_prefix(hart)),
+      $sformatf("slli x%0d, x%0d, %0d",  cfg.gpr[0], cfg.gpr[3], idx_shift),
+      $sformatf("add  x%0d, x%0d, x%0d", cfg.gpr[0], cfg.tp, cfg.gpr[0]),
+      $sformatf("%0s  x%0d, 0(x%0d)",    ld_instr, cfg.gpr[4], cfg.gpr[0]),
+      $sformatf("%0ssmh_got:",           hart_prefix(hart))
+    };
+
+    // Step 5: store bytes to faulting address based on funct3
+    instr = {instr,
+      $sformatf("sb   x%0d, 0(x%0d)",    cfg.gpr[4], cfg.gpr[1]),
+      $sformatf("li   x%0d, 0",           cfg.gpr[0]),
+      $sformatf("beq  x%0d, x%0d, %0ssmh_done", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("srli x%0d, x%0d, 8",    cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 1(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("li   x%0d, 1",           cfg.gpr[0]),
+      $sformatf("beq  x%0d, x%0d, %0ssmh_done", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("srli x%0d, x%0d, 16",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 2(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("srli x%0d, x%0d, 24",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 3(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("li   x%0d, 2",           cfg.gpr[0]),
+      $sformatf("beq  x%0d, x%0d, %0ssmh_done", cfg.gpr[2], cfg.gpr[0], hart_prefix(hart)),
+      $sformatf("srli x%0d, x%0d, 32",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 4(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("srli x%0d, x%0d, 40",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 5(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("srli x%0d, x%0d, 48",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 6(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("srli x%0d, x%0d, 56",   cfg.gpr[0], cfg.gpr[4]),
+      $sformatf("sb   x%0d, 7(x%0d)",    cfg.gpr[0], cfg.gpr[1]),
+      $sformatf("%0ssmh_done:",          hart_prefix(hart))
+    };
+
+    // MEPC already advanced -- just pop and mret
+    pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
+    instr.push_back("mret");
+    gen_section(get_label("store_misaligned_handler", hart), instr);
+  endfunction
+
   virtual function void gen_load_fault_handler(int hart);
     string instr[$];
     gen_signature_handshake(instr, CORE_STATUS, LOAD_FAULT_EXCEPTION);
@@ -1238,6 +1487,20 @@ class riscv_asm_program_gen extends uvm_object;
                                             LOAD_ACCESS_FAULT,
                                             instr);
     end
+    // advance mepc: +4 uncompressed, +2 compressed
+    instr = {instr,
+      $sformatf("csrr x%0d, 0x%0x",       cfg.gpr[0], MEPC),
+      $sformatf("lhu  x%0d, 0(x%0d)",     cfg.gpr[1], cfg.gpr[0]),
+      $sformatf("andi x%0d, x%0d, 0x3",   cfg.gpr[1], cfg.gpr[1]),
+      $sformatf("xori x%0d, x%0d, 0x3",   cfg.gpr[1], cfg.gpr[1]),
+      $sformatf("bnez x%0d, %0slf_adv2",  cfg.gpr[1], hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 4",     cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("j    %0slf_adv_done",    hart_prefix(hart)),
+      $sformatf("%0slf_adv2:",            hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 2",     cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("%0slf_adv_done:",        hart_prefix(hart)),
+      $sformatf("csrw 0x%0x, x%0d",       MEPC, cfg.gpr[0])
+    };
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
     gen_section(get_label("load_fault_handler", hart), instr);
@@ -1254,6 +1517,20 @@ class riscv_asm_program_gen extends uvm_object;
                                             STORE_AMO_ACCESS_FAULT,
                                             instr);
     end
+    // advance mepc: +4 uncompressed, +2 compressed
+    instr = {instr,
+      $sformatf("csrr x%0d, 0x%0x",       cfg.gpr[0], MEPC),
+      $sformatf("lhu  x%0d, 0(x%0d)",     cfg.gpr[1], cfg.gpr[0]),
+      $sformatf("andi x%0d, x%0d, 0x3",   cfg.gpr[1], cfg.gpr[1]),
+      $sformatf("xori x%0d, x%0d, 0x3",   cfg.gpr[1], cfg.gpr[1]),
+      $sformatf("bnez x%0d, %0ssf_adv2",  cfg.gpr[1], hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 4",     cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("j    %0ssf_adv_done",    hart_prefix(hart)),
+      $sformatf("%0ssf_adv2:",            hart_prefix(hart)),
+      $sformatf("addi x%0d, x%0d, 2",     cfg.gpr[0], cfg.gpr[0]),
+      $sformatf("%0ssf_adv_done:",        hart_prefix(hart)),
+      $sformatf("csrw 0x%0x, x%0d",       MEPC, cfg.gpr[0])
+    };
     pop_gpr_from_kernel_stack(MSTATUS, MSCRATCH, cfg.mstatus_mprv, cfg.sp, cfg.tp, instr);
     instr.push_back("mret");
     gen_section(get_label("store_fault_handler", hart), instr);
