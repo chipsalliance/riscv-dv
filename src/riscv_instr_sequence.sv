@@ -337,7 +337,7 @@ class riscv_instr_sequence extends uvm_sequence;
     bin_instr_cnt = instr_cnt * cfg.hint_instr_ratio / 1000;
     if (bin_instr_cnt >= 0) begin
       `uvm_info(`gfn, $sformatf("Injecting %0d HINT instructions, ratio %0d/100",
-                      bin_instr_cnt, cfg.illegal_instr_ratio), UVM_LOW)
+                      bin_instr_cnt, cfg.hint_instr_ratio), UVM_LOW)
       repeat (bin_instr_cnt) begin
         `DV_CHECK_RANDOMIZE_WITH_FATAL(illegal_instr,
                                        exception == kHintInstr;)
